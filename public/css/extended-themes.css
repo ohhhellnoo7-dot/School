@@ -1,0 +1,280 @@
+/* Additive palettes: existing Light, Night, Relax and Cute rules are untouched. */
+
+:root[data-theme=ocean] {
+    --page: #eff8ff;
+    --surface: #ffffff;
+    --elevated: #ffffff;
+    --ink: #102f49;
+    --muted: #4b687f;
+    --green: #0965b8;
+    --primary: #087bab;
+    --secondary: #16b6d5;
+    --soft: #e5f4ff;
+    --border: #c7e2f3;
+    --accent-ink: #ffffff;
+    --sidebar-bg: #064573;
+    --sidebar-end: #063451;
+    --sidebar-fg: #d3f1ff;
+    --nav-active: linear-gradient(110deg,#0965b8,#087bab);
+    --nav-ink: #ffffff;
+    --success: #08774f;
+    --warning: #865600;
+    --danger: #b92d4f;
+    --info: #0965b8;
+    --violet: #7050b2;
+    --success-soft: #def5eb;
+    --warning-soft: #fff0d5;
+    --danger-soft: #ffe8ef;
+    --info-soft: #e2f1ff;
+    --violet-soft: #f0eaff;
+    --hero-base: #e5f5ff;
+    --hero-fade: #e5f5ffde;
+    --card-1: #e5f4ff;
+    --card-2: #e0f6f5;
+    --card-3: #fff1da;
+    --card-4: #eeedff;
+    --shadow-color: #07558210;
+    --chart-bar: #a6d8f7;
+    --chart-female: #8466ce;
+    --chart-male: #087bab;
+    --chart-other: #af7815;
+    --bs-primary-rgb: 9,101,184;
+    --chart-line: #0965b8;
+    --chart-fill: #0965b826;
+    --chart-grid: #4b687f30;
+    --chart-bar-active: #0965b8;
+    --chart-present: #08774f;
+    --chart-absent: #b92d4f;
+    --chart-late: #865600;
+    --chart-excused: #4b687f;
+    --story: #064573;
+    color-scheme: light;
+}
+
+:root[data-theme=sunset] {
+    --page: #fff6ef;
+    --surface: #ffffff;
+    --elevated: #fffdfa;
+    --ink: #482b2b;
+    --muted: #7e5951;
+    --green: #b74722;
+    --primary: #ba3a51;
+    --secondary: #f58c57;
+    --soft: #ffebe0;
+    --border: #f1d6c7;
+    --accent-ink: #ffffff;
+    --sidebar-bg: #672f38;
+    --sidebar-end: #41242d;
+    --sidebar-fg: #ffe4da;
+    --nav-active: linear-gradient(110deg,#b74722,#ba3a51);
+    --nav-ink: #ffffff;
+    --success: #29734f;
+    --warning: #895509;
+    --danger: #b72e4b;
+    --info: #316c9c;
+    --violet: #92507e;
+    --success-soft: #e5f4e9;
+    --warning-soft: #ffedcc;
+    --danger-soft: #ffe7ed;
+    --info-soft: #e8f2fc;
+    --violet-soft: #fae8f5;
+    --hero-base: #ffecdd;
+    --hero-fade: #ffecddde;
+    --card-1: #ffe9dc;
+    --card-2: #fff0d7;
+    --card-3: #ffe7eb;
+    --card-4: #f8e9f6;
+    --shadow-color: #8b443410;
+    --chart-bar: #f2bea5;
+    --chart-female: #ba3a51;
+    --chart-male: #c05d25;
+    --chart-other: #957223;
+    --bs-primary-rgb: 183,71,34;
+    --chart-line: #b74722;
+    --chart-fill: #b7472226;
+    --chart-grid: #7e595130;
+    --chart-bar-active: #b74722;
+    --chart-present: #29734f;
+    --chart-absent: #b72e4b;
+    --chart-late: #895509;
+    --chart-excused: #7e5951;
+    --story: #672f38;
+    color-scheme: light;
+}
+
+:root[data-theme=luxury] {
+    --page: #101011;
+    --surface: #1c1c1e;
+    --elevated: #242426;
+    --ink: #f5eedf;
+    --muted: #c0b6a3;
+    --green: #e7c77d;
+    --primary: #c9a75f;
+    --secondary: #f4dda0;
+    --soft: #302a20;
+    --border: #514531;
+    --accent-ink: #19150d;
+    --sidebar-bg: #0b0b0d;
+    --sidebar-end: #1c1914;
+    --sidebar-fg: #ded3bd;
+    --nav-active: linear-gradient(110deg,#e7c77d,#c9a75f);
+    --nav-ink: #19150d;
+    --success: #8bd8b1;
+    --warning: #f1cd7d;
+    --danger: #ffa7b6;
+    --info: #a8cbee;
+    --violet: #ceb6f0;
+    --success-soft: #20382d;
+    --warning-soft: #3f3320;
+    --danger-soft: #40272e;
+    --info-soft: #253343;
+    --violet-soft: #352b40;
+    --hero-base: #1c1b19;
+    --hero-fade: #1c1b19eb;
+    --card-1: #302a20;
+    --card-2: #242e2a;
+    --card-3: #342d20;
+    --card-4: #302936;
+    --shadow-color: #00000030;
+    --chart-bar: #6d5c36;
+    --chart-female: #ceb6f0;
+    --chart-male: #e7c77d;
+    --chart-other: #a8cbee;
+    --bs-primary-rgb: 231,199,125;
+    --chart-line: #e7c77d;
+    --chart-fill: #e7c77d26;
+    --chart-grid: #c0b6a330;
+    --chart-bar-active: #e7c77d;
+    --chart-present: #8bd8b1;
+    --chart-absent: #ffa7b6;
+    --chart-late: #f1cd7d;
+    --chart-excused: #c0b6a3;
+    --story: #0b0b0d;
+    color-scheme: dark;
+}
+
+:root[data-theme=galaxy] {
+    --page: #0b1025;
+    --surface: #151d39;
+    --elevated: #1d2847;
+    --ink: #f0f2ff;
+    --muted: #b2bcdf;
+    --green: #c7b3ff;
+    --primary: #acbaff;
+    --secondary: #60c9ff;
+    --soft: #293354;
+    --border: #424e79;
+    --accent-ink: #141b36;
+    --sidebar-bg: #10132e;
+    --sidebar-end: #20143e;
+    --sidebar-fg: #dbdfff;
+    --nav-active: linear-gradient(110deg,#c7b3ff,#8ec9ff);
+    --nav-ink: #141b36;
+    --success: #7ae2be;
+    --warning: #f5d18b;
+    --danger: #ffa5c2;
+    --info: #8acfff;
+    --violet: #d0b4ff;
+    --success-soft: #163c3b;
+    --warning-soft: #3e352e;
+    --danger-soft: #412b48;
+    --info-soft: #203b5d;
+    --violet-soft: #352c57;
+    --hero-base: #191b3f;
+    --hero-fade: #191b3feb;
+    --card-1: #29254d;
+    --card-2: #19354b;
+    --card-3: #353044;
+    --card-4: #322651;
+    --shadow-color: #00001840;
+    --chart-bar: #504d8f;
+    --chart-female: #cf9fff;
+    --chart-male: #64baff;
+    --chart-other: #f5cf8b;
+    --bs-primary-rgb: 172,186,255;
+    --chart-line: #c7b3ff;
+    --chart-fill: #c7b3ff26;
+    --chart-grid: #b2bcdf30;
+    --chart-bar-active: #c7b3ff;
+    --chart-present: #7ae2be;
+    --chart-absent: #ffa5c2;
+    --chart-late: #f5d18b;
+    --chart-excused: #b2bcdf;
+    --story: #10132e;
+    color-scheme: dark;
+}
+
+/* Bootstrap and legacy screens share these tokens only for the new palettes. */
+:root:is([data-theme=ocean],[data-theme=sunset],[data-theme=luxury],[data-theme=galaxy]) {
+    --bs-body-bg:var(--page);--bs-body-color:var(--ink);--bs-secondary-color:var(--muted);
+    --bs-secondary-bg:var(--soft);--bs-tertiary-bg:var(--elevated);--bs-emphasis-color:var(--ink);
+    --bs-border-color:var(--border);--bs-primary:var(--primary);--bs-link-color:var(--green);
+    --bs-link-hover-color:var(--primary);--bs-heading-color:var(--ink);
+    --theme-hero:var(--hero-base);--theme-hero-fade:var(--hero-fade);
+    --sidebar-surface:var(--sidebar-bg);--sidebar-text:var(--sidebar-fg);
+    --action-gradient:linear-gradient(115deg,var(--green),var(--primary));
+    --action-ink:var(--accent-ink);
+}
+:root:root:root:is([data-theme=ocean],[data-theme=sunset],[data-theme=luxury],[data-theme=galaxy]) :is(.card,.toast,.list-group-item,.swal2-popup) {
+    background-color:var(--surface);color:var(--ink);border-color:var(--border);
+}
+:root:root:root:is([data-theme=ocean],[data-theme=sunset],[data-theme=luxury],[data-theme=galaxy]) :is(.card-header,.card-footer,.toast-header) {
+    background-color:var(--soft);color:var(--ink);border-color:var(--border);
+}
+:root:root:root:is([data-theme=ocean],[data-theme=sunset],[data-theme=luxury],[data-theme=galaxy]) :is(.btn-primary,.scholar-workspace .btn-primary) {
+    background:var(--action-gradient);color:var(--action-ink);border-color:var(--primary);
+}
+:root:root:root:is([data-theme=ocean],[data-theme=sunset],[data-theme=luxury],[data-theme=galaxy]) :is(.btn-primary:hover,.btn-primary:focus-visible,.scholar-workspace .btn-primary:active) {
+    background:var(--action-gradient)!important;color:var(--action-ink)!important;
+}
+:root:root:root:is([data-theme=ocean],[data-theme=sunset],[data-theme=luxury],[data-theme=galaxy]) .alert-warning {background:var(--warning-soft);color:var(--warning);border-color:var(--border)}
+:root:root:root:is([data-theme=ocean],[data-theme=sunset],[data-theme=luxury],[data-theme=galaxy]) :is(.alert,.toast) a {color:inherit;text-decoration:underline}
+:root:root:root:is([data-theme=ocean],[data-theme=sunset],[data-theme=luxury],[data-theme=galaxy]) .text-muted {color:var(--muted)!important}
+:root:root:root:is([data-theme=ocean],[data-theme=sunset],[data-theme=luxury],[data-theme=galaxy]) .text-primary {color:var(--green)!important}
+:root:root:root:is([data-theme=ocean],[data-theme=sunset],[data-theme=luxury],[data-theme=galaxy]) .text-warning {color:var(--warning)!important}
+:root:root:root:is([data-theme=ocean],[data-theme=sunset],[data-theme=luxury],[data-theme=galaxy]) .text-info {color:var(--info)!important}
+:root:root:root:is([data-theme=ocean],[data-theme=sunset],[data-theme=luxury],[data-theme=galaxy]) :is(.form-check-input,.input-group-text) {background-color:var(--elevated);border-color:var(--border);color:var(--ink)}
+:root:root:root:is([data-theme=ocean],[data-theme=sunset],[data-theme=luxury],[data-theme=galaxy]) .form-check-input:checked {background-color:var(--primary);border-color:var(--primary)}
+:root:root:root:is([data-theme=ocean],[data-theme=sunset],[data-theme=luxury],[data-theme=galaxy]) :is(.form-control:disabled,.form-select:disabled) {background-color:var(--soft);color:var(--muted);opacity:1}
+:root:root:root:is([data-theme=ocean],[data-theme=sunset],[data-theme=luxury],[data-theme=galaxy]) .attendance-status-present {background:var(--success-soft);color:var(--success)}
+:root:root:root:is([data-theme=ocean],[data-theme=sunset],[data-theme=luxury],[data-theme=galaxy]) .attendance-status-late {background:var(--warning-soft);color:var(--warning)}
+:root:root:root:is([data-theme=ocean],[data-theme=sunset],[data-theme=luxury],[data-theme=galaxy]) .attendance-status-absent {background:var(--danger-soft);color:var(--danger)}
+:root[data-theme=ocean] {--action-gradient:linear-gradient(115deg,#0965b8,#087bab)}
+:root[data-theme=sunset] {--action-gradient:linear-gradient(115deg,#b74722,#ba3a51)}
+:root[data-theme=luxury] :is(h1,h2,h3,.auth-box h1) {font-family:Georgia,'Times New Roman',serif;letter-spacing:.01em}
+:root[data-theme=luxury] {--motion-duration:.32s;--glow-strength:12%}
+:root[data-theme=galaxy] {
+    --action-gradient:linear-gradient(115deg,#6840cb,#2455bf);--action-ink:#ffffff;
+    --nav-active:linear-gradient(115deg,#6840cb,#2455bf);--nav-ink:#ffffff;
+    --motion-duration:.32s;--glow-strength:20%;
+}
+:root:root:root[data-theme=galaxy] .scholar-workspace {
+    background:radial-gradient(ellipse at 90% 0%,#6035b52b,transparent 50%),radial-gradient(ellipse at 0% 65%,#1876b81c,transparent 50%),var(--page);
+}
+:root:root:root[data-theme=galaxy] .scholar-workspace :is(.topbar,.panel,.mini-stats) {
+    background:color-mix(in srgb,var(--surface) 92%,transparent);
+    -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+    box-shadow:0 6px 28px #05071935,inset 0 1px 0 #cfbdff0c;
+}
+:root:root:root[data-theme=galaxy] .btn-primary {box-shadow:0 4px 18px #704cff30}
+/* Keep content stationary while colors settle. Reduced motion disables transitions. */
+:root:is([data-theme=ocean],[data-theme=sunset],[data-theme=luxury],[data-theme=galaxy]) :is(.modal-content,.toast,.card,.dropdown-menu,.teacher-stat,.status-badge,.pagination .page-link) {
+    transition:background-color .3s ease,color .3s ease,border-color .3s ease,box-shadow .3s ease;
+}
+@media(prefers-reduced-motion:reduce) {
+    :root:is([data-theme=ocean],[data-theme=sunset],[data-theme=luxury],[data-theme=galaxy]) *,
+    :root:is([data-theme=ocean],[data-theme=sunset],[data-theme=luxury],[data-theme=galaxy]) *::before,
+    :root:is([data-theme=ocean],[data-theme=sunset],[data-theme=luxury],[data-theme=galaxy]) *::after {transition:none!important;animation:none!important}
+}
+@media print {
+    :root:root:root[data-theme=galaxy] .scholar-workspace {background:#fff!important}
+    :root:root:root[data-theme=galaxy] .scholar-workspace :is(.panel,.mini-stats) {background:#fff!important;backdrop-filter:none;box-shadow:none}
+}
+/* Attendance summaries use the same accessible status palette. */
+:root:root:root:is([data-theme=ocean],[data-theme=sunset],[data-theme=luxury],[data-theme=galaxy]) .attendance-ratio span:nth-child(1){color:var(--success)}
+:root:root:root:is([data-theme=ocean],[data-theme=sunset],[data-theme=luxury],[data-theme=galaxy]) .attendance-ratio span:nth-child(2){color:var(--warning)}
+:root:root:root:is([data-theme=ocean],[data-theme=sunset],[data-theme=luxury],[data-theme=galaxy]) .attendance-ratio span:nth-child(3){color:var(--danger)}
+/* The open card must sit above Galaxy's glass panels, which create stacking contexts. */
+:root:root:root[data-theme=galaxy] .scholar-workspace .stat-card:has(.stat-breakdown:hover, .stat-breakdown-trigger:focus-visible) {
+    z-index:20;
+}

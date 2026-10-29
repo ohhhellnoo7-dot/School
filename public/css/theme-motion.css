@@ -1,0 +1,126 @@
+/* One motion vocabulary per palette; content remains visible without JavaScript. */
+:root {
+    --motion-duration: .24s;
+    --motion-arrival-duration: .55s;
+    --motion-ease: cubic-bezier(.2,.8,.2,1);
+    --card-lift: -3px;
+    --motion-tilt: -4deg;
+    --glow-strength: 12%;
+    --theme-arrival: scholar-rise;
+}
+:root[data-theme=night] {
+    --motion-duration: .32s;
+    --motion-arrival-duration: .7s;
+    --motion-ease: cubic-bezier(.16,1,.3,1);
+    --card-lift: -2px;
+    --motion-tilt: 3deg;
+    --glow-strength: 22%;
+    --theme-arrival: scholar-night;
+}
+:root[data-theme=relax] {
+    --motion-duration: .45s;
+    --motion-arrival-duration: .85s;
+    --motion-ease: cubic-bezier(.25,.46,.45,.94);
+    --card-lift: -2px;
+    --motion-tilt: -3deg;
+    --glow-strength: 9%;
+    --theme-arrival: scholar-drift;
+}
+:root[data-theme=cute] {
+    --motion-duration: .34s;
+    --motion-arrival-duration: .65s;
+    --motion-ease: cubic-bezier(.2,.85,.3,1.18);
+    --card-lift: -5px;
+    --motion-tilt: -9deg;
+    --glow-strength: 16%;
+    --theme-arrival: scholar-pop;
+}
+body, .sidebar, .topbar, .panel, .stat-card, .mini-stats, .date-pill, .form-control, .form-select {
+    transition: background-color .4s ease, color .3s ease, border-color var(--motion-duration) ease,
+        box-shadow var(--motion-duration) var(--motion-ease), transform var(--motion-duration) var(--motion-ease);
+}
+.btn, .quick-action, .school-nav a, .stat-icon, .announcement-icon, .auth-emblem, .brand-mark, .student-avatar, .user-avatar {
+    transition: transform var(--motion-duration) var(--motion-ease), background-color .3s ease,
+        color .3s ease, box-shadow var(--motion-duration) ease, border-color .3s ease;
+}
+/* Keep content readable even if an observer is delayed in a background tab. */
+.motion-pending { opacity: 1; }
+.motion-reveal {
+    animation: var(--theme-arrival) var(--motion-arrival-duration) var(--motion-ease) both;
+    animation-delay: var(--motion-delay, 0ms);
+}
+/* Theme changes are brief and do not hide the content the user is reading. */
+.theme-changing .page-heading, .theme-changing .stat-card, .theme-changing .auth-box {
+    animation: scholar-palette .55s ease both;
+}
+.theme-changing .brand-mark, .theme-changing .auth-emblem {
+    animation: scholar-mark .65s var(--motion-ease) both;
+}
+.theme-changing .school-nav a.active { animation: scholar-selected .65s ease; }
+.form-control:focus, .form-select:focus {
+    transition: border-color var(--motion-duration) ease, box-shadow var(--motion-duration) ease, background-color .3s ease;
+}
+.btn:active, .quick-action:active { transform: translateY(0) scale(.97); }
+.school-nav a:active { transform: scale(.98); }
+.btn:focus-visible, .quick-action:focus-visible { box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 20%, transparent); }
+.status-badge.unrecorded, .status-badge.excused { background: var(--soft); color: var(--muted); }
+.table td { transition: background-color .2s ease; }
+.alert { animation: scholar-notice .4s ease both; }
+#dashboard-content[aria-busy=true] > .page-heading { opacity: .75; transition: opacity .2s ease; }
+@media (hover:hover) and (pointer:fine) {
+    .btn:hover, .quick-action:hover { transform: translateY(var(--card-lift)); }
+    .school-nav a:hover { transform: translateX(3px); }
+    .stat-card:hover, a.panel:hover {
+        transform: translateY(var(--card-lift));
+        border-color: color-mix(in srgb, var(--green) 40%, var(--border));
+        box-shadow: 0 12px 28px color-mix(in srgb, var(--green) var(--glow-strength), transparent);
+    }
+    .stat-card:hover .stat-icon, a.panel:hover > .bi { transform: rotate(var(--motion-tilt)) scale(1.07); }
+    a.panel > .bi { display: inline-block; transition: transform var(--motion-duration) var(--motion-ease); }
+    .profile-link:hover .user-avatar { transform: scale(1.07); }
+    .theme-picker .form-select:hover { box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 9%, transparent); border-color: var(--green); }
+    :root[data-theme=night] .btn-primary:hover { box-shadow: 0 0 22px color-mix(in srgb, var(--green) 23%, transparent); }
+    :root[data-theme=cute] .auth-emblem:hover { transform: rotate(-8deg) scale(1.08); }
+    :root[data-theme=relax] .brand:hover .brand-mark { transform: rotate(-3deg); }
+}
+@keyframes scholar-rise {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: none; }
+}
+@keyframes scholar-night {
+    from { opacity: 0; transform: translateY(8px) scale(.99); }
+    to { opacity: 1; transform: none; }
+}
+@keyframes scholar-drift {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: none; }
+}
+@keyframes scholar-pop {
+    0% { opacity: 0; transform: translateY(16px) scale(.96); }
+    75% { opacity: 1; transform: translateY(-2px) scale(1.005); }
+    100% { opacity: 1; transform: none; }
+}
+@keyframes scholar-palette {
+    0% { opacity: .7; transform: translateY(4px); }
+    100% { opacity: 1; transform: none; }
+}
+@keyframes scholar-mark {
+    0%, 100% { transform: none; }
+    45% { transform: rotate(var(--motion-tilt)) scale(1.08); }
+}
+@keyframes scholar-selected {
+    50% { box-shadow: 0 0 0 5px #d5ebcc25; }
+}
+@keyframes scholar-notice {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *:before, *:after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+    .motion-pending, .motion-reveal { opacity: 1 !important; transform: none !important; }
+    .btn:hover, .quick-action:hover, .school-nav a:hover, .stat-card:hover, a.panel:hover,
+    .stat-card:hover .stat-icon, a.panel:hover > .bi, .profile-link:hover .user-avatar { transform: none; }
+}
+@media print {
+    .motion-pending, .motion-reveal { opacity: 1 !important; transform: none !important; animation: none !important; }
+}
