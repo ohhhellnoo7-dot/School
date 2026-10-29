@@ -67,6 +67,44 @@ class ProgramClassTest extends TestCase
         }
     }
 
+    public function test_khmer_classes_never_offer_or_return_the_evening_session(): void
+    {
+        $admin = User::factory()->create();
+        $admin->forceFill(['role' => 'administrator'])->save();
+        $morning = SchoolClass::create(['name' => 'Grade 8', 'section' => 'A', 'program' => 'Khmer', 'session' => 'Morning']);
+        SchoolClass::create(['name' => 'Grade 8', 'section' => 'B', 'program' => 'Khmer', 'session' => 'Evening']);
+
+        $response = $this->actingAs($admin)->get('/school/classes?filter=Khmer&session=Evening');
+
+        $response->assertOk()
+            ->assertViewHas('records', fn ($records) => $records->total() === 1 && $records->first()->is($morning))
+            ->assertSee('js/class-filters.js');
+        $this->assertNull(request('session'));
+
+        $this->get('/school/classes/create')
+            ->assertOk()
+            ->assertSee('js/class-form-sessions.js');
+    }
+
+    public function test_invalid_chinese_and_khmer_session_classes_are_removed_when_empty(): void
+    {
+        $chineseMorning = SchoolClass::create(['name' => 'Grade 12', 'section' => 'A', 'program' => 'Chinese', 'session' => 'Morning']);
+        $chineseAfternoon = SchoolClass::create(['name' => 'Grade 12', 'section' => 'A', 'program' => 'Chinese', 'session' => 'Afternoon']);
+        $chineseEvening = SchoolClass::create(['name' => 'Grade 12', 'section' => 'A', 'program' => 'Chinese', 'session' => 'Evening']);
+        $khmerEvening = SchoolClass::create(['name' => 'Grade 12', 'section' => 'B', 'program' => 'Khmer', 'session' => 'Evening']);
+        $khmerMorning = SchoolClass::create(['name' => 'Grade 12', 'section' => 'B', 'program' => 'Khmer', 'session' => 'Morning']);
+
+        $migration = require database_path('migrations/2026_10_29_000002_remove_invalid_program_session_classes.php');
+        $migration->up();
+
+        foreach ([$chineseMorning, $chineseAfternoon, $khmerEvening] as $removed) {
+            $this->assertDatabaseMissing('school_classes', ['id' => $removed->id]);
+        }
+        foreach ([$chineseEvening, $khmerMorning] as $preserved) {
+            $this->assertDatabaseHas('school_classes', ['id' => $preserved->id]);
+        }
+    }
+
     public function test_program_filters_show_classes_and_language_programs_cover_all_grades_and_sessions(): void
     {
         foreach (User::factory()->count(30)->create() as $teacher) {
@@ -87,14 +125,15 @@ class ProgramClassTest extends TestCase
         $admin->role = 'administrator';
         $admin->save();
         $this->actingAs($admin);
-        foreach (['Khmer' => 1, 'English' => 72, 'Chinese' => 72] as $program => $count) {
+        foreach (['Khmer' => 1, 'English' => 72, 'Chinese' => 24] as $program => $count) {
             $this->get('/school/classes?filter='.$program)->assertOk()
                 ->assertViewHas('records', fn ($records) => $records->total() === $count && $records->every(fn ($class) => $class->program === $program));
             $classes = SchoolClass::with('teacher')->where('program', $program)->get();
             $this->assertTrue($classes->every(fn ($class) => $class->teacher->program === $program));
             if ($program !== 'Khmer') {
                 foreach (range(1, 12) as $grade) {
-                    foreach (array_keys(SchoolClass::SESSION_HOURS) as $session) {
+                    $sessions = $program === 'Chinese' ? ['Evening'] : array_keys(SchoolClass::SESSION_HOURS);
+                    foreach ($sessions as $session) {
                         $this->assertSame(2, $classes->where('name', 'Grade '.$grade)->where('session', $session)->count());
                     }
                 }
@@ -104,7 +143,8 @@ class ProgramClassTest extends TestCase
         $data = ['name' => 'Grade 7', 'section' => 'A', 'program' => 'English', 'session' => 'Morning', 'capacity' => 40, 'room' => 'EN-7C'];
         $this->post('/school/classes', $data)->assertSessionHasErrors('section');
         $this->post('/school/classes', array_replace($data, ['section' => 'C']))->assertSessionHasNoErrors();
-        $this->post('/school/classes', array_replace($data, ['section' => 'C', 'program' => 'Chinese']))->assertSessionHasNoErrors();
+        $this->post('/school/classes', array_replace($data, ['section' => 'C', 'program' => 'Chinese']))->assertSessionHasErrors('session');
+        $this->post('/school/classes', array_replace($data, ['section' => 'C', 'program' => 'Chinese', 'session' => 'Evening']))->assertSessionHasNoErrors();
         $this->post('/school/classes', array_replace($data, ['section' => 'C', 'session' => 'Evening']))->assertSessionHasNoErrors();
     }
 }

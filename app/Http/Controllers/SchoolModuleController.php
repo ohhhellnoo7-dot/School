@@ -47,13 +47,28 @@ class SchoolModuleController extends Controller
         }
         $classSummary = null;
         if ($module === 'classes') {
+            $query->where(fn ($class) => $class->whereNull('program')
+                ->orWhere('program', '!=', 'Chinese')
+                ->orWhere('session', 'Evening'))
+                ->where(fn ($class) => $class->whereNull('program')
+                    ->orWhere('program', '!=', 'Khmer')
+                    ->orWhereNull('session')
+                    ->orWhereIn('session', ['Morning', 'Afternoon']));
             $classSummary = [
                 'total' => (clone $query)->select('name', 'section')->distinct()->get()->count(),
                 'students' => Student::whereIn('school_class_id', (clone $query)->select('school_classes.id'))->count(),
                 'teachers' => (clone $query)->whereNotNull('teacher_id')->distinct()->count('teacher_id'),
                 'occupied' => (clone $query)->whereHas('students')->count(),
             ];
-            $request->validate(['session' => 'nullable|in:Morning,Afternoon,Evening']);
+            $request->validate([
+                'session' => 'nullable|in:Morning,Afternoon,Evening',
+                'filter' => 'nullable|in:Khmer,Chinese,English',
+            ]);
+            if ($request->input('filter') === 'Chinese') {
+                $request->merge(['session' => 'Evening']);
+            } elseif ($request->input('filter') === 'Khmer' && $request->input('session') === 'Evening') {
+                $request->merge(['session' => null]);
+            }
             if ($request->filled('session')) {
                 $query->where('session', $request->session);
             }
@@ -232,14 +247,7 @@ class SchoolModuleController extends Controller
 
     public function classTimetable(Request $request, SchoolClass $schoolClass)
     {
-        if ($request->user()->role === 'parent') {
-            abort_unless(Student::visibleTo($request->user())->where('school_class_id', $schoolClass->id)->exists(), 404);
-        } else {
-            SchoolModules::query('classes', $request->user())->findOrFail($schoolClass->id);
-        }
-        $slots = Schedule::with(['subject.teacher'])->whereHas('subject', fn ($q) => $q->where('school_class_id', $schoolClass->id))->orderBy('starts_at')->get()->groupBy('day');
-
-        return view('school.classes.timetable', compact('schoolClass', 'slots'));
+        return app(TimetableController::class)->show($request, $schoolClass);
     }
 
     public function create(Request $request, string $module)
@@ -408,9 +416,13 @@ class SchoolModuleController extends Controller
         if ($module === 'classes' && ($data['program'] ?? null) === 'Khmer' && ($data['session'] ?? null) === 'Evening') {
             throw ValidationException::withMessages(['session' => 'Khmer classes study in Morning or Afternoon only.']);
         }
+        if ($module === 'classes' && ($data['program'] ?? null) === 'Chinese' && ($data['session'] ?? null) !== 'Evening') {
+            throw ValidationException::withMessages(['session' => 'Chinese classes study in the Evening only.']);
+        }
         if ($module === 'classes' && $record->exists && ! empty($data['session'])) {
             [$start, $end] = SchoolClass::SESSION_HOURS[$data['session']];
-            $outsideSession = Schedule::whereHas('subject', fn ($q) => $q->where('school_class_id', $record->id))
+            $outsideSession = Schedule::where(fn ($q) => $q->where('school_class_id', $record->id)
+                ->orWhereHas('subject', fn ($subject) => $subject->where('school_class_id', $record->id)))
                 ->where(fn ($q) => $q->where('starts_at', '<', $start)->orWhere('ends_at', '>', $end))->exists();
             if ($outsideSession) {
                 throw ValidationException::withMessages(['session' => 'Move existing lessons into the selected session hours before changing the class session.']);
@@ -419,7 +431,7 @@ class SchoolModuleController extends Controller
         if ($module === 'schedules') {
             $subject = Subject::findOrFail($data['subject_id']);
             if (! TeacherTimetable::withinHours($subject, $data['starts_at'], $data['ends_at']) || TimetableConflicts::exists($subject, $data['day'], $data['starts_at'], $data['ends_at'], $data['room'], $record->id)) {
-                throw ValidationException::withMessages(['starts_at' => 'Use Morning 07:00?11:00, Afternoon 13:00?16:00, or Evening 16:30?18:30 within the class session, without teacher, class or room overlaps. Chinese teachers teach in the evening only.']);
+                throw ValidationException::withMessages(['starts_at' => 'Use Morning 07:00-11:00, Afternoon 13:00-17:00, or Evening 16:30-18:30 within the class session, without teacher, class or room overlaps. Chinese teachers teach in the evening only.']);
             }
         }
         if ($module === 'attendance') {

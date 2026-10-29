@@ -18,4 +18,5 @@
 
 @push('scripts')
 <script src="{{ asset('js/address-options.js') }}?v={{ filemtime(public_path('js/address-options.js')) }}" defer></script>
+@if($module === 'classes')<script src="{{ asset('js/class-form-sessions.js') }}?v={{ filemtime(public_path('js/class-form-sessions.js')) }}" defer></script>@endif
 @endpush

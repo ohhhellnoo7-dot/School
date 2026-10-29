@@ -154,6 +154,11 @@
 <script src="{{ asset('js/parent-filters.js') }}?v={{ filemtime(public_path('js/parent-filters.js')) }}"></script>
 @endpush
 @endif
+@if($module === 'classes')
+@push('scripts')
+<script src="{{ asset('js/class-filters.js') }}?v={{ filemtime(public_path('js/class-filters.js')) }}"></script>
+@endpush
+@endif
 
 @push('scripts')
 <script src="{{ asset('js/directory-search.js') }}?v={{ filemtime(public_path('js/directory-search.js')) }}"></script>

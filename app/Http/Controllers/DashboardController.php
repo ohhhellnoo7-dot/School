@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Announcement;
 use App\Models\Attendance;
+use App\Models\ClassGroup;
 use App\Models\Fee;
 use App\Models\SchoolClass;
 use App\Models\Student;
@@ -98,13 +99,16 @@ class DashboardController extends Controller
         ];
 
         $programBreakdowns = [];
+        $normalizedClassCount = ClassGroup::query()->count();
         if ($user->role === 'administrator') {
             foreach (['Khmer', 'English', 'Chinese'] as $program) {
                 $programBreakdowns['people'][$program] = (clone $students)
                     ->whereHas('schoolClass', fn ($q) => $q->where('program', $program))->count();
                 $programBreakdowns['person-workspace'][$program] = User::where('role', 'teacher')->where('program', $program)->count();
-                $programBreakdowns['building'][$program] = SchoolClass::where('program', $program)
-                    ->select('name', 'section')->distinct()->get()->count();
+                $programBreakdowns['building'][$program] = $normalizedClassCount > 0
+                    ? ClassGroup::where('program', $program)->count()
+                    : SchoolClass::where('program', $program)
+                        ->select('name', 'section')->distinct()->get()->count();
                 $programBreakdowns['book'][$program] = SchoolModules::subjects($user)
                     ->whereHas('schoolClass', fn ($q) => $q->where('program', $program))->distinct()->count('name');
             }
@@ -119,13 +123,16 @@ class DashboardController extends Controller
             'upcomingExams' => $user->role === 'student' ? SchoolModules::query('examinations', $user)->with('subject')->whereDate('date', '>=', today())->orderBy('date')->orderBy('id')->limit(3)->get() : collect(),
             'studentCount' => (clone $students)->count(),
             'teacherCount' => $user->role === 'administrator' ? User::where('role', 'teacher')->count() : SchoolModules::subjects($user)->whereNotNull('teacher_id')->distinct()->count('teacher_id'),
-            // A grade and section identify a class across programs and sessions.
-            'classCount' => ($user->role === 'administrator'
-                ? SchoolClass::query()
-                : ($user->role === 'teacher'
-                    ? SchoolModules::query('classes', $user)
-                    : SchoolClass::whereIn('id', (clone $students)->select('school_class_id'))))
-                ->select('name', 'section')->distinct()->get()->count(),
+            // Normalized class groups count each academic identity once even
+            // when the legacy cohort records span several study sessions.
+            'classCount' => $user->role === 'administrator' && $normalizedClassCount > 0
+                ? $normalizedClassCount
+                : ($user->role === 'administrator'
+                    ? SchoolClass::query()
+                    : ($user->role === 'teacher'
+                        ? SchoolModules::query('classes', $user)
+                        : SchoolClass::whereIn('id', (clone $students)->select('school_class_id'))))
+                    ->select('name', 'section')->distinct()->get()->count(),
             'subjectCount' => SchoolModules::subjects($user)->distinct()->count('name'),
             'presentCount' => (clone $attendance)->where('status', 'present')->count(),
             'absentCount' => (clone $attendance)->where('status', 'absent')->count(),

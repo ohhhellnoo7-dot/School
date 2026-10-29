@@ -18,9 +18,12 @@ Route::get('hi/{name}', [HiController::class, 'greet']);
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ClassGroupController;
+use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\SchoolModuleController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TimetableController;
 
 // Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
 // Route::get('/customers/create', [CustomerController::class, 'create'])->name('customers.create');
@@ -52,7 +55,40 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
     Route::get('/students/{student}/photo', [ProfileController::class, 'studentPhoto'])->name('students.photo');
     Route::resource('/students', StudentController::class);
     Route::get('/teachers/{teacher}/schedule', [SchoolModuleController::class, 'teacherTimetable'])->name('teachers.schedule');
-    Route::get('/classes/{schoolClass}/timetable', [SchoolModuleController::class, 'classTimetable'])->name('classes.timetable');
+    Route::get('/classes/{schoolClass}/timetable', [TimetableController::class, 'show'])->name('classes.timetable');
+    Route::post('/classes/{schoolClass}/timetable/generate', [TimetableController::class, 'generate'])->middleware('role:administrator')->name('classes.timetable.generate');
+    Route::post('/classes/{schoolClass}/timetable/regenerate', [TimetableController::class, 'regenerate'])->middleware('role:administrator')->name('classes.timetable.regenerate');
+
+    // The redesigned class-group directory owns only this exact URL. Keep the
+    // legacy dynamic class CRUD routes below for existing SchoolClass records.
+    Route::get('/school/classes', [ClassGroupController::class, 'index'])->name('class-groups.index');
+    Route::get('/class-groups/create', [ClassGroupController::class, 'create'])->middleware('role:administrator')->name('class-groups.create');
+    Route::get('/class-groups/{classGroup}', [ClassGroupController::class, 'show'])->name('class-groups.show');
+
+    Route::get('/school/classrooms', [ClassroomController::class, 'index'])->name('classrooms.index');
+    Route::get('/school/classrooms/data', [ClassroomController::class, 'data'])->name('classrooms.data');
+    Route::get('/school/classrooms/create', [ClassroomController::class, 'create'])->middleware('role:administrator')->name('classrooms.create');
+    Route::get('/school/classrooms/{classroom}', [ClassroomController::class, 'show'])->name('classrooms.show');
+
+    Route::middleware('role:administrator')->group(function () {
+        Route::post('/class-groups', [ClassGroupController::class, 'store'])->name('class-groups.store');
+        Route::get('/class-groups/{classGroup}/edit', [ClassGroupController::class, 'edit'])->name('class-groups.edit');
+        Route::put('/class-groups/{classGroup}', [ClassGroupController::class, 'update'])->name('class-groups.update');
+        Route::delete('/class-groups/{classGroup}', [ClassGroupController::class, 'destroy'])->name('class-groups.destroy');
+
+        Route::post('/school/classrooms', [ClassroomController::class, 'store'])->name('classrooms.store');
+        Route::post('/school/classrooms/auto-assign', [ClassroomController::class, 'autoAssign'])->name('classrooms.auto-assign');
+        Route::get('/school/classrooms/{classroom}/edit', [ClassroomController::class, 'edit'])->name('classrooms.edit');
+        Route::put('/school/classrooms/{classroom}', [ClassroomController::class, 'update'])->name('classrooms.update');
+        Route::delete('/school/classrooms/{classroom}', [ClassroomController::class, 'destroy'])->name('classrooms.destroy');
+
+        Route::get('/classroom-bookings/create', [ClassroomController::class, 'bookingCreate'])->name('classroom-bookings.create');
+        Route::post('/classroom-bookings', [ClassroomController::class, 'bookingStore'])->name('classroom-bookings.store');
+        Route::get('/classroom-bookings/{classroomBooking}/edit', [ClassroomController::class, 'bookingEdit'])->name('classroom-bookings.edit');
+        Route::put('/classroom-bookings/{classroomBooking}', [ClassroomController::class, 'bookingUpdate'])->name('classroom-bookings.update');
+        Route::delete('/classroom-bookings/{classroomBooking}', [ClassroomController::class, 'bookingDestroy'])->name('classroom-bookings.destroy');
+    });
+
     Route::get('/school/{module}', [SchoolModuleController::class, 'index'])->name('modules.index');
     Route::get('/school/{module}/create', [SchoolModuleController::class, 'create'])->name('modules.create');
     Route::post('/school/{module}', [SchoolModuleController::class, 'store'])->name('modules.store');

@@ -11,10 +11,12 @@
 @include('school.partials.theme-head')
 @if(request()->routeIs('modules.index') && request()->route('module') === 'parents')<link href="{{ asset('css/parent-directory.css') }}?v={{ filemtime(public_path('css/parent-directory.css')) }}" rel="stylesheet">@endif
     @if(request()->routeIs('students.index'))<link href="{{ asset('css/student-directory.css') }}?v={{ filemtime(public_path('css/student-directory.css')) }}" rel="stylesheet">@endif
+    @if(request()->routeIs('classes.timetable*') || (request()->routeIs('modules.show') && request()->route('module') === 'classes'))<link href="{{ asset('css/timetable.css') }}?v={{ filemtime(public_path('css/timetable.css')) }}" rel="stylesheet">@endif
+    @if(request()->routeIs('class-groups.*', 'classrooms.*', 'classroom-bookings.*'))<link href="{{ asset('css/classrooms.css') }}?v={{ filemtime(public_path('css/classrooms.css')) }}" rel="stylesheet">@endif
 
 @if(request()->routeIs('modules.index') && in_array(request()->route('module'), ['teachers', 'classes', 'subjects']))<link href="{{ asset('css/teacher-directory.css') }}?v={{ filemtime(public_path('css/teacher-directory.css')) }}" rel="stylesheet">@endif
 </head>
-<body class="scholar-workspace {{ request()->routeIs('modules.index') && request()->route('module') === 'subjects' ? 'subjects-page' : '' }} {{ request()->routeIs('modules.index') && request()->route('module') === 'classes' ? 'classes-page' : '' }} {{ request()->routeIs('modules.index') && request()->route('module') === 'teachers' ? 'teachers-page' : '' }} {{ request()->routeIs('modules.index') && request()->route('module') === 'parents' ? 'parents-page' : '' }} {{ request()->routeIs('students.index') ? 'students-page' : '' }}">
+<body class="scholar-workspace {{ request()->routeIs('modules.index') && request()->route('module') === 'subjects' ? 'subjects-page' : '' }} {{ request()->routeIs('class-groups.*') ? 'classes-page' : '' }} {{ request()->routeIs('classrooms.*', 'classroom-bookings.*') ? 'classrooms-page' : '' }} {{ request()->routeIs('modules.index') && request()->route('module') === 'teachers' ? 'teachers-page' : '' }} {{ request()->routeIs('modules.index') && request()->route('module') === 'parents' ? 'parents-page' : '' }} {{ request()->routeIs('students.index') ? 'students-page' : '' }}">
 <a href="#main-content" class="skip-link">Skip to content</a>
 <aside class="sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="sidebar" aria-label="Main navigation">
     <button class="btn sidebar-close d-lg-none" type="button" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Close navigation"><i class="bi bi-x-lg"></i></button>
@@ -26,9 +28,10 @@
         <a class="{{ request()->routeIs('students.*') ? 'active' : '' }}" href="{{ route('students.index') }}"><i class="bi bi-people"></i> {{ auth()->user()->role === 'parent' ? __('My children') : (auth()->user()->role === 'student' ? __('My profile') : __('Students')) }}</a>
         @foreach(\App\Support\SchoolModules::all() as $key => $module)
             @if(\App\Support\SchoolModules::canView(auth()->user(), $key))
-                <a class="{{ request()->route('module') === $key ? 'active' : '' }}" href="{{ route('modules.index', $key) }}"><i class="bi bi-{{ $module['icon'] }}"></i>{{ __($module['title']) }}</a>
+                <a class="{{ ($key === 'classes' ? request()->routeIs('class-groups.*') : request()->route('module') === $key) ? 'active' : '' }}" href="{{ $key === 'classes' ? route('class-groups.index') : route('modules.index', $key) }}"><i class="bi bi-{{ $module['icon'] }}"></i>{{ __($module['title']) }}</a>
             @endif
         @endforeach
+        <a class="{{ request()->routeIs('classrooms.*', 'classroom-bookings.*') ? 'active' : '' }}" href="{{ route('classrooms.index') }}"><i class="bi bi-door-open"></i>{{ __('Classroom availability') }}</a>
         @if(auth()->user()->role === 'administrator')<a class="{{ request()->routeIs('reports') ? 'active' : '' }}" href="{{ route('reports') }}"><i class="bi bi-bar-chart-line"></i> {{ __('Reports') }}</a>@endif
     </nav>
     <div class="school-switch"><span class="school-icon"><i class="bi bi-buildings"></i></span><div><strong>Greenfield Academy</strong><small>{{ __('School management portal') }}</small></div></div>

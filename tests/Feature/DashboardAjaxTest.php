@@ -93,6 +93,27 @@ class DashboardAjaxTest extends TestCase
             ->assertViewHas('programBreakdowns', [])->assertDontSee('breakdown-people');
     }
 
+    public function test_dashboard_counts_a_grade_and_section_once_across_programs_and_sessions(): void
+    {
+        $admin = User::factory()->create();
+        $admin->forceFill(['role' => 'administrator'])->save();
+        foreach ([
+            ['English', 'Morning'],
+            ['English', 'Afternoon'],
+            ['Chinese', 'Evening'],
+            ['Khmer', 'Morning'],
+        ] as [$program, $session]) {
+            SchoolClass::create([
+                'name' => 'Grade 12', 'section' => 'A',
+                'program' => $program, 'session' => $session,
+            ]);
+        }
+        SchoolClass::create(['name' => 'Grade 12', 'section' => 'B', 'program' => 'English', 'session' => 'Morning']);
+
+        $this->actingAs($admin)->getJson('/dashboard/data')->assertOk()
+            ->assertJsonPath('summary.classCount', 2);
+    }
+
     public function test_student_home_prioritizes_scoped_upcoming_schoolwork(): void
     {
         $this->seed(SchoolSeeder::class);

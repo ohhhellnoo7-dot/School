@@ -1,0 +1,102 @@
+:root {
+    --tt-academic-bg: #f1f7ff;
+    --tt-academic-border: #a9c8ef;
+    --tt-academic-accent: #367cc2;
+    --tt-relax-bg: #fff6df;
+    --tt-relax-border: #edc873;
+    --tt-relax-ink: #815d12;
+}
+
+:root[data-theme=night] {
+    --tt-academic-bg: #222d49;
+    --tt-academic-border: #65588e;
+    --tt-academic-accent: #9b86e4;
+    --tt-relax-bg: #3d3152;
+    --tt-relax-border: #9d79d1;
+    --tt-relax-ink: #eadcff;
+}
+
+:root[data-theme=relax] {
+    --tt-academic-bg: #ebf4e7;
+    --tt-academic-border: #a6c89d;
+    --tt-academic-accent: #507347;
+    --tt-relax-bg: #dcebd5;
+    --tt-relax-border: #76a56d;
+    --tt-relax-ink: #315c38;
+}
+
+:root[data-theme=cute] {
+    --tt-academic-bg: #fff0f8;
+    --tt-academic-border: #e9b9d7;
+    --tt-academic-accent: #b879c5;
+    --tt-relax-bg: #f9e2ff;
+    --tt-relax-border: #d9a7e7;
+    --tt-relax-ink: #784c86;
+}
+
+.timetable-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
+.timetable-actions form { margin: 0; }
+.timetable-controls { display: grid; grid-template-columns: minmax(145px, .8fr) minmax(210px, 1fr) minmax(250px, 1.5fr) auto; gap: 16px; align-items: end; padding: 18px 20px; margin-bottom: 18px; }
+.timetable-filter label { display: block; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .08em; margin-bottom: 7px; text-transform: uppercase; }
+.timetable-session-summary { align-items: flex-end; border-left: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center; min-height: 44px; padding-left: 20px; }
+.timetable-session-summary span { color: var(--muted); font-size: 10px; text-transform: uppercase; }
+.timetable-session-summary strong { color: var(--ink); font-size: 13px; margin-top: 3px; }
+.timetable-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+.timetable-summary > div { align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); display: flex; justify-content: space-between; padding: 14px 17px; }
+.timetable-summary span { color: var(--muted); font-size: 11px; }
+.timetable-summary strong { color: var(--ink); font-family: Manrope, sans-serif; font-size: 15px; }
+.timetable-summary .relax-stat { background: var(--tt-relax-bg); border-color: var(--tt-relax-border); }
+.timetable-summary .relax-stat span, .timetable-summary .relax-stat strong { color: var(--tt-relax-ink); }
+.timetable-empty { align-items: center; display: flex; gap: 13px; }
+.timetable-empty > i { font-size: 25px; }
+.timetable-panel { margin-bottom: 20px; }
+.timetable-scroll { overflow-x: auto; }
+.weekly-timetable { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: 100%; min-width: 1040px; }
+.weekly-timetable th, .weekly-timetable td { border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); }
+.weekly-timetable tr:last-child > * { border-bottom: 0; }
+.weekly-timetable tr > *:last-child { border-right: 0; }
+.weekly-timetable thead th { background: var(--soft); color: var(--ink); font-size: 11px; font-weight: 700; letter-spacing: .03em; padding: 14px 12px; text-align: center; }
+.weekly-timetable .time-heading { width: 86px; }
+.period-time { background: var(--soft); padding: 14px 10px; text-align: center; vertical-align: top; }
+.period-time strong, .period-time span { display: block; }
+.period-time strong { color: var(--ink); font-size: 12px; }
+.period-time span { color: var(--muted); font-size: 10px; margin-top: 4px; }
+.weekly-timetable td { background: var(--surface); height: 150px; padding: 8px; vertical-align: top; }
+.weekly-timetable td.relaxation-cell { background: color-mix(in srgb, var(--tt-relax-bg) 55%, var(--surface)); }
+.timetable-entry { background: var(--tt-academic-bg); border: 1px solid var(--tt-academic-border); border-left: 3px solid var(--tt-academic-accent); border-radius: 9px; min-height: 132px; padding: 11px; position: relative; }
+.timetable-entry h2 { color: var(--ink); font-size: 12px; font-weight: 800; line-height: 1.4; margin: 8px 0; }
+.timetable-entry p { color: var(--muted); font-size: 10px; line-height: 1.45; margin: 4px 0; }
+.timetable-entry p i { margin-right: 4px; }
+.entry-time { color: var(--muted); font-size: 9px; }
+.entry-kind { background: color-mix(in srgb, var(--tt-relax-border) 22%, transparent); border-radius: 999px; color: var(--tt-relax-ink); display: inline-block; font-size: 8px; font-weight: 700; letter-spacing: .06em; margin-top: 8px; padding: 3px 7px; text-transform: uppercase; }
+.relaxation-entry { background: var(--tt-relax-bg); border-color: var(--tt-relax-border); border-left-color: var(--tt-relax-border); }
+.relaxation-entry h2, .relaxation-entry p, .relaxation-entry .entry-time { color: var(--tt-relax-ink); }
+.relaxation-entry .khmer-label { font-size: 11px; font-weight: 600; }
+.entry-edit { display: inline-block; font-size: 9px; font-weight: 700; margin-top: 5px; }
+.empty-period { align-items: center; border: 1px dashed var(--border); border-radius: 8px; color: var(--muted); display: flex; font-size: 10px; height: 100%; justify-content: center; min-height: 132px; opacity: .65; }
+
+@media (max-width: 991px) {
+    .timetable-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .timetable-session-summary { align-items: flex-start; border-left: 0; padding-left: 0; }
+}
+
+@media (max-width: 575px) {
+    .timetable-heading { display: block; }
+    .timetable-actions { justify-content: flex-start; margin-top: 16px; }
+    .timetable-controls, .timetable-summary { grid-template-columns: 1fr; }
+}
+
+@media print {
+    @page { margin: 10mm; size: landscape; }
+    .no-print { display: none !important; }
+    .main-content { max-width: none; }
+    .timetable-heading { margin-bottom: 12px; }
+    .timetable-summary { grid-template-columns: repeat(3, 1fr); margin-bottom: 10px; }
+    .timetable-summary > div { padding: 8px 10px; }
+    .timetable-panel { border: 1px solid #bbb; }
+    .timetable-scroll { overflow: visible; }
+    .weekly-timetable { min-width: 0; }
+    .weekly-timetable td { height: 112px; padding: 5px; }
+    .timetable-entry, .empty-period { min-height: 100px; }
+    .timetable-entry { padding: 7px; }
+}

@@ -29,9 +29,10 @@ class ProgramClassSeeder extends Seeder
             foreach (['English' => 'EN', 'Chinese' => 'ZH'] as $program => $prefix) {
                 $pool = $teachers[$program];
                 $index = 0;
+                $sessions = $program === 'Chinese' ? ['Evening'] : array_keys(SchoolClass::SESSION_HOURS);
                 foreach (range(1, 12) as $grade) {
                     foreach (['A', 'B'] as $section) {
-                        foreach (array_keys(SchoolClass::SESSION_HOURS) as $session) {
+                        foreach ($sessions as $session) {
                             SchoolClass::firstOrCreate([
                                 'name' => 'Grade '.$grade, 'section' => $section,
                                 'program' => $program, 'session' => $session,
