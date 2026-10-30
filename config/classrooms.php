@@ -22,7 +22,7 @@ foreach (range(1, 12) as $grade) {
 }
 
 return [
-    'timezone' => 'Asia/Bangkok',
+    'timezone' => 'Asia/Phnom_Penh',
 
     'weekdays' => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
 
@@ -37,6 +37,8 @@ return [
         'English' => ['Morning', 'Afternoon', 'Evening'],
         'Chinese' => ['Evening'],
     ],
+
+    'program_session_hours' => ['Chinese' => ['Evening' => ['starts_at'=>'17:30','ends_at'=>'19:30']]],
 
     'rooms' => [...$khmerRooms, ...$englishRooms],
 ];

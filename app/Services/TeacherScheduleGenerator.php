@@ -37,7 +37,8 @@ class TeacherScheduleGenerator
                 if ($missing % 60 !== 0) $this->rules->fail('Approved remaining curriculum must use whole hours for '.$subject->name.'.');
                 if ($missing && blank($subject->schoolClass?->room)) $this->rules->fail('Assign a classroom for '.$subject->name.' first.');
                 while ($missing > 0) {
-                    $minutes = min((int) $subject->lesson_minutes, $missing);
+                    \App\Support\KhmerLessonDuration::validateWeeklyHours($subject, $missing);
+                    $minutes = min(\App\Support\KhmerLessonDuration::minutes($subject), $missing);
                     if (! in_array($minutes, [60, 120], true)) $this->rules->fail('Configure a lesson duration of one or two hours.');
                     $tasks[] = ['subject' => $subject, 'minutes' => $minutes];
                     $missing -= $minutes;

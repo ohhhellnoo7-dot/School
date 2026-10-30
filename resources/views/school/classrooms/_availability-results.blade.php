@@ -37,12 +37,16 @@
                     <dl class="room-facts">
                         <div><dt><i class="bi bi-clock" aria-hidden="true"></i> Session</dt><dd>{{ $session?->session ?? '—' }} · {{ substr((string) $displayBooking->starts_at, 0, 5) }}–{{ substr((string) $displayBooking->ends_at, 0, 5) }}</dd></div>
                     </dl>
+                @elseif(data_get($entry, 'currentLesson'))
+                    <div class="booking-context"><small>Lesson currently in progress</small><strong>{{ data_get($entry, 'currentLesson.schoolClass.label') }}</strong></div>
+                @elseif(data_get($entry, 'occupancy') === 'Occupied')
+                    <div class="room-empty-message"><strong>Room reserved</strong><span>{{ data_get($entry, 'activity') }}</span></div>
                 @else
                     <div class="room-empty-message"><strong>Ready to use</strong><span>No class occupies this room at the selected time.</span></div>
                 @endif
             </div>
             <div class="px-3">@include('school.classrooms._lesson-status', ['snapshot' => $entry])</div>
-            <div class="room-card-footer"><span><i class="bi bi-people" aria-hidden="true"></i> Capacity {{ $room->capacity }}</span><a href="{{ route('classrooms.show', ['classroom' => $room, 'date' => $moment->format('Y-m-d'), 'time' => $moment->format('H:i'), 'live' => request()->boolean('live') || (!request()->filled('date') && !request()->filled('time')) ? 1 : 0]) }}">View details <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
+            <div class="room-card-footer"><span><i class="bi bi-people" aria-hidden="true"></i> Capacity {{ $room->capacity }}</span><a href="{{ route('classrooms.show', ['classroom' => $room, 'date' => $moment->format('Y-m-d'), 'time' => $moment->format('H:i'), 'live' => request()->boolean('live') || (!request()->filled('date') && !request()->filled('time')) ? 1 : 0]) }}#{{ $displayBooking ? 'reservation-'.$displayBooking->id : 'weekly-lessons' }}">View Lessons <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
         </article>
     @empty
         <div class="empty-state classroom-empty"><i class="bi bi-door-closed" aria-hidden="true"></i>No physical classrooms match these filters.</div>

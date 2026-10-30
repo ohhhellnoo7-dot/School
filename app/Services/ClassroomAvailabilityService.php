@@ -47,7 +47,8 @@ class ClassroomAvailabilityService
             : CarbonImmutable::parse($moment, $timezone);
         $minute = ($selected->hour * 60) + $selected->minute;
         $day = $selected->englishDayOfWeek;
-        $lessons = Schedule::with(['subject.teacher', 'teacher', 'schoolClass'])->where('day', $day)->get();
+        $academicYear = $filters['academic_year'] ?? $selected->year.'-'.($selected->year+1);
+        $lessons = Schedule::with(['subject.teacher', 'teacher', 'schoolClass'])->where('day', $day)->where(fn ($q)=>$q->where('academic_year',$academicYear)->orWhereNull('academic_year'))->get();
 
         $rooms = Classroom::query()
             ->with(['bookings' => fn ($query) => $query
@@ -73,6 +74,14 @@ class ClassroomAvailabilityService
 
                 $activity = app(RoomLessonService::class)->activity($classroom, $lessons, $minute, $current);
                 if ($activity['currentLesson'] && $status !== self::STATUS_OUT_OF_SERVICE) $status = self::STATUS_BUSY;
+                if (auth()->check() && in_array(auth()->user()->role, ['student', 'parent'], true)) {
+                    $cohorts = \App\Models\Student::visibleTo(auth()->user())->with('schoolClass')->get()->pluck('schoolClass')->filter();
+                    $visibleBooking = fn ($b) => ! $b || $cohorts->contains(fn ($c) => $c->class_group_id === $b->class_group_id && $c->session === $b->classSession?->session);
+                    if ($activity['currentLesson'] && ! $cohorts->contains('id', $activity['currentLesson']->school_class_id)) { $activity['currentLesson'] = null; $activity['activity'] = 'Reserved for another cohort'; }
+                    if ($activity['nextLesson'] && ! $cohorts->contains('id', $activity['nextLesson']->school_class_id)) $activity['nextLesson'] = null;
+                    if (! $visibleBooking($current)) { $current = null; $activity['activity'] = 'Reserved for another cohort'; }
+                    if (! $visibleBooking($next)) $next = null;
+                }
                 return compact('classroom', 'status', 'current', 'next') + $activity;
             })
             ->filter(fn (array $entry) => $this->matchesFilters($entry, $filters))

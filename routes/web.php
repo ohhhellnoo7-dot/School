@@ -39,6 +39,24 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,1');
 });
 Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(function () {
+    Route::get('/school/timetables', [\App\Http\Controllers\UnifiedTimetableController::class, 'index'])->name('timetables.index');
+    Route::get('/school/timetables/data', [\App\Http\Controllers\UnifiedTimetableController::class, 'data'])->name('timetables.data');
+    Route::middleware('role:administrator')->prefix('school/timetables')->group(function () {
+        Route::get('/school-audit', [\App\Http\Controllers\UnifiedTimetableController::class, 'schoolAudit'])->name('timetables.school-audit');
+        Route::get('/rooms/review', [\App\Http\Controllers\TimetableRoomController::class, 'review'])->name('timetables.rooms.review');
+        Route::post('/rooms/preview', [\App\Http\Controllers\TimetableRoomController::class, 'preview'])->name('timetables.rooms.preview');
+        Route::post('/rooms/confirm', [\App\Http\Controllers\TimetableRoomController::class, 'confirm'])->name('timetables.rooms.confirm');
+        Route::get('/diagnostics', [\App\Http\Controllers\UnifiedTimetableController::class, 'diagnostics'])->name('timetables.diagnostics');
+        Route::get('/lessons/create', [\App\Http\Controllers\UnifiedTimetableController::class, 'form'])->name('timetables.lessons.create');
+        Route::get('/lessons/options', [\App\Http\Controllers\UnifiedTimetableController::class, 'options'])->name('timetables.lessons.options');
+        Route::post('/lessons', [\App\Http\Controllers\UnifiedTimetableController::class, 'store'])->name('timetables.lessons.store');
+        Route::get('/lessons/{lesson}/edit', [\App\Http\Controllers\UnifiedTimetableController::class, 'form'])->name('timetables.lessons.edit');
+        Route::put('/lessons/{lesson}', [\App\Http\Controllers\UnifiedTimetableController::class, 'update'])->name('timetables.lessons.update');
+        Route::post('/lessons/{lesson}/cancel', [\App\Http\Controllers\UnifiedTimetableController::class, 'cancel'])->name('timetables.lessons.cancel');
+        Route::get('/lessons/{lesson}/conflicts', [\App\Http\Controllers\UnifiedTimetableController::class, 'conflicts'])->name('timetables.conflicts');
+        Route::post('/generate/preview', [\App\Http\Controllers\UnifiedTimetableController::class, 'preview'])->name('timetables.generate.preview');
+        Route::post('/generate/confirm', [\App\Http\Controllers\UnifiedTimetableController::class, 'confirm'])->name('timetables.generate.confirm');
+    });
     Route::get('/fees/qr', [\App\Http\Controllers\FeePaymentController::class, 'qr'])->name('fees.qr');
     Route::post('/fees/qr', [\App\Http\Controllers\FeePaymentController::class, 'uploadQr'])->name('fees.qr.upload');
     Route::get('/fees/{fee}/pay', [\App\Http\Controllers\FeePaymentController::class, 'show'])->whereNumber('fee')->name('fees.pay');

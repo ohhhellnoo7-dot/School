@@ -11,7 +11,7 @@
 @if($slot)<article class="timetable-entry {{ $slot->isRelaxation() ? 'relaxation-entry' : 'academic-entry' }}" style="--subject-hue: {{ (($slot->subject_id ?? 0) * 47) % 360 }}">
 <div class="entry-time">{{ substr($slot->starts_at, 0, 5) }}–{{ substr($slot->ends_at, 0, 5) }} · {{ \App\Services\TeacherManagementService::duration($slot->starts_at, $slot->ends_at) / 60 }} hour(s)</div>
 @if($slot->isRelaxation())<span class="entry-kind">Scheduled relaxation</span><h2>{{ $slot->title_en ?: 'Relaxation Time' }}</h2><p class="khmer-label">{{ $slot->title_km }}</p>
-@else<h2>{{ $slot->subject?->name ?: 'Academic lesson' }}</h2><p>{{ $slot->subject?->teacher?->name ?: $slot->teacher?->name ?: 'Teacher unassigned' }}</p>@endif
+@else<h2>{{ $slot->subject?->name ?: 'Academic lesson' }}</h2><p>{{ $slot->teacher?->name ?: 'Teacher unassigned' }}</p>@endif
 <p>Room {{ $slot->room ?: $schoolClass->room }}</p>
 @if(auth()->user()->role === 'administrator' && ! $slot->isRelaxation())<a class="entry-edit no-print" href="{{ route('modules.edit', ['schedules', $slot->id]) }}">Edit lesson</a>
 <form class="no-print mt-2" method="post" action="{{ route('lessons.cancel', $slot) }}" data-confirm="Cancel this lesson? Its history and room reservation will be preserved.">@csrf<input type="hidden" name="confirm" value="1"><button class="btn btn-sm btn-outline-secondary">Cancel lesson</button></form>@endif

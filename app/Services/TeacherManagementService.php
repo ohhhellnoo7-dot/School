@@ -29,7 +29,12 @@ class TeacherManagementService
     public function qualifications(User $teacher) { return DB::table('teacher_qualifications')->where('teacher_id', $teacher->id)->orderBy('slot')->pluck('subject_name'); }
     public function periods(User $teacher) { return DB::table('teacher_working_periods')->where('teacher_id', $teacher->id)->get(); }
     public function breaks(User $teacher) { return DB::table('teacher_breaks')->join('teacher_break_plans', 'teacher_break_plans.id', '=', 'teacher_breaks.teacher_break_plan_id')->where('teacher_id', $teacher->id)->select('teacher_breaks.*')->orderBy('teacher_breaks.id')->get(); }
-    public function lessons(User $teacher) { return Schedule::with('subject.schoolClass')->where('entry_type', 'academic')->whereHas('subject', fn ($q) => $q->where('teacher_id', $teacher->id))->get(); }
+    public function lessons(User $teacher) { return Schedule::with('subject.schoolClass')->where('entry_type', 'academic')->where('teacher_id', $teacher->id)->get(); }
+
+    public function eligibleForBreaks(User $teacher): bool
+    {
+        return $this->periods($teacher)->where('unavailable', false)->pluck('weekday')->unique()->count() >= 3;
+    }
 
     public function workload(User $teacher): array
     {
@@ -49,7 +54,8 @@ class TeacherManagementService
         $now = \Carbon\CarbonImmutable::now(config('app.timezone'));
         $day = $now->englishDayOfWeek;
         $time = $now->format('H:i');
-        $lessons = $this->lessons($teacher)->where('day', $day)->sortBy('starts_at');
+        $academicYear = $now->year.'-'.($now->year+1);
+        $lessons = $this->lessons($teacher)->filter(fn ($s)=>\App\Support\AcademicYear::overlaps($s->academic_year,$academicYear))->where('day', $day)->sortBy('starts_at');
         $current = $lessons->first(fn ($s) => self::minute($s->starts_at) <= self::minute($time) && self::minute($s->ends_at) > self::minute($time));
         $next = $lessons->first(fn ($s) => self::minute($s->starts_at) > self::minute($time));
         $free = $this->breaks($teacher)->contains(fn ($b) => $b->weekday === $day && self::minute($b->start_time) <= self::minute($time) && self::minute($b->end_time) > self::minute($time));
@@ -99,7 +105,7 @@ class TeacherManagementService
 
     public function validateLesson(Subject $subject, Schedule $slot, bool $workload = true): void
     {
-        $teacher = User::find($subject->teacher_id);
+        $teacher = User::find($slot->teacher_id ?: $subject->teacher_id);
         if (! $teacher || $teacher->role !== 'teacher' || $teacher->status !== 'active') $this->fail('Assign an active, qualified teacher first.');
         if ($slot->classroom_id) {
             $room = \App\Models\Classroom::findOrFail($slot->classroom_id);
@@ -124,7 +130,7 @@ class TeacherManagementService
     public function validateBreak(User $teacher, array $break): void
     {
         $day = $break['weekday']; $start = $break['start_time']; $end = $break['end_time'];
-        $sessions = ($teacher->program ?: 'Khmer') === 'Khmer' ? array_slice(self::SESSIONS, 0, 2) : self::SESSIONS;
+        $sessions = ($teacher->program ?: 'Khmer') === 'Khmer' ? array_slice(self::SESSIONS, 0, 2) : ($teacher->program === 'Chinese' ? [['17:30','18:30'],['18:30','19:30']] : self::SESSIONS);
         $session = collect($sessions)->contains(fn ($hours) => self::minute($start) >= self::minute($hours[0]) && self::minute($end) <= self::minute($hours[1]) && (self::minute($start) - self::minute($hours[0])) % 60 === 0);
         if (! in_array($day, self::DAYS, true) || self::duration($start, $end) !== 60 || ! $session || ! $this->onDuty($teacher, $day, $start, $end)) $this->fail('Breaks must last one hour within confirmed working sessions, outside unavailable periods.');
         if ($this->lessons($teacher)->contains(fn ($s) => $s->day === $day && self::overlaps($start, $end, $s->starts_at, $s->ends_at))) $this->fail('This break overlaps a teaching lesson. No lesson has been removed.');
@@ -134,7 +140,8 @@ class TeacherManagementService
     {
         if ($teacher->status !== 'active') $this->fail('Breaks can only be generated for active teachers.');
         $options = [];
-        foreach (self::DAYS as $day) foreach (self::SESSIONS as [$from, $to]) {
+        $sessions = $teacher->program === 'Chinese' ? [['17:30','18:30'],['18:30','19:30']] : self::SESSIONS;
+        foreach (self::DAYS as $day) foreach ($sessions as [$from, $to]) {
             for ($minute = self::minute($from); $minute + 60 <= self::minute($to); $minute += 60) {
                 $format = fn ($m) => sprintf('%02d:%02d', intdiv($m, 60), $m % 60);
                 $b = ['weekday' => $day, 'start_time' => $format($minute), 'end_time' => $format($minute + 60), 'duration_minutes' => 60];

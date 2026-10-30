@@ -16,6 +16,11 @@ class Schedule extends Model
     {
         $service = app(\App\Services\TeacherManagementService::class);
         return $service->locked(function () use ($options, $service) {
+            if ($this->classroom_id && $this->school_class_id) {
+                if ($this->subject_id && ! $this->teacher_id) $this->teacher_id = Subject::findOrFail($this->subject_id)->teacher_id;
+                app(\App\Services\LessonManagementService::class)->validate($this);
+                return parent::save($options);
+            }
             if ($this->subject_id && $this->isDirty(['subject_id', 'day', 'starts_at', 'ends_at', 'room', 'classroom_id'])) {
                 $subject = Subject::findOrFail($this->subject_id);
                 if ($subject->teacher_id && $service->managed($subject->teacher_id)) $service->validateLesson($subject, $this);
@@ -32,7 +37,7 @@ class Schedule extends Model
                 $subject = Subject::find($schedule->subject_id);
                 if ($subject) {
                     $schedule->school_class_id = $subject->school_class_id;
-                    $schedule->teacher_id = $subject->teacher_id;
+                    if (! $schedule->teacher_id) $schedule->teacher_id = $subject->teacher_id;
                     $schedule->entry_type = self::TYPE_ACADEMIC;
                 }
             }

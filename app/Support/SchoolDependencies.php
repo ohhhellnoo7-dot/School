@@ -20,10 +20,11 @@ class SchoolDependencies
         return match (true) {
             $record instanceof Student => $record->attendances()->exists() || $record->grades()->exists() || $record->fees()->exists(),
             $record instanceof User => $record->children()->exists() || $record->subjects()->exists() || $record->classes()->exists()
-                || Student::where('user_id', $record->id)->exists() || Announcement::where('created_by', $record->id)->exists(),
+                || Student::where('user_id', $record->id)->exists() || Announcement::where('created_by', $record->id)->exists()
+                || Schedule::withoutGlobalScope('active')->where('teacher_id', $record->id)->exists(),
             $record instanceof SchoolClass => $record->students()->exists() || $record->subjects()->exists(),
             $record instanceof Subject => Examination::where('subject_id', $record->id)->exists()
-                || Assignment::where('subject_id', $record->id)->exists() || Schedule::where('subject_id', $record->id)->exists(),
+                || Assignment::where('subject_id', $record->id)->exists() || Schedule::withoutGlobalScope('active')->where('subject_id', $record->id)->exists(),
             $record instanceof Examination => Grade::where('examination_id', $record->id)->exists(),
             default => false,
         };

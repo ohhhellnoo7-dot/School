@@ -256,7 +256,7 @@ class ClassroomBookingService
         $endsMinute = ClassroomBooking::toMinute($data['ends_at']);
         $sessionStart = ClassroomBooking::toMinute($session->starts_at);
         $sessionEnd = ClassroomBooking::toMinute($session->ends_at);
-        $configured = config("classrooms.sessions.{$session->session}");
+        $configured = config("classrooms.program_session_hours.{$group->program}.{$session->session}",config("classrooms.sessions.{$session->session}"));
 
         if (is_array($configured)) {
             $sessionStart = max($sessionStart, ClassroomBooking::toMinute($configured['starts_at']));

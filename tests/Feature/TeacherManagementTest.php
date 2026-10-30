@@ -37,16 +37,16 @@ class TeacherManagementTest extends TestCase
     {
         [$teacher, $subject, $service] = $this->fixture();
         $subject->update(['teacher_id' => $teacher->id, 'required_weekly_minutes' => 240]);
-        $original = $this->lesson($subject)->fresh()->getAttributes();
+        $original = $this->lesson($subject, '07:00', '09:00')->fresh()->getAttributes();
         $generator = app(\App\Services\TeacherScheduleGenerator::class);
         $plan = $generator->preview($teacher);
-        $this->assertCount(3, $plan['lessons']);
+        $this->assertCount(1, $plan['lessons']);
         $this->assertCount(3, $plan['breaks']);
         $this->assertSame(1, Schedule::count());
         $this->assertSame(0, DB::table('teacher_breaks')->count());
         $generator->confirm($plan, false);
         $this->assertSame($original, Schedule::find($original['id'])->getAttributes());
-        $this->assertSame(4, Schedule::where('school_class_id', $subject->school_class_id)->count());
+        $this->assertSame(2, Schedule::where('school_class_id', $subject->school_class_id)->count());
         $this->assertEquals(4, $service->workload($teacher)['weekly']);
         foreach ($service->lessons($teacher) as $slot) $service->validateLesson($slot->subject, $slot);
         $admin = User::factory()->create(['role' => 'administrator']);
@@ -63,19 +63,19 @@ class TeacherManagementTest extends TestCase
         $this->post(route('teacher-management.schedules.confirm'), ['token' => $token])->assertSessionHasErrors('confirm');
         $this->assertSame(0, Schedule::count());
         $this->post(route('teacher-management.schedules.confirm'), ['token' => $token, 'confirm' => 1])->assertSessionHasNoErrors()->assertRedirect(route('teachers.schedule', $teacher));
-        $this->assertSame(2, Schedule::count());
+        $this->assertSame(1, Schedule::count());
         $this->post(route('teacher-management.schedules.confirm'), ['token' => $token, 'confirm' => 1])->assertSessionHasErrors();
         $this->post(route('teacher-management.schedules.preview', $teacher))->assertOk();
         $token = session('teacher_schedule_preview.token');
         $this->post(route('teacher-management.schedules.confirm'), ['token' => $token, 'confirm' => 1])->assertSessionHasErrors();
         $this->post(route('teacher-management.schedules.confirm'), ['token' => $token, 'confirm' => 1, 'replace' => 1])->assertSessionHasNoErrors();
-        $this->assertSame(2, Schedule::count());
+        $this->assertSame(1, Schedule::count());
     }
 
     public function test_combined_schedule_rejects_stale_preview_without_partial_writes(): void
     {
         [$teacher, $subject] = $this->fixture();
-        $subject->update(['teacher_id' => $teacher->id, 'required_weekly_minutes' => 60]);
+        $subject->update(['teacher_id' => $teacher->id, 'required_weekly_minutes' => 120]);
         $generator = app(\App\Services\TeacherScheduleGenerator::class);
         $plan = $generator->preview($teacher);
         DB::table('teacher_profiles')->where('teacher_id', $teacher->id)->update(['weekly_minutes' => 60]);

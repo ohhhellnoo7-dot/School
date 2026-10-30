@@ -39,6 +39,7 @@ class AutomaticTimetableGenerator
             // serializes two requests targeting different classes that share staff.
             $locked = SchoolClass::query()->orderBy('id')->lockForUpdate()->get();
             $classes = $this->targetClasses($locked, $schoolClass);
+            if ($classes->contains(fn ($class) => $class->program === 'Khmer' && $class->class_group_id)) $this->fail('Established Khmer cohorts must use the School Timetables replacement preview. The legacy hourly generator cannot publish the required two-hour subject blocks or bypass administrator confirmation.');
             $classes->load(['subjects' => fn ($query) => $query->orderBy('id'), 'subjects.teacher']);
             $this->validateClasses($classes);
 

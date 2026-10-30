@@ -25,6 +25,7 @@
 
     <div class="nav-caption">{{ __('Main menu') }}</div>
     <nav class="school-nav">
+        <a class="{{ request()->routeIs('timetables.*') ? 'active' : '' }}" href="{{ route('timetables.index') }}"><i class="bi bi-calendar-week"></i> School Timetables</a>
         <a class="{{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}"><i class="bi bi-grid-1x2"></i> {{ __('Overview') }}</a>
         <a class="{{ request()->routeIs('students.*') ? 'active' : '' }}" href="{{ route('students.index') }}"><i class="bi bi-people"></i> {{ auth()->user()->role === 'parent' ? __('My children') : (auth()->user()->role === 'student' ? __('My profile') : __('Students')) }}</a>
         @foreach(\App\Support\SchoolModules::all() as $key => $module)

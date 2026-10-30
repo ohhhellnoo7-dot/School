@@ -415,6 +415,11 @@ a.class-summary-card:hover {
 .schedule-cell strong { color: var(--ink); font-size: 10px; }
 .schedule-cell span, .schedule-cell small { color: var(--muted); font-size: 8px; line-height: 1.45; }
 .schedule-cell a { position: absolute; top: 7px; right: 7px; }
+.schedule-cell .reservation-lessons { min-width: 0; font-size: 12px; overflow-wrap: anywhere; }
+.reservation-lessons summary { cursor: pointer; color: var(--green); font-weight: 600; padding: 6px 0; }
+.schedule-cell .reservation-lessons strong { font-size: 12px; line-height: 1.5; }
+.schedule-cell .reservation-lessons span, .schedule-cell .reservation-lessons small { font-size: 11px; line-height: 1.5; }
+.reservation-lessons:target { outline: 2px solid var(--green); outline-offset: 4px; }
 .open-slot { display: grid; place-items: center; min-height: 90px; color: var(--room-available); border: 1px dashed color-mix(in srgb, var(--room-available) 45%, transparent); border-radius: 7px; font-size: 9px; }
 
 .danger-zone {

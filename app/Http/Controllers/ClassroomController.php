@@ -54,10 +54,12 @@ class ClassroomController extends Controller
         $filters = $request->validate([
             'date' => ['nullable', 'date_format:Y-m-d'],
             'time' => ['nullable', 'date_format:H:i'],
+            'academic_year'=>['nullable','regex:/^\d{4}-\d{4}$/'],
         ]);
         $moment = $this->moment($filters);
         if ($request->boolean('live')) $moment = CarbonImmutable::now(config('app.timezone'));
-        $snapshot = collect($availabilityService->forMoment($moment, ['search' => $classroom->room_number]))
+        $academicYear = $filters['academic_year'] ?? $moment->year.'-'.($moment->year+1);
+        $snapshot = collect($availabilityService->forMoment($moment, ['search' => $classroom->room_number,'academic_year'=>$academicYear]))
             ->first(fn ($entry) => (int) data_get($entry, 'classroom.id') === (int) $classroom->id);
 
         $classroom->load(['bookings' => fn ($query) => $query
@@ -65,13 +67,17 @@ class ClassroomController extends Controller
             ->orderByRaw("CASE day_of_week WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2 WHEN 'Wednesday' THEN 3 WHEN 'Thursday' THEN 4 WHEN 'Friday' THEN 5 ELSE 6 END")
             ->orderBy('starts_at')]);
 
+        $visibleCohorts = in_array($request->user()->role, ['student', 'parent'], true)
+            ? \App\Models\SchoolClass::whereIn('id', \App\Models\Student::visibleTo($request->user())->select('school_class_id'))->get() : null;
+        if ($visibleCohorts !== null) $classroom->setRelation('bookings', $classroom->bookings->filter(fn ($b) => $visibleCohorts->contains(fn ($c) => $c->class_group_id === $b->class_group_id && $c->session === $b->classSession?->session)));
+
         $weekly = collect(self::SESSIONS)->mapWithKeys(function (string $session) use ($classroom) {
             return [$session => collect(self::DAYS)->mapWithKeys(fn (string $day) => [
                 $day => $classroom->bookings->filter(fn (ClassroomBooking $booking) => $booking->day_of_week === $day && $booking->classSession?->session === $session),
             ])];
         });
 
-        $lessons = app(\App\Services\RoomLessonService::class)->lessons($classroom, \App\Models\Schedule::with(['schoolClass', 'subject.teacher'])->get());
+        $lessons = app(\App\Services\RoomLessonService::class)->lessons($classroom, \App\Models\Schedule::with(['schoolClass', 'subject', 'teacher'])->where(fn ($q)=>$q->where('academic_year',$academicYear)->orWhereNull('academic_year'))->when($visibleCohorts !== null, fn ($q) => $q->whereIn('school_class_id', $visibleCohorts->modelKeys()))->get());
         return view('school.classrooms.show', [
             'classroom' => $classroom,
             'snapshot' => $snapshot,
@@ -114,7 +120,7 @@ class ClassroomController extends Controller
 
     public function update(Request $request, Classroom $classroom): RedirectResponse
     {
-        $classroom->update($this->validatedClassroom($request, $classroom));
+        app(\App\Services\TeacherManagementService::class)->locked(fn () => $classroom->update($this->validatedClassroom($request, $classroom)));
 
         return redirect()->route('classrooms.show', $classroom)
             ->with('success', "Room {$classroom->room_number} was updated.");

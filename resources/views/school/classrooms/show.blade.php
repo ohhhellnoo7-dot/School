@@ -20,11 +20,11 @@
 </section>
 <section class="panel p-4 mb-4"><h2 class="h5">Daily lessons &middot; {{ $moment->englishDayOfWeek }}</h2>
 @forelse($lessons->where('day', $moment->englishDayOfWeek) as $lesson)
-<article class="schedule-cell"><strong>{{ substr($lesson->starts_at, 0, 5) }}&ndash;{{ substr($lesson->ends_at, 0, 5) }} &middot; {{ $lesson->isRelaxation() ? 'Scheduled relaxation' : $lesson->subject?->name }}</strong><span>{{ $lesson->schoolClass?->label }}</span><small>{{ $lesson->isRelaxation() ? 'No teacher' : $lesson->subject?->teacher?->name }}</small></article>
+<article class="schedule-cell"><strong>{{ substr($lesson->starts_at, 0, 5) }}&ndash;{{ substr($lesson->ends_at, 0, 5) }} &middot; {{ $lesson->isRelaxation() ? 'Scheduled relaxation' : $lesson->subject?->name }}</strong><span>{{ $lesson->schoolClass?->label }}</span><small>{{ $lesson->isRelaxation() ? 'No teacher' : $lesson->teacher?->name }}</small></article>
 @empty<p>No lessons scheduled today. Reservations can still occupy the room.</p>@endforelse
 </section>
-<section class="panel p-4 mb-4"><h2 class="h5">Weekly lesson rotation</h2><div class="table-responsive"><table class="table"><thead><tr>@foreach($days as $day)<th>{{ $day }}</th>@endforeach</tr></thead><tbody><tr>@foreach($days as $day)<td>@forelse($lessons->where('day', $day) as $lesson)<article class="schedule-cell"><strong>{{ $lesson->isRelaxation() ? 'Scheduled relaxation' : $lesson->subject?->name }}</strong><span>{{ $lesson->schoolClass?->label }}</span><small>{{ substr($lesson->starts_at, 0, 5) }}&ndash;{{ substr($lesson->ends_at, 0, 5) }} &middot; {{ $lesson->isRelaxation() ? 'No teacher' : $lesson->subject?->teacher?->name }}</small></article>@empty<span>No Class</span>@endforelse</td>@endforeach</tr></tbody></table></div></section>
-<section class="panel weekly-room-panel">
+<section class="panel p-4 mb-4"><h2 class="h5">Weekly lesson rotation</h2><div class="table-responsive"><table class="table"><thead><tr>@foreach($days as $day)<th>{{ $day }}</th>@endforeach</tr></thead><tbody><tr>@foreach($days as $day)<td>@forelse($lessons->where('day', $day) as $lesson)<article class="schedule-cell"><strong>{{ $lesson->isRelaxation() ? 'Scheduled relaxation' : $lesson->subject?->name }}</strong><span>{{ $lesson->schoolClass?->label }}</span><small>{{ substr($lesson->starts_at, 0, 5) }}&ndash;{{ substr($lesson->ends_at, 0, 5) }} &middot; {{ $lesson->isRelaxation() ? 'No teacher' : $lesson->teacher?->name }}</small></article>@empty<span>No Class</span>@endforelse</td>@endforeach</tr></tbody></table></div></section>
+<section class="panel weekly-room-panel" id="weekly-lessons">
     <div class="panel-header"><div><h2>Room reservations</h2><p>Recurring classroom bookings from Monday to Friday.</p></div><form class="detail-moment-form" method="get"><label class="visually-hidden" for="detail-date">Date</label><input class="form-control" id="detail-date" type="date" name="date" value="{{ $moment->format('Y-m-d') }}"><label class="visually-hidden" for="detail-time">Time</label><input class="form-control" id="detail-time" type="time" name="time" value="{{ $moment->format('H:i') }}"><button class="btn btn-outline-secondary">Check time</button></form></div>
     <div class="table-responsive"><table class="table weekly-room-table"><thead><tr><th>Session</th>@foreach($days as $day)<th>{{ $day }}</th>@endforeach</tr></thead><tbody>
         @foreach($sessions as $session)
@@ -32,7 +32,7 @@
                 @foreach($days as $day)
                     <td>
                         @forelse($weekly[$session][$day] as $booking)
-                            <div class="schedule-cell"><strong>{{ $booking->classGroup->display_name }}</strong><span>{{ $booking->classGroup->program }} · {{ substr((string) $booking->starts_at, 0, 5) }}-{{ substr((string) $booking->ends_at, 0, 5) }}</span><small>Session reservation</small>@if(auth()->user()->role === 'administrator')<a href="{{ route('classroom-bookings.edit', $booking) }}" aria-label="Edit {{ $booking->classGroup->display_name }} booking"><i class="bi bi-pencil" aria-hidden="true"></i></a>@endif</div>
+                            <div class="schedule-cell"><strong>{{ $booking->classGroup->display_name }}</strong><span>{{ $booking->classGroup->program }} · {{ substr((string) $booking->starts_at, 0, 5) }}-{{ substr((string) $booking->ends_at, 0, 5) }}</span><small>Session reservation</small>@include('school.classrooms.reservation-lessons')@if(auth()->user()->role === 'administrator')<a href="{{ route('classroom-bookings.edit', $booking) }}" aria-label="Edit {{ $booking->classGroup->display_name }} booking"><i class="bi bi-pencil" aria-hidden="true"></i></a>@endif</div>
                         @empty<span class="open-slot"><i class="bi bi-check-circle" aria-hidden="true"></i> Available</span>@endforelse
                     </td>
                 @endforeach
@@ -55,4 +55,4 @@
 @endif
 @endsection
 
-@push('scripts')<script src="{{ asset('js/room-lesson-status.js') }}" defer></script>@endpush
+@push('scripts')<script src="{{ asset('js/room-lesson-status.js') }}" defer></script><script>function showReservationLessons(){ const target = document.getElementById(location.hash.slice(1)); if(target && target.matches('details.reservation-lessons')) target.open = true; } showReservationLessons(); addEventListener('hashchange', showReservationLessons);</script>@endpush

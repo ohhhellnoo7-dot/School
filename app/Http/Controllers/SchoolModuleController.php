@@ -242,7 +242,7 @@ class SchoolModuleController extends Controller
     public function teacherTimetable(Request $request, User $teacher)
     {
         abort_unless($teacher->role === 'teacher' && ($request->user()->role === 'administrator' || ($request->user()->role === 'teacher' && $request->user()->id === $teacher->id)), 403);
-        $slots = Schedule::with('subject.schoolClass')->whereHas('subject', fn ($q) => $q->where('teacher_id', $teacher->id))->orderBy('starts_at')->get()->groupBy('day');
+        $slots = Schedule::with('subject.schoolClass')->where('teacher_id', $teacher->id)->orderBy('starts_at')->get()->groupBy('day');
 
         $service = app(\App\Services\TeacherManagementService::class);
         $teacherBreaks = $service->breaks($teacher);
@@ -275,6 +275,7 @@ class SchoolModuleController extends Controller
         $record = new $meta['model'];
         Gate::authorize('manage', [$record, $module]);
         if ($module === 'teachers') return app(TeacherManagementController::class)->form();
+        if ($module === 'schedules') return app(UnifiedTimetableController::class)->form($request);
 
         return view('school.modules.form', compact('module', 'meta', 'record') + ['options' => SchoolModules::options($request->user())]);
     }
@@ -285,6 +286,7 @@ class SchoolModuleController extends Controller
         $record = SchoolModules::query($module, $request->user())->findOrFail($id);
         Gate::authorize('manage', [$record, $module]);
         if ($module === 'teachers') return app(TeacherManagementController::class)->form($record);
+        if ($record instanceof Schedule && $record->schoolClass?->program === 'Khmer' && $record->schoolClass?->class_group_id) return app(UnifiedTimetableController::class)->form($request, $record);
         $this->authorizeTeacherGrade($request, $record);
 
         return view('school.modules.form', compact('module', 'meta', 'record') + ['options' => SchoolModules::options($request->user())]);
@@ -295,6 +297,7 @@ class SchoolModuleController extends Controller
         $meta = SchoolModules::get($module);
         $record = new $meta['model'];
         Gate::authorize('manage', [$record, $module]);
+        if ($record instanceof Schedule && ($class = Subject::find($request->input('subject_id'))?->schoolClass) && $class->program === 'Khmer' && $class->class_group_id) return app(UnifiedTimetableController::class)->store($request, app(\App\Services\LessonManagementService::class));
         $data = $this->validated($request, $module, $record);
         DB::transaction(function () use ($record, $data, $module) {
             $record->fill($data);
@@ -325,6 +328,7 @@ class SchoolModuleController extends Controller
         $record = SchoolModules::query($module, $request->user())->findOrFail($id);
         Gate::authorize('manage', [$record, $module]);
         $this->authorizeTeacherGrade($request, $record);
+        if ($record instanceof Schedule && $record->schoolClass?->program === 'Khmer' && $record->schoolClass?->class_group_id) return app(UnifiedTimetableController::class)->update($request, $record, app(\App\Services\LessonManagementService::class));
         $data = $this->validated($request, $module, $record);
         if ($record instanceof User && isset($data['role']) && $data['role'] !== $record->role) {
             // Linked records must be explicitly unlinked before an account changes purpose.
@@ -358,6 +362,7 @@ class SchoolModuleController extends Controller
     {
         $record = SchoolModules::query($module, $request->user())->findOrFail($id);
         Gate::authorize('manage', [$record, $module]);
+        if ($record instanceof Schedule && $record->schoolClass?->program === 'Khmer' && $record->schoolClass?->class_group_id) return app(UnifiedTimetableController::class)->cancel($request, $record, app(\App\Services\LessonManagementService::class));
         $this->authorizeTeacherGrade($request, $record);
         if ($record instanceof User && $record->id === $request->user()->id) {
             return back()->withErrors(['record' => 'You cannot delete your own account.']);
