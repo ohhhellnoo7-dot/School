@@ -9,6 +9,7 @@
     <link href="{{ asset('css/school.css') }}?v={{ filemtime(public_path('css/school.css')) }}" rel="stylesheet">
     <link href="{{ asset('css/dashboard-breakdowns.css') }}?v={{ filemtime(public_path('css/dashboard-breakdowns.css')) }}" rel="stylesheet">
 @include('school.partials.theme-head')
+@if(request()->routeIs('teacher-management.*', 'teachers.schedule') || request()->route('module') === 'teachers')<link href="{{ asset('css/teacher-management.css') }}?v={{ filemtime(public_path('css/teacher-management.css')) }}" rel="stylesheet">@endif
 @if(request()->routeIs('modules.index') && request()->route('module') === 'parents')<link href="{{ asset('css/parent-directory.css') }}?v={{ filemtime(public_path('css/parent-directory.css')) }}" rel="stylesheet">@endif
     @if(request()->routeIs('students.index'))<link href="{{ asset('css/student-directory.css') }}?v={{ filemtime(public_path('css/student-directory.css')) }}" rel="stylesheet">@endif
     @if(request()->routeIs('classes.timetable*') || (request()->routeIs('modules.show') && request()->route('module') === 'classes'))<link href="{{ asset('css/timetable.css') }}?v={{ filemtime(public_path('css/timetable.css')) }}" rel="stylesheet">@endif

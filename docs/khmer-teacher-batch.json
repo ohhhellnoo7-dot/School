@@ -1,0 +1,940 @@
+﻿{
+    "committed": true,
+    "khmer_teachers": 30,
+    "added": 20,
+    "reassigned_subjects": 99,
+    "existing_lesson_times_preserved": true,
+    "teachers": [
+        {
+            "id": 286,
+            "name": "Sample Sok Dara",
+            "subjects": [
+                "Mathematics",
+                "Khmer"
+            ],
+            "classes": [
+                "Grade 10 · A · Khmer · Morning",
+                "Grade 8 · C · Khmer · Afternoon",
+                "Grade 11 · B · Khmer · Afternoon",
+                "Grade 7 · A · Khmer · Afternoon",
+                "Grade 12 · B · Khmer · Morning"
+            ],
+            "rooms": [
+                "Room 101",
+                "Room 104",
+                "KH-1102",
+                "Room 204",
+                "KH-1202"
+            ],
+            "teaching_hours": 13,
+            "free_periods": 3
+        },
+        {
+            "id": 287,
+            "name": "Sample Chan Sophea",
+            "subjects": [
+                "Physics",
+                "Khmer"
+            ],
+            "classes": [
+                "Grade 10 · C · Khmer · Afternoon",
+                "Grade 8 · B · Khmer · Morning",
+                "Grade 12 · A · Khmer · Afternoon",
+                "Grade 7 · A · Khmer · Morning"
+            ],
+            "rooms": [
+                "KH-1201",
+                "Room 208",
+                "Room 203",
+                "Room 101"
+            ],
+            "teaching_hours": 15,
+            "free_periods": 3
+        },
+        {
+            "id": 288,
+            "name": "Sample Chea Vanna",
+            "subjects": [
+                "Physics",
+                "Biology"
+            ],
+            "classes": [
+                "Grade 12 · A · Khmer · Morning",
+                "Grade 11 · A · Khmer · Morning",
+                "Grade 9 · C · Khmer · Afternoon",
+                "Grade 7 · B · Khmer · Morning"
+            ],
+            "rooms": [
+                "KH-1101",
+                "KH-1201",
+                "Room 206",
+                "Room 201"
+            ],
+            "teaching_hours": 13,
+            "free_periods": 3
+        },
+        {
+            "id": 289,
+            "name": "Sample Heng Bopha",
+            "subjects": [
+                "Biology",
+                "History"
+            ],
+            "classes": [
+                "Grade 11 · A · Khmer · Afternoon",
+                "Grade 11 · B · Khmer · Morning",
+                "Grade 10 · A · Khmer · Afternoon",
+                "Grade 12 · B · Khmer · Afternoon",
+                "Grade 8 · A · Khmer · Afternoon",
+                "Grade 7 · C · Khmer · Morning"
+            ],
+            "rooms": [
+                "KH-1202",
+                "KH-1101",
+                "KH-1102",
+                "Room 104",
+                "Room 102",
+                "Room 202"
+            ],
+            "teaching_hours": 15,
+            "free_periods": 3
+        },
+        {
+            "id": 290,
+            "name": "Sample Lim Piseth",
+            "subjects": [
+                "History",
+                "Geography"
+            ],
+            "classes": [
+                "Grade 11 · B · Khmer · Afternoon",
+                "Grade 12 · A · Khmer · Morning",
+                "Grade 7 · A · Khmer · Afternoon",
+                "Grade 7 · B · Khmer · Afternoon"
+            ],
+            "rooms": [
+                "KH-1102",
+                "Room 101",
+                "KH-1201",
+                "Room 201"
+            ],
+            "teaching_hours": 14,
+            "free_periods": 3
+        },
+        {
+            "id": 291,
+            "name": "Sample Seng Sreymom",
+            "subjects": [
+                "Geography",
+                "Mathematics"
+            ],
+            "classes": [
+                "Grade 12 · A · Khmer · Afternoon",
+                "Grade 12 · B · Khmer · Morning",
+                "Grade 11 · A · Khmer · Morning",
+                "Grade 7 · B · Khmer · Afternoon"
+            ],
+            "rooms": [
+                "KH-1101",
+                "Room 201",
+                "KH-1201",
+                "KH-1202"
+            ],
+            "teaching_hours": 15,
+            "free_periods": 3
+        },
+        {
+            "id": 292,
+            "name": "Sample Phan Rithy",
+            "subjects": [
+                "Khmer",
+                "Mathematics"
+            ],
+            "classes": [
+                "Grade 7 · A · Khmer · Afternoon",
+                "Grade 11 · B · Khmer · Morning",
+                "Grade 12 · B · Khmer · Morning",
+                "Grade 7 · C · Khmer · Afternoon"
+            ],
+            "rooms": [
+                "KH-1102",
+                "Room 101",
+                "KH-1202",
+                "Room 202"
+            ],
+            "teaching_hours": 14,
+            "free_periods": 3
+        },
+        {
+            "id": 293,
+            "name": "Sample Keo Sreyneang",
+            "subjects": [
+                "Khmer",
+                "Physics"
+            ],
+            "classes": [
+                "Grade 10 · B · Khmer · Morning",
+                "Grade 7 · B · Khmer · Afternoon",
+                "Grade 8 · A · Khmer · Afternoon",
+                "Grade 12 · A · Khmer · Afternoon"
+            ],
+            "rooms": [
+                "KH-1201",
+                "Room 207",
+                "Room 201",
+                "Room 102"
+            ],
+            "teaching_hours": 14,
+            "free_periods": 3
+        },
+        {
+            "id": 294,
+            "name": "Sample Ouk Visal",
+            "subjects": [
+                "Biology",
+                "Physics"
+            ],
+            "classes": [
+                "Grade 12 · B · Khmer · Morning",
+                "Grade 7 · C · Khmer · Afternoon",
+                "Grade 8 · B · Khmer · Afternoon"
+            ],
+            "rooms": [
+                "KH-1202",
+                "Room 202",
+                "Room 203"
+            ],
+            "teaching_hours": 13,
+            "free_periods": 3
+        },
+        {
+            "id": 295,
+            "name": "Sample Long Chenda",
+            "subjects": [
+                "History",
+                "Biology"
+            ],
+            "classes": [
+                "Grade 7 · A · Khmer · Morning",
+                "Grade 8 · A · Khmer · Afternoon",
+                "Grade 8 · C · Khmer · Afternoon",
+                "Grade 11 · A · Khmer · Morning",
+                "Grade 12 · B · Khmer · Afternoon"
+            ],
+            "rooms": [
+                "KH-1101",
+                "Room 204",
+                "Room 101",
+                "Room 102",
+                "KH-1202"
+            ],
+            "teaching_hours": 14,
+            "free_periods": 3
+        },
+        {
+            "id": 296,
+            "name": "Sample Sao Sophal",
+            "subjects": [
+                "Geography",
+                "History"
+            ],
+            "classes": [
+                "Grade 7 · B · Khmer · Morning",
+                "Grade 8 · B · Khmer · Afternoon",
+                "Grade 11 · B · Khmer · Morning",
+                "Grade 7 · A · Khmer · Afternoon"
+            ],
+            "rooms": [
+                "Room 101",
+                "Room 201",
+                "Room 203",
+                "KH-1102"
+            ],
+            "teaching_hours": 15,
+            "free_periods": 3
+        },
+        {
+            "id": 297,
+            "name": "Sample Kim Sreypov",
+            "subjects": [
+                "Mathematics",
+                "Geography"
+            ],
+            "classes": [
+                "Grade 12 · B · Khmer · Afternoon",
+                "Grade 9 · B · Khmer · Morning",
+                "Grade 12 · A · Khmer · Morning",
+                "Grade 7 · C · Khmer · Morning"
+            ],
+            "rooms": [
+                "KH-1202",
+                "KH-1201",
+                "Room 205",
+                "Room 202"
+            ],
+            "teaching_hours": 15,
+            "free_periods": 3
+        },
+        {
+            "id": 298,
+            "name": "Sample Meas Vuthy",
+            "subjects": [
+                "Mathematics",
+                "Khmer"
+            ],
+            "classes": [
+                "Grade 7 · C · Khmer · Morning",
+                "Grade 9 · A · Khmer · Afternoon",
+                "Grade 11 · B · Khmer · Afternoon"
+            ],
+            "rooms": [
+                "KH-1102",
+                "Room 202",
+                "Room 103"
+            ],
+            "teaching_hours": 13,
+            "free_periods": 3
+        },
+        {
+            "id": 299,
+            "name": "Sample Yim Kanha",
+            "subjects": [
+                "Physics",
+                "Khmer"
+            ],
+            "classes": [
+                "Grade 7 · B · Khmer · Afternoon",
+                "Grade 10 · C · Khmer · Morning",
+                "Grade 8 · A · Khmer · Morning"
+            ],
+            "rooms": [
+                "Room 201",
+                "Room 208",
+                "Room 102"
+            ],
+            "teaching_hours": 14,
+            "free_periods": 3
+        },
+        {
+            "id": 300,
+            "name": "Sample Nhem Panha",
+            "subjects": [
+                "Physics",
+                "Biology"
+            ],
+            "classes": [
+                "Grade 10 · C · Khmer · Morning",
+                "Grade 8 · C · Khmer · Morning",
+                "Grade 12 · A · Khmer · Afternoon",
+                "Grade 12 · B · Khmer · Morning",
+                "Grade 7 · B · Khmer · Morning"
+            ],
+            "rooms": [
+                "Room 208",
+                "KH-1201",
+                "Room 204",
+                "KH-1202",
+                "Room 201"
+            ],
+            "teaching_hours": 15,
+            "free_periods": 3
+        },
+        {
+            "id": 301,
+            "name": "Sample Ros Sreyka",
+            "subjects": [
+                "Biology",
+                "History"
+            ],
+            "classes": [
+                "Grade 7 · C · Khmer · Afternoon",
+                "Grade 9 · A · Khmer · Morning",
+                "Grade 12 · B · Khmer · Afternoon"
+            ],
+            "rooms": [
+                "KH-1202",
+                "Room 202",
+                "Room 103"
+            ],
+            "teaching_hours": 13,
+            "free_periods": 3
+        },
+        {
+            "id": 302,
+            "name": "Sample Touch Samnang",
+            "subjects": [
+                "History"
+            ],
+            "classes": [
+                "Grade 8 · A · Khmer · Afternoon",
+                "Grade 11 · B · Khmer · Morning",
+                "Grade 7 · A · Khmer · Afternoon"
+            ],
+            "rooms": [
+                "KH-1102",
+                "Room 101",
+                "Room 102"
+            ],
+            "teaching_hours": 12,
+            "free_periods": 3
+        },
+        {
+            "id": 303,
+            "name": "Sample Chum Malis",
+            "subjects": [
+                "Geography",
+                "Mathematics"
+            ],
+            "classes": [
+                "Grade 8 · B · Khmer · Afternoon",
+                "Grade 11 · A · Khmer · Afternoon",
+                "Grade 12 · A · Khmer · Morning",
+                "Grade 7 · B · Khmer · Afternoon"
+            ],
+            "rooms": [
+                "KH-1101",
+                "Room 201",
+                "Room 203",
+                "KH-1201"
+            ],
+            "teaching_hours": 14,
+            "free_periods": 3
+        },
+        {
+            "id": 304,
+            "name": "Sample Prak Sovan",
+            "subjects": [
+                "Khmer"
+            ],
+            "classes": [
+                "Grade 7 · A · Khmer · Afternoon",
+                "Grade 10 · B · Khmer · Morning",
+                "Grade 11 · B · Khmer · Morning"
+            ],
+            "rooms": [
+                "KH-1102",
+                "Room 207",
+                "Room 101"
+            ],
+            "teaching_hours": 14,
+            "free_periods": 3
+        },
+        {
+            "id": 305,
+            "name": "Sample Kong Rachana",
+            "subjects": [
+                "Khmer",
+                "Physics"
+            ],
+            "classes": [
+                "Grade 8 · A · Khmer · Morning",
+                "Grade 9 · B · Khmer · Afternoon",
+                "Grade 12 · A · Khmer · Morning"
+            ],
+            "rooms": [
+                "KH-1201",
+                "Room 102",
+                "Room 205"
+            ],
+            "teaching_hours": 13,
+            "free_periods": 3
+        }
+    ],
+    "assignment_changes": [
+        {
+            "subject_id": 161,
+            "previous_teacher_id": 2,
+            "teacher_id": 286
+        },
+        {
+            "subject_id": 163,
+            "previous_teacher_id": 2,
+            "teacher_id": 287
+        },
+        {
+            "subject_id": 175,
+            "previous_teacher_id": 2,
+            "teacher_id": 288
+        },
+        {
+            "subject_id": 180,
+            "previous_teacher_id": 3,
+            "teacher_id": 289
+        },
+        {
+            "subject_id": 197,
+            "previous_teacher_id": 7,
+            "teacher_id": 290
+        },
+        {
+            "subject_id": 214,
+            "previous_teacher_id": 26,
+            "teacher_id": 291
+        },
+        {
+            "subject_id": 176,
+            "previous_teacher_id": 2,
+            "teacher_id": 292
+        },
+        {
+            "subject_id": 178,
+            "previous_teacher_id": 3,
+            "teacher_id": 293
+        },
+        {
+            "subject_id": 192,
+            "previous_teacher_id": 3,
+            "teacher_id": 294
+        },
+        {
+            "subject_id": 209,
+            "previous_teacher_id": 7,
+            "teacher_id": 295
+        },
+        {
+            "subject_id": 226,
+            "previous_teacher_id": 26,
+            "teacher_id": 296
+        },
+        {
+            "subject_id": 231,
+            "previous_teacher_id": 45,
+            "teacher_id": 297
+        },
+        {
+            "subject_id": 243,
+            "previous_teacher_id": 45,
+            "teacher_id": 298
+        },
+        {
+            "subject_id": 193,
+            "previous_teacher_id": 3,
+            "teacher_id": 299
+        },
+        {
+            "subject_id": 195,
+            "previous_teacher_id": 7,
+            "teacher_id": 300
+        },
+        {
+            "subject_id": 210,
+            "previous_teacher_id": 7,
+            "teacher_id": 301
+        },
+        {
+            "subject_id": 227,
+            "previous_teacher_id": 26,
+            "teacher_id": 302
+        },
+        {
+            "subject_id": 244,
+            "previous_teacher_id": 45,
+            "teacher_id": 303
+        },
+        {
+            "subject_id": 248,
+            "previous_teacher_id": 64,
+            "teacher_id": 304
+        },
+        {
+            "subject_id": 260,
+            "previous_teacher_id": 64,
+            "teacher_id": 305
+        },
+        {
+            "subject_id": 261,
+            "previous_teacher_id": 64,
+            "teacher_id": 286
+        },
+        {
+            "subject_id": 277,
+            "previous_teacher_id": 83,
+            "teacher_id": 287
+        },
+        {
+            "subject_id": 212,
+            "previous_teacher_id": 26,
+            "teacher_id": 288
+        },
+        {
+            "subject_id": 229,
+            "previous_teacher_id": 45,
+            "teacher_id": 289
+        },
+        {
+            "subject_id": 246,
+            "previous_teacher_id": 64,
+            "teacher_id": 290
+        },
+        {
+            "subject_id": 263,
+            "previous_teacher_id": 83,
+            "teacher_id": 291
+        },
+        {
+            "subject_id": 280,
+            "previous_teacher_id": 102,
+            "teacher_id": 292
+        },
+        {
+            "subject_id": 265,
+            "previous_teacher_id": 83,
+            "teacher_id": 293
+        },
+        {
+            "subject_id": 282,
+            "previous_teacher_id": 102,
+            "teacher_id": 294
+        },
+        {
+            "subject_id": 299,
+            "previous_teacher_id": 121,
+            "teacher_id": 295
+        },
+        {
+            "subject_id": 316,
+            "previous_teacher_id": 140,
+            "teacher_id": 296
+        },
+        {
+            "subject_id": 328,
+            "previous_teacher_id": 140,
+            "teacher_id": 297
+        },
+        {
+            "subject_id": 278,
+            "previous_teacher_id": 83,
+            "teacher_id": 298
+        },
+        {
+            "subject_id": 297,
+            "previous_teacher_id": 121,
+            "teacher_id": 299
+        },
+        {
+            "subject_id": 294,
+            "previous_teacher_id": 102,
+            "teacher_id": 300
+        },
+        {
+            "subject_id": 311,
+            "previous_teacher_id": 121,
+            "teacher_id": 301
+        },
+        {
+            "subject_id": 200,
+            "previous_teacher_id": 7,
+            "teacher_id": 302
+        },
+        {
+            "subject_id": 164,
+            "previous_teacher_id": 2,
+            "teacher_id": 303
+        },
+        {
+            "subject_id": 162,
+            "previous_teacher_id": 2,
+            "teacher_id": 304
+        },
+        {
+            "subject_id": 295,
+            "previous_teacher_id": 102,
+            "teacher_id": 305
+        },
+        {
+            "subject_id": 167,
+            "previous_teacher_id": 2,
+            "teacher_id": 286
+        },
+        {
+            "subject_id": 166,
+            "previous_teacher_id": 2,
+            "teacher_id": 287
+        },
+        {
+            "subject_id": 312,
+            "previous_teacher_id": 121,
+            "teacher_id": 288
+        },
+        {
+            "subject_id": 329,
+            "previous_teacher_id": 140,
+            "teacher_id": 289
+        },
+        {
+            "subject_id": 204,
+            "previous_teacher_id": 7,
+            "teacher_id": 290
+        },
+        {
+            "subject_id": 169,
+            "previous_teacher_id": 2,
+            "teacher_id": 291
+        },
+        {
+            "subject_id": 172,
+            "previous_teacher_id": 2,
+            "teacher_id": 292
+        },
+        {
+            "subject_id": 170,
+            "previous_teacher_id": 2,
+            "teacher_id": 293
+        },
+        {
+            "subject_id": 314,
+            "previous_teacher_id": 140,
+            "teacher_id": 294
+        },
+        {
+            "subject_id": 183,
+            "previous_teacher_id": 3,
+            "teacher_id": 295
+        },
+        {
+            "subject_id": 213,
+            "previous_teacher_id": 26,
+            "teacher_id": 296
+        },
+        {
+            "subject_id": 173,
+            "previous_teacher_id": 2,
+            "teacher_id": 297
+        },
+        {
+            "subject_id": 181,
+            "previous_teacher_id": 3,
+            "teacher_id": 298
+        },
+        {
+            "subject_id": 179,
+            "previous_teacher_id": 3,
+            "teacher_id": 299
+        },
+        {
+            "subject_id": 184,
+            "previous_teacher_id": 3,
+            "teacher_id": 300
+        },
+        {
+            "subject_id": 187,
+            "previous_teacher_id": 3,
+            "teacher_id": 301
+        },
+        {
+            "subject_id": 218,
+            "previous_teacher_id": 26,
+            "teacher_id": 302
+        },
+        {
+            "subject_id": 217,
+            "previous_teacher_id": 26,
+            "teacher_id": 303
+        },
+        {
+            "subject_id": 186,
+            "previous_teacher_id": 3,
+            "teacher_id": 304
+        },
+        {
+            "subject_id": 189,
+            "previous_teacher_id": 3,
+            "teacher_id": 305
+        },
+        {
+            "subject_id": 190,
+            "previous_teacher_id": 3,
+            "teacher_id": 286
+        },
+        {
+            "subject_id": 198,
+            "previous_teacher_id": 7,
+            "teacher_id": 287
+        },
+        {
+            "subject_id": 196,
+            "previous_teacher_id": 7,
+            "teacher_id": 288
+        },
+        {
+            "subject_id": 201,
+            "previous_teacher_id": 7,
+            "teacher_id": 289
+        },
+        {
+            "subject_id": 223,
+            "previous_teacher_id": 26,
+            "teacher_id": 290
+        },
+        {
+            "subject_id": 221,
+            "previous_teacher_id": 26,
+            "teacher_id": 291
+        },
+        {
+            "subject_id": 234,
+            "previous_teacher_id": 45,
+            "teacher_id": 292
+        },
+        {
+            "subject_id": 203,
+            "previous_teacher_id": 7,
+            "teacher_id": 293
+        },
+        {
+            "subject_id": 206,
+            "previous_teacher_id": 7,
+            "teacher_id": 294
+        },
+        {
+            "subject_id": 215,
+            "previous_teacher_id": 26,
+            "teacher_id": 295
+        },
+        {
+            "subject_id": 232,
+            "previous_teacher_id": 45,
+            "teacher_id": 296
+        },
+        {
+            "subject_id": 230,
+            "previous_teacher_id": 45,
+            "teacher_id": 297
+        },
+        {
+            "subject_id": 238,
+            "previous_teacher_id": 45,
+            "teacher_id": 298
+        },
+        {
+            "subject_id": 207,
+            "previous_teacher_id": 7,
+            "teacher_id": 299
+        },
+        {
+            "subject_id": 220,
+            "previous_teacher_id": 26,
+            "teacher_id": 300
+        },
+        {
+            "subject_id": 224,
+            "previous_teacher_id": 26,
+            "teacher_id": 301
+        },
+        {
+            "subject_id": 237,
+            "previous_teacher_id": 45,
+            "teacher_id": 302
+        },
+        {
+            "subject_id": 235,
+            "previous_teacher_id": 45,
+            "teacher_id": 303
+        },
+        {
+            "subject_id": 251,
+            "previous_teacher_id": 64,
+            "teacher_id": 304
+        },
+        {
+            "subject_id": 255,
+            "previous_teacher_id": 64,
+            "teacher_id": 305
+        },
+        {
+            "subject_id": 247,
+            "previous_teacher_id": 64,
+            "teacher_id": 286
+        },
+        {
+            "subject_id": 264,
+            "previous_teacher_id": 83,
+            "teacher_id": 287
+        },
+        {
+            "subject_id": 268,
+            "previous_teacher_id": 83,
+            "teacher_id": 288
+        },
+        {
+            "subject_id": 241,
+            "previous_teacher_id": 45,
+            "teacher_id": 289
+        },
+        {
+            "subject_id": 249,
+            "previous_teacher_id": 64,
+            "teacher_id": 290
+        },
+        {
+            "subject_id": 240,
+            "previous_teacher_id": 45,
+            "teacher_id": 291
+        },
+        {
+            "subject_id": 252,
+            "previous_teacher_id": 64,
+            "teacher_id": 292
+        },
+        {
+            "subject_id": 269,
+            "previous_teacher_id": 83,
+            "teacher_id": 293
+        },
+        {
+            "subject_id": 272,
+            "previous_teacher_id": 83,
+            "teacher_id": 294
+        },
+        {
+            "subject_id": 289,
+            "previous_teacher_id": 102,
+            "teacher_id": 295
+        },
+        {
+            "subject_id": 254,
+            "previous_teacher_id": 64,
+            "teacher_id": 296
+        },
+        {
+            "subject_id": 257,
+            "previous_teacher_id": 64,
+            "teacher_id": 297
+        },
+        {
+            "subject_id": 271,
+            "previous_teacher_id": 83,
+            "teacher_id": 298
+        },
+        {
+            "subject_id": 274,
+            "previous_teacher_id": 83,
+            "teacher_id": 299
+        },
+        {
+            "subject_id": 281,
+            "previous_teacher_id": 102,
+            "teacher_id": 300
+        },
+        {
+            "subject_id": 285,
+            "previous_teacher_id": 102,
+            "teacher_id": 301
+        },
+        {
+            "subject_id": 258,
+            "previous_teacher_id": 64,
+            "teacher_id": 303
+        },
+        {
+            "subject_id": 283,
+            "previous_teacher_id": 102,
+            "teacher_id": 305
+        },
+        {
+            "subject_id": 298,
+            "previous_teacher_id": 121,
+            "teacher_id": 289
+        }
+    ]
+}

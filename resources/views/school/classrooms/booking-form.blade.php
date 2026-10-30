@@ -2,7 +2,7 @@
 @section('title', $booking->exists ? 'Edit classroom booking' : 'Assign classroom')
 
 @section('content')
-<div class="page-heading"><div><div class="eyebrow">Conflict-safe scheduling</div><h1>{{ $booking->exists ? 'Edit classroom booking' : 'Assign a classroom' }}</h1><p>The room, teacher, and class group are checked for overlapping times before anything is saved.</p></div><a class="btn btn-outline-secondary" href="{{ $booking->classroom_id ? route('classrooms.show', $booking->classroom_id) : route('classrooms.index') }}">Cancel</a></div>
+<div class="page-heading"><div><div class="eyebrow">Conflict-safe scheduling</div><h1>{{ $booking->exists ? 'Edit classroom booking' : 'Assign a classroom' }}</h1><p>Reserve the room for its student cohort. Subject teachers and lesson times come from the shared timetable. An optional supervisor is a separate session commitment.</p></div><a class="btn btn-outline-secondary" href="{{ $booking->classroom_id ? route('classrooms.show', $booking->classroom_id) : route('classrooms.index') }}">Cancel</a></div>
 
 <form class="panel entity-form booking-form" method="post" action="{{ $booking->exists ? route('classroom-bookings.update', $booking) : route('classroom-bookings.store') }}" data-booking-form>
     @csrf @if($booking->exists) @method('PUT') @endif
@@ -39,8 +39,8 @@
             @error('classroom_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
         <div>
-            <label class="form-label" for="teacher_id">Teacher</label>
-            <select class="form-select @error('teacher_id') is-invalid @enderror" id="teacher_id" name="teacher_id" data-booking-teacher><option value="">Use class teacher</option>@foreach($teachers as $teacher)<option value="{{ $teacher->id }}" @selected((string) old('teacher_id', $booking->teacher_id) === (string) $teacher->id)>{{ $teacher->name }}{{ $teacher->program ? ' · '.$teacher->program : '' }}</option>@endforeach</select>
+            <label class="form-label" for="teacher_id">Session supervisor (optional)</label>
+            <select class="form-select @error('teacher_id') is-invalid @enderror" id="teacher_id" name="teacher_id" data-booking-teacher><option value="">No supervisor - teachers come from lessons</option>@foreach($teachers as $teacher)<option value="{{ $teacher->id }}" @selected((string) old('teacher_id', $booking->teacher_id) === (string) $teacher->id)>{{ $teacher->name }}{{ $teacher->program ? ' · '.$teacher->program : '' }}</option>@endforeach</select>
             @error('teacher_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
         <div>
@@ -101,7 +101,7 @@
     group.addEventListener('change', () => {
         filterSessions();
         const selected = group.selectedOptions[0];
-        if (selected?.dataset.teacher && !teacher.value) teacher.value = selected.dataset.teacher;
+
     });
     session.addEventListener('change', () => {
         const selected = session.selectedOptions[0];

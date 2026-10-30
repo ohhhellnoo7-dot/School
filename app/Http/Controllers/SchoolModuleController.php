@@ -27,6 +27,7 @@ class SchoolModuleController extends Controller
 {
     public function index(Request $request, string $module)
     {
+        if ($module === 'teachers' && $request->user()->role === 'administrator') return app(TeacherManagementController::class)->index($request, app(\App\Services\TeacherManagementService::class));
         $meta = SchoolModules::get($module);
         $query = SchoolModules::query($module, $request->user());
         $subjectSummary = null;
@@ -229,6 +230,7 @@ class SchoolModuleController extends Controller
     {
         $meta = SchoolModules::get($module);
         $record = SchoolModules::query($module, $request->user())->findOrFail($id);
+        if ($module === 'teachers' && $request->user()->role === 'administrator') return app(TeacherManagementController::class)->show($record, app(\App\Services\TeacherManagementService::class));
 
         if ($module === 'classes') {
             return $this->classTimetable($request, $record);
@@ -242,7 +244,24 @@ class SchoolModuleController extends Controller
         abort_unless($teacher->role === 'teacher' && ($request->user()->role === 'administrator' || ($request->user()->role === 'teacher' && $request->user()->id === $teacher->id)), 403);
         $slots = Schedule::with('subject.schoolClass')->whereHas('subject', fn ($q) => $q->where('teacher_id', $teacher->id))->orderBy('starts_at')->get()->groupBy('day');
 
-        return view('school.teachers.timetable', compact('teacher', 'slots'));
+        $service = app(\App\Services\TeacherManagementService::class);
+        $teacherBreaks = $service->breaks($teacher);
+        $workload = $service->workload($teacher);
+        $lessons = $slots->flatten();
+        $request->validate(['grade' => 'nullable|string|max:255', 'class' => 'nullable|integer', 'subject' => 'nullable|integer', 'session' => 'nullable|in:Morning,Afternoon,Evening']);
+        $filterSubjects = $lessons->pluck('subject')->filter()->unique('id');
+        $filterClasses = $filterSubjects->pluck('schoolClass')->filter()->unique('id');
+        $lessons = $lessons->filter(fn ($s) => (! $request->filled('grade') || $s->subject?->schoolClass?->name === $request->input('grade')) && (! $request->filled('class') || $s->subject?->school_class_id === $request->integer('class')) && (! $request->filled('subject') || $s->subject_id === $request->integer('subject')) && (! $request->filled('session') || $s->subject?->schoolClass?->session === $request->input('session')));
+        $scheduleTeachers = $request->user()->role === 'administrator' ? User::where('role', 'teacher')->orderBy('name')->get() : collect([$teacher]);
+        $periods = $service->periods($teacher);
+        $breaks = $teacherBreaks;
+        return view('school.teachers.timetable', compact('teacher', 'slots', 'teacherBreaks', 'workload', 'service', 'lessons', 'periods', 'breaks', 'filterSubjects', 'filterClasses', 'scheduleTeachers'));
+    }
+
+    public function teacherLessonStatus(Request $request, User $teacher)
+    {
+        abort_unless($teacher->role === 'teacher' && ($request->user()->role === 'administrator' || ($request->user()->role === 'teacher' && $request->user()->id === $teacher->id)), 403);
+        return response()->json(app(\App\Services\TeacherManagementService::class)->availability($teacher))->header('Cache-Control', 'no-store');
     }
 
     public function classTimetable(Request $request, SchoolClass $schoolClass)
@@ -255,6 +274,7 @@ class SchoolModuleController extends Controller
         $meta = SchoolModules::get($module);
         $record = new $meta['model'];
         Gate::authorize('manage', [$record, $module]);
+        if ($module === 'teachers') return app(TeacherManagementController::class)->form();
 
         return view('school.modules.form', compact('module', 'meta', 'record') + ['options' => SchoolModules::options($request->user())]);
     }
@@ -264,6 +284,7 @@ class SchoolModuleController extends Controller
         $meta = SchoolModules::get($module);
         $record = SchoolModules::query($module, $request->user())->findOrFail($id);
         Gate::authorize('manage', [$record, $module]);
+        if ($module === 'teachers') return app(TeacherManagementController::class)->form($record);
         $this->authorizeTeacherGrade($request, $record);
 
         return view('school.modules.form', compact('module', 'meta', 'record') + ['options' => SchoolModules::options($request->user())]);
@@ -285,6 +306,12 @@ class SchoolModuleController extends Controller
             }
             if ($module === 'announcements') {
                 $record->created_by = auth()->id();
+            }
+            if ($record instanceof Subject || $record instanceof Schedule) {
+                DB::table('teacher_management_settings')->where('id', 1)->lockForUpdate()->firstOrFail();
+                $service = app(\App\Services\TeacherManagementService::class);
+                if ($record instanceof Subject) $service->validateSubject($record);
+                else $service->validateLesson(Subject::findOrFail($record->subject_id), $record);
             }
             $record->save();
             if ($record instanceof User) $record->ensureParentProfileNumber();
@@ -313,7 +340,15 @@ class SchoolModuleController extends Controller
         if ($module === 'users') {
             $record->role = $data['role'];
         }
-        $record->fill($data)->save();
+        if ($record instanceof Subject || $record instanceof Schedule) {
+            app(\App\Services\TeacherManagementService::class)->locked(function () use ($record, $data) {
+                $record->fill($data);
+                $service = app(\App\Services\TeacherManagementService::class);
+                if ($record instanceof Subject && $record->isDirty(['name', 'teacher_id', 'school_class_id'])) $service->validateSubject($record);
+                if ($record instanceof Schedule) $service->validateLesson(Subject::findOrFail($record->subject_id), $record);
+                $record->save();
+            });
+        } else $record->fill($data)->save();
         if ($record instanceof User) $record->ensureParentProfileNumber();
 
         return redirect()->route('modules.index', $module)->with('success', 'Record updated successfully.');

@@ -8,6 +8,7 @@
         <p>Monday to Friday · {{ $schoolClass->room ?: 'Room not assigned' }}</p>
     </div>
     <div class="timetable-actions no-print">
+        @if(auth()->user()->role === 'administrator')<a class="btn btn-outline-secondary" href="#class-weekly-calendar">Edit Schedule</a>@endif
         <button class="btn btn-outline-secondary" type="button" onclick="window.print()"><i class="bi bi-printer me-1"></i> Print timetable</button>
         @if(auth()->user()->role === 'administrator')
             @if($stats['total'] === 0)
@@ -16,9 +17,9 @@
                     <button class="btn btn-primary"><i class="bi bi-calendar2-plus me-1"></i> Generate timetable</button>
                 </form>
             @else
-                <form method="post" action="{{ route('classes.timetable.regenerate', $schoolClass) }}" data-confirm="Regenerate this class timetable? Its current timetable entries will be replaced after a complete new schedule is validated.">
+                <form method="post" action="{{ route('classes.timetable.regenerate', $schoolClass) }}">
                     @csrf
-                    <input type="hidden" name="confirm_regeneration" value="1">
+
                     <button class="btn btn-primary"><i class="bi bi-arrow-repeat me-1"></i> Regenerate timetable</button>
                 </form>
             @endif
@@ -60,10 +61,19 @@
     </div>
 </section>
 
+<form method="get" class="d-flex gap-3 mb-3 no-print"><label for="rotation-day" class="form-label">Day</label><select name="day" id="rotation-day" class="form-select w-auto"><option value="">All weekdays</option>@foreach(\App\Services\TeacherManagementService::DAYS as $day)<option @selected(request('day') === $day)>{{ $day }}</option>@endforeach</select><button class="btn btn-outline-secondary">Filter</button>@if(auth()->user()->role === 'administrator')<label for="rotation-teacher" class="form-label">Teacher</label><select id="rotation-teacher" class="form-select w-auto" onchange="if(this.value) window.location.assign(this.value)"><option value="">View a teacher schedule</option>@foreach($schoolClass->subjects->pluck('teacher')->filter()->unique('id') as $teacher)<option value="{{ route('teachers.schedule', $teacher) }}">{{ $teacher->name }}</option>@endforeach</select>@endif</form>
+@if(auth()->user()->role === 'administrator')
+<details class="panel p-4 mb-4 no-print"><summary>Scheduling Settings &middot; Curriculum and lesson duration</summary>
+<p class="mt-3">Enter your approved weekly hours. These are school-configured values, not official curriculum allocations. Saving settings preserves existing lessons.</p>
+<form method="post" action="{{ route('classes.timetable.settings', $schoolClass) }}">@csrf
+<div class="table-responsive"><table class="table"><thead><tr><th>Subject</th><th>Assigned teacher</th><th>Weekly hours</th><th>Lesson duration</th></tr></thead><tbody>
+@foreach($schoolClass->subjects as $subject)<tr><td>{{ $subject->name }}<input type="hidden" name="subjects[{{ $loop->index }}][id]" value="{{ $subject->id }}"></td><td>{{ $subject->teacher?->name ?: 'Select a qualified teacher during planning' }}</td><td><input class="form-control" aria-label="{{ $subject->name }} weekly hours" name="subjects[{{ $loop->index }}][weekly_hours]" type="number" min="0" max="20" value="{{ $subject->required_weekly_minutes === null ? '' : $subject->required_weekly_minutes / 60 }}" required></td><td><select class="form-select" aria-label="{{ $subject->name }} lesson duration" name="subjects[{{ $loop->index }}][lesson_minutes]"><option value="60" @selected($subject->lesson_minutes === 60)>1 hour</option><option value="120" @selected($subject->lesson_minutes === 120)>2 hours (1 hour for an odd remaining hour)</option></select></td></tr>@endforeach
+</tbody></table></div><label class="form-label" for="relaxation-hours">Scheduled student relaxation hours per week</label><input id="relaxation-hours" class="form-control w-auto" type="number" name="relaxation_hours" min="0" max="5" value="{{ $schoolClass->weekly_relaxation_minutes / 60 }}" required><label class="d-block my-3"><input type="checkbox" name="confirm" value="1" required> I confirm these school curriculum settings.</label><button class="btn btn-primary">Save Settings</button></form></details>
+@endif
 <div class="timetable-summary" aria-label="Weekly timetable totals">
-    <div><span>Total periods</span><strong>{{ $stats['total'] }} / 20</strong></div>
-    <div><span>Academic lessons</span><strong>{{ $stats['academic'] }} / 17</strong></div>
-    <div class="relax-stat"><span>Relaxation periods</span><strong>{{ $stats['relaxation'] }} / 3</strong></div>
+    <div><span>Total periods</span><strong>{{ $stats['total'] }}</strong></div>
+    <div><span>Academic lessons</span><strong>{{ $stats['academic_minutes'] / 60 }} hours</strong></div>
+    <div class="relax-stat"><span>Relaxation periods</span><strong>{{ $stats['relaxation_minutes'] / 60 }} / {{ $schoolClass->weekly_relaxation_minutes / 60 }} hours</strong></div>
 </div>
 
 @if($stats['total'] === 0)
@@ -73,53 +83,9 @@
     </div>
 @endif
 
-<section class="panel timetable-panel">
-    <div class="timetable-scroll">
-        <table class="weekly-timetable">
-            <thead>
-                <tr>
-                    <th scope="col" class="time-heading">Time</th>
-                    @foreach($days as $day)<th scope="col">{{ $day }}</th>@endforeach
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($periods as [$start, $end])
-                    <tr>
-                        <th scope="row" class="period-time"><strong>{{ $start }}</strong><span>{{ $end }}</span></th>
-                        @foreach($days as $day)
-                            @php
-                                $slot = $slots->get($day, collect())->first(fn ($entry) => substr($entry->starts_at, 0, 5) === $start);
-                                $isRelaxation = $slot?->entry_type === 'relaxation';
-                                $teacher = $slot?->teacher ?: $slot?->subject?->teacher;
-                            @endphp
-                            <td class="{{ $isRelaxation ? 'relaxation-cell' : '' }}">
-                                @if($slot)
-                                    <article class="timetable-entry {{ $isRelaxation ? 'relaxation-entry' : 'academic-entry' }}">
-                                        <div class="entry-time"><i class="bi bi-clock"></i> {{ substr($slot->starts_at, 0, 5) }}–{{ substr($slot->ends_at, 0, 5) }}</div>
-                                        @if($isRelaxation)
-                                            <span class="entry-kind">Wellbeing break</span>
-                                            <h2>{{ $slot->title_en ?: 'Relaxation Time' }}</h2>
-                                            <p class="khmer-label">{{ $slot->title_km ?: 'ម៉ោងសម្រាក' }}</p>
-                                        @else
-                                            <h2>{{ $slot->subject?->name ?: $slot->title_en ?: 'Academic lesson' }}</h2>
-                                            <p><i class="bi bi-person"></i> {{ $teacher?->name ?: 'Teacher not assigned' }}</p>
-                                        @endif
-                                        <p><i class="bi bi-geo-alt"></i> {{ $slot->room ?: $schoolClass->room ?: 'Room not assigned' }}</p>
-                                        @if(auth()->user()->role === 'administrator' && ! $isRelaxation && $slot->subject_id)
-                                            <a class="entry-edit no-print" href="{{ route('modules.edit', ['schedules', $slot->id]) }}">Edit lesson</a>
-                                        @endif
-                                    </article>
-                                @else
-                                    <span class="empty-period">Available</span>
-                                @endif
-                            </td>
-                        @endforeach
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-</section>
+<div id="class-weekly-calendar">@include('school.partials.lesson-calendar')</div>
+@if($cancelled->isNotEmpty())<details class="panel p-3 mt-4"><summary>Cancelled lesson history ({{ $cancelled->count() }})</summary>@foreach($cancelled as $lesson)<p>{{ $lesson->day }} {{ substr($lesson->starts_at, 0, 5) }}-{{ substr($lesson->ends_at, 0, 5) }} &middot; {{ $lesson->subject?->name ?: $lesson->title_en }} &middot; Cancelled {{ $lesson->cancelled_at->format('Y-m-d H:i') }}</p>@endforeach</details>@endif
+
 @endsection
 
 @push('scripts')

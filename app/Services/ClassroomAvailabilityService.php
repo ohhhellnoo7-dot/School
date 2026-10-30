@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Classroom;
 use App\Models\ClassroomBooking;
+use App\Models\Schedule;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
@@ -46,6 +47,7 @@ class ClassroomAvailabilityService
             : CarbonImmutable::parse($moment, $timezone);
         $minute = ($selected->hour * 60) + $selected->minute;
         $day = $selected->englishDayOfWeek;
+        $lessons = Schedule::with(['subject.teacher', 'teacher', 'schoolClass'])->where('day', $day)->get();
 
         $rooms = Classroom::query()
             ->with(['bookings' => fn ($query) => $query
@@ -56,7 +58,7 @@ class ClassroomAvailabilityService
             ->get();
 
         return $rooms
-            ->map(function (Classroom $classroom) use ($minute) {
+            ->map(function (Classroom $classroom) use ($minute, $lessons) {
                 $bookings = $classroom->bookings;
                 $current = $bookings->first(fn (ClassroomBooking $booking) => $booking->starts_minute <= $minute && $booking->ends_minute > $minute
                 );
@@ -69,7 +71,9 @@ class ClassroomAvailabilityService
                     default => self::STATUS_AVAILABLE,
                 };
 
-                return compact('classroom', 'status', 'current', 'next');
+                $activity = app(RoomLessonService::class)->activity($classroom, $lessons, $minute, $current);
+                if ($activity['currentLesson'] && $status !== self::STATUS_OUT_OF_SERVICE) $status = self::STATUS_BUSY;
+                return compact('classroom', 'status', 'current', 'next') + $activity;
             })
             ->filter(fn (array $entry) => $this->matchesFilters($entry, $filters))
             ->values();

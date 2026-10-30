@@ -12,12 +12,11 @@
     let requestController = null;
 
     const localDateParts = () => {
-        const now = new Date();
-        const pad = value => String(value).padStart(2, '0');
-        return {
-            date: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
-            time: `${pad(now.getHours())}:${pad(now.getMinutes())}`,
-        };
+        const parts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+        }).formatToParts(new Date()).map(part => [part.type, part.value]));
+        return {date: `${parts.year}-${parts.month}-${parts.day}`, time: `${parts.hour}:${parts.minute}`};
     };
 
     const useCurrentMoment = () => {
@@ -34,6 +33,7 @@
         new FormData(form).forEach((value, key) => {
             if (String(value).trim() !== '') query.set(key, value);
         });
+        if (followNow) query.set('live', '1');
         return query;
     };
 

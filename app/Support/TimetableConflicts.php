@@ -9,6 +9,7 @@ class TimetableConflicts
 {
     public static function exists(Subject $subject, string $day, string $start, string $end, string $room, ?int $ignore = null): bool
     {
+        if ($subject->teacher_id && app(\App\Services\TeacherManagementService::class)->breaks(\App\Models\User::findOrFail($subject->teacher_id))->contains(fn ($b) => $b->weekday === $day && \App\Services\TeacherManagementService::overlaps($start, $end, $b->start_time, $b->end_time))) return true;
         return Schedule::where('day', $day)->where('starts_at', '<', $end)->where('ends_at', '>', $start)
             ->when($ignore, fn ($q) => $q->where('id', '!=', $ignore))
             ->where(function ($q) use ($subject, $room) {

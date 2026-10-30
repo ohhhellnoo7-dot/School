@@ -23,10 +23,18 @@ class AutomaticTimetableGenerator
 
     private const MAX_SEARCH_STEPS = 300000;
 
+    private array $teacherRules = [];
+
     /** @return Collection<int, Schedule> */
     public function generate(?SchoolClass $schoolClass = null, bool $overwrite = false): Collection
     {
         return DB::transaction(function () use ($schoolClass, $overwrite) {
+            DB::table('teacher_management_settings')->where('id', 1)->lockForUpdate()->firstOrFail();
+            $service = app(TeacherManagementService::class);
+            $this->teacherRules = [];
+            foreach (\App\Models\User::whereIn('id', DB::table('teacher_profiles')->select('teacher_id'))->get() as $teacher) {
+                $this->teacherRules[$teacher->id] = ['periods' => $service->periods($teacher), 'breaks' => $service->breaks($teacher), 'limit' => $service->limit($teacher)];
+            }
             // Lock every potentially generated class in deterministic order. This
             // serializes two requests targeting different classes that share staff.
             $locked = SchoolClass::query()->orderBy('id')->lockForUpdate()->get();
@@ -96,6 +104,10 @@ class AutomaticTimetableGenerator
             $unassigned = $class->subjects->first(fn (Subject $subject) => ! $subject->teacher_id || ! $subject->teacher);
             if ($unassigned) {
                 $this->fail("Assign a teacher to {$unassigned->name} for {$label} before generating its timetable.");
+            }
+            foreach ($class->subjects as $subject) {
+                try { app(TeacherManagementService::class)->validateSubject($subject); }
+                catch (ValidationException $exception) { $this->fail($subject->name.' · '.$label.': '.$exception->getMessage()); }
             }
         }
     }
@@ -185,16 +197,26 @@ class AutomaticTimetableGenerator
             $days = self::DAYS;
             shuffle($days);
             $relaxation = [];
-            foreach (array_slice($days, 0, 3) as $day) {
+            foreach (self::DAYS as $day) foreach (self::SESSION_STARTS[$class->session] as $slot => $start) {
+                if ($class->subjects->every(fn ($s) => $this->teacherIsBusy([], $s->teacher_id, $day, $start, $this->addHour($start)))) {
+                    if (isset($relaxation[$day])) $this->fail("{$class->label}: more than one period on {$day} has no on-duty teacher. Adjust working hours or assignments.");
+                    $relaxation[$day] = $slot;
+                }
+            }
+            if (count($relaxation) > 3) $this->fail("{$class->label}: teacher breaks or unavailable periods leave too few academic periods. Review assignments.");
+            $days = array_values(array_diff($days, array_keys($relaxation)));
+            foreach (array_slice($days, 0, 3 - count($relaxation)) as $day) {
                 $relaxation[$day] = random_int(0, 3);
             }
 
             $classSubjects = $class->subjects->shuffle()->values();
+            $configured = $classSubjects->whereNotNull('required_weekly_minutes');
+            if ($configured->isNotEmpty() && ($configured->count() !== $classSubjects->count() || $configured->sum('required_weekly_minutes') !== 1020 || $configured->contains(fn ($s) => $s->required_weekly_minutes % 60 !== 0))) $this->fail("{$class->label}: this hourly generator requires approved whole-hour curriculum allocations totaling 17 hours.");
             $base = intdiv(17, $classSubjects->count());
             $extra = 17 % $classSubjects->count();
             foreach ($classSubjects as $index => $subject) {
                 $subjects[$class->id][$subject->id] = $subject;
-                $remaining[$class->id][$subject->id] = $base + ($index < $extra ? 1 : 0);
+                $remaining[$class->id][$subject->id] = $configured->isNotEmpty() ? intdiv($subject->required_weekly_minutes, 60) : $base + ($index < $extra ? 1 : 0);
             }
 
             foreach (self::DAYS as $day) {
@@ -293,6 +315,15 @@ class AutomaticTimetableGenerator
     /** @param array<int, array<string, array<int, array{0: string, 1: string}>>> $teacherBusy */
     private function teacherIsBusy(array $teacherBusy, int $teacherId, string $day, string $start, string $end): bool
     {
+        if (isset($this->teacherRules[$teacherId])) {
+            $rules = $this->teacherRules[$teacherId]; $periods = $rules['periods']->where('weekday', $day);
+            $available = $periods->contains(fn ($p) => ! $p->unavailable && TeacherManagementService::minute($p->start_time) <= TeacherManagementService::minute($start) && TeacherManagementService::minute($p->end_time) >= TeacherManagementService::minute($end));
+            if (! $available || $periods->contains(fn ($p) => $p->unavailable && TeacherManagementService::overlaps($start, $end, $p->start_time, $p->end_time))) return true;
+            if ($rules['breaks']->contains(fn ($b) => $b->weekday === $day && TeacherManagementService::overlaps($start, $end, $b->start_time, $b->end_time))) return true;
+            $used = 0;
+            foreach ($teacherBusy[$teacherId] ?? [] as $intervals) foreach ($intervals as [$from, $to]) $used += TeacherManagementService::duration($from, $to);
+            if ($used + TeacherManagementService::duration($start, $end) > $rules['limit']) return true;
+        }
         foreach ($teacherBusy[$teacherId][$day] ?? [] as [$busyStart, $busyEnd]) {
             if ($this->overlaps($start, $end, $busyStart, $busyEnd)) {
                 return true;

@@ -56,6 +56,10 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
     Route::resource('/students', StudentController::class);
     Route::get('/teachers/{teacher}/schedule', [SchoolModuleController::class, 'teacherTimetable'])->name('teachers.schedule');
     Route::get('/classes/{schoolClass}/timetable', [TimetableController::class, 'show'])->name('classes.timetable');
+    Route::get('/teachers/{teacher}/schedule/status', [SchoolModuleController::class, 'teacherLessonStatus'])->name('teachers.schedule.status');
+    Route::post('/classes/{schoolClass}/timetable/confirm', [TimetableController::class, 'confirm'])->middleware('role:administrator')->name('classes.timetable.confirm');
+    Route::post('/classes/{schoolClass}/timetable/settings', [TimetableController::class, 'settings'])->middleware('role:administrator')->name('classes.timetable.settings');
+    Route::post('/lessons/{schedule}/cancel', [TimetableController::class, 'cancelLesson'])->middleware('role:administrator')->name('lessons.cancel');
     Route::post('/classes/{schoolClass}/timetable/generate', [TimetableController::class, 'generate'])->middleware('role:administrator')->name('classes.timetable.generate');
     Route::post('/classes/{schoolClass}/timetable/regenerate', [TimetableController::class, 'regenerate'])->middleware('role:administrator')->name('classes.timetable.regenerate');
 
@@ -69,6 +73,7 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
     Route::get('/school/classrooms/data', [ClassroomController::class, 'data'])->name('classrooms.data');
     Route::get('/school/classrooms/create', [ClassroomController::class, 'create'])->middleware('role:administrator')->name('classrooms.create');
     Route::get('/school/classrooms/{classroom}', [ClassroomController::class, 'show'])->name('classrooms.show');
+    Route::get('/school/classrooms/{classroom}/lesson-status', [ClassroomController::class, 'lessonStatus'])->name('classrooms.lesson-status');
 
     Route::middleware('role:administrator')->group(function () {
         Route::post('/class-groups', [ClassGroupController::class, 'store'])->name('class-groups.store');
@@ -89,6 +94,28 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
         Route::delete('/classroom-bookings/{classroomBooking}', [ClassroomController::class, 'bookingDestroy'])->name('classroom-bookings.destroy');
     });
 
+    Route::prefix('teacher-management')->name('teacher-management.')->middleware('role:administrator')->group(function () {
+        Route::post('/schedules/confirm', [\App\Http\Controllers\TeacherManagementController::class, 'confirmSchedule'])->name('schedules.confirm');
+        Route::post('/{teacher}/schedules/preview', [\App\Http\Controllers\TeacherManagementController::class, 'previewSchedule'])->name('schedules.preview');
+        Route::get('/reports', [\App\Http\Controllers\TeacherManagementController::class, 'reports'])->name('reports');
+        Route::post('/settings', [\App\Http\Controllers\TeacherManagementController::class, 'settings'])->name('settings');
+        Route::post('/curriculum/{subject}', [\App\Http\Controllers\TeacherManagementController::class, 'curriculum'])->name('curriculum');
+        Route::post('/samples/preview', [\App\Http\Controllers\TeacherManagementController::class, 'samplePreview'])->name('samples.preview');
+        Route::post('/samples/confirm', [\App\Http\Controllers\TeacherManagementController::class, 'sampleConfirm'])->name('samples.confirm');
+        Route::post('/breaks/preview', [\App\Http\Controllers\TeacherManagementController::class, 'previewBreaks'])->name('breaks.preview-all');
+        Route::post('/breaks/confirm', [\App\Http\Controllers\TeacherManagementController::class, 'confirmBreaks'])->name('breaks.confirm');
+        Route::post('/assignments/preview', [\App\Http\Controllers\TeacherManagementController::class, 'assignments'])->name('assignments.preview');
+        Route::post('/assignments/confirm', [\App\Http\Controllers\TeacherManagementController::class, 'confirmAssignments'])->name('assignments.confirm');
+        Route::get('/create', [\App\Http\Controllers\TeacherManagementController::class, 'form'])->name('create');
+        Route::post('/', [\App\Http\Controllers\TeacherManagementController::class, 'save'])->name('store');
+        Route::get('/{teacher}', [\App\Http\Controllers\TeacherManagementController::class, 'show'])->name('show');
+        Route::get('/{teacher}/edit', [\App\Http\Controllers\TeacherManagementController::class, 'form'])->name('edit');
+        Route::put('/{teacher}', [\App\Http\Controllers\TeacherManagementController::class, 'save'])->name('update');
+        Route::post('/{teacher}/assign', [\App\Http\Controllers\TeacherManagementController::class, 'assign'])->name('assign');
+        Route::get('/{teacher}/available-times', [\App\Http\Controllers\TeacherManagementController::class, 'availableTimes'])->name('available-times');
+        Route::post('/{teacher}/breaks/preview', [\App\Http\Controllers\TeacherManagementController::class, 'previewBreaks'])->name('breaks.preview');
+        Route::put('/{teacher}/breaks/{break}', [\App\Http\Controllers\TeacherManagementController::class, 'editBreak'])->name('breaks.edit');
+    });
     Route::get('/school/{module}', [SchoolModuleController::class, 'index'])->name('modules.index');
     Route::get('/school/{module}/create', [SchoolModuleController::class, 'create'])->name('modules.create');
     Route::post('/school/{module}', [SchoolModuleController::class, 'store'])->name('modules.store');

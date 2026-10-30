@@ -100,3 +100,7 @@
     .timetable-entry, .empty-period { min-height: 100px; }
     .timetable-entry { padding: 7px; }
 }
+/* Rotation blocks retain the current theme's surface and readable text. */
+.academic-entry{border-inline-start:4px solid hsl(var(--subject-hue,220) 58% 54%)}
+.rotation-changed{outline:2px solid var(--info,#4b80d6);outline-offset:2px}
+.weekly-timetable td[rowspan="2"] .timetable-entry{min-height:220px}

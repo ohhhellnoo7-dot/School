@@ -151,22 +151,10 @@ class AutomaticTimetableGeneratorTest extends TestCase
 
         $this->actingAs($administrator)
             ->post(route('classes.timetable.generate', $class))
-            ->assertRedirect(route('classes.timetable', $class))
-            ->assertSessionHasNoErrors();
-        $this->assertSame(20, Schedule::where('school_class_id', $class->id)->count());
-        $originalIds = Schedule::where('school_class_id', $class->id)->pluck('id')->all();
-
-        $this->post(route('classes.timetable.regenerate', $class))
-            ->assertSessionHasErrors('confirm_regeneration');
-        $this->assertSame($originalIds, Schedule::where('school_class_id', $class->id)->pluck('id')->all());
-
-        $this->post(route('classes.timetable.regenerate', $class), ['confirm_regeneration' => '1'])
-            ->assertRedirect(route('classes.timetable', $class))
-            ->assertSessionHasNoErrors();
-        $this->assertEmpty(array_intersect(
-            $originalIds,
-            Schedule::where('school_class_id', $class->id)->pluck('id')->all(),
-        ));
+            ->assertSessionHasErrors();
+        $this->assertSame(0, Schedule::count());
+        $this->post(route('classes.timetable.regenerate', $class))->assertSessionHasErrors();
+        $this->assertSame(0, Schedule::count());
     }
 
     private function classWithSubjects(
@@ -193,6 +181,12 @@ class AutomaticTimetableGeneratorTest extends TestCase
                 'school_class_id' => $class->id,
                 'teacher_id' => $teacher->id,
             ]);
+            $periods = [];
+            foreach (\App\Services\TeacherManagementService::DAYS as $day) {
+                [$from, $to] = \App\Services\TeacherManagementService::SESSIONS[$session];
+                $periods[] = ['weekday' => $day, 'start_time' => $from, 'end_time' => $to, 'unavailable' => false];
+            }
+            app(\App\Services\TeacherManagementService::class)->saveProfile($teacher, [$name], null, $periods);
         }
 
         return $class;

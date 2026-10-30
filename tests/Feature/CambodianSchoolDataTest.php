@@ -115,6 +115,7 @@ class CambodianSchoolDataTest extends TestCase
         $two = SchoolClass::create(['name' => 'Grade 8', 'section' => 'A']);
         $first = Subject::create(['name' => 'Math', 'code' => 'MATH-A', 'school_class_id' => $one->id, 'teacher_id' => $teacher->id]);
         $second = Subject::create(['name' => 'Math', 'code' => 'MATH-B', 'school_class_id' => $two->id, 'teacher_id' => $teacher->id]);
+        app(\App\Services\TeacherManagementService::class)->saveProfile($teacher, ['Math'], null, [['weekday' => 'Monday', 'start_time' => '07:00', 'end_time' => '11:00', 'unavailable' => false]]);
         Schedule::create(['subject_id' => $first->id, 'day' => 'Monday', 'starts_at' => '07:00', 'ends_at' => '08:00', 'room' => 'Room A']);
         $this->actingAs($admin);
         $data = ['subject_id' => $second->id, 'day' => 'Monday', 'starts_at' => '07:30', 'ends_at' => '08:30', 'room' => 'Room B'];

@@ -22,55 +22,16 @@ class TeacherTimetable
         $class = $subject->schoolClass;
         foreach (SchoolClass::SESSION_HOURS as $session => [$from, $to]) {
             if ($class->session && $class->session !== $session) continue;
-            if (($subject->teacher?->program === 'Chinese' || $class->program === 'Chinese') && $session !== 'Evening') continue;
-            if (($class->program === 'Khmer' || ($subject->teacher && ($subject->teacher->program ?: 'Khmer') === 'Khmer')) && $session === 'Evening') continue;
+            if (($class->program === 'Chinese' || (! $class->program && $subject->teacher?->program === 'Chinese')) && $session !== 'Evening') continue;
+            if (($class->program === 'Khmer' || (! $class->program && $subject->teacher && ($subject->teacher->program ?: 'Khmer') === 'Khmer')) && $session === 'Evening') continue;
             if (substr($start, 0, 5) >= $from && substr($end, 0, 5) <= $to && $start < $end) return true;
         }
         return false;
     }
 
-    /** Rebuild the weekly timetable atomically; callers back up existing lessons first. */
+    /** Preserve existing records and generate only from configured class subjects. */
     public static function generate(): int
     {
-        return DB::transaction(function () {
-            Schedule::query()->delete();
-            $teachers = User::where('role', 'teacher')->orderBy('id')->get();
-            foreach ($teachers as $index => $teacher) {
-                $program = $teacher->program ?: 'Khmer';
-                $names = match ($program) {
-                    'Chinese' => ['Chinese language', 'Chinese reading', 'Chinese writing'],
-                    'English' => ['English language', 'English reading', 'English writing'],
-                    default => array_slice(array_merge($pool = ['Mathematics', 'Khmer', 'Physics', 'Biology', 'History', 'Geography'], $pool), $index % 6, 3),
-                };
-                foreach (self::DAYS as $dayIndex => $day) {
-                    $previous = null;
-                    foreach (self::BLOCKS as $blockIndex => [$session, $start, $end]) {
-                        if ($program === 'Chinese' && $session !== 'Evening') continue;
-                        if ($program === 'Khmer' && $session === 'Evening') continue;
-                        $classes = SchoolClass::where('program', $program)
-                            ->where(fn ($q) => $q->whereNull('session')->orWhere('session', $session))
-                            ->orderBy('name')->orderBy('section')->orderBy('id')->get();
-                        $placed = false;
-                        for ($attempt = 0; $attempt < $classes->count(); $attempt++) {
-                            $class = $classes[($index + $dayIndex + $blockIndex + $attempt) % $classes->count()];
-                            if ($class->id === $previous) continue;
-                            $candidate = new Subject(['teacher_id' => $teacher->id, 'school_class_id' => $class->id]);
-                            $room = $class->room ?: $program.'-'.$class->id;
-                            if (TimetableConflicts::exists($candidate, $day, $start, $end, $room)) continue;
-                            $name = $names[($dayIndex + $blockIndex) % 3];
-                            $subject = Subject::firstOrCreate(['code' => 'TT-'.$teacher->id.'-'.$class->id.'-'.array_search($name, $names)], [
-                                'name' => $name, 'school_class_id' => $class->id, 'teacher_id' => $teacher->id,
-                            ]);
-                            Schedule::create(['subject_id' => $subject->id, 'day' => $day, 'starts_at' => $start, 'ends_at' => $end, 'room' => $room]);
-                            $previous = $class->id;
-                            $placed = true;
-                            break;
-                        }
-                        if (! $placed) throw new \RuntimeException("Not enough available {$program} classes for {$teacher->name}, {$day} {$start}. Changes rolled back.");
-                    }
-                }
-            }
-            return Schedule::count();
-        });
+        return app(\App\Services\AutomaticTimetableGenerator::class)->generate()->count();
     }
 }

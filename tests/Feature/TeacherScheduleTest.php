@@ -15,30 +15,21 @@ class TeacherScheduleTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_generation_rotates_classes_and_respects_hours_without_conflicts(): void
+    public function test_generation_does_not_create_unqualified_subjects_or_delete_existing_data(): void
     {
-        foreach (['Khmer', 'English', 'Chinese'] as $program) {
-            $teacher = User::factory()->create(['program' => $program]);
-            $teacher->role = 'teacher';
-            $teacher->save();
-            foreach (range(7, 9) as $grade) {
-                SchoolClass::create(['name' => 'Grade '.$grade, 'section' => 'A', 'program' => $program, 'room' => $program.$grade]);
-            }
+        $teacher = User::factory()->create(['program' => 'Khmer']);
+        $teacher->forceFill(['role' => 'teacher'])->save();
+        $class = SchoolClass::create(['name' => 'Grade 7', 'section' => 'A', 'program' => 'Khmer', 'session' => 'Morning', 'room' => 'R1']);
+        try {
+            TeacherTimetable::generate();
+            $this->fail('Missing curriculum should be reported.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->assertArrayHasKey('timetable', $e->errors());
         }
-        $this->assertSame(50, TeacherTimetable::generate());
-        $this->assertSame(50, TeacherTimetable::generate());
-        foreach (Schedule::with('subject.teacher', 'subject.schoolClass')->get() as $slot) {
-            $this->assertTrue(TeacherTimetable::withinHours($slot->subject, $slot->starts_at, $slot->ends_at));
-            $this->assertFalse(TimetableConflicts::exists($slot->subject, $slot->day, $slot->starts_at, $slot->ends_at, $slot->room, $slot->id));
-        }
-        foreach (User::where('role', 'teacher')->get() as $teacher) {
-            $slots = Schedule::whereHas('subject', fn ($q) => $q->where('teacher_id', $teacher->id))->with('subject')->get();
-            $this->assertCount(3, $slots->pluck('subject.name')->unique());
-            foreach ($slots->groupBy('day') as $daily) {
-                $this->assertCount(match ($teacher->program) { 'Chinese' => 1, 'Khmer' => 4, default => 5 }, $daily);
-                $this->assertGreaterThanOrEqual($teacher->program === 'Chinese' ? 1 : 2, $daily->pluck('subject.school_class_id')->unique()->count());
-            }
-        }
+        $this->assertSame(0, Schedule::count());
+        $this->assertSame(0, Subject::count());
+        $this->assertNotNull($teacher->fresh());
+        $this->assertNotNull($class->fresh());
     }
 
     public function test_schedule_access_is_limited_to_admin_and_the_teacher(): void

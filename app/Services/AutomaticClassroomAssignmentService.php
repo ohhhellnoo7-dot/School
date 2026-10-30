@@ -24,6 +24,7 @@ class AutomaticClassroomAssignmentService
     public function assignAll(?array $classGroupIds = null): Collection
     {
         return DB::transaction(function () use ($classGroupIds) {
+            DB::table('teacher_management_settings')->where('id', 1)->lockForUpdate()->firstOrFail();
             $groupsQuery = ClassGroup::query()
                 ->active()
                 ->with(['sessions' => fn ($query) => $query->orderBy('starts_at')])

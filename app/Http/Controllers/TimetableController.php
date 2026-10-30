@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Schedule;
 use App\Models\SchoolClass;
 use App\Models\Student;
-use App\Services\AutomaticTimetableGenerator;
 use App\Support\SchoolModules;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use App\Services\{RotationTimetableGenerator, TeacherManagementService};
+use App\Models\Subject;
+use Illuminate\Support\Str;
 
 class TimetableController extends Controller
 {
@@ -19,6 +21,7 @@ class TimetableController extends Controller
     public function show(Request $request, SchoolClass $schoolClass): View
     {
         $this->authorizeView($request, $schoolClass);
+        $request->validate(['day' => 'nullable|in:Monday,Tuesday,Wednesday,Thursday,Friday']);
 
         $entries = Schedule::with(['subject.teacher', 'teacher'])
             ->where('school_class_id', $schoolClass->id)
@@ -50,35 +53,75 @@ class TimetableController extends Controller
             'total' => $entries->count(),
             'academic' => $entries->where('entry_type', 'academic')->count(),
             'relaxation' => $entries->where('entry_type', 'relaxation')->count(),
+            'academic_minutes' => $entries->where('entry_type', 'academic')->sum(fn ($s) => TeacherManagementService::duration($s->starts_at, $s->ends_at)),
+            'relaxation_minutes' => $entries->where('entry_type', 'relaxation')->sum(fn ($s) => TeacherManagementService::duration($s->starts_at, $s->ends_at)),
         ];
+        $schoolClass->load('subjects.teacher');
 
         return view('school.classes.timetable', [
             'schoolClass' => $schoolClass,
             'availableClasses' => $availableClasses,
-            'days' => self::DAYS,
+            'days' => $request->filled('day') ? [$request->input('day')] : self::DAYS,
             'periods' => $periods,
             'slots' => $slots,
             'stats' => $stats,
+            'cancelled' => Schedule::withoutGlobalScope('active')->where('school_class_id', $schoolClass->id)->whereNotNull('cancelled_at')->orderByDesc('cancelled_at')->get(),
         ]);
     }
 
-    public function generate(Request $request, SchoolClass $schoolClass, AutomaticTimetableGenerator $generator): RedirectResponse
+    public function generate(Request $request, SchoolClass $schoolClass, RotationTimetableGenerator $generator): View
     {
         $this->authorizeAdministrator($request);
-        $created = $generator->generate($schoolClass);
-
-        return redirect()->route('classes.timetable', $schoolClass)
-            ->with('success', "Timetable generated successfully with {$created->count()} weekly entries.");
+        return $this->preview($request, $schoolClass, $generator, false);
     }
 
-    public function regenerate(Request $request, SchoolClass $schoolClass, AutomaticTimetableGenerator $generator): RedirectResponse
+    public function regenerate(Request $request, SchoolClass $schoolClass, RotationTimetableGenerator $generator): View
     {
         $this->authorizeAdministrator($request);
-        $request->validate(['confirm_regeneration' => ['required', 'accepted']]);
-        $created = $generator->generate($schoolClass, true);
+        return $this->preview($request, $schoolClass, $generator, true);
+    }
 
-        return redirect()->route('classes.timetable', $schoolClass)
-            ->with('success', "Timetable regenerated successfully with {$created->count()} weekly entries.");
+    private function preview(Request $request, SchoolClass $class, RotationTimetableGenerator $generator, bool $replace): View
+    {
+        $plan = $generator->preview($class, $replace);
+        $token = (string) Str::uuid();
+        $request->session()->put('rotation_preview', ['plan' => $plan, 'token' => $token, 'created' => time()]);
+        $old = Schedule::with('subject.teacher')->where('school_class_id', $class->id)->get();
+        $proposed = collect($plan['rows'])->map(fn ($row) => (new Schedule($row))->setRelation('subject', $row['subject_id'] ? Subject::with('teacher')->find($row['subject_id']) : null)->setRelation('teacher', $row['teacher_id'] ? \App\Models\User::find($row['teacher_id']) : null));
+        return view('school.classes.rotation-preview', compact('class', 'plan', 'token', 'old', 'proposed'));
+    }
+
+    public function confirm(Request $request, SchoolClass $schoolClass, RotationTimetableGenerator $generator): RedirectResponse
+    {
+        $this->authorizeAdministrator($request);
+        $request->validate(['token' => 'required|string', 'confirm' => 'required|accepted', 'replace' => 'sometimes|accepted']);
+        $preview = $request->session()->get('rotation_preview');
+        if (! $preview || $preview['plan']['class_id'] !== $schoolClass->id || time() - $preview['created'] > 1800 || ! hash_equals($preview['token'], $request->input('token'))) app(TeacherManagementService::class)->fail('The preview expired or changed. Generate another preview.');
+        if ($preview['plan']['replace'] && ! $request->boolean('replace')) app(TeacherManagementService::class)->fail('Confirm replacement of the existing timetable.');
+        $generator->confirm($preview['plan']);
+        $request->session()->forget('rotation_preview');
+        return redirect()->route('classes.timetable', $schoolClass)->with('success', 'Confirmed timetable saved. Teacher schedules use these same lessons.');
+    }
+
+    public function settings(Request $request, SchoolClass $schoolClass, TeacherManagementService $service): RedirectResponse
+    {
+        $this->authorizeAdministrator($request);
+        $data = $request->validate(['subjects' => 'required|array', 'subjects.*.id' => 'required|integer', 'subjects.*.weekly_hours' => 'required|integer|min:0|max:20', 'subjects.*.lesson_minutes' => 'required|in:60,120', 'relaxation_hours' => 'required|integer|min:0|max:5', 'confirm' => 'required|accepted']);
+        $service->locked(function () use ($data, $schoolClass, $service) {
+            if (collect($data['subjects'])->sum('weekly_hours') + $data['relaxation_hours'] > 20) $service->fail('Curriculum and relaxation exceed the 20 available session hours.');
+            if (collect($data['subjects'])->pluck('id')->unique()->count() !== count($data['subjects']) || count($data['subjects']) !== $schoolClass->subjects()->count()) $service->fail('Configure every class subject exactly once.');
+            foreach ($data['subjects'] as $row) $schoolClass->subjects()->findOrFail($row['id'])->update(['required_weekly_minutes' => $row['weekly_hours'] * 60, 'lesson_minutes' => $row['lesson_minutes']]);
+            $schoolClass->update(['weekly_relaxation_minutes' => $data['relaxation_hours'] * 60]);
+        });
+        return back()->with('success', 'Scheduling settings saved. Existing lessons were preserved. Generate a preview to apply the curriculum.');
+    }
+
+    public function cancelLesson(Request $request, Schedule $schedule, TeacherManagementService $service): RedirectResponse
+    {
+        $this->authorizeAdministrator($request);
+        $request->validate(['confirm' => 'required|accepted']);
+        $service->locked(fn () => Schedule::whereKey($schedule->id)->update(['cancelled_at' => now()]));
+        return back()->with('success', 'Lesson cancelled. Its history remains available; room reservations remain in place.');
     }
 
     private function authorizeView(Request $request, SchoolClass $schoolClass): void

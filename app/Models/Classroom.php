@@ -24,6 +24,11 @@ class Classroom extends Model
         return $this->hasMany(ClassroomBooking::class);
     }
 
+    public function lessons(): HasMany
+    {
+        return $this->hasMany(Schedule::class);
+    }
+
     public function scopeOperational(Builder $query): Builder
     {
         return $query->where('status', self::STATUS_ACTIVE);

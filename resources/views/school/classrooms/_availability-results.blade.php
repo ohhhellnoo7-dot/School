@@ -20,7 +20,6 @@
             $next = data_get($entry, 'next');
             $displayBooking = $current ?: $next;
             $group = $displayBooking?->classGroup;
-            $teacher = $displayBooking?->teacher ?: $group?->teacher;
             $session = $displayBooking?->classSession;
             $icons = ['available' => 'check-circle-fill', 'busy' => 'record-circle-fill', 'upcoming' => 'clock-fill', 'out_of_service' => 'tools'];
         @endphp
@@ -37,13 +36,13 @@
                     <div class="booking-context"><small>{{ $current ? 'Current class' : 'Next scheduled class' }}</small><strong>{{ $group?->display_name ?? 'Scheduled class' }}</strong><span class="program-badge program-{{ strtolower($group?->program ?? '') }}">{{ $group?->program ?? 'Program not set' }}</span></div>
                     <dl class="room-facts">
                         <div><dt><i class="bi bi-clock" aria-hidden="true"></i> Session</dt><dd>{{ $session?->session ?? '—' }} · {{ substr((string) $displayBooking->starts_at, 0, 5) }}–{{ substr((string) $displayBooking->ends_at, 0, 5) }}</dd></div>
-                        <div><dt><i class="bi bi-person" aria-hidden="true"></i> Teacher</dt><dd>{{ $teacher?->name ?? 'Unassigned' }}</dd></div>
                     </dl>
                 @else
                     <div class="room-empty-message"><strong>Ready to use</strong><span>No class occupies this room at the selected time.</span></div>
                 @endif
             </div>
-            <div class="room-card-footer"><span><i class="bi bi-people" aria-hidden="true"></i> Capacity {{ $room->capacity }}</span><a href="{{ route('classrooms.show', ['classroom' => $room, 'date' => $moment->format('Y-m-d'), 'time' => $moment->format('H:i')]) }}">View details <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
+            <div class="px-3">@include('school.classrooms._lesson-status', ['snapshot' => $entry])</div>
+            <div class="room-card-footer"><span><i class="bi bi-people" aria-hidden="true"></i> Capacity {{ $room->capacity }}</span><a href="{{ route('classrooms.show', ['classroom' => $room, 'date' => $moment->format('Y-m-d'), 'time' => $moment->format('H:i'), 'live' => request()->boolean('live') || (!request()->filled('date') && !request()->filled('time')) ? 1 : 0]) }}">View details <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
         </article>
     @empty
         <div class="empty-state classroom-empty"><i class="bi bi-door-closed" aria-hidden="true"></i>No physical classrooms match these filters.</div>

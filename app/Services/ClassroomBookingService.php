@@ -26,6 +26,7 @@ class ClassroomBookingService
     {
         try {
             return DB::transaction(function () use ($attributes) {
+                DB::table('teacher_management_settings')->where('id', 1)->lockForUpdate()->firstOrFail();
                 $data = $this->validatedPayload($attributes);
 
                 return $this->persist(new ClassroomBooking, $data);
@@ -40,6 +41,7 @@ class ClassroomBookingService
     {
         try {
             return DB::transaction(function () use ($booking, $attributes) {
+                DB::table('teacher_management_settings')->where('id', 1)->lockForUpdate()->firstOrFail();
                 $snapshot = ClassroomBooking::query()->findOrFail($booking->getKey());
                 $data = $this->validatedPayload(array_replace(
                     $snapshot->only(self::SNAPSHOT_FIELDS),
@@ -56,6 +58,7 @@ class ClassroomBookingService
     public function cancel(ClassroomBooking $booking): void
     {
         DB::transaction(function () use ($booking) {
+            DB::table('teacher_management_settings')->where('id', 1)->lockForUpdate()->firstOrFail();
             $snapshot = ClassroomBooking::query()->findOrFail($booking->getKey());
             $this->lockResources($snapshot->only(self::SNAPSHOT_FIELDS), $snapshot);
             $locked = $this->lockBooking($snapshot);

@@ -46,6 +46,9 @@ class SchoolTest extends TestCase
         $this->actingAs($admin)->post('/school/classes', ['name' => 'English 1', 'section' => 'A', 'program' => 'English', 'session' => 'Evening', 'room' => 'E1', 'capacity' => 30])->assertSessionHasNoErrors();
         $class = SchoolClass::where('name', 'English 1')->firstOrFail();
         $subject = Subject::create(['name' => 'History', 'code' => 'HIS-E1', 'school_class_id' => $class->id]);
+        $qualified = $this->account('teacher'); $qualified->program = 'English'; $qualified->save();
+        app(\App\Services\TeacherManagementService::class)->saveProfile($qualified, ['History'], null, [['weekday' => 'Monday', 'start_time' => '16:30', 'end_time' => '18:30', 'unavailable' => false]]);
+        $subject->update(['teacher_id' => $qualified->id]);
         $lesson = ['subject_id' => $subject->id, 'day' => 'Monday', 'starts_at' => '16:30', 'ends_at' => '17:30', 'room' => 'E1'];
         $this->post('/school/schedules', $lesson)->assertSessionHasNoErrors();
         $this->post('/school/schedules', array_merge($lesson, ['day' => 'Tuesday', 'starts_at' => '08:00', 'ends_at' => '09:00']))->assertSessionHasErrors('starts_at');
@@ -220,12 +223,13 @@ class SchoolTest extends TestCase
         $student = $this->student();
         $teacher = $this->account('teacher');
         $subject = Subject::create(['name' => 'Mathematics', 'code' => 'TEST-MATH', 'school_class_id' => $student->school_class_id, 'teacher_id' => $teacher->id]);
+        app(\App\Services\TeacherManagementService::class)->saveProfile($teacher, ['Mathematics'], null, [['weekday' => 'Monday', 'start_time' => '07:00', 'end_time' => '11:00', 'unavailable' => false]]);
         $exam = Examination::create(['name' => 'Test exam', 'subject_id' => $subject->id, 'date' => today(), 'total_marks' => 100]);
         $cases = [
             'parents' => ['name' => 'New Guardian', 'email' => 'newguardian@example.com', 'password' => 'SecurePass123'],
             'teachers' => ['name' => 'New Teacher', 'email' => 'newteacher@example.com', 'password' => 'SecurePass123'],
             'classes' => ['name' => 'New Class', 'section' => 'B', 'capacity' => 35, 'room' => 'Room 2', 'teacher_id' => $teacher->id],
-            'subjects' => ['name' => 'New Subject', 'code' => 'NEW-SUB', 'school_class_id' => $student->school_class_id, 'teacher_id' => $teacher->id],
+            'subjects' => ['name' => 'New Subject', 'code' => 'NEW-SUB', 'school_class_id' => $student->school_class_id, 'teacher_id' => null],
             'attendance' => ['student_id' => $student->id, 'date' => today()->toDateString(), 'status' => 'present'],
             'examinations' => ['name' => 'New Exam', 'subject_id' => $subject->id, 'date' => today()->toDateString(), 'total_marks' => 100],
             'grades' => ['student_id' => $student->id, 'examination_id' => $exam->id, 'marks' => 95],

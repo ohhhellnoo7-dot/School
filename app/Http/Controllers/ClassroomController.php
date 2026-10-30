@@ -56,6 +56,7 @@ class ClassroomController extends Controller
             'time' => ['nullable', 'date_format:H:i'],
         ]);
         $moment = $this->moment($filters);
+        if ($request->boolean('live')) $moment = CarbonImmutable::now(config('app.timezone'));
         $snapshot = collect($availabilityService->forMoment($moment, ['search' => $classroom->room_number]))
             ->first(fn ($entry) => (int) data_get($entry, 'classroom.id') === (int) $classroom->id);
 
@@ -70,6 +71,7 @@ class ClassroomController extends Controller
             ])];
         });
 
+        $lessons = app(\App\Services\RoomLessonService::class)->lessons($classroom, \App\Models\Schedule::with(['schoolClass', 'subject.teacher'])->get());
         return view('school.classrooms.show', [
             'classroom' => $classroom,
             'snapshot' => $snapshot,
@@ -77,7 +79,17 @@ class ClassroomController extends Controller
             'weekly' => $weekly,
             'days' => self::DAYS,
             'sessions' => self::SESSIONS,
+            'lessons' => $lessons,
         ]);
+    }
+
+    public function lessonStatus(Request $request, Classroom $classroom, ClassroomAvailabilityService $availabilityService): JsonResponse
+    {
+        abort_unless($this->visibleClassrooms($request->user())->whereKey($classroom)->exists(), 403);
+        $filters = $request->validate(['date' => 'nullable|date_format:Y-m-d', 'time' => 'nullable|date_format:H:i']);
+        $moment = $request->boolean('live') ? CarbonImmutable::now(config('app.timezone')) : $this->moment($filters);
+        $snapshot = $availabilityService->forMoment($moment)->first(fn ($row) => $row['classroom']->id === $classroom->id);
+        return response()->json(['html' => view('school.classrooms._lesson-status', compact('snapshot'))->render(), 'label' => $moment->format('D, M j, Y H:i')])->header('Cache-Control', 'no-store');
     }
 
     public function create(): View
@@ -110,7 +122,7 @@ class ClassroomController extends Controller
 
     public function destroy(Classroom $classroom): RedirectResponse
     {
-        if ($classroom->bookings()->exists()) {
+        if ($classroom->bookings()->exists() || $classroom->lessons()->withoutGlobalScope('active')->exists()) {
             throw ValidationException::withMessages([
                 'classroom' => 'This classroom has timetable bookings. Reassign or remove them before deleting the room.',
             ]);
@@ -193,6 +205,7 @@ class ClassroomController extends Controller
         ]);
         $moment = $this->moment($filters);
         $allowedRoomIds = $this->visibleClassrooms($request->user())->pluck('id')->map(fn ($id) => (int) $id);
+        if ($request->boolean('live')) $moment = CarbonImmutable::now(config('app.timezone'));
         $serviceFilters = $filters;
         $serviceFilters['search'] = $filters['room'] ?? null;
         $availability = collect($availabilityService->forMoment($moment, $serviceFilters))
@@ -258,7 +271,7 @@ class ClassroomController extends Controller
             ]);
         }
 
-        $attributes['teacher_id'] ??= ClassGroup::find($attributes['class_group_id'])?->teacher_id;
+        $attributes['teacher_id'] ??= null;
 
         return $attributes;
     }
@@ -287,9 +300,13 @@ class ClassroomController extends Controller
 
         return match ($user->role) {
             'administrator' => $query,
-            'teacher' => $query->whereHas('bookings', function ($bookings) use ($user) {
-                $bookings->where('teacher_id', $user->id)
-                    ->orWhereHas('classGroup', fn ($group) => $group->where('teacher_id', $user->id));
+            'teacher' => $query->where(function ($rooms) use ($user) {
+                $rooms->whereHas('lessons.subject', fn ($q) => $q->where('teacher_id', $user->id))
+                    ->orWhereHas('bookings', function ($bookings) use ($user) {
+                        $bookings->where('teacher_id', $user->id)
+                            ->orWhereHas('classGroup', fn ($group) => $group->where('teacher_id', $user->id))
+                            ->orWhereHas('classGroup.schoolClasses.subjects', fn ($q) => $q->where('teacher_id', $user->id)->whereHas('schedules'));
+                    });
             }),
             'student' => $query->whereHas('bookings.classGroup.students', fn ($students) => $students->where('students.user_id', $user->id)),
             'parent' => $query->whereHas('bookings.classGroup.students', fn ($students) => $students->where('students.parent_id', $user->id)),
