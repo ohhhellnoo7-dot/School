@@ -42,7 +42,7 @@ class TeacherManagementService
     public function qualifications(User $teacher) { return DB::table('teacher_qualifications')->where('teacher_id', $teacher->id)->orderBy('slot')->pluck('subject_name'); }
     public function periods(User $teacher) { return DB::table('teacher_working_periods')->where('teacher_id', $teacher->id)->get(); }
     public function breaks(User $teacher) { return DB::table('teacher_breaks')->join('teacher_break_plans', 'teacher_break_plans.id', '=', 'teacher_breaks.teacher_break_plan_id')->where('teacher_id', $teacher->id)->select('teacher_breaks.*')->orderBy('teacher_breaks.id')->get(); }
-    public function lessons(User $teacher) { return Schedule::with('subject.schoolClass')->where('entry_type', 'academic')->where('teacher_id', $teacher->id)->get(); }
+    public function lessons(User $teacher) { return Schedule::with('subject.schoolClass', 'schoolClass')->where('entry_type', 'academic')->where('teacher_id', $teacher->id)->get(); }
 
     public function eligibleForBreaks(User $teacher): bool
     {
@@ -55,8 +55,10 @@ class TeacherManagementService
     {
         $lessons = $this->lessons($teacher);
         $minutes = $lessons->sum(fn ($s) => self::duration($s->starts_at, $s->ends_at));
-        $subjects = Subject::with('schoolClass')->where('teacher_id', $teacher->id)->get();
-        $classes = $subjects->pluck('schoolClass')->filter()->unique(fn ($c) => $c->class_group_id ?: $c->program.'|'.$c->name.'|'.$c->section);
+        $subjects = Subject::with('schoolClass')->where('teacher_id', $teacher->id)->get()
+            ->concat($lessons->pluck('subject')->filter())->unique('id');
+        $classes = $subjects->pluck('schoolClass')->concat($lessons->pluck('schoolClass'))->filter()
+            ->unique(fn ($c) => $c->class_group_id ?: $c->program.'|'.$c->name.'|'.$c->section);
         $limit = $this->limit($teacher);
         return ['subjects' => $subjects->pluck('name')->unique()->values(), 'classes' => $classes,
             'weekly' => $minutes / 60, 'limit' => $limit / 60, 'breaks' => $this->breaks($teacher)->sum('duration_minutes') / 60,

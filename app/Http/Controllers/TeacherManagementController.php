@@ -73,10 +73,13 @@ class TeacherManagementController extends Controller
     {
         if ($teacher) abort_unless($teacher->role === 'teacher', 404);
         $data = $request->validate(['name' => 'required|string|max:255', 'gender' => 'required|in:male,female,other', 'phone' => 'nullable|string|max:50', 'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($teacher?->id)],
-            'program' => 'required|in:Khmer,English,Chinese', 'subject1' => ['required', Rule::exists('subjects', 'name')], 'subject2' => ['nullable', 'different:subject1', Rule::exists('subjects', 'name')],
+            'program' => 'required|in:Khmer,English,Chinese', 'subject1' => ['required', Rule::exists('subjects', 'name')], 'subject2' => ['required_if:program,Khmer', 'nullable', 'different:subject1', Rule::exists('subjects', 'name')],
             'additional_subjects' => 'nullable|array', 'additional_subjects.*' => ['required','distinct',Rule::exists('subjects','name')],
             'weekly_hours' => 'nullable|numeric|min:1|max:40', 'working_sessions' => 'required|in:Morning,Afternoon,Both,Evening,EnglishFullTime,EnglishPartTime,Custom', 'part_time_start' => 'nullable|date_format:H:i', 'status' => 'required|in:active,inactive',
             'periods' => 'nullable|array|max:25', 'periods.*.weekday' => ['required', Rule::in(TeacherManagementService::DAYS)], 'periods.*.start_time' => 'required|date_format:H:i', 'periods.*.end_time' => 'required|date_format:H:i|after:periods.*.start_time', 'periods.*.unavailable' => 'required|boolean']);
+        if ($data['program'] === 'Khmer' && ! empty($data['additional_subjects'])) {
+            throw ValidationException::withMessages(['additional_subjects' => 'Khmer teachers must have exactly two distinct subjects.']);
+        }
         $teacher = $service->locked(function () use ($teacher, $data, $service) {
             $t = $teacher ?: new User;
             $t->fill(collect($data)->only(['name', 'gender', 'phone', 'email', 'program', 'status'])->all());

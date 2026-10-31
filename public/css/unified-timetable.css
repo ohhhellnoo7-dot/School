@@ -9,3 +9,84 @@
 
 /* Keep filter dropdowns outside the rounded panel and above subsequent panels. */
 :root:root:root .panel.timetable-filters{position:relative;z-index:20;overflow:visible}
+
+/* The scheduling workspace follows the active portal palette in every theme. */
+.timetable-workspace{--schedule-accent:var(--action);--schedule-tint:color-mix(in srgb,var(--action) 8%,var(--surface));display:grid;grid-template-columns:minmax(0,1fr);min-width:0;max-width:100%;gap:20px}
+:root:root:root:root .timetable-workspace .unified-timetable-hero{isolation:isolate;overflow:hidden;position:relative;margin:0!important;padding:24px!important;border:1px solid var(--border);border-radius:var(--card-radius);background-color:var(--hero-veil);background-image:url('../images/timetable-hero.png');background-position:right 48%;background-repeat:no-repeat;background-size:cover;min-height:160px;box-shadow:var(--shadow-card)}
+.timetable-hero-copy{position:relative;z-index:1;max-width:78%}
+.timetable-hero-heading{display:flex;align-items:center;gap:18px}
+.timetable-hero-icon{width:66px;height:70px;display:grid;place-items:center;flex-shrink:0;border:1px solid color-mix(in srgb,var(--action) 22%,var(--border));border-radius:18px;background:var(--surface);color:var(--action);font-size:36px;box-shadow:0 6px 16px var(--shadow-color);transform:rotate(-4deg)}
+.timetable-eyebrow{display:block;margin-bottom:5px;color:var(--action);font-size:10px;font-weight:800;letter-spacing:.15em;text-transform:uppercase}
+:root:root:root:root .timetable-workspace .unified-timetable-hero h1{font-size:clamp(23px,2.2vw,29px);margin:0;line-height:1.22;letter-spacing:-.04em}
+:root:root:root:root .timetable-workspace .unified-timetable-hero p{margin:16px 0 20px;color:var(--muted);font-size:13px;display:flex;gap:12px;flex-wrap:wrap}
+.timetable-timezone{display:inline-flex;align-items:center;gap:6px;font-size:11px}
+.timetable-school-art{position:absolute;right:-28px;bottom:-5px;width:43%;height:100%;color:var(--primary);z-index:-1;opacity:.85;mask-image:linear-gradient(to right,transparent,#000 22%)}
+.timetable-hero-actions .btn{display:inline-flex;align-items:center;gap:7px;min-height:40px;font-size:11px;box-shadow:0 3px 8px var(--shadow-color)}
+:root:root:root:root .timetable-workspace .timetable-hero-actions .btn-outline-secondary{background:color-mix(in srgb,var(--surface) 92%,transparent)}
+.timetable-view-tabs{margin:0!important;gap:10px!important;position:relative;z-index:35}
+:root:root:root:root .timetable-workspace .timetable-view-tabs .btn{min-height:48px;min-width:150px;display:inline-flex;justify-content:center;align-items:center;gap:10px;padding:11px 22px;border-radius:14px;font-weight:700;text-transform:none;letter-spacing:0;box-shadow:0 3px 10px var(--shadow-color)}
+.timetable-view-tabs .btn>.bi{font-size:21px}
+:root:root:root:root .timetable-workspace .timetable-filters{margin:0!important;padding:22px!important;border-radius:20px;background:var(--surface);box-shadow:0 6px 18px var(--shadow-color);gap:18px!important}
+:root:root:root:root .timetable-workspace .timetable-filters label{flex:1 1 150px;min-width:0;gap:9px;font-size:11px;font-weight:700;color:var(--ink)}
+.timetable-workspace .timetable-filters label:has([name="class"]),.timetable-workspace .timetable-filters label:has([name="teacher"]){flex-grow:1.6}
+.timetable-workspace .timetable-filters .form-control,.timetable-workspace .timetable-filters .form-select{min-height:44px;font-size:12px;font-weight:400}
+.timetable-workspace .timetable-filters>button{min-height:44px;min-width:155px}
+.timetable-calendar{min-width:0;border:1px solid var(--border);border-radius:22px;background:var(--surface);box-shadow:0 7px 24px var(--shadow-color);overflow:hidden}
+.timetable-calendar-toolbar{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:20px 22px;background:linear-gradient(100deg,var(--surface),var(--schedule-tint));border-bottom:1px solid var(--border)}
+.timetable-calendar-toolbar>div:first-child{display:flex;align-items:center;gap:12px}
+.timetable-calendar-icon{color:var(--action);font-size:28px}
+:root:root:root:root .timetable-calendar-toolbar h2{font-size:17px;letter-spacing:-.025em;margin:0 0 5px}
+.timetable-calendar-toolbar p{margin:0;color:var(--muted);font-size:11px;display:flex;gap:8px}
+.timetable-calendar-tools{display:flex;align-items:center;gap:18px}
+.timetable-refresh-note{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:10px}
+.timetable-refresh-note>span{width:6px;height:6px;border-radius:50%;background:var(--success)}
+:root:root:root:root .timetable-workspace .timetable-scroll{border:0;border-radius:0;box-shadow:none;margin:0;padding:0 12px 12px}
+.timetable-workspace .shared-timetable caption{position:absolute;width:1px;height:1px;padding:0!important;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+:root:root:root:root .timetable-workspace .shared-timetable{min-width:980px;border-spacing:0 8px;table-layout:fixed}
+:root:root:root:root .timetable-workspace .shared-timetable thead th{font-size:12px;background:var(--schedule-tint);padding:14px 12px;border:1px solid var(--border);border-left:0;vertical-align:middle}
+.timetable-workspace .shared-timetable thead .bi{font-size:15px;margin-right:6px;color:var(--action)}
+.timetable-workspace .shared-timetable thead th:first-child{border-radius:12px 0 0 12px;border-left:1px solid var(--border)}
+.timetable-workspace .shared-timetable thead th:last-child{border-radius:0 12px 12px 0}
+:root:root:root:root .timetable-workspace .shared-timetable td{padding:4px 6px;border:0;vertical-align:top}
+:root:root:root:root .timetable-workspace .shared-timetable tbody th[scope="row"]{padding:16px 8px;border:0;border-radius:12px;background:var(--schedule-tint);font-size:12px;line-height:1.8;font-variant-numeric:tabular-nums;text-align:center}
+:root:root:root:root .timetable-workspace .shared-timetable .timetable-session-heading th{padding:12px 16px;border:0;border-radius:12px;background:color-mix(in srgb,var(--success) 9%,var(--surface));color:var(--ink)}
+.timetable-workspace .timetable-session-title{padding:4px 10px;border-radius:20px;background:color-mix(in srgb,var(--success) 14%,var(--surface))}
+:root:root:root:root .timetable-workspace .shared-lesson{--lesson-color:var(--primary);padding:16px 13px;background:color-mix(in srgb,var(--lesson-color) 7%,var(--surface));border:1px solid color-mix(in srgb,var(--lesson-color) 24%,var(--border));border-inline-start:4px solid var(--lesson-color);border-radius:14px;box-shadow:0 3px 7px var(--shadow-color);transition:box-shadow .18s ease,transform .18s ease}
+.timetable-workspace .shared-timetable .day-tuesday .shared-lesson{--lesson-color:var(--violet)}
+.timetable-workspace .shared-timetable .day-wednesday .shared-lesson{--lesson-color:var(--warning)}
+.timetable-workspace .shared-timetable .day-thursday .shared-lesson{--lesson-color:var(--success)}
+.timetable-workspace .shared-timetable .day-friday .shared-lesson{--lesson-color:var(--accent)}
+/* One card per hourly cell for every program. Longer lessons continue in
+   the next hourly row without creating duplicate schedule records. */
+@media screen {
+    :root:root:root:root .timetable-workspace .timetable-hour-row{height:260px}
+    :root:root:root:root .timetable-workspace .timetable-hour-cell{position:relative}
+    :root:root:root:root .timetable-workspace .timetable-hour-cell>.shared-lesson,
+    :root:root:root:root .timetable-workspace .timetable-hour-cell>.timetable-conflict-card{position:absolute;inset:4px 6px;height:auto;overflow:auto;scrollbar-width:thin}
+    :root:root:root:root .timetable-workspace .shared-timetable tbody th[scope="row"]{vertical-align:top;padding-top:18px}
+
+}
+@media(hover:hover){.timetable-workspace .shared-lesson:hover{box-shadow:0 7px 15px var(--shadow-color)}}
+:root:root:root:root .timetable-workspace .shared-lesson-title{display:flex;gap:9px;align-items:flex-start;font-size:13px;line-height:1.45;margin-bottom:12px}
+.timetable-workspace .shared-lesson-title>.bi{font-size:20px;line-height:1.15;color:var(--lesson-color)}
+:root:root:root:root .timetable-workspace .shared-lesson p{display:flex;align-items:baseline;gap:8px;font-size:11px;line-height:1.55;margin:8px 0;color:var(--muted)}
+.timetable-workspace .shared-lesson p>.bi{color:var(--lesson-color);flex-shrink:0}
+.timetable-workspace .shared-lesson .shared-lesson-room{font-weight:700}
+.timetable-workspace .shared-lesson>a{display:inline-flex;font-size:10px;font-weight:700;margin-top:7px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface)}
+/* Keep the familiar weekday columns and hourly rows with stronger contrast. */
+:root:root:root:root .timetable-workspace .shared-timetable{border-spacing:0;min-width:1100px}
+:root:root:root:root .timetable-workspace .shared-timetable td{border-right:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--surface)}
+:root:root:root:root .timetable-workspace .shared-timetable tbody th[scope="row"]{border-radius:0;border-bottom:1px solid var(--border);font-size:14px;color:var(--ink);background:var(--soft)}
+:root:root:root:root .timetable-workspace .shared-timetable thead th{font-size:14px}
+:root:root:root:root .timetable-workspace .shared-lesson{padding:12px;border-radius:8px;background:var(--surface);border:1px solid var(--border);border-inline-start:4px solid var(--action);box-shadow:none}
+:root:root:root:root .timetable-workspace .shared-lesson-title{font-size:15px;line-height:1.35;gap:7px;margin-bottom:8px}
+.timetable-workspace .shared-lesson-title>.bi{font-size:17px}
+:root:root:root:root .timetable-workspace .shared-lesson p{font-size:13px;line-height:1.4;margin:5px 0;color:var(--ink);gap:7px}
+:root:root:root:root .timetable-workspace .shared-lesson>a{font-size:12px;margin-top:6px;padding:3px 8px}
+.timetable-workspace .timetable-hour-cell>.text-secondary{display:block;font-size:13px;line-height:1.5;padding:10px;color:var(--muted)!important}
+.lesson-continuation{display:inline-block;padding:2px 7px;margin-bottom:5px;border-radius:5px;background:var(--soft);color:var(--action);font-size:11px;font-weight:700}
+@media(min-width:1600px){.timetable-hero-copy{max-width:72%}.timetable-school-art{width:40%}.timetable-hero-actions .btn{font-size:12px}}
+@media(max-width:1100px){.timetable-hero-copy{max-width:100%}.timetable-school-art{opacity:.18;width:55%}.timetable-calendar-toolbar{flex-wrap:wrap}.timetable-refresh-note{display:none}}
+@media(max-width:600px){:root:root:root:root .timetable-workspace .unified-timetable-hero{padding:20px!important}.timetable-hero-icon{width:46px;height:50px;font-size:26px;border-radius:12px}.timetable-hero-heading{gap:12px}.timetable-school-art{display:none}.timetable-hero-actions .btn{flex:1 1 auto}.timetable-view-tabs{gap:6px!important}:root:root:root:root .timetable-workspace .timetable-view-tabs .btn{min-width:0;min-height:44px;padding:9px 12px;font-size:11px}.timetable-calendar-toolbar{padding:16px}.timetable-calendar-toolbar h2{font-size:15px}.timetable-calendar-tools{width:100%}.timetable-calendar-tools .btn{width:100%}}
+@media(prefers-reduced-motion:reduce){.timetable-workspace .shared-lesson{transition:none;transform:none!important}}
+@media print{.timetable-workspace .unified-timetable-hero,.timetable-view-tabs,.timetable-calendar-tools{display:none!important}.timetable-calendar{box-shadow:none;overflow:visible;border:0}.timetable-calendar-toolbar{padding:8px}.timetable-workspace .timetable-scroll{overflow:visible;padding:0!important}:root:root:root:root .timetable-workspace .shared-timetable{min-width:0;font-size:9px}:root:root:root:root .timetable-workspace .shared-lesson{padding:6px;box-shadow:none;break-inside:avoid}:root:root:root:root .timetable-workspace .shared-lesson p{font-size:8px;gap:3px}:root:root:root:root .timetable-workspace .shared-lesson-title{font-size:9px}.timetable-workspace .shared-lesson>a{display:none}}

@@ -1,4 +1,75 @@
 (() => {
+    // Hover opens information disclosures, including content added by live refresh.
+    // Native selects, action buttons, tabs and confirmation dialogs keep their behavior.
+    const hoverMenus = new WeakMap();
+    const openInformation = new Set();
+    let keyboardNavigation = false;
+    const hoverTarget = target => target instanceof Element
+        ? target.closest('details:not([data-theme-menu]):not([data-language-menu]), .dropdown') : null;
+    const closeInformation = menu => {
+        if (menu.matches('details')) {
+            if (openInformation.has(menu)) menu.open = false;
+        } else {
+            const trigger = menu.querySelector('[data-bs-toggle="dropdown"]');
+            if (trigger && window.bootstrap) bootstrap.Dropdown.getOrCreateInstance(trigger).hide();
+        }
+        openInformation.delete(menu);
+    };
+    document.addEventListener('pointerover', event => {
+        if (event.pointerType !== 'mouse' || !matchMedia('(hover: hover)').matches) return;
+        keyboardNavigation = false;
+        const menu = hoverTarget(event.target);
+        for (const other of openInformation) {
+            if (other !== menu && !other.contains(event.target)) {
+                clearTimeout(hoverMenus.get(other));
+                closeInformation(other);
+            }
+        }
+        if (!menu || (event.relatedTarget instanceof Node && menu.contains(event.relatedTarget))) return;
+        clearTimeout(hoverMenus.get(menu));
+        if (menu.matches('details')) {
+            if (!menu.open) {
+                menu.open = true;
+                openInformation.add(menu);
+            }
+        } else {
+            const trigger = menu.querySelector('[data-bs-toggle="dropdown"]');
+            if (trigger && window.bootstrap) {
+                bootstrap.Dropdown.getOrCreateInstance(trigger).show();
+                openInformation.add(menu);
+            }
+        }
+    });
+    document.addEventListener('pointerout', event => {
+        if (event.pointerType !== 'mouse') return;
+        const menu = hoverTarget(event.target);
+        if (!menu || (event.relatedTarget instanceof Node && menu.contains(event.relatedTarget))) return;
+        clearTimeout(hoverMenus.get(menu));
+        hoverMenus.set(menu, setTimeout(() => {
+            if (!keyboardNavigation || !menu.contains(document.activeElement)) closeInformation(menu);
+        }, 220));
+    });
+    document.addEventListener('focusout', event => {
+        const menu = hoverTarget(event.target);
+        if (!menu) return;
+        setTimeout(() => {
+            if (!menu.matches(':hover') && !menu.contains(document.activeElement)) closeInformation(menu);
+        }, 0);
+    });
+    document.addEventListener('keydown', event => {
+        keyboardNavigation = true;
+        for (const menu of openInformation) clearTimeout(hoverMenus.get(menu));
+        if (event.key !== 'Escape') return;
+        for (const menu of openInformation) {
+            closeInformation(menu);
+            if (menu.contains(document.activeElement)) menu.querySelector('summary, [data-bs-toggle="dropdown"]')?.focus();
+        }
+    });
+    document.addEventListener('click', event => {
+        for (const menu of openInformation) {
+            if (!menu.isConnected || !menu.contains(event.target)) closeInformation(menu);
+        }
+    });
     // A single confirmation dialog retains the original form, method, CSRF and submitter.
     const confirmation = document.getElementById('scholar-confirm-dialog');
     const approved = new WeakSet();

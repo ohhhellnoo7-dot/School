@@ -100,6 +100,8 @@
 :root:root:root:root :where(h1,h2,h3,h4,.stat-value) {font-family:Manrope,'DM Sans',system-ui,sans-serif;color:var(--ink);letter-spacing:-.035em}
 :root:root:root:root :where(a) {color:var(--action);text-decoration:none;text-underline-offset:4px}
 :root:root:root:root :where(a:hover) {text-decoration:none}
+:root:root:root:root :where(.program-selector a) {color:var(--muted)}
+:root:root:root:root :where(.program-selector a.active,.program-selector a:hover) {color:var(--on-action);background:var(--action)}
 :root:root:root:root :where(:focus-visible) {outline:3px solid var(--primary);outline-offset:3px}
 ::selection {background:color-mix(in srgb,var(--primary) 25%,var(--surface));color:var(--ink)}
 :root:root:root:root :where(.sidebar) {width:var(--shell-width)!important;height:100dvh;position:fixed;inset:0 auto 0 0;display:flex;flex-direction:column;background:var(--sidebar-bg);background-color:var(--sidebar-bg)!important;color:var(--sidebar-text);border-right:1px solid color-mix(in srgb,var(--sidebar-text) 15%,var(--sidebar-bg));padding:0;overflow:hidden;z-index:1040;transition:width .2s ease}
@@ -228,6 +230,16 @@
 :root:root:root:root :where(.dropdown-item) {font-size:13px;border-radius:8px;padding:9px 12px;color:var(--ink)}
 :root:root:root:root :where(.dropdown-item:hover,.dropdown-item:focus) {color:var(--action);background:var(--soft)}
 :root:root:root:root :where(.dropdown-item.active,.dropdown-item:active) {background:var(--action);color:var(--on-action)}
+.hover-select-menu{position:fixed;z-index:1100;overflow-y:auto;overscroll-behavior:contain;padding:6px;border:1px solid var(--border);border-radius:14px;background:var(--surface-raised,var(--surface));color:var(--ink);box-shadow:var(--shadow-float);scrollbar-width:thin}
+.hover-select-menu[hidden]{display:none}
+.hover-select-option{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;padding:10px 12px;border:0;border-radius:8px;background:transparent;color:var(--ink);text-align:start;font:inherit;font-size:13px;line-height:1.5;white-space:normal}
+.hover-select-option .bi{visibility:hidden;flex-shrink:0}
+.hover-select-option[aria-selected=true]{background:var(--soft);color:var(--action);font-weight:700}
+.hover-select-option[aria-selected=true] .bi{visibility:visible}
+.hover-select-option:hover:not(:disabled){background:var(--action);color:var(--on-action)}
+.hover-select-option:disabled{color:var(--muted);opacity:.6;cursor:not-allowed}
+.hover-select-group{padding:10px 12px 5px;color:var(--muted);font-size:11px;font-weight:700}
+@media print{.hover-select-menu{display:none!important}}
 :root:root:root:root :where(.modal-header,.modal-footer) {border-color:var(--border);padding:18px 24px}
 :root:root:root:root :where(.modal-body) {padding:24px}
 :root:root:root:root :where(.alert) {border-radius:12px;padding:14px 18px;font-size:13px;border:1px solid var(--border)}

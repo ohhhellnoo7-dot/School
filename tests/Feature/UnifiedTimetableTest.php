@@ -209,7 +209,11 @@ class UnifiedTimetableTest extends TestCase
         $this->assertSame(1, Schedule::count());
         $lesson = Schedule::firstOrFail();
         $marker = 'data-lesson-id="'.$lesson->id.'"';
-        foreach ([['view' => 'teachers', 'teacher' => $f['primary']->id], ['view' => 'students', 'class' => $f['classes'][0]->id], ['view' => 'classrooms', 'classroom' => $f['rooms'][0]->id]] as $query) $this->get(route('timetables.index', $query))->assertOk()->assertSee($marker, false)->assertSee('rowspan="2"', false)->assertSee('Primary Mathematics Teacher');
+        foreach ([['view' => 'teachers', 'teacher' => $f['primary']->id], ['view' => 'students', 'class' => $f['classes'][0]->id], ['view' => 'classrooms', 'classroom' => $f['rooms'][0]->id]] as $query) {
+            $page = $this->get(route('timetables.index', $query))->assertOk()->assertSee($marker, false)
+                ->assertDontSee('rowspan="2"', false)->assertSee('Continued lesson')->assertSee('Primary Mathematics Teacher');
+            $this->assertSame(2, substr_count($page->getContent(), $marker));
+        }
         $update = array_replace($this->data($f), ['teacher_id' => $f['substitute']->id, 'version' => app(LessonManagementService::class)->version($lesson), 'confirm' => 1]);
         $this->put(route('timetables.lessons.update', $lesson), $update)->assertSessionHasNoErrors()->assertRedirect();
         $this->assertSame(1, Schedule::count());
@@ -326,7 +330,7 @@ class UnifiedTimetableTest extends TestCase
         $this->assertSame(0, Schedule::count());
         $this->post(route('timetables.generate.confirm'), ['token' => $token, 'confirm' => 1])->assertRedirect()->assertSessionHasNoErrors();
         $this->post(route('timetables.generate.confirm'), ['token' => $token, 'confirm' => 1])->assertSessionHasErrors();
-        $page = $this->get(route('timetables.index'))->assertOk()->assertSee('unified-timetable-hero')->assertSee('TEACHERS')->assertSee('STUDENTS')->assertSee('CLASSROOMS');
+        $page = $this->get(route('timetables.index'))->assertOk()->assertSee('unified-timetable-hero')->assertSee('Teachers')->assertSee('Students')->assertSee('Classrooms');
         foreach (['Light', 'Night', 'Relax', 'Cute'] as $theme) $page->assertSee($theme);
     }
 

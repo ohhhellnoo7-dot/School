@@ -8,7 +8,7 @@
         if (animate && root.dataset.theme !== theme && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
             clearTimeout(timer);
             root.classList.add('theme-changing');
-            timer = setTimeout(() => root.classList.remove('theme-changing'), 200);
+            timer = setTimeout(() => root.classList.remove('theme-changing'), 750);
         }
         root.dataset.theme = theme;
         root.dataset.bsTheme = ['night', 'luxury', 'galaxy'].includes(theme) ? 'dark' : 'light';
@@ -32,8 +32,10 @@
         document.querySelectorAll('[data-theme-menu], [data-language-menu]').forEach(menu => {
             const summary = menu.querySelector('summary');
             let closeTimer;
+            let keyboardNavigation = false;
             menu.addEventListener('pointerenter', event => {
                 if (event.pointerType !== 'mouse' || !window.matchMedia('(hover: hover)').matches) return;
+                keyboardNavigation = false;
                 clearTimeout(closeTimer);
                 document.querySelectorAll('[data-theme-menu], [data-language-menu]').forEach(other => { if (other !== menu) other.open = false; });
                 menu.open = true;
@@ -41,7 +43,7 @@
             menu.addEventListener('pointerleave', event => {
                 if (event.pointerType !== 'mouse') return;
                 closeTimer = setTimeout(() => {
-                    if (document.activeElement === summary || !menu.contains(document.activeElement)) menu.open = false;
+                    if (!keyboardNavigation || !menu.contains(document.activeElement)) menu.open = false;
                 }, 180);
             });
             menu.querySelectorAll('[data-theme-choice]').forEach(button => button.addEventListener('click', () => {
@@ -50,6 +52,8 @@
                 summary.focus();
             }));
             menu.addEventListener('keydown', event => {
+                keyboardNavigation = true;
+                clearTimeout(closeTimer);
                 if (event.key === 'Escape') { menu.open = false; summary.focus(); }
                 if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
                 event.preventDefault();

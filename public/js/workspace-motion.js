@@ -2,7 +2,7 @@
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     if (!('IntersectionObserver' in window) || reducedMotion.matches) return;
 
-    const selectors = '.page-heading, .stat-card, .panel, .mini-stats, .attendance-toolbar, .auth-box';
+    const selectors = '.page-heading, .stat-card, .panel, .mini-stats, .attendance-toolbar, .auth-box, .class-summary-card, .teacher-stat, .parent-stat, .timetable-calendar';
     // Animate only outer cards so nested panels and their controls do not move twice.
     const elements = Array.from(document.querySelectorAll(selectors))
         .filter(element => !element.parentElement?.closest(selectors));

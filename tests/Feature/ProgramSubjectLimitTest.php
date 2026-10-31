@@ -14,6 +14,23 @@ class ProgramSubjectLimitTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_khmer_teacher_form_requires_exactly_two_subjects(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = User::factory()->create(['role' => 'teacher', 'program' => 'Khmer']);
+        $class = SchoolClass::create(['name' => 'Grade 7', 'section' => 'A', 'program' => 'Khmer', 'session' => 'Morning']);
+        foreach (['Physics', 'Biology', 'History'] as $name) Subject::create(['school_class_id' => $class->id, 'name' => $name, 'code' => $name]);
+        $data = ['name' => $teacher->name, 'gender' => 'female', 'email' => $teacher->email,
+            'program' => 'Khmer', 'status' => 'active', 'subject1' => 'Physics', 'working_sessions' => 'Morning'];
+        $this->actingAs($admin)->put(route('teacher-management.update', $teacher), $data)->assertSessionHasErrors('subject2');
+        $this->put(route('teacher-management.update', $teacher), $data + ['subject2' => 'Physics'])->assertSessionHasErrors('subject2');
+        $this->put(route('teacher-management.update', $teacher), $data + ['subject2' => 'Biology', 'additional_subjects' => ['History']])
+            ->assertSessionHasErrors('additional_subjects');
+        $this->put(route('teacher-management.update', $teacher), $data + ['subject2' => 'Biology'])
+            ->assertSessionHasNoErrors()->assertRedirect(route('teacher-management.show', $teacher));
+        $this->assertSame(['Physics', 'Biology'], app(TeacherManagementService::class)->qualifications($teacher)->all());
+    }
+
     public function test_english_and_chinese_profiles_and_assignments_can_have_more_than_two_subjects(): void
     {
         foreach (['English','Chinese'] as $program) {

@@ -13,6 +13,31 @@ class TeacherManagementTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_workload_includes_subjects_and_classes_assigned_through_lessons(): void
+    {
+        [$teacher, $subject, $service] = $this->fixture();
+        $lesson = new Schedule(['subject_id' => $subject->id, 'school_class_id' => $subject->school_class_id,
+            'teacher_id' => $teacher->id, 'day' => 'Monday', 'starts_at' => '07:00', 'ends_at' => '08:00',
+            'room' => 'R1', 'entry_type' => 'academic']);
+        $lesson->saveQuietly();
+        $this->assertNull($subject->fresh()->teacher_id);
+        $workload = $service->workload($teacher);
+        $this->assertSame(['Mathematics'], $workload['subjects']->all());
+        $this->assertSame([$subject->school_class_id], $workload['classes']->pluck('id')->all());
+        $this->assertEquals(1, $workload['weekly']);
+
+        $subject->update(['teacher_id' => $teacher->id]);
+        $workload = $service->workload($teacher);
+        $this->assertCount(1, $workload['subjects']);
+        $this->assertCount(1, $workload['classes']);
+
+        $lesson->update(['cancelled_at' => now()]);
+        $subject->update(['teacher_id' => null]);
+        $workload = $service->workload($teacher);
+        $this->assertCount(0, $workload['subjects']);
+        $this->assertCount(0, $workload['classes']);
+    }
+
     private function fixture(string $session = 'Morning'): array
     {
         $teacher = User::factory()->create(['role' => 'teacher', 'program' => 'Khmer', 'status' => 'active']);

@@ -13,17 +13,29 @@
     }, true);
     $sessionIcons = ['Morning'=>'sunrise', 'Afternoon'=>'sun', 'Evening'=>'moon-stars'];
 @endphp
-<div class="panel timetable-scroll"><table class="shared-timetable"><caption>Weekly schedule — Monday–Friday</caption><thead><tr><th scope="col">{{ __('Time') }}</th>@foreach(\App\Services\TeacherManagementService::DAYS as $day)<th scope="col">{{ $day }}</th>@endforeach</tr></thead>
+<div class="panel timetable-scroll"><table class="shared-timetable"><caption>{{ __('Weekly schedule — Monday–Friday') }}</caption><thead><tr><th scope="col"><i class="bi bi-clock" aria-hidden="true"></i> {{ __('Time') }}</th>@foreach(\App\Services\TeacherManagementService::DAYS as $day)<th scope="col"><i class="bi bi-calendar2" aria-hidden="true"></i> {{ __($day) }}</th>@endforeach</tr></thead>
 @foreach($sessionGroups as $sessionName => $sessionPeriods)
 <tbody class="timetable-session-group" aria-label="{{ $sessionName }} schedule">
 <tr class="timetable-session-heading session-{{ strtolower($sessionName) }}"><th colspan="6" scope="rowgroup"><span class="timetable-session-title"><i class="bi bi-{{ $sessionIcons[$sessionName] }}" aria-hidden="true"></i> {{ $sessionName }} schedule</span><span class="timetable-session-hours">{{ $sessionPeriods->first()[0] }}–{{ $sessionPeriods->last()[1] }}</span></th></tr>
-@foreach($sessionPeriods as $index => [$from,$to])<tr><th scope="row"><strong>{{ $from }}</strong><br>{{ $to }}</th>
+@foreach($sessionPeriods as $index => [$from,$to])<tr class="timetable-hour-row"><th scope="row"><strong>{{ $from }}</strong><br>{{ $to }}</th>
 @foreach(\App\Services\TeacherManagementService::DAYS as $day)
-@php($cell = $cells[$day][$index] ?? null)
-@if($cell === false) @continue @endif
-<td @if($cell) rowspan="{{ $cell['span'] }}" @endif>
+@php
+    $cell = $cells[$day][$index] ?? null;
+    $continuation = $cell === false;
+    if ($continuation) {
+        for ($previous = $index - 1; $previous >= 0; $previous--) {
+            $candidate = $cells[$day][$previous] ?? null;
+            if (is_array($candidate) && $previous + $candidate['span'] > $index) {
+                $cell = $candidate;
+                break;
+            }
+        }
+        if ($cell === false) $cell = null;
+    }
+@endphp
+<td class="timetable-hour-cell day-{{ strtolower($day) }}">
 @if($cell && $cell['lessons']->count() > 1)<article class="timetable-conflict-card"><strong>CONFLICT DETECTED</strong><p>{{ $cell['lessons']->count() }} lessons assigned</p>@if(auth()->user()->role === 'administrator')<a href="{{ route('timetables.conflicts', $cell['lessons']->first()) }}">View Conflict</a>@endif</article>
-@elseif($cell)@include('school.timetables.lesson', ['entry'=>$cell['lessons']->first()])
+@elseif($cell)@include('school.timetables.lesson', ['entry'=>$cell['lessons']->first(), 'continuation' => $continuation])
 @else @php($free = $breaks->first(fn ($b) => $b->weekday === $day && substr($b->start_time,0,5) === $from))<span class="text-secondary">{{ $free ? 'Designated teacher free period' : 'No lesson scheduled' }}</span>@endif
 </td>@endforeach</tr>@endforeach
 </tbody>

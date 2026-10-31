@@ -35,11 +35,43 @@
     --glow-strength: 16%;
     --theme-arrival: scholar-pop;
 }
-body, .sidebar, .topbar, .panel, .stat-card, .mini-stats, .date-pill, .form-control, .form-select {
+:root[data-theme=ocean] {
+    --motion-duration: .32s;
+    --motion-arrival-duration: .65s;
+    --motion-ease: cubic-bezier(.2,.7,.2,1);
+    --card-lift: -3px;
+    --motion-tilt: -4deg;
+    --theme-arrival: scholar-wave;
+}
+:root[data-theme=sunset] {
+    --motion-duration: .4s;
+    --motion-arrival-duration: .75s;
+    --motion-ease: cubic-bezier(.22,.61,.36,1);
+    --card-lift: -3px;
+    --motion-tilt: 4deg;
+    --theme-arrival: scholar-drift;
+}
+:root[data-theme=luxury] {
+    --motion-duration: .4s;
+    --motion-arrival-duration: .8s;
+    --motion-ease: cubic-bezier(.16,1,.3,1);
+    --card-lift: -2px;
+    --motion-tilt: 2deg;
+    --theme-arrival: scholar-night;
+}
+:root[data-theme=galaxy] {
+    --motion-duration: .38s;
+    --motion-arrival-duration: .75s;
+    --motion-ease: cubic-bezier(.2,.8,.2,1);
+    --card-lift: -4px;
+    --motion-tilt: -5deg;
+    --theme-arrival: scholar-orbit;
+}
+:root:root:root:root :where(body, .sidebar, .topbar, .panel, .stat-card, .mini-stats, .date-pill, .form-control, .form-select) {
     transition: background-color .4s ease, color .3s ease, border-color var(--motion-duration) ease,
         box-shadow var(--motion-duration) var(--motion-ease), transform var(--motion-duration) var(--motion-ease);
 }
-.btn, .quick-action, .school-nav a, .stat-icon, .announcement-icon, .auth-emblem, .brand-mark, .student-avatar, .user-avatar {
+:root:root:root:root :where(.btn, .quick-action, .school-nav a, .stat-icon, .announcement-icon, .auth-emblem, .brand-mark, .student-avatar, .user-avatar, .class-summary-card, .teacher-stat, .parent-stat) {
     transition: transform var(--motion-duration) var(--motion-ease), background-color .3s ease,
         color .3s ease, box-shadow var(--motion-duration) ease, border-color .3s ease;
 }
@@ -50,7 +82,7 @@ body, .sidebar, .topbar, .panel, .stat-card, .mini-stats, .date-pill, .form-cont
     animation-delay: var(--motion-delay, 0ms);
 }
 /* Theme changes are brief and do not hide the content the user is reading. */
-.theme-changing .page-heading, .theme-changing .stat-card, .theme-changing .auth-box {
+.theme-changing .page-heading, .theme-changing .stat-card, .theme-changing .auth-box, .theme-changing .unified-timetable-hero {
     animation: scholar-palette .55s ease both;
 }
 .theme-changing .brand-mark, .theme-changing .auth-emblem {
@@ -70,7 +102,7 @@ body, .sidebar, .topbar, .panel, .stat-card, .mini-stats, .date-pill, .form-cont
 @media (hover:hover) and (pointer:fine) {
     .btn:hover, .quick-action:hover { transform: translateY(var(--card-lift)); }
     .school-nav a:hover { transform: translateX(3px); }
-    .stat-card:hover, a.panel:hover {
+    .stat-card:hover, a.panel:hover, .class-summary-card:hover, .teacher-stat:hover, .parent-stat:hover {
         transform: translateY(var(--card-lift));
         border-color: color-mix(in srgb, var(--green) 40%, var(--border));
         box-shadow: 0 12px 28px color-mix(in srgb, var(--green) var(--glow-strength), transparent);
@@ -85,6 +117,14 @@ body, .sidebar, .topbar, .panel, .stat-card, .mini-stats, .date-pill, .form-cont
 }
 @keyframes scholar-rise {
     from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: none; }
+}
+@keyframes scholar-wave {
+    from { opacity: 0; transform: translateY(12px) translateX(-5px); }
+    to { opacity: 1; transform: none; }
+}
+@keyframes scholar-orbit {
+    from { opacity: 0; transform: translateY(10px) scale(.98); }
     to { opacity: 1; transform: none; }
 }
 @keyframes scholar-night {
@@ -119,7 +159,8 @@ body, .sidebar, .topbar, .panel, .stat-card, .mini-stats, .date-pill, .form-cont
     *, *:before, *:after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
     .motion-pending, .motion-reveal { opacity: 1 !important; transform: none !important; }
     .btn:hover, .quick-action:hover, .school-nav a:hover, .stat-card:hover, a.panel:hover,
-    .stat-card:hover .stat-icon, a.panel:hover > .bi, .profile-link:hover .user-avatar { transform: none; }
+    .stat-card:hover .stat-icon, a.panel:hover > .bi, .profile-link:hover .user-avatar,
+    .class-summary-card:hover, .teacher-stat:hover, .parent-stat:hover { transform: none; }
 }
 @media print {
     .motion-pending, .motion-reveal { opacity: 1 !important; transform: none !important; animation: none !important; }
