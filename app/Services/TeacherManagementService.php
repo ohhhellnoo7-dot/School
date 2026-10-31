@@ -21,7 +21,19 @@ class TeacherManagementService
     }
 
     public function settings(): object { return DB::table('teacher_management_settings')->where('id', 1)->first(); }
-    public function limit(User $teacher): int { return (int) (DB::table('teacher_profiles')->where('teacher_id', $teacher->id)->value('weekly_minutes') ?? $this->settings()->weekly_minutes); }
+    public function weeklyWorkPlan(User|string|null $teacher = null): array
+    {
+        $settings = $this->settings();
+        $teaching = $teacher instanceof User ? $this->limit($teacher) : $this->defaultLimit($teacher);
+        $plan = ['teaching'=>$teaching / 60,'preparation'=>$settings->preparation_minutes / 60,'marking'=>$settings->marking_minutes / 60,'other_duties'=>$settings->other_duties_minutes / 60];
+        return $plan + ['total'=>array_sum($plan)];
+    }
+    public function defaultLimit(?string $program = null): int
+    {
+        $settings = $this->settings();
+        return (int) ($program === 'Khmer' ? ($settings->khmer_weekly_minutes ?? $settings->weekly_minutes) : $settings->weekly_minutes);
+    }
+    public function limit(User $teacher): int { return (int) (DB::table('teacher_profiles')->where('teacher_id', $teacher->id)->value('weekly_minutes') ?? $this->defaultLimit($teacher->program)); }
     public static function minute(string $time): int { return (int) substr($time, 0, 2) * 60 + (int) substr($time, 3, 2); }
     public static function duration(string $start, string $end): int { return max(0, self::minute($end) - self::minute($start)); }
     public static function overlaps(string $start, string $end, string $otherStart, string $otherEnd): bool { return self::minute($start) < self::minute($otherEnd) && self::minute($end) > self::minute($otherStart); }
@@ -214,10 +226,11 @@ class TeacherManagementService
     public function demand(): array
     {
         $sessions = ClassSession::whereHas('classGroup', fn ($q) => $q->where('program', 'Khmer')->where('status', 'active'))->with('classGroup')->get();
-        $hours = $sessions->sum(fn ($s) => max(0, self::duration($s->starts_at, $s->ends_at) * 5 - 180)) / 60;
+        $cohortSettings = \App\Models\SchoolClass::where('program','Khmer')->whereNull('shared_timetable_class_id')->get()->keyBy(fn ($c)=>$c->class_group_id.'|'.$c->session);
+        $hours = $sessions->sum(fn ($s) => max(0, self::duration($s->starts_at, $s->ends_at) * 5 - (int)($cohortSettings->get($s->class_group_id.'|'.$s->session)?->weekly_relaxation_minutes ?? 180))) / 60;
         $active = User::where('role', 'teacher')->where('status', 'active')->where(fn ($q) => $q->where('program', 'Khmer')->orWhereNull('program'))->get();
         $capacity = $active->sum(fn ($t) => $this->limit($t)) / 60;
-        $limit = $this->settings()->weekly_minutes / 60;
+        $limit = $this->defaultLimit('Khmer') / 60;
         $cohorts = [];
         foreach ($sessions->groupBy('class_group_id') as $groupSessions) {
             $group = $groupSessions->first()->classGroup;

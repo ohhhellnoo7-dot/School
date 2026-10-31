@@ -218,8 +218,12 @@ class TeacherManagementController extends Controller
 
     public function settings(Request $request, TeacherManagementService $service)
     {
-        $data = $request->validate(['target' => 'required|integer|min:1|max:1000', 'weekly_hours' => 'required|numeric|min:1|max:40']);
-        $service->locked(fn () => DB::table('teacher_management_settings')->where('id', 1)->update(['target' => $data['target'], 'weekly_minutes' => (int) round($data['weekly_hours'] * 60)]));
+        $data = $request->validate(['target' => 'required|integer|min:1|max:1000', 'weekly_hours' => 'required|numeric|min:1|max:40',
+            'preparation_hours'=>'sometimes|required|numeric|min:0|max:40','marking_hours'=>'sometimes|required|numeric|min:0|max:40','other_duties_hours'=>'sometimes|required|numeric|min:0|max:40','khmer_weekly_hours'=>'sometimes|required|numeric|min:1|max:40']);
+        $updates = ['target'=>$data['target'],'weekly_minutes'=>(int) round($data['weekly_hours'] * 60)];
+        foreach (['preparation','marking','other_duties'] as $category) if (array_key_exists($category.'_hours',$data)) $updates[$category.'_minutes'] = (int) round($data[$category.'_hours'] * 60);
+        if (array_key_exists('khmer_weekly_hours',$data)) $updates['khmer_weekly_minutes'] = (int) round($data['khmer_weekly_hours'] * 60);
+        $service->locked(fn () => DB::table('teacher_management_settings')->where('id', 1)->update($updates));
         return back()->with('success', 'Staffing settings updated. Existing lessons were preserved.');
     }
 

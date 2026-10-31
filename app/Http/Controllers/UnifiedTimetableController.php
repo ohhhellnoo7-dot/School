@@ -18,7 +18,9 @@ class UnifiedTimetableController extends Controller
         $classes = SchoolClass::query()->when($restricted, fn ($q) => $q->whereIn('id', Student::visibleTo($request->user())->select('school_class_id')))->orderBy('name')->orderBy('section')->orderBy('session')->get();
         $view = $request->input('view', 'students');
         $studentClasses = null;
-        $teachers = User::where('role', 'teacher')->orderBy('name')->get();
+        $request->validate(['program' => 'nullable|in:Khmer,English,Chinese']);
+        $teacherProgram = $view === 'teachers' ? $request->input('program') : null;
+        $teachers = User::where('role', 'teacher')->when($teacherProgram, fn ($q) => $q->where('program', $teacherProgram))->orderBy('name')->get();
         $rooms = Classroom::orderBy('room_number')->get();
         $query = Schedule::with(['subject', 'teacher', 'classroom', 'schoolClass.classGroup']);
         $academicYear = $request->input('academic_year') ?: now('Asia/Phnom_Penh')->year.'-'.(now('Asia/Phnom_Penh')->year+1);
@@ -26,9 +28,13 @@ class UnifiedTimetableController extends Controller
         if ($restricted) $query->whereIn('school_class_id', $classes->map->timetableOwnerId()->unique()->all());
         if ($view === 'teachers') {
             abort_if($restricted, 404);
-            $selected = $request->integer('teacher') ?: ($request->user()->role === 'teacher' ? $request->user()->id : $teachers->first()?->id);
+            $scheduledTeacherIds = (clone $query)->whereIn('teacher_id', $teachers->modelKeys())->pluck('teacher_id');
+            $defaultTeacher = $teachers->first(fn ($teacher) => $scheduledTeacherIds->contains($teacher->id)) ?? $teachers->first();
+            $requestedTeacher = $request->integer('teacher');
+            if ($requestedTeacher && User::withoutGlobalScope('archived')->whereKey($requestedTeacher)->where('role','teacher')->whereNotNull('archived_at')->exists()) $requestedTeacher = null;
+            $selected = $requestedTeacher ?: ($request->user()->role === 'teacher' && $teachers->contains('id', $request->user()->id) ? $request->user()->id : $defaultTeacher?->id);
             abort_if($selected && ! $teachers->contains('id', $selected), 404);
-            $query->where('teacher_id', $selected);
+            if ($selected) $query->where('teacher_id', $selected); else $query->whereRaw('1 = 0');
         } elseif ($view === 'classrooms') {
             $selected = $request->integer('classroom') ?: $rooms->first()?->id;
             abort_if($selected && ! $rooms->contains('id', $selected), 404);
@@ -63,7 +69,7 @@ class UnifiedTimetableController extends Controller
             $excess = $subjects->filter(fn ($s)=>$s->required_weekly_minutes !== null && $lessons->where('subject_id',$s->id)->sum(fn ($entry)=>TeacherManagementService::duration($entry->starts_at,$entry->ends_at)) > $s->required_weekly_minutes)->pluck('name')->all();
             $curriculum = ['unknown'=>$unknown,'missing'=>array_values(array_unique($missing)), 'excess'=>array_values(array_unique($excess))];
         }
-        return compact('view', 'classes', 'teachers', 'rooms', 'selected', 'lessons', 'periods', 'breaks','roomIssues','curriculum','academicYear','studentClasses') + TimetableGrid::build($lessons, $periods);
+        return compact('view', 'classes', 'teachers', 'rooms', 'selected', 'lessons', 'periods', 'breaks','roomIssues','curriculum','academicYear','studentClasses','teacherProgram') + TimetableGrid::build($lessons, $periods);
     }
 
     public function index(Request $request)

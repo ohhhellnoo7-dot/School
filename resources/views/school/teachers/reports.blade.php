@@ -2,8 +2,26 @@
 @section('title', 'Teacher Reports')
 @section('content')
 <div class="page-heading"><div><div class="eyebrow">School workspace</div><h1>Teacher Reports</h1><p>Understand staffing needs and plan the next steps.</p></div><a class="btn btn-outline-secondary" href="{{ route('modules.index', 'teachers') }}">Back to Teachers</a></div>
-<div class="row g-3 mb-4">@foreach(['Current Khmer Teachers' => $demand['active'], 'Target Teachers' => $demand['target'], 'Required Teachers' => $demand['minimum'], 'Additional Teachers Needed' => max($demand['needed'], (int)ceil(collect($coverage)->sum('missing') / max(1, $service->settings()->weekly_minutes / 60)))] as $label => $value)<div class="col-sm-6 col-lg-3"><div class="panel p-4"><div class="small text-secondary">{{ $label }}</div><strong class="fs-2">{{ $value }}</strong></div></div>@endforeach</div>
-<section class="panel p-4 mb-4"><h2 class="h5">Staffing Plan</h2><p>{{ max(0, $demand['target'] - $demand['active']) }} additional active Khmer teachers are needed to reach the target. Demand may require more teachers.</p><form class="row g-3" method="post" action="{{ route('teacher-management.settings') }}">@csrf<div class="col-md-4"><label for="target" class="form-label">Khmer teacher target</label><input id="target" name="target" type="number" min="1" max="1000" value="{{ $demand['target'] }}" class="form-control" required></div><div class="col-md-4"><label class="form-label" for="weekly_hours">Default weekly teaching limit</label><input class="form-control" id="weekly_hours" name="weekly_hours" type="number" min="1" max="40" step="0.25" value="{{ $service->settings()->weekly_minutes / 60 }}" required></div><div class="col-auto align-self-end"><button class="btn btn-primary">Save Settings</button></div></form></section>
+<div class="row g-3 mb-4">@foreach(['Current Khmer Teachers' => $demand['active'], 'Target Teachers' => $demand['target'], 'Required Teachers' => $demand['minimum'], 'Additional Teachers Needed' => max($demand['needed'], (int)ceil(collect($coverage)->sum('missing') / max(1, $service->defaultLimit('Khmer') / 60)))] as $label => $value)<div class="col-sm-6 col-lg-3"><div class="panel p-4"><div class="small text-secondary">{{ $label }}</div><strong class="fs-2">{{ $value }}</strong></div></div>@endforeach</div>
+<section class="panel p-4 mb-4">
+    <h2 class="h5">Staffing Plan</h2>
+    <p>{{ max(0, $demand['target'] - $demand['active']) }} additional active Khmer teachers are needed to reach the target. Demand may require more teachers.</p>
+    @php($workPlan = $service->weeklyWorkPlan())
+    @include('school.teachers._weekly-work-plan', ['workPlan'=>$workPlan])
+    @if($service->defaultLimit('Khmer') !== $service->defaultLimit())
+    <h3 class="h6">Khmer teacher work plan</h3>
+    @include('school.teachers._weekly-work-plan', ['workPlan'=>$service->weeklyWorkPlan('Khmer')])
+    @endif
+    <form class="row g-3" method="post" action="{{ route('teacher-management.settings') }}">@csrf
+        <div class="col-md-4"><label for="target" class="form-label">Khmer teacher target</label><input id="target" name="target" type="number" min="1" max="1000" value="{{ old('target', $demand['target']) }}" class="form-control" required></div>
+        <div class="col-md-4"><label class="form-label" for="weekly_hours">Default weekly teaching limit</label><input class="form-control" id="weekly_hours" name="weekly_hours" type="number" min="1" max="40" step="0.25" value="{{ old('weekly_hours', $service->settings()->weekly_minutes / 60) }}" required></div>
+        <div class="col-md-4"><label class="form-label" for="khmer_weekly_hours">Khmer weekly teaching limit</label><input class="form-control" id="khmer_weekly_hours" name="khmer_weekly_hours" type="number" min="1" max="40" step="0.25" value="{{ old('khmer_weekly_hours', $service->defaultLimit('Khmer') / 60) }}" required></div>
+        @foreach(['preparation'=>'Lesson preparation','marking'=>'Marking student work','other_duties'=>'Meetings and other duties'] as $key=>$label)
+        <div class="col-md-4"><label class="form-label" for="{{ $key }}_hours">{{ $label }} (hours/week)</label><input class="form-control" id="{{ $key }}_hours" name="{{ $key }}_hours" type="number" min="0" max="40" step="0.25" value="{{ old($key.'_hours', $workPlan[$key]) }}" required></div>
+        @endforeach
+        <div class="col-auto align-self-end"><button class="btn btn-primary">Save Settings</button></div>
+    </form>
+</section>
 <section class="panel p-4 mb-4"><h2 class="h5">Subject Coverage</h2><p>Each teacher’s free time is counted once across subjects. Confirm qualifications, working hours, and approved curriculum hours to improve these estimates.</p>
 @forelse($coverage as $row)<article class="border rounded p-3 mb-3"><h3 class="h6">{{ $row['name'] }}</h3><div class="d-flex flex-wrap gap-4"><span>Required: <strong>{{ $row['required'] }} h</strong></span><span>Qualified capacity: <strong>{{ $row['available'] }} h</strong></span><span>Missing: <strong>{{ $row['missing'] }} h</strong></span></div>@if($row['missing'] > 0)<p class="mt-2 mb-2">More {{ $row['name'] }} teaching capacity is needed.</p>@endif<a href="{{ route('modules.index', ['module' => 'teachers', 'qualified_subject' => $row['name']]) }}" class="btn btn-sm btn-outline-secondary mt-2">View Available Teachers</a>
 <details class="mt-3"><summary>Review class hours and schedule details</summary><p class="small text-secondary">{{ $row['unknown'] }} class-subject allocations have unconfirmed curriculum hours; their existing lessons are used as provisional demand. {{ $row['conflicts'] }} existing lessons need review for qualifications, duty hours, breaks, workload, or conflicts.</p>

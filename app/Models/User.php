@@ -10,6 +10,11 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
+    protected static function booted(): void
+    {
+        static::addGlobalScope('archived',fn($query)=>$query->whereNull('users.archived_at'));
+    }
+
     protected $attributes = ['role' => 'student'];
 
     /** @use HasFactory<UserFactory> */
