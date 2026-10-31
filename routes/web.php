@@ -42,6 +42,7 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
     Route::get('/school/timetables', [\App\Http\Controllers\UnifiedTimetableController::class, 'index'])->name('timetables.index');
     Route::get('/school/timetables/data', [\App\Http\Controllers\UnifiedTimetableController::class, 'data'])->name('timetables.data');
     Route::middleware('role:administrator')->prefix('school/timetables')->group(function () {
+        Route::post('/curriculum/setup', [\App\Http\Controllers\UnifiedTimetableController::class, 'setupCurriculum'])->name('timetables.curriculum.setup');
         Route::get('/school-audit', [\App\Http\Controllers\UnifiedTimetableController::class, 'schoolAudit'])->name('timetables.school-audit');
         Route::get('/rooms/review', [\App\Http\Controllers\TimetableRoomController::class, 'review'])->name('timetables.rooms.review');
         Route::post('/rooms/preview', [\App\Http\Controllers\TimetableRoomController::class, 'preview'])->name('timetables.rooms.preview');

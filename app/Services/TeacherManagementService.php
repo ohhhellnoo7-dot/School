@@ -26,6 +26,7 @@ class TeacherManagementService
     public static function duration(string $start, string $end): int { return max(0, self::minute($end) - self::minute($start)); }
     public static function overlaps(string $start, string $end, string $otherStart, string $otherEnd): bool { return self::minute($start) < self::minute($otherEnd) && self::minute($end) > self::minute($otherStart); }
     public function managed(int $id): bool { return DB::table('teacher_profiles')->where('teacher_id', $id)->exists(); }
+    public function subjectLimit(User $teacher): int { return blank($teacher->program) || $teacher->program === 'Khmer' ? 2 : PHP_INT_MAX; }
     public function qualifications(User $teacher) { return DB::table('teacher_qualifications')->where('teacher_id', $teacher->id)->orderBy('slot')->pluck('subject_name'); }
     public function periods(User $teacher) { return DB::table('teacher_working_periods')->where('teacher_id', $teacher->id)->get(); }
     public function breaks(User $teacher) { return DB::table('teacher_breaks')->join('teacher_break_plans', 'teacher_break_plans.id', '=', 'teacher_breaks.teacher_break_plan_id')->where('teacher_id', $teacher->id)->select('teacher_breaks.*')->orderBy('teacher_breaks.id')->get(); }
@@ -67,7 +68,7 @@ class TeacherManagementService
     public function saveProfile(User $teacher, array $names, ?int $limit, array $periods): void
     {
         $this->locked(function () use ($teacher, $names, $limit, $periods) {
-            if (count(array_unique($names)) !== count($names) || count($names) > 2) $this->fail('Choose one or two different subjects.');
+            if (count(array_unique($names)) !== count($names) || count($names) > $this->subjectLimit($teacher)) $this->fail('Choose different subjects; Khmer teachers may have at most two.');
             foreach ($names as $name) if (! Subject::where('name', $name)->exists()) $this->fail('Choose subjects from the existing catalog.');
             foreach ($periods as $p) {
                 if (! in_array($p['weekday'], self::DAYS, true) || self::duration($p['start_time'], $p['end_time']) < 1) $this->fail('Working hours must be valid weekday intervals.');
@@ -95,7 +96,7 @@ class TeacherManagementService
         if (! $subject->teacher_id) return;
         $teacher = User::findOrFail($subject->teacher_id);
         if ($teacher->role !== 'teacher' || $teacher->status !== 'active') $this->fail('Select an active teacher.');
-        if (Subject::where('teacher_id', $teacher->id)->where('id', '!=', $subject->id ?: 0)->pluck('name')->push($subject->name)->unique()->count() > 2) $this->fail('A teacher cannot teach more than two distinct subjects across all programs. Review existing assignments.');
+        if (Subject::where('teacher_id', $teacher->id)->where('id', '!=', $subject->id ?: 0)->pluck('name')->push($subject->name)->unique()->count() > $this->subjectLimit($teacher)) $this->fail('A Khmer teacher cannot teach more than two distinct subjects. Review existing assignments.');
         if (! $this->qualifications($teacher)->contains($subject->name)) $this->fail('Confirm this subject qualification in the teacher profile first.');
         $slots = Schedule::where('subject_id', $subject->id ?: 0)->get();
         $minutes = $this->lessons($teacher)->where('subject_id', '!=', $subject->id)->sum(fn ($s) => self::duration($s->starts_at, $s->ends_at));
@@ -121,7 +122,7 @@ class TeacherManagementService
         if ($subject->schoolClass?->class_group_id && ! ClassSession::where('class_group_id', $subject->schoolClass->class_group_id)->where('session', $subject->schoolClass->session)->where('starts_at', '<=', $slot->starts_at)->where('ends_at', '>=', $slot->ends_at)->whereHas('classGroup', fn ($q) => $q->where('status', 'active'))->exists()) $this->fail('No active class-session assignment covers this lesson.');
         if (! $this->onDuty($teacher, $slot->day, $slot->starts_at, $slot->ends_at)) $this->fail('The teacher is not on duty or is unavailable during this time.');
         if (! $this->qualifications($teacher)->contains($subject->name)) $this->fail('The teacher is not qualified for this subject.');
-        if (Subject::where('teacher_id', $teacher->id)->where('id', '!=', $subject->id ?: 0)->pluck('name')->push($subject->name)->unique()->count() > 2) $this->fail('Resolve the teacher’s two-subject limit violation before adding lessons.');
+        if (Subject::where('teacher_id', $teacher->id)->where('id', '!=', $subject->id ?: 0)->pluck('name')->push($subject->name)->unique()->count() > $this->subjectLimit($teacher)) $this->fail('Resolve the Khmer teacher’s two-subject limit violation before adding lessons.');
         if ($this->breaks($teacher)->contains(fn ($b) => $b->weekday === $slot->day && self::overlaps($slot->starts_at, $slot->ends_at, $b->start_time, $b->end_time))) $this->fail('The teacher has a scheduled break during this time.');
         if (TimetableConflicts::exists($subject, $slot->day, $slot->starts_at, $slot->ends_at, $slot->room ?: '', $slot->id)) $this->fail('This time conflicts with a teacher, class, or classroom lesson.');
         if ($workload && $this->lessons($teacher)->where('id', '!=', $slot->id)->sum(fn ($s) => self::duration($s->starts_at, $s->ends_at)) + self::duration($slot->starts_at, $slot->ends_at) > $this->limit($teacher)) $this->fail('The weekly teaching limit would be exceeded.');
@@ -265,7 +266,7 @@ class TeacherManagementService
             $add('source', 'teacher:'.$t->id, $capacity);
             $assigned = Subject::where('teacher_id', $t->id)->pluck('name');
             foreach ($this->qualifications($t) as $name) {
-                if (! isset($rows[$name]) || $assigned->concat([$name])->unique()->count() > 2) continue;
+                if (! isset($rows[$name]) || $assigned->concat([$name])->unique()->count() > $this->subjectLimit($t)) continue;
                 $sessions = $rows[$name]['classes']->pluck('schoolClass.session')->filter()->unique();
                 $usable = 0;
                 foreach ($free as $day => $minutes) foreach (array_keys($minutes) as $m) {

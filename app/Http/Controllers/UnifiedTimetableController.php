@@ -23,7 +23,7 @@ class UnifiedTimetableController extends Controller
         $query = Schedule::with(['subject', 'teacher', 'classroom', 'schoolClass.classGroup']);
         $academicYear = $request->input('academic_year') ?: now('Asia/Phnom_Penh')->year.'-'.(now('Asia/Phnom_Penh')->year+1);
         $query->where(fn ($q)=>$q->where('academic_year',$academicYear)->orWhereNull('academic_year'));
-        if ($restricted) $query->whereIn('school_class_id', $classes->modelKeys());
+        if ($restricted) $query->whereIn('school_class_id', $classes->map->timetableOwnerId()->unique()->all());
         if ($view === 'teachers') {
             abort_if($restricted, 404);
             $selected = $request->integer('teacher') ?: ($request->user()->role === 'teacher' ? $request->user()->id : $teachers->first()?->id);
@@ -44,7 +44,7 @@ class UnifiedTimetableController extends Controller
             abort_if($requestedClass && ! $classes->contains('id', $requestedClass), 404);
             $selected = $requestedClass && $filtered->contains('id',$requestedClass) ? $requestedClass : $filtered->first()?->id;
             $studentClasses = $filtered;
-            if ($selected) $query->where('school_class_id',$selected); else $query->whereRaw('1 = 0');
+            if ($selected) $query->where('school_class_id',$classes->firstWhere('id',$selected)->timetableOwnerId()); else $query->whereRaw('1 = 0');
         }
         $lessons = $query->orderBy('starts_at')->get();
         $periods = [['07:00','08:00'], ['08:00','09:00'], ['09:00','10:00'], ['10:00','11:00'], ['13:00','14:00'], ['14:00','15:00'], ['15:00','16:00'], ['16:00','17:00'], ['17:30','18:30'], ['18:30','19:30']];
@@ -57,10 +57,11 @@ class UnifiedTimetableController extends Controller
         $roomIssues = $lessons->mapWithKeys(fn ($entry)=>[$entry->id=>$repair->describe($entry)])->all();
         $curriculum = null;
         if ($view === 'students' && ($cohort = $classes->firstWhere('id',$selected))) {
-            $subjects = $cohort->subjects;
+            $subjects = $cohort->timetableOwner()->subjects;
             $unknown = $subjects->isEmpty() || $subjects->contains(fn ($s)=>$s->required_weekly_minutes === null);
             $missing = $subjects->filter(fn ($s)=>$s->required_weekly_minutes !== null && $lessons->where('subject_id',$s->id)->sum(fn ($entry)=>TeacherManagementService::duration($entry->starts_at,$entry->ends_at)) < $s->required_weekly_minutes)->pluck('name')->all();
-            $curriculum = ['unknown'=>$unknown,'missing'=>$missing];
+            $excess = $subjects->filter(fn ($s)=>$s->required_weekly_minutes !== null && $lessons->where('subject_id',$s->id)->sum(fn ($entry)=>TeacherManagementService::duration($entry->starts_at,$entry->ends_at)) > $s->required_weekly_minutes)->pluck('name')->all();
+            $curriculum = ['unknown'=>$unknown,'missing'=>array_values(array_unique($missing)), 'excess'=>array_values(array_unique($excess))];
         }
         return compact('view', 'classes', 'teachers', 'rooms', 'selected', 'lessons', 'periods', 'breaks','roomIssues','curriculum','academicYear','studentClasses') + TimetableGrid::build($lessons, $periods);
     }
@@ -78,6 +79,21 @@ class UnifiedTimetableController extends Controller
     public function diagnostics()
     {
         return view('school.timetables.diagnostics', ['report' => app(TimetableDiagnostics::class)->report()]);
+    }
+
+    public function setupCurriculum(Request $request)
+    {
+        $request->validate(['use_school_defaults' => 'required|accepted']);
+        $count = app(TeacherManagementService::class)->locked(function () {
+            $classes = SchoolClass::whereDoesntHave('subjects')->orWhereHas('subjects', fn ($q) => $q->whereNull('required_weekly_minutes'))->get();
+            if ($classes->isEmpty()) return 0;
+            $backup = app(\App\Services\TimetableBackup::class)->create();
+            $changes = $classes->map(fn ($class) => app(\App\Services\CurriculumSetupService::class)->configure($class));
+            $path = 'timetable-drafts/curriculum-setup-'.Str::uuid().'.json';
+            if (! \Illuminate\Support\Facades\Storage::disk('local')->put($path, json_encode(['backup'=>$backup,'classes'=>$changes,'source'=>'administrator_school_defaults'], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR))) throw new \RuntimeException('Could not save curriculum setup report.');
+            return $classes->count();
+        });
+        return back()->with('success', $count ? 'Weekly hours configured for '.$count.' class sessions using school defaults. Review Scheduling Settings before generating remaining lessons.' : 'Weekly hours are already configured for every class.');
     }
 
     public function schoolAudit(Request $request)
@@ -118,6 +134,12 @@ class UnifiedTimetableController extends Controller
         $data = $request->all();
         $lesson = $request->filled('ignore_lesson') ? Schedule::findOrFail($request->integer('ignore_lesson')) : new Schedule;
         $subject = Subject::findOrFail($request->integer('subject_id'));
+        $selectedClass = SchoolClass::findOrFail($data['school_class_id']);
+        if ($selectedClass->shared_timetable_class_id && $subject->school_class_id === $selectedClass->id) {
+            $owner = $selectedClass->timetableOwner();
+            $data['school_class_id'] = $owner->id;
+            $subject = $owner->subjects()->where('name', $subject->name)->firstOrFail();
+        }
         $rooms = Classroom::where('status', 'active')->get()->filter(function ($room) use ($service, $data, $lesson, $subject) {
             $slot = clone $lesson;
             $slot->fill(array_intersect_key($data, array_flip(['school_class_id','day','starts_at','ends_at','academic_year'])) + ['classroom_id' => $room->id, 'room' => $room->room_number, 'entry_type' => 'academic', 'subject_id' => $subject->id, 'teacher_id' => null]);
@@ -126,7 +148,7 @@ class UnifiedTimetableController extends Controller
         $rules = app(TeacherManagementService::class);
         $teachers = User::where('role', 'teacher')->where('status', 'active')->get()->filter(function ($teacher) use ($rules, $subject, $data, $lesson) {
             return $rules->qualifications($teacher)->contains($subject->name)
-                && Subject::where('teacher_id', $teacher->id)->pluck('name')->concat($rules->lessons($teacher)->pluck('subject.name'))->push($subject->name)->filter()->unique()->count() <= 2
+                && Subject::where('teacher_id', $teacher->id)->pluck('name')->concat($rules->lessons($teacher)->pluck('subject.name'))->push($subject->name)->filter()->unique()->count() <= $rules->subjectLimit($teacher)
                 && $rules->lessons($teacher)->where('id', '!=', $lesson->id)->filter(fn ($s)=>\App\Support\AcademicYear::overlaps($s->academic_year,$data['academic_year']??null))->sum(fn ($s) => $rules::duration($s->starts_at, $s->ends_at)) + $rules::duration($data['starts_at'], $data['ends_at']) <= $rules->limit($teacher)
                 && $rules->onDuty($teacher, $data['day'], $data['starts_at'], $data['ends_at'])
                 && ! $rules->breaks($teacher)->contains(fn ($b) => $b->weekday === $data['day'] && $rules::overlaps($b->start_time, $b->end_time, $data['starts_at'], $data['ends_at']))

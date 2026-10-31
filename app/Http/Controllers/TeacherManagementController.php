@@ -74,6 +74,7 @@ class TeacherManagementController extends Controller
         if ($teacher) abort_unless($teacher->role === 'teacher', 404);
         $data = $request->validate(['name' => 'required|string|max:255', 'gender' => 'required|in:male,female,other', 'phone' => 'nullable|string|max:50', 'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($teacher?->id)],
             'program' => 'required|in:Khmer,English,Chinese', 'subject1' => ['required', Rule::exists('subjects', 'name')], 'subject2' => ['nullable', 'different:subject1', Rule::exists('subjects', 'name')],
+            'additional_subjects' => 'nullable|array', 'additional_subjects.*' => ['required','distinct',Rule::exists('subjects','name')],
             'weekly_hours' => 'nullable|numeric|min:1|max:40', 'working_sessions' => 'required|in:Morning,Afternoon,Both,Evening,Custom', 'status' => 'required|in:active,inactive',
             'periods' => 'nullable|array|max:25', 'periods.*.weekday' => ['required', Rule::in(TeacherManagementService::DAYS)], 'periods.*.start_time' => 'required|date_format:H:i', 'periods.*.end_time' => 'required|date_format:H:i|after:periods.*.start_time', 'periods.*.unavailable' => 'required|boolean']);
         $teacher = $service->locked(function () use ($teacher, $data, $service) {
@@ -92,7 +93,8 @@ class TeacherManagementController extends Controller
                 }
             }
             if (! collect($periods)->contains(fn ($p) => ! $p['unavailable'])) $service->fail('Confirm at least one on-duty working period.');
-            $service->saveProfile($t, array_values(array_filter([$data['subject1'], $data['subject2'] ?? null])), isset($data['weekly_hours']) ? (int) round($data['weekly_hours'] * 60) : null, $periods);
+            $names = collect([$data['subject1'], $data['subject2'] ?? null])->merge($data['additional_subjects'] ?? [])->filter()->unique()->values()->all();
+            $service->saveProfile($t, $names, isset($data['weekly_hours']) ? (int) round($data['weekly_hours'] * 60) : null, $periods);
             return $t;
         });
         return redirect()->route('teacher-management.show', $teacher)->with('success', 'Teacher information, qualifications, and working hours saved. Existing lessons were preserved.');

@@ -82,11 +82,14 @@ class SchoolModules
 
         return match ($module) {
             'announcements' => $query->whereIn('audience', ['all', $user->role])->whereDate('published_at', '<=', today()),
-            'classes' => $query->whereIn('id', Student::visibleTo($user)->select('school_class_id'))->when($user->role === 'teacher', fn ($q) => $q->orWhere('teacher_id', $user->id)->orWhereIn('id', self::subjects($user)->select('school_class_id'))),
+            'classes' => $query->whereIn('id', Student::visibleTo($user)->select('school_class_id'))->when($user->role === 'teacher', fn ($q) => $q->orWhere('teacher_id', $user->id)->orWhereIn('id', self::subjects($user)->select('school_class_id'))->orWhereIn('id', Schedule::where('teacher_id',$user->id)->select('school_class_id'))->orWhereIn('shared_timetable_class_id', Schedule::where('teacher_id',$user->id)->select('school_class_id'))),
             'subjects' => self::subjects($user),
             'attendance', 'fees' => $query->whereIn('student_id', Student::visibleTo($user)->select('id')),
             'grades' => $query->whereIn('student_id', Student::visibleTo($user)->select('id'))->when($user->role === 'teacher', fn ($q) => $q->whereHas('examination', fn ($exam) => $exam->whereIn('subject_id', self::subjects($user)->select('id')))),
-            'examinations', 'assignments', 'schedules' => $query->whereIn('subject_id', self::subjects($user)->select('id')),
+            'schedules' => $user->role === 'teacher'
+                ? $query->where('teacher_id', $user->id)
+                : $query->whereIn('school_class_id', SchoolClass::whereIn('id', Student::visibleTo($user)->select('school_class_id'))->get()->map->timetableOwnerId()->unique()->all()),
+            'examinations', 'assignments' => $query->whereIn('subject_id', self::subjects($user)->select('id')),
             default => $query->whereRaw('1 = 0'),
         };
     }

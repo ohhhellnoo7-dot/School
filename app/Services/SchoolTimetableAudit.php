@@ -16,8 +16,8 @@ class SchoolTimetableAudit
         $classes = SchoolClass::with(['subjects','classGroup'])->get();
         $missing = []; $unknown = []; $invalid = []; $reservations = [];
         foreach ($classes as $class) if ($class->subjects->isEmpty()) $unknown[] = ['program'=>$class->program,'class'=>$class->label,'cohort_id'=>$class->id,'subject'=>null,'required_minutes'=>null,'scheduled_minutes'=>0,'reason'=>'No curriculum subjects are linked to this existing cohort.'];
-        foreach ($classes as $class) foreach ($class->subjects as $subject) {
-            $years = $lessons->where('school_class_id',$class->id)->pluck('academic_year')->unique();
+        foreach ($classes as $class) foreach ($class->timetableOwner()->subjects as $subject) {
+            $years = $lessons->where('school_class_id',$class->timetableOwnerId())->pluck('academic_year')->unique();
             if ($years->isEmpty()) $years = collect([null]);
             foreach ($years as $year) {
                 $actual = $lessons->where('subject_id',$subject->id)->filter(fn ($s)=>AcademicYear::overlaps($s->academic_year,$year))->sum(fn ($s)=>TeacherManagementService::duration($s->starts_at,$s->ends_at));

@@ -77,7 +77,7 @@ class ClassroomController extends Controller
             ])];
         });
 
-        $lessons = app(\App\Services\RoomLessonService::class)->lessons($classroom, \App\Models\Schedule::with(['schoolClass', 'subject', 'teacher'])->where(fn ($q)=>$q->where('academic_year',$academicYear)->orWhereNull('academic_year'))->when($visibleCohorts !== null, fn ($q) => $q->whereIn('school_class_id', $visibleCohorts->modelKeys()))->get());
+        $lessons = app(\App\Services\RoomLessonService::class)->lessons($classroom, \App\Models\Schedule::with(['schoolClass', 'subject', 'teacher'])->where(fn ($q)=>$q->where('academic_year',$academicYear)->orWhereNull('academic_year'))->when($visibleCohorts !== null, fn ($q) => $q->whereIn('school_class_id', $visibleCohorts->map->timetableOwnerId()->unique()->all()))->get());
         return view('school.classrooms.show', [
             'classroom' => $classroom,
             'snapshot' => $snapshot,
@@ -307,7 +307,8 @@ class ClassroomController extends Controller
         return match ($user->role) {
             'administrator' => $query,
             'teacher' => $query->where(function ($rooms) use ($user) {
-                $rooms->whereHas('lessons.subject', fn ($q) => $q->where('teacher_id', $user->id))
+                $rooms->whereHas('lessons', fn ($q) => $q->where('teacher_id', $user->id))
+                    ->orWhereHas('lessons.subject', fn ($q) => $q->where('teacher_id', $user->id))
                     ->orWhereHas('bookings', function ($bookings) use ($user) {
                         $bookings->where('teacher_id', $user->id)
                             ->orWhereHas('classGroup', fn ($group) => $group->where('teacher_id', $user->id))

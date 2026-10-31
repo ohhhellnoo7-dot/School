@@ -8,6 +8,27 @@ class SchoolClass extends Model
 {
     protected $guarded = [];
 
+    protected static function booted(): void
+    {
+        static::saving(function (SchoolClass $class) {
+            if (! $class->shared_timetable_class_id) return;
+            $owner = self::findOrFail($class->shared_timetable_class_id);
+            if ($owner->id === $class->id || $owner->shared_timetable_class_id || ! $class->class_group_id || $owner->class_group_id !== $class->class_group_id || $owner->program !== $class->program || $owner->session !== $class->session) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['shared_timetable_class_id'=>'Shared timetables must use the same class group, program and session, without circular links.']);
+            }
+        });
+    }
+
+    public function timetableOwnerId(): int
+    {
+        return (int) ($this->shared_timetable_class_id ?: $this->id);
+    }
+
+    public function timetableOwner(): SchoolClass
+    {
+        return $this->shared_timetable_class_id ? self::findOrFail($this->shared_timetable_class_id) : $this;
+    }
+
     public const SESSION_HOURS = ['Morning' => ['07:00', '11:00'], 'Afternoon' => ['13:00', '17:00'], 'Evening' => ['16:30', '18:30']];
 
     public function sessionHours(): array

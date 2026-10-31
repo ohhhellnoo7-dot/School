@@ -77,8 +77,9 @@ class ClassroomAvailabilityService
                 if (auth()->check() && in_array(auth()->user()->role, ['student', 'parent'], true)) {
                     $cohorts = \App\Models\Student::visibleTo(auth()->user())->with('schoolClass')->get()->pluck('schoolClass')->filter();
                     $visibleBooking = fn ($b) => ! $b || $cohorts->contains(fn ($c) => $c->class_group_id === $b->class_group_id && $c->session === $b->classSession?->session);
-                    if ($activity['currentLesson'] && ! $cohorts->contains('id', $activity['currentLesson']->school_class_id)) { $activity['currentLesson'] = null; $activity['activity'] = 'Reserved for another cohort'; }
-                    if ($activity['nextLesson'] && ! $cohorts->contains('id', $activity['nextLesson']->school_class_id)) $activity['nextLesson'] = null;
+                    $visibleLesson = fn ($lesson) => $cohorts->contains(fn ($class) => $class->timetableOwnerId() === (int) $lesson->school_class_id);
+                    if ($activity['currentLesson'] && ! $visibleLesson($activity['currentLesson'])) { $activity['currentLesson'] = null; $activity['activity'] = 'Reserved for another cohort'; }
+                    if ($activity['nextLesson'] && ! $visibleLesson($activity['nextLesson'])) $activity['nextLesson'] = null;
                     if (! $visibleBooking($current)) { $current = null; $activity['activity'] = 'Reserved for another cohort'; }
                     if (! $visibleBooking($next)) $next = null;
                 }

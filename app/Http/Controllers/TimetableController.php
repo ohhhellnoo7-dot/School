@@ -24,7 +24,7 @@ class TimetableController extends Controller
         $request->validate(['day' => 'nullable|in:Monday,Tuesday,Wednesday,Thursday,Friday']);
 
         $entries = Schedule::with(['subject.teacher', 'teacher'])
-            ->where('school_class_id', $schoolClass->id)
+            ->where('school_class_id', $schoolClass->timetableOwnerId())
             ->orderBy('starts_at')
             ->get();
 
@@ -35,19 +35,9 @@ class TimetableController extends Controller
             ->orderBy('program')
             ->get();
 
-        $periods = match ($schoolClass->session) {
-            'Afternoon' => [
-                ['13:00', '14:00'], ['14:00', '15:00'],
-                ['15:00', '16:00'], ['16:00', '17:00'],
-            ],
-            'Evening' => [
-                ['16:30', '17:30'], ['17:30', '18:30'],
-            ],
-            default => [
-                ['07:00', '08:00'], ['08:00', '09:00'],
-                ['09:00', '10:00'], ['10:00', '11:00'],
-            ],
-        };
+        [$sessionStart, $sessionEnd] = $schoolClass->sessionHours();
+        $periods = [];
+        for ($minute = TeacherManagementService::minute($sessionStart); $minute + 60 <= TeacherManagementService::minute($sessionEnd); $minute += 60) $periods[] = [sprintf('%02d:%02d',intdiv($minute,60),$minute%60),sprintf('%02d:%02d',intdiv($minute+60,60),($minute+60)%60)];
 
         $stats = [
             'total' => $entries->count(),
@@ -56,7 +46,7 @@ class TimetableController extends Controller
             'academic_minutes' => $entries->where('entry_type', 'academic')->sum(fn ($s) => TeacherManagementService::duration($s->starts_at, $s->ends_at)),
             'relaxation_minutes' => $entries->where('entry_type', 'relaxation')->sum(fn ($s) => TeacherManagementService::duration($s->starts_at, $s->ends_at)),
         ];
-        $schoolClass->load('subjects.teacher');
+        $schoolClass->setRelation('subjects', $schoolClass->timetableOwner()->subjects()->with('teacher')->get());
 
         return view('school.classes.timetable', [
             'schoolClass' => $schoolClass,
@@ -83,6 +73,7 @@ class TimetableController extends Controller
 
     private function preview(Request $request, SchoolClass $class, RotationTimetableGenerator $generator, bool $replace): View
     {
+        $class = $class->timetableOwner();
         $plan = $generator->preview($class, $replace);
         $token = (string) Str::uuid();
         $request->session()->put('rotation_preview', ['plan' => $plan, 'token' => $token, 'created' => time()]);
@@ -93,6 +84,7 @@ class TimetableController extends Controller
 
     public function confirm(Request $request, SchoolClass $schoolClass, RotationTimetableGenerator $generator): RedirectResponse
     {
+        $schoolClass = $schoolClass->timetableOwner();
         $this->authorizeAdministrator($request);
         $request->validate(['token' => 'required|string', 'confirm' => 'required|accepted', 'replace' => 'sometimes|accepted']);
         $preview = $request->session()->get('rotation_preview');
@@ -109,9 +101,12 @@ class TimetableController extends Controller
     public function settings(Request $request, SchoolClass $schoolClass, TeacherManagementService $service): RedirectResponse
     {
         $this->authorizeAdministrator($request);
+        $schoolClass = $schoolClass->timetableOwner();
         $data = $request->validate(['subjects' => 'required|array', 'subjects.*.id' => 'required|integer', 'subjects.*.weekly_hours' => 'required|integer|min:0|max:20', 'subjects.*.lesson_minutes' => 'required|in:60,120', 'relaxation_hours' => 'required|integer|min:0|max:5', 'confirm' => 'required|accepted']);
         $service->locked(function () use ($data, $schoolClass, $service) {
-            if (collect($data['subjects'])->sum('weekly_hours') + $data['relaxation_hours'] > 20) $service->fail('Curriculum and relaxation exceed the 20 available session hours.');
+            [$from, $to] = $schoolClass->sessionHours();
+            $capacity = TeacherManagementService::duration($from, $to) * count(TeacherManagementService::DAYS) / 60;
+            if (collect($data['subjects'])->sum('weekly_hours') + $data['relaxation_hours'] > $capacity) $service->fail('Curriculum and relaxation exceed the '.$capacity.' available weekly session hours.');
             if (collect($data['subjects'])->pluck('id')->unique()->count() !== count($data['subjects']) || count($data['subjects']) !== $schoolClass->subjects()->count()) $service->fail('Configure every class subject exactly once.');
             foreach ($data['subjects'] as $row) {
                 $subject = $schoolClass->subjects()->findOrFail($row['id']);

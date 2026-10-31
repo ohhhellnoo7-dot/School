@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 /** Plans individual lessons from approved curriculum, without modifying preview data. */
 class RotationTimetableGenerator
 {
+    private array $subjectLimits = [];
     public function __construct(private TeacherManagementService $rules) {}
 
     public function fingerprint(): string
@@ -19,6 +20,7 @@ class RotationTimetableGenerator
 
     public function preview(SchoolClass $class, bool $replace = false, ?\Illuminate\Support\Collection $preservedRelaxation = null): array
     {
+        $class = $class->timetableOwner();
         return $this->rules->locked(function () use ($class, $replace, $preservedRelaxation) {
             $class->refresh()->load('subjects');
             if (! in_array($class->session, ['Morning', 'Afternoon', 'Evening'], true) || ($class->program === 'Khmer' && $class->session === 'Evening')) $this->rules->fail('Choose a permitted class session.');
@@ -31,13 +33,15 @@ class RotationTimetableGenerator
             if ($class->subjects->isEmpty() || $class->subjects->contains(fn ($s) => $s->required_weekly_minutes === null)) $this->rules->fail('Configure approved weekly hours for every class subject in Scheduling Settings first.');
             $required = $class->subjects->sum('required_weekly_minutes');
             $relaxMinutes = (int) $class->weekly_relaxation_minutes;
-            if ($required + $relaxMinutes > 1200) $this->rules->fail('Approved curriculum and relaxation exceed the 20 available session hours. No subject was removed.');
+            $capacity = $this->rules::duration($session->starts_at, $session->ends_at) * count($this->rules::DAYS);
+            if ($required + $relaxMinutes > $capacity) $this->rules->fail('Approved curriculum and relaxation exceed the '.($capacity / 60).' available weekly session hours. No subject was removed.');
             $outside = Schedule::with(['subject', 'schoolClass'])->where('school_class_id', '!=', $class->id)->get();
             $bookings = ClassroomBooking::with(['classSession', 'classroom'])->get();
             $rooms = Classroom::where('status', 'active')->get();
             $teachers = User::where('role', 'teacher')->where('status', 'active')->get()->keyBy('id');
             $qualifications = []; $limits = []; $breaks = []; $newBreaks = []; $used = []; $names = [];
             foreach ($teachers as $teacher) {
+                $this->subjectLimits[$teacher->id] = $this->rules->subjectLimit($teacher);
                 $qualifications[$teacher->id] = $this->rules->qualifications($teacher)->all();
                 $limits[$teacher->id] = $this->rules->limit($teacher);
                 $names[$teacher->id] = Subject::where('teacher_id', $teacher->id)->pluck('name')->unique()->all();
@@ -53,8 +57,8 @@ class RotationTimetableGenerator
                 \App\Support\KhmerLessonDuration::validateWeeklyHours($subject, $minutes);
                 if ($minutes % 60 !== 0 || ! in_array((int) $subject->lesson_minutes, [60, 120], true)) $this->rules->fail('Curriculum must use whole hours and lesson durations of one or two hours.');
                 if (! $minutes) continue;
-                $eligible = $teachers->filter(fn ($t) => ($class->program !== 'Khmer' || ($t->program ?: 'Khmer') === 'Khmer') && (! $subject->teacher_id || $subject->teacher_id === $t->id) && in_array($subject->name, $qualifications[$t->id], true) && count(array_unique([...$names[$t->id], $subject->name])) <= 2);
-                if ($eligible->isEmpty()) $this->rules->fail('Assign an active teacher with confirmed qualifications and at most two subjects for '.$subject->name.'.');
+                $eligible = $teachers->filter(fn ($t) => ($class->program !== 'Khmer' || ($t->program ?: 'Khmer') === 'Khmer') && (! $subject->teacher_id || $subject->teacher_id === $t->id) && in_array($subject->name, $qualifications[$t->id], true) && count(array_unique([...$names[$t->id], $subject->name])) <= $this->rules->subjectLimit($t));
+                if ($eligible->isEmpty()) $this->rules->fail('Assign an active qualified teacher within the program subject limit for '.$subject->name.'.');
                 $assignmentOptions[$subject->id] = $eligible->keys()->all();
                 foreach ($eligible as $teacher) if (! $breaks[$teacher->id]) {
                     $newBreaks[$teacher->id] = $this->rules->proposeBreaks($teacher);
@@ -126,7 +130,7 @@ class RotationTimetableGenerator
             $teacherRows = collect($chosen)->where('teacher_id', $teacher);
             if (($used[$teacher] ?? 0) + $teacherRows->sum(fn ($s) => $this->rules::duration($s['starts_at'], $s['ends_at'])) + $duration > $limits[$teacher]) return false;
             $assignedNames = array_merge($names[$teacher], $teacherRows->map(fn ($s) => $subjects[$s['subject_id']]->name)->all(), [$subjects[$row['subject_id']]->name]);
-            if (count(array_unique($assignedNames)) > 2) return false;
+            if (count(array_unique($assignedNames)) > ($this->subjectLimits[$teacher] ?? 2)) return false;
             if (collect($chosen)->contains(fn ($s) => $s['subject_id'] === $row['subject_id'] && $s['teacher_id'] !== $teacher)) return false;
         }
         foreach ([...$busy, ...$chosen] as $s) {
