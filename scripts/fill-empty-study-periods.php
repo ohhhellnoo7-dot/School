@@ -12,11 +12,14 @@ use Illuminate\Support\Facades\{DB, Storage};
 use Illuminate\Validation\ValidationException;
 
 $apply = in_array('--apply', $argv, true);
-$result = app(TeacherManagementService::class)->locked(function () use ($apply) {
+$program = collect($argv)->first(fn ($argument) => str_starts_with($argument, '--program='));
+$program = $program ? substr($program, strlen('--program=')) : null;
+if ($program && ! in_array($program, ['Khmer','English','Chinese'], true)) throw new RuntimeException('Choose a valid program.');
+$result = app(TeacherManagementService::class)->locked(function () use ($apply, $program) {
     $rules = app(TeacherManagementService::class);
     $service = app(LessonManagementService::class);
     $year = '2026-2027';
-    $classes = SchoolClass::with('subjects')->whereNull('shared_timetable_class_id')->get()->sortBy(fn ($c) => $c->program === 'Khmer' && $c->name === 'Grade 10' && $c->section === 'A' && $c->session === 'Morning' ? 0 : $c->id);
+    $classes = SchoolClass::with('subjects')->whereNull('shared_timetable_class_id')->when($program, fn($q)=>$q->where('program',$program))->get()->sortBy(fn ($c) => $c->program === 'Khmer' && $c->name === 'Grade 10' && $c->section === 'A' && $c->session === 'Morning' ? 0 : $c->id);
     $teachers = User::where('role', 'teacher')->where('status', 'active')->get();
     $limits = $teachers->mapWithKeys(fn ($teacher) => [$teacher->id => $rules->limit($teacher)]);
     $qualifications = DB::table('teacher_qualifications')->get()->groupBy('teacher_id')->map(fn ($rows) => $rows->pluck('subject_name'));

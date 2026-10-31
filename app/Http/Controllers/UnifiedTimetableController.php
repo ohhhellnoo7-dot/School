@@ -54,6 +54,9 @@ class UnifiedTimetableController extends Controller
         }
         $lessons = $query->orderBy('starts_at')->get();
         $periods = [['07:00','08:00'], ['08:00','09:00'], ['09:00','10:00'], ['10:00','11:00'], ['13:00','14:00'], ['14:00','15:00'], ['15:00','16:00'], ['16:00','17:00'], ['17:30','18:30'], ['18:30','19:30']];
+        if ($view === 'teachers' && ($teachers->firstWhere('id', $selected)?->program ?? $teacherProgram) === 'Khmer') {
+            $periods = array_slice($periods, 0, 8);
+        }
         if ($view === 'students' && ($class = $classes->firstWhere('id', $selected))) {
             [$start,$end] = $class->sessionHours(); $periods = [];
             for ($minute = TeacherManagementService::minute($start); $minute + 60 <= TeacherManagementService::minute($end); $minute += 60) $periods[] = [sprintf('%02d:%02d',intdiv($minute,60),$minute%60),sprintf('%02d:%02d',intdiv($minute+60,60),($minute+60)%60)];

@@ -1,0 +1,31 @@
+position,existing_teacher_id,actual_name,program,proposed_subject_1,proposed_subject_2,proposed_grades,working_days,morning_hours,afternoon_hours,weekly_teaching_limit,proposed_weekly_teaching_hours,record_status
+1,2,"Sarah Williams",Khmer,Khmer,History,"Grade 10; Grade 11; Grade 7; Grade 8; Grade 9",Monday-Friday,07:00-11:00,13:00-17:00,40,37,existing_record_needs_school_confirmation
+2,3,"James Anderson",Khmer,Khmer,History,"Grade 9; Grade 7",Monday-Friday,07:00-11:00,13:00-17:00,40,37,existing_record_needs_school_confirmation
+3,7,"Mrs. Una Keeling",Khmer,Khmer,History,"Grade 8; Grade 9",Monday-Friday,07:00-11:00,13:00-17:00,40,37,existing_record_needs_school_confirmation
+4,26,"Bernadette Marquardt",Khmer,Khmer,History,"Grade 9; Grade 10",Monday-Friday,07:00-11:00,13:00-17:00,40,37,existing_record_needs_school_confirmation
+5,45,"Berry Keebler",Khmer,Khmer,History,"Grade 11; Grade 12; Grade 7; Grade 10",Monday-Friday,07:00-11:00,13:00-17:00,40,37,existing_record_needs_school_confirmation
+6,64,"Isabel Berge",Khmer,Khmer,History,"Grade 7; Grade 8; Grade 9; Grade 11; Grade 10",Monday-Friday,07:00-11:00,13:00-17:00,40,37,existing_record_needs_school_confirmation
+7,83,"Dr. Ron Gibson PhD",Khmer,Khmer,Mathematics,"Grade 11; Grade 9; Grade 10; Grade 7",Monday-Friday,07:00-11:00,13:00-17:00,40,36,existing_record_needs_school_confirmation
+8,102,"Prof. Margaretta Harvey I",Khmer,Mathematics,History,"Grade 7; Grade 8; Grade 9; Grade 11",Monday-Friday,07:00-11:00,13:00-17:00,40,37,existing_record_needs_school_confirmation
+9,121,"Prof. Benedict Cummerata",Khmer,Mathematics,History,"Grade 9; Grade 10; Grade 11; Grade 7",Monday-Friday,07:00-11:00,13:00-17:00,40,37,existing_record_needs_school_confirmation
+10,140,"Miss Betsy Kerluke",Khmer,Mathematics,History,"Grade 11; Grade 12; Grade 7",Monday-Friday,07:00-11:00,13:00-17:00,40,37,existing_record_needs_school_confirmation
+11,,,Khmer,Mathematics,History,"Grade 11; Grade 12; Grade 7; Grade 8",Monday-Friday,07:00-11:00,13:00-17:00,40,37,vacancy_requires_actual_staff_name
+12,,,Khmer,Mathematics,History,"Grade 8; Grade 11; Grade 12; Grade 7",Monday-Friday,07:00-11:00,13:00-17:00,40,37,vacancy_requires_actual_staff_name
+13,,,Khmer,History,,"Grade 8; Grade 9; Grade 10; Grade 7",Monday-Friday,07:00-11:00,13:00-17:00,40,37,vacancy_requires_actual_staff_name
+14,,,Khmer,History,,"Grade 8; Grade 9; Grade 10",Monday-Friday,07:00-11:00,13:00-17:00,40,37,vacancy_requires_actual_staff_name
+15,,,Khmer,History,,"Grade 10; Grade 11; Grade 12; Grade 7; Grade 8",Monday-Friday,07:00-11:00,13:00-17:00,40,37,vacancy_requires_actual_staff_name
+16,,,Khmer,History,,"Grade 8; Grade 9; Grade 10",Monday-Friday,07:00-11:00,13:00-17:00,40,37,vacancy_requires_actual_staff_name
+17,,,Khmer,History,Physics,"Grade 10; Grade 11; Grade 8; Grade 9; Grade 7",Monday-Friday,07:00-11:00,13:00-17:00,40,37,vacancy_requires_actual_staff_name
+18,,,Khmer,Physics,,"Grade 8; Grade 9; Grade 7; Grade 10; Grade 11; Grade 12",Monday-Friday,07:00-11:00,13:00-17:00,40,37,vacancy_requires_actual_staff_name
+19,,,Khmer,Physics,,"Grade 12; Grade 11; Grade 7; Grade 8",Monday-Friday,07:00-11:00,13:00-17:00,40,37,vacancy_requires_actual_staff_name
+20,,,Khmer,Physics,,"Grade 8; Grade 9; Grade 10; Grade 12",Monday-Friday,07:00-11:00,13:00-17:00,40,37,vacancy_requires_actual_staff_name
+21,,,Khmer,Biology,,"Grade 10; Grade 11; Grade 8; Grade 9; Grade 7",Monday-Friday,07:00-11:00,13:00-17:00,40,37,vacancy_requires_actual_staff_name
+22,,,Khmer,Biology,,"Grade 10; Grade 11; Grade 12; Grade 7",Monday-Friday,07:00-11:00,13:00-17:00,40,37,vacancy_requires_actual_staff_name
+23,,,Khmer,Biology,Geography,"Grade 7; Grade 8; Grade 9; Grade 11; Grade 12; Grade 10",Monday-Friday,07:00-11:00,13:00-17:00,40,37,vacancy_requires_actual_staff_name
+24,,,Khmer,Geography,,"Grade 11; Grade 9; Grade 10; Grade 7; Grade 8; Grade 12",Monday-Friday,07:00-11:00,13:00-17:00,40,37,vacancy_requires_actual_staff_name
+25,,,Khmer,Geography,,"Grade 12; Grade 11",Monday-Friday,07:00-11:00,13:00-17:00,40,37,vacancy_requires_actual_staff_name
+26,,,Khmer,Geography,English,"Grade 7; Grade 8; Grade 9; Grade 12; Grade 10",Monday-Friday,07:00-11:00,13:00-17:00,40,37,vacancy_requires_actual_staff_name
+27,,,Khmer,English,Chemistry,"Grade 10; Grade 11; Grade 7; Grade 8; Grade 9; Grade 12",Monday-Friday,07:00-11:00,13:00-17:00,40,35,vacancy_requires_actual_staff_name
+28,,,Khmer,"Computer Science","Physical Education","Grade 10; Grade 11; Grade 7; Grade 8; Grade 9; Grade 12",Monday-Friday,07:00-11:00,13:00-17:00,40,34,vacancy_requires_actual_staff_name
+29,,,Khmer,Science,"Computer Studies","Grade 9; Grade 10; Grade 7; Grade 8",Monday-Friday,07:00-11:00,13:00-17:00,40,18,vacancy_requires_actual_staff_name
+30,,,Khmer,Art,,"Grade 9; Grade 10",Monday-Friday,07:00-11:00,13:00-17:00,40,5,vacancy_requires_actual_staff_name

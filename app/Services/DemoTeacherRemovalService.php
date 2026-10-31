@@ -26,7 +26,7 @@ class DemoTeacherRemovalService
             $rules=app(TeacherManagementService::class);
             $extra=User::where('role','teacher')->where(function($q) use ($includeOriginalSamples) {
                 $q->where('profile_number','like','DEMO-%')->orWhere('email','like','demo-timetable-%');
-                if($includeOriginalSamples) $q->orWhere('name','like','Sample %')->orWhere('name','like','Fictional %');
+                if($includeOriginalSamples) $q->orWhere('name','like','Sample %')->orWhere('name','like','Fictional %')->orWhere(fn($generated)=>$generated->where('teacher_record_source','generated_unverified')->whereNull('employee_confirmed_at'));
             })->get();
             if($extra->isEmpty()) return ['removed'=>0,'reassigned_lessons'=>0,'unfilled_lessons'=>0];
             $backup=app(TimetableBackup::class)->create();

@@ -71,12 +71,14 @@ class DemoTeacherRemovalTest extends TestCase
     {
         [$original,$demo,$subject,$lesson]=$this->fixture();
         $existing=User::factory()->create(['role'=>'teacher','program'=>'Khmer','name'=>'Existing Khmer Teacher','status'=>'active']);
+        $generated=User::factory()->create(['role'=>'teacher','program'=>'Khmer','name'=>'Normal Generated Name','teacher_record_source'=>'generated_unverified','status'=>'active']);
         $parent=User::factory()->create(['role'=>'parent','name'=>'Sample Parent','status'=>'active']);
         $report=app(DemoTeacherRemovalService::class)->removeAllSamples();
         $this->assertSame('all_samples',$report['scope']);
-        $this->assertSame(2,$report['removed']);
+        $this->assertSame(3,$report['removed']);
         $this->assertNull(User::find($original->id));
         $this->assertNull(User::find($demo->id));
+        $this->assertNull(User::find($generated->id));
         $this->assertNotNull(User::find($existing->id));
         $this->assertNotNull(User::find($parent->id));
         $this->assertSame(1,User::where('role','teacher')->count());

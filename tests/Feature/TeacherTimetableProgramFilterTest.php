@@ -21,6 +21,8 @@ class TeacherTimetableProgramFilterTest extends TestCase
                 ->assertSee(strtoupper($program).' TEACHERS')
                 ->assertViewHas('selected',$teacher->id)->assertViewHas('academicYear','2026-2027');
             foreach ($teachers->except($program) as $other) $response->assertDontSee($other->name);
+            if ($program === 'Khmer') $response->assertSee('Morning schedule')->assertSee('Afternoon schedule')->assertDontSee('Evening schedule')->assertDontSee('17:30');
+            else $response->assertSee('Evening schedule');
             $this->getJson(route('timetables.data',['view'=>'teachers','program'=>$program,'teacher'=>$teacher->id]))->assertOk();
         }
         $this->get(route('timetables.index',['view'=>'teachers','program'=>'Khmer','teacher'=>$teachers['English']->id]))->assertNotFound();

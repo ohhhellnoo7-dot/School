@@ -17,6 +17,11 @@ class User extends Authenticatable
 
     protected $attributes = ['role' => 'student'];
 
+    public function requiresTeacherConfirmation(): bool
+    {
+        return $this->teacher_record_source === 'generated_unverified' && $this->employee_confirmed_at === null;
+    }
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
@@ -95,6 +100,8 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
+            'teacher_planned_grades' => 'array',
+            'employee_confirmed_at' => 'datetime',
             'hire_date' => 'date', 'salary' => 'decimal:2',
             'email_verified_at' => 'datetime',
             'password' => 'hashed',

@@ -1,6 +1,8 @@
 @extends('school.layout')
 @section('title', $teacher->name)
 @section('content')
+@if($teacher->employee_confirmed_at)<div class="alert alert-success">Employee status: manually confirmed on {{ $teacher->employee_confirmed_at->format('M j, Y') }}.</div>
+@elseif($teacher->requiresTeacherConfirmation())<div class="alert alert-info">Generated teacher record. Staff identity and proposed subjects require school confirmation. Proposed grades: {{ implode(', ', $teacher->teacher_planned_grades ?? []) }}.</div>@endif
 <div class="page-heading"><div><div class="eyebrow">TEACHER · {{ $teacher->profile_number ?: '#'.$teacher->id }}</div><h1>@include('school.partials.avatar', ['person' => $teacher]){{ $teacher->name }}</h1><p>{{ $teacher->program ?: 'Khmer' }} · {{ $teacher->status }}</p></div><div class="d-flex gap-2"><a href="{{ route('teacher-management.edit', $teacher) }}" class="btn btn-primary">Edit Teacher</a><a href="{{ route('modules.index', 'teachers') }}" class="btn btn-outline-secondary">Back</a></div></div>
 <div class="d-flex flex-wrap gap-2 mb-4">
 <form method="post" action="{{ route('teacher-management.schedules.preview', $teacher) }}">@csrf<button class="btn btn-primary">{{ $breaks->isEmpty() ? 'Generate Schedule' : 'Regenerate Schedule' }}</button></form>
@@ -11,7 +13,7 @@
 <div class="tab-content">
 <section class="tab-pane fade show active panel p-4" id="overview" role="tabpanel" aria-labelledby="overview-tab">
 @include('school.teachers._weekly-work-plan')
-<h2 class="h5">Teacher Overview</h2><div class="row g-4 mt-1"><div class="col-md-6"><p>{{ $teacher->email }}<br>{{ $teacher->phone }}</p><p>Verified subjects: <strong>{{ $service->qualifications($teacher)->join(', ') ?: 'Not confirmed' }}</strong></p><p>Assigned subjects: {{ $workload['subjects']->join(', ') ?: 'Not assigned' }}</p><p>Assigned classes: {{ $workload['classes']->map(fn ($c) => $c->name.$c->section)->join(', ') ?: 'Not assigned' }}</p></div>
+<h2 class="h5">Teacher Overview</h2><div class="row g-4 mt-1"><div class="col-md-6"><p>{{ $teacher->email }}<br>{{ $teacher->phone }}</p><p>{{ $teacher->teacher_record_source === 'generated_unverified' ? 'Proposed subjects' : 'Verified subjects' }}: <strong>{{ $service->qualifications($teacher)->join(', ') ?: 'Not confirmed' }}</strong></p><p>Assigned subjects: {{ $workload['subjects']->join(', ') ?: 'Not assigned' }}</p><p>Assigned classes: {{ $workload['classes']->map(fn ($c) => $c->name.$c->section)->join(', ') ?: 'Not assigned' }}</p></div>
 <div class="col-md-6"><p>Teaching: <strong>{{ $workload['weekly'] }} / {{ $workload['limit'] }} hours</strong></p><p>Breaks: <strong>{{ $workload['breaks'] }} / 3 hours</strong></p><p>Remaining teaching capacity: {{ $workload['remaining'] }} hours</p><span class="teacher-status status-{{ strtolower($workload['status']) }}">{{ $workload['status'] }}</span></div></div>
 @if($workload['subjects']->count() > $service->subjectLimit($teacher))<p class="alert alert-warning mt-4">This Khmer teacher has more than two historical subjects. Existing assignments are preserved. Review and reassign surplus subjects before adding lessons.</p>@endif
 @if($periods->isEmpty())<p class="alert alert-warning mt-4">Working hours are not confirmed. Edit Teacher before generating breaks or assigning lessons.</p>@endif
