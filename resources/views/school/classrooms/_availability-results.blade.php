@@ -9,7 +9,7 @@
     @endforeach
 </section>
 
-<div class="room-grid-heading"><div><h2>Physical classrooms</h2><p>{{ $availability->count() }} {{ \Illuminate\Support\Str::plural('room', $availability->count()) }} match the selected date, time, and filters.</p></div><span class="status-legend"><span class="legend-available">Available</span><span class="legend-busy">Busy</span><span class="legend-upcoming">Upcoming</span><span class="legend-out">Out of service</span></span></div>
+<div class="room-grid-heading"><div><h2>Physical classrooms</h2><p>{{ $availability->count() }} {{ \Illuminate\Support\Str::plural('room', $availability->count()) }} match the selected date, time, and filters.</p></div><span class="status-legend"><span class="legend-available">{{ __('Available') }}</span><span class="legend-busy">Busy</span><span class="legend-upcoming">Upcoming</span><span class="legend-out">Out of service</span></span></div>
 
 <section class="classroom-grid" aria-label="Physical classroom status">
     @forelse($availability as $entry)
@@ -26,7 +26,7 @@
         <article class="classroom-card room-status-{{ $status }}">
             <div class="room-card-head">
                 <span class="room-icon"><i class="bi bi-door-open" aria-hidden="true"></i></span>
-                <span class="room-heading"><small>Room</small><strong>{{ $room->room_number }}</strong>@if($room->name && $room->name !== $room->room_number)<span>{{ $room->name }}</span>@endif</span>
+                <span class="room-heading"><small>{{ __('Room') }}</small><strong>{{ $room->room_number }}</strong>@if($room->name && $room->name !== $room->room_number)<span>{{ $room->name }}</span>@endif</span>
                 <span class="room-status"><i class="bi bi-{{ $icons[$status] ?? 'circle-fill' }}" aria-hidden="true"></i> {{ str_replace('_', ' ', ucfirst($status)) }}</span>
             </div>
             <div class="room-card-body">
@@ -35,7 +35,7 @@
                 @elseif($displayBooking)
                     <div class="booking-context"><small>{{ $current ? 'Current class' : 'Next scheduled class' }}</small><strong>{{ $group?->display_name ?? 'Scheduled class' }}</strong><span class="program-badge program-{{ strtolower($group?->program ?? '') }}">{{ $group?->program ?? 'Program not set' }}</span></div>
                     <dl class="room-facts">
-                        <div><dt><i class="bi bi-clock" aria-hidden="true"></i> Session</dt><dd>{{ $session?->session ?? '—' }} · {{ substr((string) $displayBooking->starts_at, 0, 5) }}–{{ substr((string) $displayBooking->ends_at, 0, 5) }}</dd></div>
+                        <div><dt><i class="bi bi-clock" aria-hidden="true"></i> {{ __('Session') }}</dt><dd>{{ $session?->session ?? '—' }} · {{ substr((string) $displayBooking->starts_at, 0, 5) }}–{{ substr((string) $displayBooking->ends_at, 0, 5) }}</dd></div>
                     </dl>
                 @elseif(data_get($entry, 'currentLesson'))
                     <div class="booking-context"><small>Lesson currently in progress</small><strong>{{ data_get($entry, 'currentLesson.schoolClass.label') }}</strong></div>

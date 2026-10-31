@@ -9,7 +9,7 @@
     <div class="panel-body">
         <div class="d-flex align-items-center gap-3 flex-wrap my-3">
             <div class="user-avatar profile-preview" id="profile-initial" @if($user->profile_photo_path) hidden @endif>{{ mb_substr($user->name, 0, 1) }}</div>
-            <img class="user-avatar profile-preview" id="profile-preview" @if($user->profile_photo_path) src="{{ route('profile.photo') }}" @else hidden @endif alt="Your profile photo">
+            <img class="user-avatar profile-preview" id="profile-preview" @if($user->profile_photo_path) src="{{ route('profile.photo') }}" @else hidden @endif alt="{{ __('Your profile photo') }}">
             <div><label for="photo" class="form-label">Choose profile photo</label><input type="file" class="form-control" id="photo" name="photo" accept="image/jpeg,image/png,image/webp" aria-describedby="photo-help"><small id="photo-help" class="text-muted">JPG, PNG or WebP. Maximum 2 MB.</small><div id="photo-error" class="text-danger" role="alert"></div></div>
         </div>
         <div class="row g-3">

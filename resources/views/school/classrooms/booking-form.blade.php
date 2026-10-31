@@ -11,7 +11,7 @@
         <div>
             <label class="form-label" for="booking-program">Academic program</label>
             <select class="form-select" id="booking-program" data-booking-program>
-                <option value="">All programs</option>@foreach(['Khmer', 'English', 'Chinese'] as $program)<option value="{{ $program }}" @selected(old('program', $booking->classGroup?->program) === $program)>{{ $program }}</option>@endforeach
+                <option value="">{{ __('All programs') }}</option>@foreach(['Khmer', 'English', 'Chinese'] as $program)<option value="{{ $program }}" @selected(old('program', $booking->classGroup?->program) === $program)>{{ $program }}</option>@endforeach
             </select>
         </div>
         <div>
@@ -23,7 +23,7 @@
             @error('class_group_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
         <div>
-            <label class="form-label" for="class_session_id">Session <span aria-hidden="true">*</span></label>
+            <label class="form-label" for="class_session_id">{{ __('Session') }} <span aria-hidden="true">*</span></label>
             <select class="form-select @error('class_session_id') is-invalid @enderror" id="class_session_id" name="class_session_id" required data-booking-session>
                 <option value="">Choose a session</option>
                 @foreach($classGroups as $classGroup)@foreach($classGroup->sessions as $session)<option value="{{ $session->id }}" data-group="{{ $classGroup->id }}" data-start="{{ substr((string) $session->starts_at, 0, 5) }}" data-end="{{ substr((string) $session->ends_at, 0, 5) }}" @selected((string) old('class_session_id', $booking->class_session_id) === (string) $session->id)>{{ $classGroup->display_name }} · {{ $session->session }} ({{ substr((string) $session->starts_at, 0, 5) }}-{{ substr((string) $session->ends_at, 0, 5) }})</option>@endforeach @endforeach

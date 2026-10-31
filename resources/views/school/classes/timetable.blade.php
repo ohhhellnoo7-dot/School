@@ -8,7 +8,7 @@
         <p>Monday to Friday · {{ $schoolClass->room ?: 'Room not assigned' }}</p>
     </div>
     <div class="timetable-actions no-print">
-        @if(auth()->user()->role === 'administrator')<a class="btn btn-outline-secondary" href="#class-weekly-calendar">Edit Schedule</a>@endif
+        @if(auth()->user()->role === 'administrator')<a class="btn btn-outline-secondary" href="#class-weekly-calendar">{{ __('Edit Schedule') }}</a>@endif
         <button class="btn btn-outline-secondary" type="button" onclick="window.print()"><i class="bi bi-printer me-1"></i> Print timetable</button>
         @if(auth()->user()->role === 'administrator')
             @if($stats['total'] === 0)
@@ -29,24 +29,24 @@
 
 <section class="panel timetable-controls no-print" aria-label="Timetable filters">
     <div class="timetable-filter">
-        <label for="timetable-grade">Grade</label>
+        <label for="timetable-grade">{{ __('Grade') }}</label>
         <select class="form-select" id="timetable-grade">
-            <option value="">All grades</option>
+            <option value="">{{ __('All grades') }}</option>
             @foreach(range(7, 12) as $grade)
                 <option value="Grade {{ $grade }}" @selected($schoolClass->name === 'Grade '.$grade)>Grade {{ $grade }}</option>
             @endforeach
         </select>
     </div>
     <div class="timetable-filter">
-        <label for="timetable-session">Session</label>
+        <label for="timetable-session">{{ __('Session') }}</label>
         <select class="form-select" id="timetable-session">
-            <option value="">All sessions</option>
+            <option value="">{{ __('All sessions') }}</option>
             <option value="Morning" @selected($schoolClass->session === 'Morning')>Morning · 07:00–11:00</option>
             <option value="Afternoon" @selected($schoolClass->session === 'Afternoon')>Afternoon · 13:00–17:00</option>
         </select>
     </div>
     <div class="timetable-filter timetable-class-filter">
-        <label for="timetable-class">Class</label>
+        <label for="timetable-class">{{ __('Class') }}</label>
         <select class="form-select" id="timetable-class">
             @foreach($availableClasses as $class)
                 <option value="{{ route('classes.timetable', $class) }}" data-grade="{{ $class->name }}" data-session="{{ $class->session }}" @selected($class->id === $schoolClass->id)>{{ $class->label }}</option>
@@ -61,12 +61,12 @@
     </div>
 </section>
 
-<form method="get" class="d-flex gap-3 mb-3 no-print"><label for="rotation-day" class="form-label">Day</label><select name="day" id="rotation-day" class="form-select w-auto"><option value="">All weekdays</option>@foreach(\App\Services\TeacherManagementService::DAYS as $day)<option @selected(request('day') === $day)>{{ $day }}</option>@endforeach</select><button class="btn btn-outline-secondary">Filter</button>@if(auth()->user()->role === 'administrator')<label for="rotation-teacher" class="form-label">Teacher</label><select id="rotation-teacher" class="form-select w-auto" onchange="if(this.value) window.location.assign(this.value)"><option value="">View a teacher schedule</option>@foreach($schoolClass->subjects->pluck('teacher')->filter()->unique('id') as $teacher)<option value="{{ route('teachers.schedule', $teacher) }}">{{ $teacher->name }}</option>@endforeach</select>@endif</form>
+<form method="get" class="d-flex gap-3 mb-3 no-print"><label for="rotation-day" class="form-label">Day</label><select name="day" id="rotation-day" class="form-select w-auto"><option value="">All weekdays</option>@foreach(\App\Services\TeacherManagementService::DAYS as $day)<option @selected(request('day') === $day)>{{ $day }}</option>@endforeach</select><button class="btn btn-outline-secondary">{{ __('Filter') }}</button>@if(auth()->user()->role === 'administrator')<label for="rotation-teacher" class="form-label">{{ __('Teacher') }}</label><select id="rotation-teacher" class="form-select w-auto" onchange="if(this.value) window.location.assign(this.value)"><option value="">View a teacher schedule</option>@foreach($schoolClass->subjects->pluck('teacher')->filter()->unique('id') as $teacher)<option value="{{ route('teachers.schedule', $teacher) }}">{{ $teacher->name }}</option>@endforeach</select>@endif</form>
 @if(auth()->user()->role === 'administrator')
 <details class="panel p-4 mb-4 no-print"><summary>Scheduling Settings &middot; Curriculum and lesson duration</summary>
 <p class="mt-3">Enter your approved weekly hours. These are school-configured values, not official curriculum allocations. Saving settings preserves existing lessons.</p>
 <form method="post" action="{{ route('classes.timetable.settings', $schoolClass) }}">@csrf
-<div class="table-responsive"><table class="table"><thead><tr><th>Subject</th><th>Assigned teacher</th><th>Weekly hours</th><th>Lesson duration</th></tr></thead><tbody>
+<div class="table-responsive"><table class="table"><thead><tr><th>{{ __('Subject') }}</th><th>Assigned teacher</th><th>Weekly hours</th><th>Lesson duration</th></tr></thead><tbody>
 @foreach($schoolClass->subjects as $subject)<tr><td>{{ $subject->name }}<input type="hidden" name="subjects[{{ $loop->index }}][id]" value="{{ $subject->id }}"></td><td>{{ $subject->teacher?->name ?: 'Select a qualified teacher during planning' }}</td><td><input class="form-control" aria-label="{{ $subject->name }} weekly hours" name="subjects[{{ $loop->index }}][weekly_hours]" type="number" min="0" max="20" step="{{ $schoolClass->program === 'Khmer' ? \App\Support\KhmerLessonDuration::minutes($subject) / 60 : 1 }}" value="{{ $subject->required_weekly_minutes === null ? '' : $subject->required_weekly_minutes / 60 }}" required></td><td>
 @if($schoolClass->program === 'Khmer')<input type="hidden" name="subjects[{{ $loop->index }}][lesson_minutes]" value="{{ \App\Support\KhmerLessonDuration::minutes($subject) }}">{{ \App\Support\KhmerLessonDuration::minutes($subject) / 60 }} consecutive hour(s)
 @else<select class="form-select" aria-label="{{ $subject->name }} lesson duration" name="subjects[{{ $loop->index }}][lesson_minutes]"><option value="60" @selected($subject->lesson_minutes === 60)>1 hour</option><option value="120" @selected($subject->lesson_minutes === 120)>2 hours (1 hour for an odd remaining hour)</option></select>@endif</td></tr>@endforeach

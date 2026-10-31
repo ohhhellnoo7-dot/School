@@ -75,8 +75,8 @@ class TeacherManagementService
         $next = $lessons->first(fn ($s) => self::minute($s->starts_at) > self::minute($time));
         $free = $this->breaks($teacher)->contains(fn ($b) => $b->weekday === $day && self::minute($b->start_time) <= self::minute($time) && self::minute($b->end_time) > self::minute($time));
         $status = $teacher->status !== 'active' ? 'Inactive' : ($current ? 'Teaching' : ($free ? 'Designated Free Period' : ($this->onDuty($teacher, $day, $time, $now->addMinute()->format('H:i')) ? 'Available' : 'Off duty')));
-        $describe = fn ($s) => $s ? $s->subject?->name.' · '.$s->subject?->schoolClass?->label.' · Room '.$s->room.' · '.substr($s->starts_at, 0, 5).'–'.substr($s->ends_at, 0, 5) : 'No lesson';
-        return ['status' => $status, 'current' => $describe($current), 'next' => $describe($next), 'time' => $now->format('D H:i')];
+        $describe = fn ($s) => $s ? $s->subject?->name.' · '.$s->subject?->schoolClass?->label.' · '.__('Room').' '.$s->room.' · '.substr($s->starts_at, 0, 5).'–'.substr($s->ends_at, 0, 5) : __('No lesson');
+        return ['status' => __($status), 'current' => $describe($current), 'next' => $describe($next), 'time' => __($now->englishDayOfWeek).' '.$now->format('H:i')];
     }
 
     public function saveProfile(User $teacher, array $names, ?int $limit, array $periods): void

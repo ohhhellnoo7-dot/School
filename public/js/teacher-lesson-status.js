@@ -12,7 +12,7 @@
             ['status', 'current', 'next', 'time'].forEach(key => {
                 panel.querySelector(`[data-teacher-${key}]`).textContent = data[key];
             });
-        } catch { panel.querySelector('[data-teacher-time]').textContent = 'Refresh unavailable'; }
+        } catch { panel.querySelector('[data-teacher-time]').textContent = panel.dataset.refreshError; }
         finally { pending = false; }
     };
     setInterval(refresh, 30000);

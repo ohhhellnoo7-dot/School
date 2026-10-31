@@ -13,7 +13,10 @@
         root.dataset.theme = theme;
         root.dataset.bsTheme = ['night', 'luxury', 'galaxy'].includes(theme) ? 'dark' : 'light';
         document.querySelectorAll('[data-theme-picker]').forEach(picker => { picker.value = theme; });
-        document.querySelectorAll('[data-current-theme]').forEach(label => { label.textContent = theme[0].toUpperCase() + theme.slice(1); });
+        document.querySelectorAll('[data-current-theme]').forEach(label => {
+            const option = document.querySelector(`[data-theme-choice="${theme}"] strong`);
+            if (option) label.textContent = option.textContent;
+        });
         document.querySelectorAll('[data-theme-choice]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === theme)));
     }
     let saved;

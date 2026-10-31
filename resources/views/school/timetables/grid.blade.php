@@ -13,7 +13,7 @@
     }, true);
     $sessionIcons = ['Morning'=>'sunrise', 'Afternoon'=>'sun', 'Evening'=>'moon-stars'];
 @endphp
-<div class="panel timetable-scroll"><table class="shared-timetable"><caption>Weekly schedule — Monday–Friday</caption><thead><tr><th scope="col">Time</th>@foreach(\App\Services\TeacherManagementService::DAYS as $day)<th scope="col">{{ $day }}</th>@endforeach</tr></thead>
+<div class="panel timetable-scroll"><table class="shared-timetable"><caption>Weekly schedule — Monday–Friday</caption><thead><tr><th scope="col">{{ __('Time') }}</th>@foreach(\App\Services\TeacherManagementService::DAYS as $day)<th scope="col">{{ $day }}</th>@endforeach</tr></thead>
 @foreach($sessionGroups as $sessionName => $sessionPeriods)
 <tbody class="timetable-session-group" aria-label="{{ $sessionName }} schedule">
 <tr class="timetable-session-heading session-{{ strtolower($sessionName) }}"><th colspan="6" scope="rowgroup"><span class="timetable-session-title"><i class="bi bi-{{ $sessionIcons[$sessionName] }}" aria-hidden="true"></i> {{ $sessionName }} schedule</span><span class="timetable-session-hours">{{ $sessionPeriods->first()[0] }}–{{ $sessionPeriods->last()[1] }}</span></th></tr>

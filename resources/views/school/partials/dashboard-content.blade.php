@@ -20,7 +20,7 @@
         <details class="attendance-actions">
             <summary class="btn btn-primary"><i class="bi bi-check2-all me-2" aria-hidden="true"></i>Student attendance <i class="bi bi-chevron-down ms-2" aria-hidden="true"></i></summary>
             <div class="attendance-action-menu">
-                <div class="attendance-menu-heading"><strong>Today's attendance</strong><span>{{ $reportDate->format('M d, Y') }} &middot; {{ $studentCount }} students</span></div>
+                <div class="attendance-menu-heading"><strong>{{ __('Today\'s attendance') }}</strong><span>{{ $reportDate->format('M d, Y') }} &middot; {{ $studentCount }} students</span></div>
                 <div class="attendance-status-grid">
                     @foreach([['Present', $presentCount, 'present', 'check-circle'], ['Absent', $absentCount, 'absent', 'x-circle'], ['Late', $lateCount, 'late', 'clock']] as [$statusLabel, $statusCount, $statusClass, $statusIcon])
                         <div class="attendance-status-item attendance-status-{{ $statusClass }}"><i class="bi bi-{{ $statusIcon }}" aria-hidden="true"></i><strong>{{ $statusCount }}</strong><span>{{ $statusLabel }}</span></div>

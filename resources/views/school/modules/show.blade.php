@@ -13,7 +13,7 @@
 @if($module === 'fees')<dt>Balance ? USD</dt><dd>${{ number_format($record->balance, 2) }}</dd><dt>Payment status</dt><dd>{{ \Illuminate\Support\Str::headline($record->payment_status) }}</dd>@endif
 @if($module === 'grades')<dt>Result</dt><dd>{{ round($record->percentage, 1) }}% ? {{ $record->letter_grade }}</dd>@endif
 @if($module === 'teachers')<dt>Weekly schedule</dt><dd><a href="{{ route('teachers.schedule', $record) }}">View teaching schedule</a></dd><dt>{{ __('Subjects') }}</dt><dd>{{ $record->subjects->map(fn ($subject) => $subject->name.' ('.$subject->schoolClass->name.$subject->schoolClass->section.')')->join(', ') ?: 'Not assigned' }}</dd>@endif
-@if($module === 'parents')<dt>Children</dt><dd>@foreach($record->children as $child)<a class="d-block" href="{{ route('students.show', $child) }}">@include('school.partials.avatar', ['person' => $child]){{ $child->name }} ? {{ $child->student_number }} ? {{ ucfirst($child->guardian_relationship ?? 'guardian') }}</a>@endforeach</dd>@endif
+@if($module === 'parents')<dt>{{ __('Children') }}</dt><dd>@foreach($record->children as $child)<a class="d-block" href="{{ route('students.show', $child) }}">@include('school.partials.avatar', ['person' => $child]){{ $child->name }} ? {{ $child->student_number }} ? {{ ucfirst($child->guardian_relationship ?? 'guardian') }}</a>@endforeach</dd>@endif
 @if($module === 'classes')<dt>{{ __('Students') }}</dt><dd>{{ $record->students()->count() }}</dd>@endif
 @if($module === 'announcements')<dt>Created by</dt><dd>{{ $record->creator?->name ?? 'Not recorded' }}</dd>@endif
 </dl></section>

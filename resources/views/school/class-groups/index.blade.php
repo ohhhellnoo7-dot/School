@@ -9,7 +9,7 @@
         <p>One class identity can study in several sessions and use different physical classrooms.</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
-        <a class="btn btn-outline-secondary" href="{{ route('classrooms.index') }}"><i class="bi bi-door-open me-1" aria-hidden="true"></i> Classroom availability</a>
+        <a class="btn btn-outline-secondary" href="{{ route('classrooms.index') }}"><i class="bi bi-door-open me-1" aria-hidden="true"></i> {{ __('Classroom availability') }}</a>
         @if(auth()->user()->role === 'administrator')
             <a class="btn btn-primary" href="{{ route('class-groups.create') }}"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i> Add class group</a>
         @endif
@@ -38,7 +38,7 @@
 </section>
 
 <nav class="program-selector" aria-label="Filter class groups by academic program">
-    <a class="{{ request('program') ? '' : 'active' }}" href="{{ route('class-groups.index') }}">All programs</a>
+    <a class="{{ request('program') ? '' : 'active' }}" href="{{ route('class-groups.index') }}">{{ __('All programs') }}</a>
     @foreach(['Khmer', 'English', 'Chinese'] as $program)
         <a class="{{ request('program') === $program ? 'active' : '' }}" href="{{ route('class-groups.index', ['program' => $program]) }}">{{ $program }}</a>
     @endforeach
@@ -54,44 +54,44 @@
             <input class="form-control" id="class-search" name="search" type="search" value="{{ request('search') }}" placeholder="Class or teacher name">
         </div>
         <div>
-            <label class="form-label" for="class-program">Program</label>
+            <label class="form-label" for="class-program">{{ __('Program') }}</label>
             <select class="form-select" id="class-program" name="program">
-                <option value="">All programs</option>
+                <option value="">{{ __('All programs') }}</option>
                 @foreach(['Khmer', 'English', 'Chinese'] as $program)<option value="{{ $program }}" @selected(request('program') === $program)>{{ $program }}</option>@endforeach
             </select>
         </div>
         <div>
-            <label class="form-label" for="class-grade">Grade</label>
+            <label class="form-label" for="class-grade">{{ __('Grade') }}</label>
             <select class="form-select" id="class-grade" name="grade">
-                <option value="">All grades</option>
+                <option value="">{{ __('All grades') }}</option>
                 @for($grade = 1; $grade <= 12; $grade++)<option value="{{ $grade }}" @selected((string) request('grade') === (string) $grade)>Grade {{ $grade }}</option>@endfor
             </select>
         </div>
         <div>
-            <label class="form-label" for="class-session">Session</label>
+            <label class="form-label" for="class-session">{{ __('Session') }}</label>
             <select class="form-select" id="class-session" name="session">
-                <option value="">All sessions</option>
+                <option value="">{{ __('All sessions') }}</option>
                 @foreach(['Morning', 'Afternoon', 'Evening'] as $session)<option value="{{ $session }}" @selected(request('session') === $session)>{{ $session }}</option>@endforeach
             </select>
         </div>
         <div>
-            <label class="form-label" for="class-status">Status</label>
+            <label class="form-label" for="class-status">{{ __('Status') }}</label>
             <select class="form-select" id="class-status" name="status">
-                <option value="">All statuses</option>
-                <option value="active" @selected(request('status') === 'active')>Active</option>
-                <option value="inactive" @selected(request('status') === 'inactive')>Inactive</option>
+                <option value="">{{ __('All statuses') }}</option>
+                <option value="active" @selected(request('status') === 'active')>{{ __('Active') }}</option>
+                <option value="inactive" @selected(request('status') === 'inactive')>{{ __('Inactive') }}</option>
             </select>
         </div>
         <div class="filter-actions">
             <button class="btn btn-primary" type="submit">Apply</button>
-            <a class="btn btn-light" href="{{ route('class-groups.index') }}">Reset</a>
+            <a class="btn btn-light" href="{{ route('class-groups.index') }}">{{ __('Reset') }}</a>
         </div>
     </form>
 
     <div class="table-responsive">
         <table class="table class-groups-table">
             <thead><tr>
-                <th>Class name</th><th>Grade</th><th>Section</th><th>Program</th><th>Sessions</th><th>Classroom</th><th>Teacher</th><th>Students</th><th>Capacity</th><th>Status</th><th>Actions</th>
+                <th>Class name</th><th>{{ __('Grade') }}</th><th>Section</th><th>{{ __('Program') }}</th><th>Sessions</th><th>Classroom</th><th>{{ __('Teacher') }}</th><th>{{ __('Students') }}</th><th>Capacity</th><th>{{ __('Status') }}</th><th>{{ __('Actions') }}</th>
             </tr></thead>
             <tbody>
             @forelse($classGroups as $classGroup)

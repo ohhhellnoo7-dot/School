@@ -1,4 +1,4 @@
-<section class="panel timetable-panel"><div class="timetable-scroll"><table class="weekly-timetable"><thead><tr><th scope="col">Time</th>@foreach($days as $day)<th scope="col">{{ $day }}</th>@endforeach</tr></thead><tbody>
+<section class="panel timetable-panel"><div class="timetable-scroll"><table class="weekly-timetable"><thead><tr><th scope="col">{{ __('Time') }}</th>@foreach($days as $day)<th scope="col">{{ $day }}</th>@endforeach</tr></thead><tbody>
 @foreach($periods as [$start, $end])<tr><th scope="row" class="period-time"><strong>{{ $start }}</strong><span>{{ $end }}</span></th>
 @foreach($days as $day)
 @php
@@ -15,6 +15,6 @@
 <p>Room {{ $slot->room ?: $schoolClass->room }}</p>
 @if(auth()->user()->role === 'administrator' && ! $slot->isRelaxation())<a class="entry-edit no-print" href="{{ route('modules.edit', ['schedules', $slot->id]) }}">Edit lesson</a>
 <form class="no-print mt-2" method="post" action="{{ route('lessons.cancel', $slot) }}" data-confirm="Cancel this lesson? Its history and room reservation will be preserved.">@csrf<input type="hidden" name="confirm" value="1"><button class="btn btn-sm btn-outline-secondary">Cancel lesson</button></form>@endif
-</article>@else<span class="empty-period">FREE PERIOD<br><small>No Class · No teacher</small></span>@endif
+</article>@else<span class="empty-period">{{ __('FREE PERIOD') }}<br><small>No Class · No teacher</small></span>@endif
 </td>@endforeach</tr>@endforeach
 </tbody></table></div></section>

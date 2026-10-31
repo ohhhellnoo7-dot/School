@@ -26,7 +26,7 @@
             @error('program')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
         <div>
-            <label class="form-label" for="grade">Grade <span aria-hidden="true">*</span></label>
+            <label class="form-label" for="grade">{{ __('Grade') }} <span aria-hidden="true">*</span></label>
             <select class="form-select @error('grade') is-invalid @enderror" id="grade" name="grade" required>
                 <option value="">Choose a grade</option>
                 @for($grade = 1; $grade <= 12; $grade++)<option value="{{ $grade }}" @selected((string) old('grade', $classGroup->grade) === (string) $grade)>Grade {{ $grade }}</option>@endfor
@@ -56,10 +56,10 @@
             @error('capacity')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
         <div>
-            <label class="form-label" for="status">Status <span aria-hidden="true">*</span></label>
+            <label class="form-label" for="status">{{ __('Status') }} <span aria-hidden="true">*</span></label>
             <select class="form-select @error('status') is-invalid @enderror" id="status" name="status" required>
-                <option value="active" @selected(old('status', $classGroup->status ?: 'active') === 'active')>Active</option>
-                <option value="inactive" @selected(old('status', $classGroup->status) === 'inactive')>Inactive</option>
+                <option value="active" @selected(old('status', $classGroup->status ?: 'active') === 'active')>{{ __('Active') }}</option>
+                <option value="inactive" @selected(old('status', $classGroup->status) === 'inactive')>{{ __('Inactive') }}</option>
             </select>
             @error('status')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>

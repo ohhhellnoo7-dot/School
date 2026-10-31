@@ -7,8 +7,8 @@
 <div class="panel table-responsive"><table class="table table-hover">
   <thead class="table-primary">
     <th>CID</th>
-    <th>Name</th>
-    <th>Actions</th>
+    <th>{{ __('Name') }}</th>
+    <th>{{ __('Actions') }}</th>
   </thead>
   <tbody>
     @foreach($customers as $c)
