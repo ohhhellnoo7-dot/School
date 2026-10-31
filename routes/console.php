@@ -4,6 +4,29 @@ use App\Support\SampleSchoolVerifier;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 
+Artisan::command('school:setup-chinese {--year=2026-2027} {--dry-run}', function () {
+    if (! preg_match('/^\d{4}-\d{4}$/', $this->option('year'))) throw new \InvalidArgumentException('Use an academic year such as 2026-2027.');
+    $dryRun = $this->option('dry-run');
+    if ($dryRun) \Illuminate\Support\Facades\DB::beginTransaction();
+    try {
+        $this->line(json_encode(app(\App\Services\ChineseProgramSetup::class)->apply($this->option('year')), JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+    } finally {
+        if ($dryRun) \Illuminate\Support\Facades\DB::rollBack();
+    }
+})->purpose('Back up and fill Chinese evening lessons Monday-Friday for Grades 1-12');
+
+Artisan::command('school:setup-english {--year=2026-2027} {--dry-run}', function () {
+    if (! preg_match('/^\d{4}-\d{4}$/', $this->option('year'))) throw new \InvalidArgumentException('Use an academic year such as 2026-2027.');
+    $dryRun = $this->option('dry-run');
+    if ($dryRun) \Illuminate\Support\Facades\DB::beginTransaction();
+    try {
+        $report = app(\App\Services\EnglishProgramSetup::class)->apply($this->option('year'));
+        $this->line(json_encode($report, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+    } finally {
+        if ($dryRun) \Illuminate\Support\Facades\DB::rollBack();
+    }
+})->purpose('Back up and rebuild English Grades 1–12 with 12 full-time and 12 part-time confirmed teacher records');
+
 Artisan::command('school:khmer-timetable-draft {--year=}', function () {
     $draft = app(\App\Services\KhmerTimetableDraft::class)->prepare($this->option('year') ?: null);
     $path = 'timetable-drafts/khmer-'.now()->format('Ymd-His').'.json';

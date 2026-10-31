@@ -80,6 +80,7 @@ class LessonManagementService
         $subject = Subject::findOrFail($lesson->subject_id);
         if ($subject->school_class_id !== $class->id) $this->rules->fail('Subject does not belong to this cohort.');
         if ($teacher->role !== 'teacher' || $teacher->status !== 'active' || ! $this->rules->qualifications($teacher)->contains($subject->name)) $this->rules->fail('Select an active qualified teacher.');
+        $this->rules->validateEnglishSession($teacher, $lesson, $class);
         if (! $this->rules->onDuty($teacher, $lesson->day, $lesson->starts_at, $lesson->ends_at)) $this->rules->fail('Teacher is unavailable during this lesson.');
         if ($this->rules->breaks($teacher)->contains(fn ($b) => $b->weekday === $lesson->day && $this->rules::overlaps($lesson->starts_at, $lesson->ends_at, $b->start_time, $b->end_time))) $this->rules->fail('Teacher has a designated free period.');
         $others = Schedule::with('subject')->where('teacher_id', $teacher->id)->when($lesson->academic_year,fn ($q)=>$q->where(fn ($year)=>$year->where('academic_year',$lesson->academic_year)->orWhereNull('academic_year')))->when($lesson->id, fn ($q) => $q->where('id', '!=', $lesson->id))->get();

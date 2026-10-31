@@ -1,10 +1,10 @@
-<form action="{{ route('language.update') }}" method="post" class="language-picker d-flex align-items-center gap-2">
-    @csrf
-    <label for="language" class="visually-hidden">{{ __('Language') }}</label>
-    <select id="language" name="locale" class="form-select" aria-label="{{ __('Language') }}" onchange="this.form.submit()">
-        <option value="en" @selected(app()->getLocale() === 'en')>English</option>
-        <option value="km" @selected(app()->getLocale() === 'km')>ខ្មែរ</option>
-        <option value="zh" @selected(app()->getLocale() === 'zh')>中文</option>
-    </select>
-    <noscript><button class="btn btn-outline-secondary" type="submit">OK</button></noscript>
-</form>
+@php($languageNames = ['en' => 'English', 'km' => 'ខ្មែរ', 'zh' => '中文'])
+<details class="theme-switcher language-switcher" data-language-menu>
+    <summary aria-label="{{ __('Choose language') }}"><i class="bi bi-translate" aria-hidden="true"></i><span>{{ $languageNames[app()->getLocale()] ?? 'English' }}</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+    <form action="{{ route('language.update') }}" method="post" class="language-options" aria-label="{{ __('Language') }}">
+        @csrf
+        @foreach($languageNames as $locale => $label)
+        <button type="submit" name="locale" value="{{ $locale }}" class="language-option" data-language-choice aria-pressed="{{ app()->getLocale() === $locale ? 'true' : 'false' }}"><span lang="{{ $locale }}">{{ $label }}</span><i class="bi bi-check2" aria-hidden="true"></i></button>
+        @endforeach
+    </form>
+</details>

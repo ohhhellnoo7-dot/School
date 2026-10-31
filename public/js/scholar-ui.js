@@ -1,4 +1,57 @@
 (() => {
+    // A single confirmation dialog retains the original form, method, CSRF and submitter.
+    const confirmation = document.getElementById('scholar-confirm-dialog');
+    const approved = new WeakSet();
+    let pendingForm;
+    let pendingSubmitter;
+    document.addEventListener('submit', event => {
+        const form = event.target.closest('form[data-confirm]');
+        if (!form) return;
+        if (approved.has(form)) { approved.delete(form); return; }
+        if (!confirmation || !window.bootstrap) {
+            if (!window.confirm(form.dataset.confirm)) event.preventDefault();
+            return;
+        }
+        event.preventDefault();
+        pendingForm = form;
+        pendingSubmitter = event.submitter;
+        confirmation.querySelector('#scholar-confirm-message').textContent = form.dataset.confirm;
+        bootstrap.Modal.getOrCreateInstance(confirmation).show();
+    });
+    confirmation?.querySelector('[data-confirm-accept]').addEventListener('click', () => {
+        if (!pendingForm?.isConnected) return;
+        const form = pendingForm;
+        const submitter = pendingSubmitter;
+        approved.add(form);
+        bootstrap.Modal.getOrCreateInstance(confirmation).hide();
+        form.requestSubmit(submitter || undefined);
+    });
+    confirmation?.addEventListener('hidden.bs.modal', () => {
+        pendingSubmitter?.focus();
+        pendingForm = null;
+        pendingSubmitter = null;
+    });
+    const root = document.documentElement;
+    const toggle = document.querySelector('[data-sidebar-toggle]');
+    const syncSidebar = () => {
+        if (!toggle) return;
+        const collapsed = root.dataset.sidebar === 'collapsed';
+        toggle.setAttribute('aria-expanded', String(!collapsed));
+        toggle.setAttribute('aria-label', collapsed ? 'Expand navigation' : 'Collapse navigation');
+        toggle.title = collapsed ? 'Expand navigation' : 'Collapse navigation';
+    };
+    syncSidebar();
+    toggle?.addEventListener('click', () => {
+        const collapsed = root.dataset.sidebar !== 'collapsed';
+        root.dataset.sidebar = collapsed ? 'collapsed' : 'expanded';
+        try { localStorage.setItem('scholar-sidebar-collapsed', String(collapsed)); } catch (_) {}
+        syncSidebar();
+    });
+    document.querySelectorAll('.school-nav a').forEach(link => {
+        const label = link.textContent.trim();
+        link.setAttribute('aria-label', label);
+        link.title = label;
+    });
     // Keep navigation context while the document itself scrolls independently.
     const navigation = document.querySelector('.school-nav');
     if (navigation) {

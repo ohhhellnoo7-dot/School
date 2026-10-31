@@ -12,7 +12,7 @@
     function renderCharts(payload) {
         if (typeof Chart === 'undefined') return;
         latestPayload = payload;
-        const night = document.documentElement.dataset.theme === 'night';
+        const night = document.documentElement.dataset.bsTheme === 'dark';
         const palette = getComputedStyle(document.documentElement);
         const color = (name, fallback) => palette.getPropertyValue('--chart-' + name).trim() || fallback;
         const data = payload.charts;

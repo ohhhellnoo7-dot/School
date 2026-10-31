@@ -1,33 +1,63 @@
 (() => {
     const themes = ['light', 'night', 'relax', 'cute', 'ocean', 'sunset', 'luxury', 'galaxy'];
+    const root = document.documentElement;
     const key = 'scholar-theme';
-    let motionTimer;
+    let timer;
     function apply(value, animate = false) {
         const theme = themes.includes(value) ? value : 'light';
-        if (animate && document.documentElement.dataset.theme !== theme) {
-            clearTimeout(motionTimer);
-            document.documentElement.classList.remove('theme-changing');
-            // Restart the short entrance sequence when choosing another theme.
-            void document.documentElement.offsetWidth;
-            document.documentElement.classList.add('theme-changing');
-            motionTimer = setTimeout(() => document.documentElement.classList.remove('theme-changing'), 1000);
+        if (animate && root.dataset.theme !== theme && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            clearTimeout(timer);
+            root.classList.add('theme-changing');
+            timer = setTimeout(() => root.classList.remove('theme-changing'), 200);
         }
-        document.documentElement.dataset.theme = theme;
-        document.documentElement.dataset.bsTheme = ['night', 'luxury', 'galaxy'].includes(theme) ? 'dark' : 'light';
+        root.dataset.theme = theme;
+        root.dataset.bsTheme = ['night', 'luxury', 'galaxy'].includes(theme) ? 'dark' : 'light';
         document.querySelectorAll('[data-theme-picker]').forEach(picker => { picker.value = theme; });
+        document.querySelectorAll('[data-current-theme]').forEach(label => { label.textContent = theme[0].toUpperCase() + theme.slice(1); });
+        document.querySelectorAll('[data-theme-choice]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === theme)));
     }
     let saved;
-    try { saved = localStorage.getItem(key); } catch (_) { /* Storage may be disabled. */ }
+    try { saved = localStorage.getItem(key); if (localStorage.getItem('scholar-sidebar-collapsed') === 'true') root.dataset.sidebar = 'collapsed'; } catch (_) {}
     apply(saved);
     document.addEventListener('DOMContentLoaded', () => {
-        apply(document.documentElement.dataset.theme);
-        document.documentElement.classList.add('theme-entering');
-        setTimeout(() => document.documentElement.classList.remove('theme-entering'), 1000);
-        document.querySelectorAll('[data-theme-picker]').forEach(picker => {
-            picker.addEventListener('change', () => {
-                apply(picker.value, true);
-                try { localStorage.setItem(key, picker.value); } catch (_) { /* Keep the current page usable. */ }
+        apply(root.dataset.theme);
+        const choose = value => {
+            apply(value, true);
+            try { localStorage.setItem(key, root.dataset.theme); } catch (_) {}
+        };
+        document.querySelectorAll('[data-theme-picker]').forEach(picker => picker.addEventListener('change', () => choose(picker.value)));
+        document.querySelectorAll('[data-theme-menu], [data-language-menu]').forEach(menu => {
+            const summary = menu.querySelector('summary');
+            let closeTimer;
+            menu.addEventListener('pointerenter', event => {
+                if (event.pointerType !== 'mouse' || !window.matchMedia('(hover: hover)').matches) return;
+                clearTimeout(closeTimer);
+                document.querySelectorAll('[data-theme-menu], [data-language-menu]').forEach(other => { if (other !== menu) other.open = false; });
+                menu.open = true;
             });
+            menu.addEventListener('pointerleave', event => {
+                if (event.pointerType !== 'mouse') return;
+                closeTimer = setTimeout(() => {
+                    if (document.activeElement === summary || !menu.contains(document.activeElement)) menu.open = false;
+                }, 180);
+            });
+            menu.querySelectorAll('[data-theme-choice]').forEach(button => button.addEventListener('click', () => {
+                choose(button.dataset.themeChoice);
+                menu.open = false;
+                summary.focus();
+            }));
+            menu.addEventListener('keydown', event => {
+                if (event.key === 'Escape') { menu.open = false; summary.focus(); }
+                if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+                event.preventDefault();
+                menu.open = true;
+                const options = [...menu.querySelectorAll('[data-theme-choice], [data-language-choice]')];
+                let index = options.indexOf(document.activeElement);
+                index = event.key === 'Home' ? 0 : event.key === 'End' ? options.length - 1 : (index + (event.key === 'ArrowDown' ? 1 : -1) + options.length) % options.length;
+                options[index].focus();
+            });
+            document.addEventListener('click', event => { if (!menu.contains(event.target)) menu.open = false; });
+            document.addEventListener('focusin', event => { if (!menu.contains(event.target)) menu.open = false; });
         });
     });
     window.addEventListener('storage', event => { if (event.key === key) apply(event.newValue, true); });

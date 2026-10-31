@@ -15,7 +15,7 @@
 <div class="alert alert-info" role="status">No student records are linked to your account{{ $role === 'teacher' ? ' through a class or teaching assignment' : '' }}. Ask the school administrator to link your {{ $role === 'parent' ? 'children' : ($role === 'teacher' ? 'teaching assignments' : 'student profile') }}. These zero counts do not mean the school database is empty.</div>
 @endif
 <div class="page-heading dashboard-heading school-hero">
-    <div><div class="eyebrow">WELCOME BACK &#128075;</div><h1>Good {{ now()->hour < 12 ? 'morning' : (now()->hour < 18 ? 'afternoon' : 'evening') }}, {{ explode(' ', auth()->user()->name)[0] }} <i class="bi bi-brightness-high text-warning" aria-hidden="true" style="font-size:22px"></i></h1><p>Here's what's happening at Greenfield Academy today.</p></div>
+    <div><div class="eyebrow">WELCOME BACK &#128075;</div><h1>Good {{ now()->hour < 12 ? 'morning' : (now()->hour < 18 ? 'afternoon' : 'evening') }}, {{ auth()->user()->name }} <i class="bi bi-brightness-high text-warning" aria-hidden="true" style="font-size:22px"></i></h1><p>Here's what's happening at your school today.</p><span class="hero-school"><i class="bi bi-buildings" aria-hidden="true"></i> Greenfield Academy <span aria-hidden="true">&middot;</span> {{ __(ucfirst($role)) }} workspace</span></div>
     @if($role === 'administrator' && $reportDate->isToday())
         <details class="attendance-actions">
             <summary class="btn btn-primary"><i class="bi bi-check2-all me-2" aria-hidden="true"></i>Student attendance <i class="bi bi-chevron-down ms-2" aria-hidden="true"></i></summary>

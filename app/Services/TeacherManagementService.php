@@ -46,6 +46,8 @@ class TeacherManagementService
 
     public function eligibleForBreaks(User $teacher): bool
     {
+        // These programs fill their working shifts with lessons rather than automatic free periods.
+        if (in_array($teacher->program, ['English', 'Chinese'], true)) return false;
         return $this->periods($teacher)->where('unavailable', false)->pluck('weekday')->unique()->count() >= 3;
     }
 
@@ -120,6 +122,7 @@ class TeacherManagementService
     {
         $teacher = User::find($slot->teacher_id ?: $subject->teacher_id);
         if (! $teacher || $teacher->role !== 'teacher' || $teacher->status !== 'active') $this->fail('Assign an active, qualified teacher first.');
+        $this->validateEnglishSession($teacher, $slot, $subject->schoolClass);
         if ($slot->classroom_id) {
             $room = \App\Models\Classroom::findOrFail($slot->classroom_id);
             if ($room->status !== 'active') $this->fail('This physical classroom is out of service.');
@@ -147,6 +150,24 @@ class TeacherManagementService
         $session = collect($sessions)->contains(fn ($hours) => self::minute($start) >= self::minute($hours[0]) && self::minute($end) <= self::minute($hours[1]) && (self::minute($start) - self::minute($hours[0])) % 60 === 0);
         if (! in_array($day, self::DAYS, true) || self::duration($start, $end) !== 60 || ! $session || ! $this->onDuty($teacher, $day, $start, $end)) $this->fail('Breaks must last one hour within confirmed working sessions, outside unavailable periods.');
         if ($this->lessons($teacher)->contains(fn ($s) => $s->day === $day && self::overlaps($start, $end, $s->starts_at, $s->ends_at))) $this->fail('This break overlaps a teaching lesson. No lesson has been removed.');
+    }
+
+    public function validateEnglishSession(User $teacher, Schedule $lesson, \App\Models\SchoolClass $class): void
+    {
+        if ($teacher->program !== 'English' || ! $class->session) return;
+        $others = Schedule::with('schoolClass')->where('teacher_id', $teacher->id)
+            ->where('entry_type', 'academic')->where('day', $lesson->day)
+            ->whereHas('schoolClass', fn ($q) => $q->where('session', $class->session))
+            ->when($lesson->id, fn ($q) => $q->where('id', '!=', $lesson->id))->get();
+        foreach ($others as $other) {
+            if (! \App\Support\AcademicYear::overlaps($other->academic_year, $lesson->academic_year)) continue;
+            $sameRoom = $lesson->classroom_id && $other->classroom_id
+                ? (int) $lesson->classroom_id === (int) $other->classroom_id
+                : RoomLessonService::roomKey($lesson->room ?? '') === RoomLessonService::roomKey($other->room ?? '');
+            if ($other->schoolClass->timetableOwnerId() !== $class->timetableOwnerId() || ! $sameRoom) {
+                $this->fail('An English teacher can teach only one class in one classroom per session each day. Choose another teacher or a different session.');
+            }
+        }
     }
 
     public function proposeBreaks(User $teacher): array

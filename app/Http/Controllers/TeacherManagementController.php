@@ -75,7 +75,7 @@ class TeacherManagementController extends Controller
         $data = $request->validate(['name' => 'required|string|max:255', 'gender' => 'required|in:male,female,other', 'phone' => 'nullable|string|max:50', 'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($teacher?->id)],
             'program' => 'required|in:Khmer,English,Chinese', 'subject1' => ['required', Rule::exists('subjects', 'name')], 'subject2' => ['nullable', 'different:subject1', Rule::exists('subjects', 'name')],
             'additional_subjects' => 'nullable|array', 'additional_subjects.*' => ['required','distinct',Rule::exists('subjects','name')],
-            'weekly_hours' => 'nullable|numeric|min:1|max:40', 'working_sessions' => 'required|in:Morning,Afternoon,Both,Evening,Custom', 'status' => 'required|in:active,inactive',
+            'weekly_hours' => 'nullable|numeric|min:1|max:40', 'working_sessions' => 'required|in:Morning,Afternoon,Both,Evening,EnglishFullTime,EnglishPartTime,Custom', 'part_time_start' => 'nullable|date_format:H:i', 'status' => 'required|in:active,inactive',
             'periods' => 'nullable|array|max:25', 'periods.*.weekday' => ['required', Rule::in(TeacherManagementService::DAYS)], 'periods.*.start_time' => 'required|date_format:H:i', 'periods.*.end_time' => 'required|date_format:H:i|after:periods.*.start_time', 'periods.*.unavailable' => 'required|boolean']);
         $teacher = $service->locked(function () use ($teacher, $data, $service) {
             $t = $teacher ?: new User;
@@ -83,7 +83,15 @@ class TeacherManagementController extends Controller
             if (! $t->exists) { $t->role = 'teacher'; $t->password = Str::random(40); }
             $t->save();
             $periods = $data['periods'] ?? [];
-            if ($data['working_sessions'] !== 'Custom') {
+            if (in_array($data['working_sessions'], ['EnglishFullTime', 'EnglishPartTime'], true)) {
+                if ($t->program !== 'English') $service->fail('English working arrangements require the English program.');
+                $partTime = $data['working_sessions'] === 'EnglishPartTime';
+                $periods = \App\Services\EnglishProgramSetup::workingPeriods($partTime, $data['part_time_start'] ?? '07:00');
+                $data['weekly_hours'] = $partTime ? 10 : 40;
+                foreach ($service->lessons($t) as $lesson) {
+                    if (! collect($periods)->contains(fn ($p) => $p['weekday'] === $lesson->day && $p['start_time'] <= substr($lesson->starts_at, 0, 5) && $p['end_time'] >= substr($lesson->ends_at, 0, 5))) $service->fail('Move existing lessons into the selected working hours before changing this arrangement.');
+                }
+            } elseif ($data['working_sessions'] !== 'Custom') {
                 $periods = [];
                 if ($data['program'] === 'Khmer' && $data['working_sessions'] === 'Evening') $service->fail('Khmer teachers work morning or afternoon sessions.');
                 $selected = $data['working_sessions'] === 'Both' ? ['Morning', 'Afternoon'] : [$data['working_sessions']];

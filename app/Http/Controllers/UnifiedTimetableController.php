@@ -20,6 +20,9 @@ class UnifiedTimetableController extends Controller
         $studentClasses = null;
         $request->validate(['program' => 'nullable|in:Khmer,English,Chinese']);
         $teacherProgram = $view === 'teachers' ? $request->input('program') : null;
+        $availableTeacherSessions = \App\Support\ProgramSessions::for($teacherProgram);
+        $teacherSession = $teacherProgram ? $request->input('session') : null;
+        if ($teacherSession) $request->validate(['session' => \Illuminate\Validation\Rule::in($availableTeacherSessions)]);
         $teachers = User::where('role', 'teacher')->when($teacherProgram, fn ($q) => $q->where('program', $teacherProgram))->orderBy('name')->get();
         $rooms = Classroom::orderBy('room_number')->get();
         $query = Schedule::with(['subject', 'teacher', 'classroom', 'schoolClass.classGroup']);
@@ -28,10 +31,20 @@ class UnifiedTimetableController extends Controller
         if ($restricted) $query->whereIn('school_class_id', $classes->map->timetableOwnerId()->unique()->all());
         if ($view === 'teachers') {
             abort_if($restricted, 404);
+            $programTeacherIds = $teachers->modelKeys();
+            if ($teacherSession) {
+                $query->whereHas('schoolClass', fn ($q) => $q->where('session', $teacherSession));
+                $sessionTeacherIds = (clone $query)->pluck('teacher_id');
+                $teachers = $teachers->whereIn('id', $sessionTeacherIds)->values();
+            }
             $scheduledTeacherIds = (clone $query)->whereIn('teacher_id', $teachers->modelKeys())->pluck('teacher_id');
             $defaultTeacher = $teachers->first(fn ($teacher) => $scheduledTeacherIds->contains($teacher->id)) ?? $teachers->first();
             $requestedTeacher = $request->integer('teacher');
             if ($requestedTeacher && User::withoutGlobalScope('archived')->whereKey($requestedTeacher)->where('role','teacher')->whereNotNull('archived_at')->exists()) $requestedTeacher = null;
+            if ($teacherSession && $requestedTeacher) {
+                abort_unless(in_array($requestedTeacher, $programTeacherIds, true), 404);
+                if (! $teachers->contains('id', $requestedTeacher)) $requestedTeacher = null;
+            }
             $selected = $requestedTeacher ?: ($request->user()->role === 'teacher' && $teachers->contains('id', $request->user()->id) ? $request->user()->id : $defaultTeacher?->id);
             abort_if($selected && ! $teachers->contains('id', $selected), 404);
             if ($selected) $query->where('teacher_id', $selected); else $query->whereRaw('1 = 0');
@@ -54,12 +67,37 @@ class UnifiedTimetableController extends Controller
         }
         $lessons = $query->orderBy('starts_at')->get();
         $periods = [['07:00','08:00'], ['08:00','09:00'], ['09:00','10:00'], ['10:00','11:00'], ['13:00','14:00'], ['14:00','15:00'], ['15:00','16:00'], ['16:00','17:00'], ['17:30','18:30'], ['18:30','19:30']];
-        if ($view === 'teachers' && ($teachers->firstWhere('id', $selected)?->program ?? $teacherProgram) === 'Khmer') {
-            $periods = array_slice($periods, 0, 8);
+        if ($view === 'teachers') {
+            $periods = match ($teachers->firstWhere('id', $selected)?->program ?? $teacherProgram) {
+                'Khmer' => array_slice($periods, 0, 8),
+                'Chinese' => array_slice($periods, 8),
+                default => $periods,
+            };
+            if (($selectedTeacher = $teachers->firstWhere('id', $selected))?->program === 'English') {
+                $workingPeriods = app(TeacherManagementService::class)->periods($selectedTeacher);
+                if ($workingPeriods->isNotEmpty()) {
+                    $periods = array_values(array_filter($periods, function ($period) use ($workingPeriods, $lessons) {
+                        [$from, $to] = $period;
+                        // Keep existing lessons visible even when a profile needs correction.
+                        if ($lessons->contains(fn ($lesson) => TeacherManagementService::overlaps($from, $to, $lesson->starts_at, $lesson->ends_at))) return true;
+                        return $workingPeriods->contains(fn ($p) => ! $p->unavailable
+                            && TeacherManagementService::minute($p->start_time) <= TeacherManagementService::minute($from)
+                            && TeacherManagementService::minute($p->end_time) >= TeacherManagementService::minute($to)
+                            && ! $workingPeriods->contains(fn ($blocked) => $blocked->unavailable && $blocked->weekday === $p->weekday && TeacherManagementService::overlaps($from, $to, $blocked->start_time, $blocked->end_time)));
+                    }));
+                }
+            }
         }
         if ($view === 'students' && ($class = $classes->firstWhere('id', $selected))) {
             [$start,$end] = $class->sessionHours(); $periods = [];
             for ($minute = TeacherManagementService::minute($start); $minute + 60 <= TeacherManagementService::minute($end); $minute += 60) $periods[] = [sprintf('%02d:%02d',intdiv($minute,60),$minute%60),sprintf('%02d:%02d',intdiv($minute+60,60),($minute+60)%60)];
+        }
+        if ($teacherSession) {
+            $periods = array_values(array_filter($periods, fn ($p) => match ($teacherSession) {
+                'Morning' => $p[0] < '12:00',
+                'Afternoon' => $p[0] >= '12:00' && $p[0] < '17:00',
+                'Evening' => $p[0] >= '17:00',
+            }));
         }
         $breaks = $view === 'teachers' && $selected ? app(TeacherManagementService::class)->breaks(User::findOrFail($selected)) : collect();
         $repair = app(\App\Services\SchoolRoomAssignmentRepair::class);
@@ -72,7 +110,7 @@ class UnifiedTimetableController extends Controller
             $excess = $subjects->filter(fn ($s)=>$s->required_weekly_minutes !== null && $lessons->where('subject_id',$s->id)->sum(fn ($entry)=>TeacherManagementService::duration($entry->starts_at,$entry->ends_at)) > $s->required_weekly_minutes)->pluck('name')->all();
             $curriculum = ['unknown'=>$unknown,'missing'=>array_values(array_unique($missing)), 'excess'=>array_values(array_unique($excess))];
         }
-        return compact('view', 'classes', 'teachers', 'rooms', 'selected', 'lessons', 'periods', 'breaks','roomIssues','curriculum','academicYear','studentClasses','teacherProgram') + TimetableGrid::build($lessons, $periods);
+        return compact('view', 'classes', 'teachers', 'rooms', 'selected', 'lessons', 'periods', 'breaks','roomIssues','curriculum','academicYear','studentClasses','teacherProgram','teacherSession','availableTeacherSessions') + TimetableGrid::build($lessons, $periods);
     }
 
     public function index(Request $request)
