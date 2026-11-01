@@ -137,6 +137,7 @@
 :root:root:root:root :where(.auth-story) {background:var(--sidebar-bg);color:var(--sidebar-text)}
 :root:root:root:root :where(.auth-story h1,.auth-story .brand) {color:var(--sidebar-heading)}
 :root:root:root:root :where(.auth-story p,.auth-story small,.auth-box>p) {color:var(--muted)}
+.auth-story-values .badge {color:var(--sidebar-heading);background:var(--soft);border:1px solid var(--border);white-space:normal;line-height:1.4}
 :root:root:root:root :where(.page-heading) {display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:24px;flex-wrap:wrap}
 :root:root:root:root :where(.page-heading h1) {font-size:clamp(25px,2.2vw,32px);line-height:1.22;font-weight:800;margin:4px 0 8px}
 :root:root:root:root :where(.page-heading p,.panel-header p) {font-size:13px;color:var(--muted);margin:0;line-height:1.65}
