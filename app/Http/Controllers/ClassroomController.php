@@ -33,6 +33,7 @@ class ClassroomController extends Controller
             'roomNames' => $this->visibleClassrooms($request->user())
                 ->orderBy('room_number')
                 ->pluck('name', 'room_number'),
+            'buildings' => \App\Models\Building::orderBy('name')->get(),
         ]);
     }
 
@@ -102,12 +103,14 @@ class ClassroomController extends Controller
     {
         return view('school.classrooms.form', [
             'classroom' => new Classroom(['capacity' => 30, 'status' => 'active']),
+            ...app(\App\Services\ClassroomSetupService::class)->formData(),
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $classroom = Classroom::create($this->validatedClassroom($request));
+        $attributes = $this->validatedClassroom($request);
+        $classroom = app(\App\Services\ClassroomSetupService::class)->save($attributes, $request);
 
         return redirect()->route('classrooms.show', $classroom)
             ->with('success', "Room {$classroom->room_number} was created.");
@@ -115,12 +118,13 @@ class ClassroomController extends Controller
 
     public function edit(Classroom $classroom): View
     {
-        return view('school.classrooms.form', compact('classroom'));
+        return view('school.classrooms.form', compact('classroom') + app(\App\Services\ClassroomSetupService::class)->formData());
     }
 
     public function update(Request $request, Classroom $classroom): RedirectResponse
     {
-        app(\App\Services\TeacherManagementService::class)->locked(fn () => $classroom->update($this->validatedClassroom($request, $classroom)));
+        $attributes = $this->validatedClassroom($request, $classroom);
+        app(\App\Services\ClassroomSetupService::class)->save($attributes, $request, $classroom);
 
         return redirect()->route('classrooms.show', $classroom)
             ->with('success', "Room {$classroom->room_number} was updated.");
@@ -208,6 +212,7 @@ class ClassroomController extends Controller
             'date' => ['nullable', 'date_format:Y-m-d'],
             'time' => ['nullable', 'date_format:H:i'],
             'room' => ['nullable', 'string', 'max:100'],
+            'building' => ['nullable', Rule::exists('buildings', 'code')],
         ]);
         $moment = $this->moment($filters);
         $allowedRoomIds = $this->visibleClassrooms($request->user())->pluck('id')->map(fn ($id) => (int) $id);
@@ -241,6 +246,8 @@ class ClassroomController extends Controller
                 Rule::unique('classrooms', 'room_number')->ignore($classroom),
             ],
             'name' => ['required', 'string', 'max:100'],
+            'building' => ['required', 'string', Rule::in(\App\Models\Building::pluck('code')->push('__new')->all())],
+            'new_building_name' => ['exclude_unless:building,__new', 'required', 'string', 'max:100', Rule::unique('buildings', 'name')],
             'capacity' => ['required', 'integer', 'between:1,500'],
             'status' => ['required', Rule::in(['active', 'out_of_service'])],
             'notes' => ['nullable', 'string', 'max:1000'],

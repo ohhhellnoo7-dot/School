@@ -26,7 +26,7 @@
         <article class="classroom-card room-status-{{ $status }}">
             <div class="room-card-head">
                 <span class="room-icon"><i class="bi bi-door-open" aria-hidden="true"></i></span>
-                <span class="room-heading"><small>{{ __('Room') }}</small><strong>{{ $room->room_number }}</strong>@if($room->name && $room->name !== $room->room_number)<span>{{ $room->name }}</span>@endif</span>
+                <span class="room-heading"><small>{{ $room->buildingRecord ? $room->buildingRecord->name.' / ' : '' }}{{ __('Room') }}</small><strong>{{ $room->room_number }}</strong>@if($room->name && $room->name !== $room->room_number)<span>{{ $room->name }}</span>@endif</span>
                 <span class="room-status"><i class="bi bi-{{ $icons[$status] ?? 'circle-fill' }}" aria-hidden="true"></i> {{ str_replace('_', ' ', ucfirst($status)) }}</span>
             </div>
             <div class="room-card-body">

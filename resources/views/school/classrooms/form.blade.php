@@ -10,10 +10,18 @@
     <div class="panel-body form-section-grid">
         <div><label class="form-label" for="room_number">Room number <span aria-hidden="true">*</span></label><input class="form-control @error('room_number') is-invalid @enderror" id="room_number" name="room_number" value="{{ old('room_number', $classroom->room_number) }}" maxlength="30" placeholder="7A or E01" required>@error('room_number')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
         <div><label class="form-label" for="name">Room name <span aria-hidden="true">*</span></label><input class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ old('name', $classroom->name) }}" maxlength="100" placeholder="Room 7A" required>@error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+        <div><label class="form-label" for="building">Building <span aria-hidden="true">*</span></label><select class="form-select @error('building') is-invalid @enderror" id="building" name="building" required>@foreach($buildings as $building)<option value="{{ $building->code }}" @selected(old('building', $classroom->building ?: 'A') === $building->code)>{{ $building->name }}</option>@endforeach<option value="__new" @selected(old('building') === '__new')>+ Create another building</option></select>@error('building')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            <div class="mt-3" data-new-building @if(old('building') !== '__new') hidden @endif><label class="form-label" for="new_building_name">New building name</label><input class="form-control" id="new_building_name" name="new_building_name" maxlength="100" placeholder="Building C" value="{{ old('new_building_name') }}">@error('new_building_name')<div class="text-danger">{{ $message }}</div>@enderror</div>
+        </div>
         <div><label class="form-label" for="capacity">Capacity <span aria-hidden="true">*</span></label><input class="form-control @error('capacity') is-invalid @enderror" id="capacity" type="number" name="capacity" min="1" max="500" value="{{ old('capacity', $classroom->capacity ?: 30) }}" required>@error('capacity')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
         <div><label class="form-label" for="status">Maintenance status <span aria-hidden="true">*</span></label><select class="form-select @error('status') is-invalid @enderror" id="status" name="status" required><option value="active" @selected(old('status', $classroom->status ?: 'active') === 'active')>{{ __('Active') }}</option><option value="out_of_service" @selected(old('status', $classroom->status) === 'out_of_service')>Out of service</option></select>@error('status')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
         <div class="form-wide"><label class="form-label" for="notes">Notes</label><textarea class="form-control @error('notes') is-invalid @enderror" id="notes" name="notes" rows="4" maxlength="1000" placeholder="Accessibility, equipment, or maintenance information">{{ old('notes', $classroom->notes) }}</textarea>@error('notes')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
     </div>
+    @include('school.classrooms._setup-planner')
     <div class="form-footer"><a class="btn btn-light" href="{{ route('classrooms.index') }}">Cancel</a><button class="btn btn-primary" type="submit">{{ $classroom->exists ? 'Save changes' : 'Create classroom' }}</button></div>
 </form>
 @endsection
+
+@push('scripts')
+<script src="{{ asset('js/classroom-setup.js') }}?v={{ filemtime(public_path('js/classroom-setup.js')) }}"></script>
+@endpush

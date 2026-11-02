@@ -71,6 +71,29 @@
         }
     };
 
+    const picker = document.querySelector('.building-picker');
+    const toggle = picker?.querySelector('[data-building-toggle]');
+    const setOpen = open => {
+        picker?.classList.toggle('is-open', open);
+        toggle?.setAttribute('aria-expanded', String(open));
+    };
+    toggle?.addEventListener('click', () => setOpen(!picker.classList.contains('is-open')));
+    picker?.addEventListener('mouseenter', () => toggle.setAttribute('aria-expanded', 'true'));
+    picker?.addEventListener('mouseleave', () => { if (!picker.contains(document.activeElement)) setOpen(false); });
+    picker?.addEventListener('keydown', event => {
+        if (event.key === 'Escape') { toggle.focus(); setOpen(false); }
+    });
+    document.addEventListener('click', event => { if (!picker?.contains(event.target)) setOpen(false); });
+    document.querySelectorAll('[data-building]').forEach(button => {
+        button.addEventListener('click', () => {
+            form.elements.building.value = button.dataset.building;
+            document.querySelector('[data-building-label]').textContent = button.dataset.building ? button.dataset.buildingName : 'Building';
+            button.blur();
+            setOpen(false);
+            refresh({ updateHistory: true });
+        });
+    });
+
     form.addEventListener('submit', event => {
         event.preventDefault();
         followNow = false;

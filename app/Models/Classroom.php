@@ -19,6 +19,11 @@ class Classroom extends Model
         return ['capacity' => 'integer'];
     }
 
+    public function buildingRecord(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Building::class, 'building', 'code');
+    }
+
     public function bookings(): HasMany
     {
         return $this->hasMany(ClassroomBooking::class);

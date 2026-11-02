@@ -510,3 +510,20 @@ a.class-summary-card:hover {
     .class-summary-card,
     .classroom-card { transition: none; }
 }
+
+.building-picker { position: relative; }
+.building-options { display: none; position: absolute; top: 100%; right: 0; min-width: 290px; padding: 8px; z-index: 1050; background: var(--bs-body-bg, #18253a); color: var(--bs-body-color, inherit); border: 1px solid #50617a; border-radius: 12px; box-shadow: 0 12px 28px #0003; }
+.building-picker:hover .building-options, .building-picker:focus-within .building-options, .building-picker.is-open .building-options { display: block; }
+.building-options button { display: block; width: 100%; text-align: left; padding: 10px 12px; border: 0; border-radius: 8px; background: transparent; color: inherit; }
+.building-options button:hover, .building-options button:focus-visible { background: #609fff26; }
+.building-options small { display: block; margin-top: 4px; }
+.classroom-setup { border-top: 1px solid var(--border-color, #8ca0b444); }
+.classroom-setup fieldset { min-width: 0; }
+.lesson-periods { display: grid; gap: 16px; margin-top: 20px; }
+.lesson-period { padding: 20px; border: 1px solid var(--border-color, #8ca0b444); border-radius: 14px; }
+.lesson-period h3 { font-size: 1.1rem; margin-bottom: 16px; }
+.lesson-period[data-covered="1"] { background: var(--room-blue-soft); }
+.teacher-disclosure summary { cursor: pointer; color: var(--room-blue); }
+.teacher-schedule-details { max-height: 320px; overflow: auto; margin-top: 14px; font-size: .9rem; }
+.teacher-schedule-details ul { margin-top: 6px; }
+.classroom-setup [hidden] { display: none !important; }

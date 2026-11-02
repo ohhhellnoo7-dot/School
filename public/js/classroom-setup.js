@@ -1,0 +1,195 @@
+(() => {
+    const root = document.querySelector('[data-classroom-setup]');
+    if (!root) return;
+    const form = root.closest('form');
+    const building = form.elements.building;
+    const newBuilding = form.querySelector('[data-new-building]');
+    const syncBuilding = () => {
+        const creating = building.value === '__new';
+        newBuilding.hidden = !creating;
+        form.elements.new_building_name.required = creating;
+        form.elements.new_building_name.disabled = !creating;
+    };
+    building.addEventListener('change', syncBuilding);
+    syncBuilding();
+
+    const config = JSON.parse(root.querySelector('[data-planner-config]').textContent);
+    const enabled = root.querySelector('[data-plan-enabled]');
+    const fields = root.querySelector('[data-plan-fields]');
+    const program = form.elements.program;
+    const session = form.elements.session;
+    const cohort = form.elements.school_class_id;
+    const day = form.elements.day;
+    const year = form.elements.academic_year;
+    const periods = root.querySelector('[data-lesson-periods]');
+    const message = root.querySelector('[data-planner-message]');
+    let generation = 0;
+    let choices = {};
+    Object.values(config.old.slots || {}).forEach(slot => { choices[slot.starts_at] = slot; });
+    const node = (tag, text, className) => {
+        const element = document.createElement(tag);
+        if (text) element.textContent = text;
+        if (className) element.className = className;
+        return element;
+    };
+    const option = (value, text, disabled = false) => {
+        const element = new Option(text, value);
+        element.disabled = disabled;
+        return element;
+    };
+    const time = minutes => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+    const minute = value => Number(value.slice(0, 2)) * 60 + Number(value.slice(3, 5));
+    const selectedClass = () => config.classes.find(item => String(item.id) === cohort.value);
+    const remember = () => {
+        periods.querySelectorAll('[data-period]').forEach(row => {
+            if (row.dataset.covered === '1') return;
+            choices[row.dataset.start] = {starts_at: row.dataset.start, subject_id: row.querySelector('[data-subject]').value, teacher_id: row.querySelector('[data-teacher]').value};
+        });
+    };
+    const teacherDetails = (target, teacher) => {
+        target.replaceChildren();
+        if (!teacher) return;
+        target.append(node('p', `${teacher.name} | ${teacher.program || 'Program unspecified'} | ${teacher.available ? 'Free for this period' : teacher.reasons.join('; ')}`));
+        target.append(node('p', `Subjects: ${teacher.subjects.join(', ') || 'No confirmed qualifications'}`));
+        const list = (label, entries) => {
+            target.append(node('strong', label));
+            const ul = node('ul');
+            entries.forEach(text => ul.append(node('li', text)));
+            if (!entries.length) ul.append(node('li', 'None recorded'));
+            target.append(ul);
+        };
+        list('Working hours', teacher.working.map(p => `${p.day} ${p.start}-${p.end}${p.unavailable ? ' (unavailable)' : ''}`));
+        list('Teaching schedule', teacher.lessons.map(p => `${p.day} ${p.start}-${p.end}: ${p.subject || 'Lesson'} (${p.class || 'Class'})`));
+        list('Scheduled breaks', teacher.breaks.map(p => `${p.day} ${p.start}-${p.end}`));
+    };
+    const loadTeachers = async (row, subject, end, currentGeneration) => {
+        const select = row.querySelector('[data-teacher]');
+        const status = row.querySelector('[data-slot-status]');
+        const details = row.querySelector('[data-teacher-details]');
+        const inspect = row.querySelector('[data-inspect]');
+        const wanted = choices[row.dataset.start]?.teacher_id;
+        select.replaceChildren(option('', 'Loading teachers...'));
+        select.disabled = true;
+        status.textContent = 'Checking qualifications, teaching hours, lessons and breaks...';
+        try {
+            const query = new URLSearchParams({school_class_id: cohort.value, subject_id: subject.id, day: day.value, academic_year: year.value, starts_at: row.dataset.start, ends_at: time(end)});
+            const response = await fetch(`${root.dataset.endpoint}?${query}`, {headers: {Accept: 'application/json'}, cache: 'no-store'});
+            if (!response.ok) throw new Error('Could not check teacher availability. Check the academic year and try again.');
+            const payload = await response.json();
+            if (currentGeneration !== generation || !row.isConnected) return;
+            select.replaceChildren(option('', 'Select a free teacher'));
+            inspect.replaceChildren(option('', 'Inspect any teacher, including busy teachers'));
+            payload.teachers.forEach(teacher => {
+                const label = `${teacher.name} - ${teacher.available ? 'Free' : teacher.reasons.join('; ')}`;
+                select.append(option(teacher.id, label, !teacher.available));
+                inspect.append(option(teacher.id, label));
+            });
+            select.disabled = false;
+            if (payload.teachers.some(t => String(t.id) === String(wanted) && t.available)) select.value = wanted;
+            const free = payload.teachers.filter(t => t.available).length;
+            status.textContent = `${free} teacher(s) free for ${row.dataset.start}-${time(end)}. Busy or unavailable teachers cannot be assigned.`;
+            const show = id => teacherDetails(details, payload.teachers.find(t => String(t.id) === id));
+            select.addEventListener('change', () => { remember(); inspect.value = select.value; show(select.value); });
+            inspect.addEventListener('change', () => show(inspect.value));
+            if (select.value) { inspect.value = select.value; show(select.value); }
+        } catch (error) {
+            if (currentGeneration !== generation || !row.isConnected) return;
+            select.replaceChildren(option('', 'Availability check failed'));
+            status.textContent = error.message;
+            const retry = node('button', 'Retry', 'btn btn-outline-secondary btn-sm ms-2');
+            retry.type = 'button';
+            retry.addEventListener('click', () => loadTeachers(row, subject, end, currentGeneration), {once: true});
+            status.append(retry);
+        }
+    };
+    const render = () => {
+        const currentGeneration = ++generation;
+        periods.replaceChildren();
+        const cls = selectedClass();
+        if (!cls || !enabled.checked) {
+            message.textContent = cohort.options.length === 1 ? 'No student classes exist for this program and session. Create a class and its curriculum first, or save the room without lessons.' : 'Choose a student class to see its hourly study periods.';
+            return;
+        }
+        message.textContent = cls.subjects.length ? `${cls.label}: ${cls.hours[0]}-${cls.hours[1]} on ${day.value}.` : 'This class has no subjects yet. Add its curriculum before assigning lessons.';
+        const finish = minute(cls.hours[1]);
+        let coveredUntil = -1;
+        for (let start = minute(cls.hours[0]), index = 0; start + 60 <= finish; start += 60, index++) {
+            const startTime = time(start);
+            const row = node('article', '', 'lesson-period');
+            row.dataset.period = '';
+            row.dataset.start = startTime;
+            row.append(node('h3', `${startTime}-${time(start + 60)}`));
+            if (start < coveredUntil) {
+                row.dataset.covered = '1';
+                row.append(node('p', 'Continuation of the previous two-hour subject.'));
+                periods.append(row);
+                continue;
+            }
+            const hidden = node('input'); hidden.type = 'hidden'; hidden.name = `slots[${index}][starts_at]`; hidden.value = startTime;
+            row.append(hidden);
+            const grid = node('div', '', 'form-section-grid');
+            const subjectWrap = node('div');
+            const subjectLabel = node('label', 'Subject', 'form-label'); subjectLabel.htmlFor = `slot-${index}-subject`;
+            const subjects = node('select', '', 'form-select'); subjects.id = subjectLabel.htmlFor; subjects.name = `slots[${index}][subject_id]`; subjects.dataset.subject = '';
+            subjects.append(option('', 'Leave this period empty'));
+            cls.subjects.forEach(subject => subjects.append(option(subject.id, `${subject.name}${subject.minutes === 120 ? ' (2 consecutive hours)' : ''}`, start + subject.minutes > finish)));
+            if (choices[startTime]?.subject_id) subjects.value = choices[startTime].subject_id;
+            const subject = cls.subjects.find(s => String(s.id) === subjects.value);
+            if (subject && start + subject.minutes > finish) subjects.value = '';
+            subjectWrap.append(subjectLabel, subjects);
+            const teacherWrap = node('div');
+            const teacherLabel = node('label', 'Teacher', 'form-label'); teacherLabel.htmlFor = `slot-${index}-teacher`;
+            const teachers = node('select', '', 'form-select'); teachers.id = teacherLabel.htmlFor; teachers.name = `slots[${index}][teacher_id]`; teachers.dataset.teacher = ''; teachers.disabled = true;
+            teachers.append(option('', 'Select a subject first'));
+            teacherWrap.append(teacherLabel, teachers);
+            grid.append(subjectWrap, teacherWrap);
+            row.append(grid);
+            const status = node('p', '', 'mt-2 text-muted'); status.dataset.slotStatus = ''; status.setAttribute('role', 'status'); row.append(status);
+            const disclosure = node('details', '', 'teacher-disclosure');
+            disclosure.append(node('summary', 'Teacher subjects, working hours, teaching schedule & breaks'));
+            const inspect = node('select', '', 'form-select mt-2'); inspect.dataset.inspect = ''; inspect.setAttribute('aria-label', `Inspect teacher details for ${startTime}`);
+            inspect.append(option('', 'Select a subject first'));
+            const detail = node('div', '', 'teacher-schedule-details'); detail.dataset.teacherDetails = '';
+            disclosure.append(inspect, detail); row.append(disclosure);
+            periods.append(row);
+            subjects.addEventListener('change', () => {
+                remember(); choices[startTime].teacher_id = '';
+                const chosen = cls.subjects.find(s => String(s.id) === subjects.value);
+                if (chosen?.minutes === 120) delete choices[time(start + 60)];
+                render();
+            });
+            if (subject && subjects.value) {
+                teachers.required = true;
+                coveredUntil = start + subject.minutes;
+                loadTeachers(row, subject, coveredUntil, currentGeneration);
+            }
+        }
+    };
+    const syncClasses = (wanted = '') => {
+        cohort.replaceChildren(option('', 'Select student class'));
+        config.classes.filter(c => c.program === program.value && c.session === session.value).forEach(c => cohort.append(option(c.id, c.label)));
+        cohort.value = wanted;
+        render();
+    };
+    const syncSessions = (wanted = '') => {
+        session.replaceChildren(...config.sessions[program.value].map(value => option(value, value)));
+        if (config.sessions[program.value].includes(wanted)) session.value = wanted;
+    };
+    enabled.addEventListener('change', () => { fields.disabled = !enabled.checked; fields.hidden = !enabled.checked; render(); });
+    program.addEventListener('change', () => { choices = {}; syncSessions(); syncClasses(); });
+    session.addEventListener('change', () => { choices = {}; syncClasses(); });
+    cohort.addEventListener('change', () => { choices = {}; render(); });
+    day.addEventListener('change', () => { remember(); render(); });
+    year.addEventListener('change', () => { remember(); render(); });
+    syncSessions(config.old.session || 'Morning');
+    syncClasses(String(config.old.school_class_id || ''));
+    form.addEventListener('submit', event => {
+        if (!enabled.checked) return;
+        const assigned = [...periods.querySelectorAll('[data-subject]')].filter(select => select.value);
+        if (!assigned.length || assigned.some(select => !select.closest('[data-period]').querySelector('[data-teacher]').value)) {
+            event.preventDefault();
+            message.textContent = 'Choose at least one subject and a free teacher for each selected subject. Wait for availability checks to finish.';
+            message.scrollIntoView({block: 'center'});
+        }
+    });
+})();

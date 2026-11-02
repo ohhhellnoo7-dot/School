@@ -124,6 +124,7 @@ class ClassroomManagementSeeder extends Seeder
         return $configuredRooms->map(fn (array $room) => Classroom::query()->firstOrCreate([
             'room_number' => $room['room_number'],
         ], [
+            'building' => $room['building'],
             'name' => $room['name'],
             'capacity' => $room['capacity'],
             'status' => Classroom::STATUS_ACTIVE,

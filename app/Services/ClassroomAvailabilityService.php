@@ -51,7 +51,7 @@ class ClassroomAvailabilityService
         $lessons = Schedule::with(['subject.teacher', 'teacher', 'schoolClass'])->where('day', $day)->where(fn ($q)=>$q->where('academic_year',$academicYear)->orWhereNull('academic_year'))->get();
 
         $rooms = Classroom::query()
-            ->with(['bookings' => fn ($query) => $query
+            ->with(['buildingRecord', 'bookings' => fn ($query) => $query
                 ->where('day_of_week', $day)
                 ->with(['classGroup', 'classSession', 'teacher'])
                 ->orderBy('starts_minute')])
@@ -120,6 +120,10 @@ class ClassroomAvailabilityService
     {
         /** @var Classroom $classroom */
         $classroom = $entry['classroom'];
+
+        if (filled($filters['building'] ?? null) && $classroom->building !== $filters['building']) {
+            return false;
+        }
 
         if (filled($filters['status'] ?? null) && $entry['status'] !== $filters['status']) {
             return false;

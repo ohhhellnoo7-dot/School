@@ -5,6 +5,7 @@ foreach (range(7, 12) as $grade) {
     foreach (range('A', 'E') as $section) {
         $khmerRooms[] = [
             'room_number' => $grade.$section,
+            'building' => 'A',
             'name' => 'Room '.$grade.$section,
             'capacity' => 40,
         ];
@@ -16,6 +17,7 @@ foreach (range(1, 12) as $grade) {
     $number = 'E'.str_pad((string) $grade, 2, '0', STR_PAD_LEFT);
     $englishRooms[] = [
         'room_number' => $number,
+        'building' => 'B',
         'name' => 'English Room '.$number,
         'capacity' => 40,
     ];

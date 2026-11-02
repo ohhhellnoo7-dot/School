@@ -22,6 +22,17 @@ class ClassroomManagementTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_building_filter_includes_shared_rooms_without_bookings(): void
+    {
+        Classroom::create(['room_number' => '7A', 'name' => 'Room 7A', 'building' => 'A', 'capacity' => 40, 'status' => 'active']);
+        Classroom::create(['room_number' => 'E01', 'name' => 'English Room E01', 'building' => 'B', 'capacity' => 40, 'status' => 'active']);
+        $service = app(ClassroomAvailabilityService::class);
+        $rooms = $service->forMoment('2026-11-02 09:00', ['building' => 'A']);
+        $this->assertSame(['7A'], $rooms->pluck('classroom.room_number')->all());
+        $this->assertSame(1, $service->summary($rooms)['total']);
+        $this->assertSame(['E01'], $service->forMoment('2026-11-02 09:00', ['building' => 'B'])->pluck('classroom.room_number')->all());
+    }
+
     public function test_seeder_is_idempotent_builds_the_exact_school_structure_and_preserves_students(): void
     {
         $morning = SchoolClass::create([
@@ -44,6 +55,8 @@ class ClassroomManagementTest extends TestCase
         $this->assertSame(54, ClassGroup::count());
         $this->assertSame(108, ClassSession::count());
         $this->assertSame(42, Classroom::count());
+        $this->assertSame(30, Classroom::where('building', 'A')->count());
+        $this->assertSame(12, Classroom::where('building', 'B')->count());
         $this->assertSame(540, ClassroomBooking::count());
         $this->assertSame($studentCount, Student::count());
         $this->assertSame($morning->id, $student->fresh()->school_class_id);
@@ -255,6 +268,7 @@ class ClassroomManagementTest extends TestCase
         $this->post(route('classrooms.store'), [
             'name' => 'Admin room',
             'room_number' => 'YES',
+            'building' => 'A',
             'capacity' => 40,
             'status' => 'active',
         ])->assertRedirect();

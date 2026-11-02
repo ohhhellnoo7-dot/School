@@ -9,6 +9,15 @@
         <p>Monitor classroom usage across all academic programs.</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
+        <div class="building-picker">
+            <button class="btn btn-outline-secondary" type="button" data-building-toggle aria-expanded="false" aria-controls="building-options"><i class="bi bi-buildings me-1" aria-hidden="true"></i> <span data-building-label>{{ filled($filters['building'] ?? null) ? $buildings->firstWhere('code', $filters['building'])?->name : 'Building' }}</span> <i class="bi bi-chevron-down ms-1" aria-hidden="true"></i></button>
+            <div class="building-options" id="building-options">
+                <button type="button" data-building="">All buildings</button>
+                @foreach($buildings as $building)
+                <button type="button" data-building="{{ $building->code }}" data-building-name="{{ $building->name }}"><strong>{{ $building->name }}</strong>@if($building->code === 'A')<small>30 original rooms - Khmer & Chinese</small>@elseif($building->code === 'B')<small>12 original rooms - English</small>@endif</button>
+                @endforeach
+            </div>
+        </div>
         <button class="btn btn-outline-secondary" type="button" data-availability-refresh><i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i> Refresh</button>
         @if(auth()->user()->role === 'administrator')
             <form method="post" action="{{ route('classrooms.auto-assign') }}" data-confirm="Automatically assign suitable rooms to every unassigned class session? Existing bookings will be preserved.">@csrf<button class="btn btn-outline-secondary"><i class="bi bi-magic me-1" aria-hidden="true"></i> Auto-assign</button></form>
@@ -19,6 +28,7 @@
 
 <section class="panel availability-filter-panel">
     <form class="availability-filters" method="get" action="{{ route('classrooms.index') }}" data-availability-filters>
+        <input type="hidden" name="building" value="{{ $filters['building'] ?? '' }}">
         <div>
             <label class="form-label" for="availability-program">{{ __('Program') }}</label>
             <select class="form-select" id="availability-program" name="program"><option value="">{{ __('All programs') }}</option>@foreach(['Khmer', 'English', 'Chinese'] as $program)<option value="{{ $program }}" @selected(($filters['program'] ?? '') === $program)>{{ $program }}</option>@endforeach</select>
