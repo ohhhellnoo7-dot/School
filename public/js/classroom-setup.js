@@ -13,6 +13,22 @@
     building.addEventListener('change', syncBuilding);
     syncBuilding();
 
+    const updateSummary = () => {
+        const write = (key, value) => {
+            const target = form.querySelector(`[data-room-summary-${key}]`);
+            if (target) target.textContent = value;
+        };
+        write('name', form.elements.name?.value.trim() || 'New classroom');
+        write('number', form.elements.room_number?.value.trim() || 'Room number not set');
+        write('building', building.value === '__new' ? (form.elements.new_building_name.value.trim() || 'New building') : building.selectedOptions[0]?.textContent || 'Choose a building');
+        write('capacity', `${form.elements.capacity?.value || '0'} students`);
+        write('status', form.elements.status?.value === 'out_of_service' ? 'Out of service' : 'Active');
+        const planning = root.querySelector('[data-plan-enabled]').checked;
+        write('plan', planning ? `${form.elements.program.value} / ${form.elements.session.value}` : 'Room only');
+    };
+    form.addEventListener('input', updateSummary);
+    form.addEventListener('change', updateSummary);
+
     const config = JSON.parse(root.querySelector('[data-planner-config]').textContent);
     const enabled = root.querySelector('[data-plan-enabled]');
     const fields = root.querySelector('[data-plan-fields]');
@@ -87,7 +103,8 @@
             select.disabled = false;
             if (payload.teachers.some(t => String(t.id) === String(wanted) && t.available)) select.value = wanted;
             const free = payload.teachers.filter(t => t.available).length;
-            status.textContent = `${free} teacher(s) free for ${row.dataset.start}-${time(end)}. Busy or unavailable teachers cannot be assigned.`;
+            status.textContent = `${free} available teacher${free === 1 ? '' : 's'} for this period`;
+            status.dataset.availability = free ? 'available' : 'none';
             const show = id => teacherDetails(details, payload.teachers.find(t => String(t.id) === id));
             select.addEventListener('change', () => { remember(); inspect.value = select.value; show(select.value); });
             inspect.addEventListener('change', () => show(inspect.value));
@@ -118,7 +135,9 @@
             const row = node('article', '', 'lesson-period');
             row.dataset.period = '';
             row.dataset.start = startTime;
-            row.append(node('h3', `${startTime}-${time(start + 60)}`));
+            const periodTime = node('div', '', 'lesson-period-time');
+            periodTime.append(node('small', `Period ${index + 1}`), node('h3', `${startTime}-${time(start + 60)}`));
+            row.append(periodTime);
             if (start < coveredUntil) {
                 row.dataset.covered = '1';
                 row.append(node('p', 'Continuation of the previous two-hour subject.'));
@@ -146,7 +165,7 @@
             row.append(grid);
             const status = node('p', '', 'mt-2 text-muted'); status.dataset.slotStatus = ''; status.setAttribute('role', 'status'); row.append(status);
             const disclosure = node('details', '', 'teacher-disclosure');
-            disclosure.append(node('summary', 'Teacher subjects, working hours, teaching schedule & breaks'));
+            disclosure.append(node('summary', 'View teacher schedules & breaks'));
             const inspect = node('select', '', 'form-select mt-2'); inspect.dataset.inspect = ''; inspect.setAttribute('aria-label', `Inspect teacher details for ${startTime}`);
             inspect.append(option('', 'Select a subject first'));
             const detail = node('div', '', 'teacher-schedule-details'); detail.dataset.teacherDetails = '';
@@ -183,6 +202,7 @@
     year.addEventListener('change', () => { remember(); render(); });
     syncSessions(config.old.session || 'Morning');
     syncClasses(String(config.old.school_class_id || ''));
+    updateSummary();
     form.addEventListener('submit', event => {
         if (!enabled.checked) return;
         const assigned = [...periods.querySelectorAll('[data-subject]')].filter(select => select.value);

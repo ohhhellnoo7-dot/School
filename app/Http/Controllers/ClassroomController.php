@@ -34,6 +34,7 @@ class ClassroomController extends Controller
                 ->orderBy('room_number')
                 ->pluck('name', 'room_number'),
             'buildings' => \App\Models\Building::orderBy('name')->get(),
+            'programs' => \App\Models\Program::names(),
         ]);
     }
 
@@ -205,7 +206,7 @@ class ClassroomController extends Controller
     private function availabilityPayload(Request $request, ClassroomAvailabilityService $availabilityService): array
     {
         $filters = $request->validate([
-            'program' => ['nullable', Rule::in(['Khmer', 'English', 'Chinese'])],
+            'program' => ['nullable', Rule::in(\App\Models\Program::names())],
             'grade' => ['nullable', 'integer', 'between:1,12'],
             'session' => ['nullable', Rule::in(self::SESSIONS)],
             'status' => ['nullable', Rule::in(['available', 'busy', 'upcoming', 'out_of_service'])],

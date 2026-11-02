@@ -38,7 +38,11 @@ class SchoolModules
 
     public static function get(string $module): array
     {
-        return self::all()[$module] ?? abort(404);
+        $definition = self::all()[$module] ?? abort(404);
+        if (in_array($module, ['classes', 'teachers'], true)) {
+            $definition['fields']['program'] = \App\Models\Program::names();
+        }
+        return $definition;
     }
 
     public static function canWrite(User $user, string $module): bool

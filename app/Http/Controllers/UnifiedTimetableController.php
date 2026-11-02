@@ -18,7 +18,7 @@ class UnifiedTimetableController extends Controller
         $classes = SchoolClass::query()->when($restricted, fn ($q) => $q->whereIn('id', Student::visibleTo($request->user())->select('school_class_id')))->orderBy('name')->orderBy('section')->orderBy('session')->get();
         $view = $request->input('view', 'students');
         $studentClasses = null;
-        $request->validate(['program' => 'nullable|in:Khmer,English,Chinese']);
+        $request->validate(['program' => ['nullable', \Illuminate\Validation\Rule::in(\App\Models\Program::names())]]);
         $teacherProgram = $view === 'teachers' ? $request->input('program') : null;
         $availableTeacherSessions = \App\Support\ProgramSessions::for($teacherProgram);
         $teacherSession = $teacherProgram ? $request->input('session') : null;

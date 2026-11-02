@@ -23,14 +23,14 @@ class ClassroomSetupService
         })->values();
 
         return ['buildings' => Building::orderBy('name')->get(), 'plannerClasses' => $plannerClasses,
-            'programSessions' => ProgramSessions::BY_PROGRAM];
+            'programSessions' => \App\Models\Program::sessionMap()];
     }
 
     public function save(array $attributes, Request $request, ?Classroom $classroom = null): Classroom
     {
         $plan = $request->validate([
             'plan_enabled' => 'nullable|boolean',
-            'program' => ['required_if:plan_enabled,1', 'nullable', Rule::in(array_keys(ProgramSessions::BY_PROGRAM))],
+            'program' => ['required_if:plan_enabled,1', 'nullable', Rule::in(array_keys(\App\Models\Program::sessionMap()))],
             'session' => 'required_if:plan_enabled,1|nullable|in:Morning,Afternoon,Evening',
             'school_class_id' => 'required_if:plan_enabled,1|nullable|integer|exists:school_classes,id',
             'day' => 'required_if:plan_enabled,1|nullable|in:Monday,Tuesday,Wednesday,Thursday,Friday',

@@ -101,7 +101,7 @@ class SchoolModuleController extends Controller
         $parentGrades = collect();
         $teacherFilterClasses = collect();
         if ($module === 'parents') {
-            $request->validate(['program' => 'nullable|in:Khmer,English,Chinese', 'session' => 'nullable|in:Morning,Afternoon,Evening', 'grade' => 'nullable|string|max:255']);
+            $request->validate(['program' => ['nullable', \Illuminate\Validation\Rule::in(\App\Models\Program::names())], 'session' => 'nullable|in:Morning,Afternoon,Evening', 'grade' => 'nullable|string|max:255']);
             if ($request->input('program') === 'Chinese') {
                 $request->merge(['session' => 'Evening']);
             } elseif ($request->input('program') === 'Khmer' && $request->input('session') === 'Evening') {
@@ -122,7 +122,7 @@ class SchoolModuleController extends Controller
         $request->validate(['search' => 'nullable|string|max:255', 'direction' => 'nullable|in:asc,desc', 'sort' => 'nullable|string', 'filter' => 'nullable|string|max:255', 'date' => 'nullable|date', 'teacher' => 'nullable|integer|exists:users,id']);
         $fields = array_keys(array_filter($meta['fields'], fn ($type) => in_array($type, ['text', 'email', 'textarea'], true)));
         if ($module === 'teachers') {
-            $request->validate(['program' => 'nullable|in:Khmer,English,Chinese', 'session' => 'nullable|in:Morning,Afternoon,Evening', 'class' => 'nullable|integer|exists:school_classes,id']);
+            $request->validate(['program' => ['nullable', \Illuminate\Validation\Rule::in(\App\Models\Program::names())], 'session' => 'nullable|in:Morning,Afternoon,Evening', 'class' => 'nullable|integer|exists:school_classes,id']);
             if ($request->program === 'Chinese' && $request->filled('session')) {
                 $request->merge(['session' => 'Evening']);
             } elseif ($request->program === 'Khmer' && $request->session === 'Evening') {

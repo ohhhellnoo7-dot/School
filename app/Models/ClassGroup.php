@@ -90,7 +90,7 @@ class ClassGroup extends Model
     /** @return list<string> */
     public static function allowedSessions(string $program): array
     {
-        return array_values(config("classrooms.program_sessions.{$program}", []));
+        return \App\Support\ProgramSessions::for($program);
     }
 
     public function getDisplayNameAttribute(): string

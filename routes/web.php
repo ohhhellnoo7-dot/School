@@ -96,6 +96,8 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
     Route::get('/school/classrooms/{classroom}/lesson-status', [ClassroomController::class, 'lessonStatus'])->name('classrooms.lesson-status');
 
     Route::middleware('role:administrator')->group(function () {
+        Route::get('/school/programs/create', [\App\Http\Controllers\ProgramController::class, 'create'])->name('programs.create');
+        Route::post('/school/programs', [\App\Http\Controllers\ProgramController::class, 'store'])->name('programs.store');
         Route::post('/class-groups', [ClassGroupController::class, 'store'])->name('class-groups.store');
         Route::get('/class-groups/{classGroup}/edit', [ClassGroupController::class, 'edit'])->name('class-groups.edit');
         Route::put('/class-groups/{classGroup}', [ClassGroupController::class, 'update'])->name('class-groups.update');

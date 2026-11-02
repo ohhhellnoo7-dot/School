@@ -9,6 +9,14 @@
         <p>Monitor classroom usage across all academic programs.</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
+        <div class="program-picker">
+            <button class="btn btn-outline-secondary" type="button" data-program-toggle aria-expanded="false" aria-controls="program-options"><i class="bi bi-book me-1" aria-hidden="true"></i> <span data-program-label>{{ $filters['program'] ?? 'Program' }}</span> <i class="bi bi-chevron-down ms-1" aria-hidden="true"></i></button>
+            <div class="program-options" id="program-options">
+                <button type="button" data-program="">All programs</button>
+                @foreach($programs as $program)<button type="button" data-program="{{ $program }}">{{ $program }}</button>@endforeach
+                @if(auth()->user()->role === 'administrator')<a href="{{ route('programs.create') }}"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i> Create new program</a>@endif
+            </div>
+        </div>
         <div class="building-picker">
             <button class="btn btn-outline-secondary" type="button" data-building-toggle aria-expanded="false" aria-controls="building-options"><i class="bi bi-buildings me-1" aria-hidden="true"></i> <span data-building-label>{{ filled($filters['building'] ?? null) ? $buildings->firstWhere('code', $filters['building'])?->name : 'Building' }}</span> <i class="bi bi-chevron-down ms-1" aria-hidden="true"></i></button>
             <div class="building-options" id="building-options">
@@ -31,7 +39,7 @@
         <input type="hidden" name="building" value="{{ $filters['building'] ?? '' }}">
         <div>
             <label class="form-label" for="availability-program">{{ __('Program') }}</label>
-            <select class="form-select" id="availability-program" name="program"><option value="">{{ __('All programs') }}</option>@foreach(['Khmer', 'English', 'Chinese'] as $program)<option value="{{ $program }}" @selected(($filters['program'] ?? '') === $program)>{{ $program }}</option>@endforeach</select>
+            <select class="form-select" id="availability-program" name="program"><option value="">{{ __('All programs') }}</option>@foreach($programs as $program)<option value="{{ $program }}" @selected(($filters['program'] ?? '') === $program)>{{ $program }}</option>@endforeach</select>
         </div>
         <div>
             <label class="form-label" for="availability-grade">{{ __('Grade') }}</label>

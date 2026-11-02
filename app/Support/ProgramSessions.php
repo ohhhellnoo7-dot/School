@@ -12,6 +12,6 @@ class ProgramSessions
 
     public static function for(?string $program): array
     {
-        return self::BY_PROGRAM[$program] ?? ['Morning', 'Afternoon', 'Evening'];
+        return \App\Models\Program::sessionMap()[$program] ?? ['Morning', 'Afternoon', 'Evening'];
     }
 }

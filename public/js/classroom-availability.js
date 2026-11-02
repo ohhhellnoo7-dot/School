@@ -71,6 +71,35 @@
         }
     };
 
+    const programPicker = document.querySelector('.program-picker');
+    const programToggle = programPicker?.querySelector('[data-program-toggle]');
+    const openProgram = open => {
+        programPicker?.classList.toggle('is-open', open);
+        programToggle?.setAttribute('aria-expanded', String(open));
+    };
+    programToggle?.addEventListener('click', () => openProgram(!programPicker.classList.contains('is-open')));
+    programPicker?.addEventListener('mouseenter', () => openProgram(true));
+    programPicker?.addEventListener('mouseleave', () => { if (!programPicker.contains(document.activeElement)) openProgram(false); });
+    programPicker?.addEventListener('focusin', () => openProgram(true));
+    programPicker?.addEventListener('focusout', () => setTimeout(() => { if (!programPicker.contains(document.activeElement)) openProgram(false); }, 0));
+    programPicker?.addEventListener('keydown', event => {
+        if (event.key === 'Escape') { programToggle.focus(); openProgram(false); }
+    });
+    document.addEventListener('click', event => { if (!programPicker?.contains(event.target)) openProgram(false); });
+    document.querySelectorAll('[data-program]').forEach(button => {
+        button.addEventListener('click', () => {
+            form.elements.program.value = button.dataset.program;
+            document.querySelector('[data-program-label]').textContent = button.dataset.program || 'Program';
+            button.blur();
+            openProgram(false);
+            refresh({ updateHistory: true });
+        });
+    });
+    form.elements.program?.addEventListener('change', () => {
+        const label = document.querySelector('[data-program-label]');
+        if (label) label.textContent = form.elements.program.value || 'Program';
+    });
+
     const picker = document.querySelector('.building-picker');
     const toggle = picker?.querySelector('[data-building-toggle]');
     const setOpen = open => {

@@ -39,7 +39,7 @@
 
 <nav class="program-selector" aria-label="Filter class groups by academic program">
     <a class="{{ request('program') ? '' : 'active' }}" href="{{ route('class-groups.index') }}">{{ __('All programs') }}</a>
-    @foreach(['Khmer', 'English', 'Chinese'] as $program)
+    @foreach(\App\Models\Program::names() as $program)
         <a class="{{ request('program') === $program ? 'active' : '' }}" href="{{ route('class-groups.index', ['program' => $program]) }}">{{ $program }}</a>
     @endforeach
 </nav>
@@ -57,7 +57,7 @@
             <label class="form-label" for="class-program">{{ __('Program') }}</label>
             <select class="form-select" id="class-program" name="program">
                 <option value="">{{ __('All programs') }}</option>
-                @foreach(['Khmer', 'English', 'Chinese'] as $program)<option value="{{ $program }}" @selected(request('program') === $program)>{{ $program }}</option>@endforeach
+                @foreach(\App\Models\Program::names() as $program)<option value="{{ $program }}" @selected(request('program') === $program)>{{ $program }}</option>@endforeach
             </select>
         </div>
         <div>

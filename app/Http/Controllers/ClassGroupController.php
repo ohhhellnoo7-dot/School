@@ -43,7 +43,7 @@ class ClassGroupController extends Controller
 
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:100'],
-            'program' => ['nullable', Rule::in(array_keys(self::PROGRAM_SESSIONS))],
+            'program' => ['nullable', Rule::in(array_keys($this->programSessions()))],
             'grade' => ['nullable', 'integer', 'between:1,12'],
             'session' => ['nullable', Rule::in(['Morning', 'Afternoon', 'Evening'])],
             'status' => ['nullable', Rule::in(['active', 'inactive'])],
@@ -109,7 +109,7 @@ class ClassGroupController extends Controller
         return view('school.class-groups.form', [
             'classGroup' => new ClassGroup(['capacity' => 30, 'status' => 'active']),
             'teachers' => $this->teachers(),
-            'programSessions' => self::PROGRAM_SESSIONS,
+            'programSessions' => $this->programSessions(),
         ]);
     }
 
@@ -130,7 +130,7 @@ class ClassGroupController extends Controller
         return view('school.class-groups.form', [
             'classGroup' => $classGroup,
             'teachers' => $this->teachers(),
-            'programSessions' => self::PROGRAM_SESSIONS,
+            'programSessions' => $this->programSessions(),
         ]);
     }
 
@@ -172,7 +172,7 @@ class ClassGroupController extends Controller
             'name' => ['required', 'string', 'max:100'],
             'grade' => ['required', 'integer', 'between:1,12'],
             'section' => ['nullable', 'string', 'max:5'],
-            'program' => ['required', Rule::in(array_keys(self::PROGRAM_SESSIONS))],
+            'program' => ['required', Rule::in(array_keys($this->programSessions()))],
             'teacher_id' => [
                 'nullable',
                 Rule::exists('users', 'id')->where(fn ($query) => $query->where('role', 'teacher')),
@@ -218,9 +218,22 @@ class ClassGroupController extends Controller
         return $attributes;
     }
 
+    private function programSessions(): array
+    {
+        $sessions = self::PROGRAM_SESSIONS;
+        foreach (\App\Models\Program::sessionMap() as $program => $names) {
+            if (isset($sessions[$program])) continue;
+            foreach ($names as $name) {
+                $hours = config('classrooms.sessions.'.$name);
+                $sessions[$program][$name] = [$hours['starts_at'], $hours['ends_at']];
+            }
+        }
+        return $sessions;
+    }
+
     private function syncSessions(ClassGroup $classGroup): void
     {
-        $sessions = self::PROGRAM_SESSIONS[$classGroup->program];
+        $sessions = $this->programSessions()[$classGroup->program];
 
         foreach ($sessions as $session => [$startsAt, $endsAt]) {
             $classGroup->sessions()->updateOrCreate(
