@@ -9,6 +9,20 @@ use Illuminate\Validation\ValidationException;
 
 class ProgramController extends Controller
 {
+    public function destroy(string $program)
+    {
+        $record = Program::where('name', $program)->firstOrFail();
+        if (\App\Models\ClassGroup::where('program', $record->name)->exists()
+            || \App\Models\SchoolClass::where('program', $record->name)->exists()
+            || \App\Models\User::where('program', $record->name)->exists()) {
+            throw ValidationException::withMessages(['program' => 'This program is in use. Reassign its classes and users before deleting it.']);
+        }
+
+        $record->delete();
+
+        return redirect()->route('classrooms.index')->with('success', $program.' program deleted.');
+    }
+
     public function create()
     {
         return view('school.programs.create');

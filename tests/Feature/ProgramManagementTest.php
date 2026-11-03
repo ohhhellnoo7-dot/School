@@ -11,6 +11,34 @@ class ProgramManagementTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_admin_can_delete_an_unused_program_including_a_default_program(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'administrator']));
+        Program::create(['name' => 'Japanese', 'sessions' => ['Morning']]);
+        $this->get(route('classrooms.index'))->assertOk()->assertSee('Delete Japanese program');
+        foreach (['Japanese', 'Chinese'] as $name) {
+            $this->delete(route('programs.destroy', ['program' => $name]))
+                ->assertRedirect(route('classrooms.index'))->assertSessionHasNoErrors();
+            $this->assertDatabaseMissing('programs', ['name' => $name]);
+            $this->assertNotContains($name, Program::names());
+        }
+    }
+
+    public function test_program_in_use_cannot_be_deleted(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'administrator']));
+        \App\Models\SchoolClass::create(['name' => 'Grade 7', 'section' => 'A', 'program' => 'Khmer', 'session' => 'Morning']);
+        $this->delete(route('programs.destroy', ['program' => 'Khmer']))->assertSessionHasErrors('program');
+        $this->assertDatabaseHas('programs', ['name' => 'Khmer']);
+    }
+
+    public function test_student_cannot_delete_programs(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'student']));
+        $this->delete(route('programs.destroy', ['program' => 'Chinese']))->assertForbidden();
+        $this->assertDatabaseHas('programs', ['name' => 'Chinese']);
+    }
+
     public function test_admin_creates_program_and_can_select_it_for_classes_and_classroom_lessons(): void
     {
         $this->actingAs(User::factory()->create(['role' => 'administrator']));

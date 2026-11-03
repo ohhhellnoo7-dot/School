@@ -101,7 +101,7 @@ class DashboardController extends Controller
         $programBreakdowns = [];
         $normalizedClassCount = ClassGroup::query()->count();
         if ($user->role === 'administrator') {
-            foreach (['Khmer', 'English', 'Chinese'] as $program) {
+            foreach (\App\Models\Program::names() as $program) {
                 $programBreakdowns['people'][$program] = (clone $students)
                     ->whereHas('schoolClass', fn ($q) => $q->where('program', $program))->count();
                 $programBreakdowns['person-workspace'][$program] = User::where('role', 'teacher')->where('program', $program)->count();

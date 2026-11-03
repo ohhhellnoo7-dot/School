@@ -93,6 +93,19 @@ class DashboardAjaxTest extends TestCase
             ->assertViewHas('programBreakdowns', [])->assertDontSee('breakdown-people');
     }
 
+    public function test_dashboard_includes_new_program_teachers_in_initial_and_refreshed_breakdowns(): void
+    {
+        $admin = User::factory()->create();
+        $admin->forceFill(['role' => 'administrator'])->save();
+        $this->seed(\Database\Seeders\JapanTeacherSeeder::class);
+
+        $this->actingAs($admin)->get('/dashboard')->assertOk()
+            ->assertViewHas('programBreakdowns', fn ($counts) => $counts['person-workspace']['Japan'] === 12);
+        $html = $this->getJson('/dashboard/data')->assertOk()->json('html');
+        $this->assertStringContainsString('breakdown-program-japan', $html);
+        $this->assertStringContainsString('<dd>12</dd>', $html);
+    }
+
     public function test_dashboard_counts_a_grade_and_section_once_across_programs_and_sessions(): void
     {
         $admin = User::factory()->create();

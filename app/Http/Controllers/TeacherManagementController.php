@@ -36,7 +36,7 @@ class TeacherManagementController extends Controller
 
     public function index(Request $request, TeacherManagementService $service)
     {
-        $request->validate(['search' => 'nullable|string|max:255', 'qualified_subject' => 'nullable|string|max:255', 'program' => 'nullable|in:Khmer,English,Chinese', 'workload' => 'nullable|in:AVAILABLE,FULL,OVERLOADED,UNASSIGNED', 'class' => 'nullable|integer|exists:school_classes,id', 'session' => 'nullable|in:Morning,Afternoon,Evening', 'filter' => 'nullable|in:active,inactive']);
+        $request->validate(['search' => 'nullable|string|max:255', 'qualified_subject' => 'nullable|string|max:255', 'program' => ['nullable', Rule::in(\App\Models\Program::names())], 'workload' => 'nullable|in:AVAILABLE,FULL,OVERLOADED,UNASSIGNED', 'class' => 'nullable|integer|exists:school_classes,id', 'session' => 'nullable|in:Morning,Afternoon,Evening', 'filter' => 'nullable|in:active,inactive']);
         $teachers = User::where('role', 'teacher')->orderBy('name')->get();
         $all = $teachers->map(fn ($t) => ['teacher' => $t, 'workload' => $service->workload($t)]);
         $rows = $all->filter(function ($r) use ($request, $service) {
@@ -73,7 +73,7 @@ class TeacherManagementController extends Controller
     {
         if ($teacher) abort_unless($teacher->role === 'teacher', 404);
         $data = $request->validate(['name' => 'required|string|max:255', 'gender' => 'required|in:male,female,other', 'phone' => 'nullable|string|max:50', 'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($teacher?->id)],
-            'program' => 'required|in:Khmer,English,Chinese', 'subject1' => ['required', Rule::exists('subjects', 'name')], 'subject2' => ['required_if:program,Khmer', 'nullable', 'different:subject1', Rule::exists('subjects', 'name')],
+            'program' => ['required', Rule::in(\App\Models\Program::names())], 'subject1' => ['required', Rule::exists('subjects', 'name')], 'subject2' => ['required_if:program,Khmer', 'nullable', 'different:subject1', Rule::exists('subjects', 'name')],
             'additional_subjects' => 'nullable|array', 'additional_subjects.*' => ['required','distinct',Rule::exists('subjects','name')],
             'weekly_hours' => 'nullable|numeric|min:1|max:40', 'working_sessions' => 'required|in:Morning,Afternoon,Both,Evening,EnglishFullTime,EnglishPartTime,Custom', 'part_time_start' => 'nullable|date_format:H:i', 'status' => 'required|in:active,inactive',
             'periods' => 'nullable|array|max:25', 'periods.*.weekday' => ['required', Rule::in(TeacherManagementService::DAYS)], 'periods.*.start_time' => 'required|date_format:H:i', 'periods.*.end_time' => 'required|date_format:H:i|after:periods.*.start_time', 'periods.*.unavailable' => 'required|boolean']);

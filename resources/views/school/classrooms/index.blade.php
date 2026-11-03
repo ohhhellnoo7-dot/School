@@ -13,7 +13,18 @@
             <button class="btn btn-outline-secondary" type="button" data-program-toggle aria-expanded="false" aria-controls="program-options"><i class="bi bi-book me-1" aria-hidden="true"></i> <span data-program-label>{{ $filters['program'] ?? 'Program' }}</span> <i class="bi bi-chevron-down ms-1" aria-hidden="true"></i></button>
             <div class="program-options" id="program-options">
                 <button type="button" data-program="">All programs</button>
-                @foreach($programs as $program)<button type="button" data-program="{{ $program }}">{{ $program }}</button>@endforeach
+                @foreach($programs as $program)
+                    <div class="program-option-row">
+                        <button type="button" data-program="{{ $program }}">{{ $program }}</button>
+                        @if(auth()->user()->role === 'administrator')
+                            <form method="post" action="{{ route('programs.destroy', ['program' => $program]) }}" data-confirm="Delete the {{ $program }} program? This cannot be undone. Programs in use must have their classes and users reassigned first.">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="program-delete" aria-label="Delete {{ $program }} program" title="Delete {{ $program }} program"><i class="bi bi-trash" aria-hidden="true"></i></button>
+                            </form>
+                        @endif
+                    </div>
+                @endforeach
                 @if(auth()->user()->role === 'administrator')<a href="{{ route('programs.create') }}"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i> Create new program</a>@endif
             </div>
         </div>

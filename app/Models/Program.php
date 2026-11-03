@@ -19,7 +19,7 @@ class Program extends Model
     {
         if (! Schema::hasTable('programs')) return ProgramSessions::BY_PROGRAM;
 
-        return array_replace(ProgramSessions::BY_PROGRAM, static::orderBy('id')->get()->pluck('sessions', 'name')->all());
+        return static::orderBy('id')->get()->pluck('sessions', 'name')->all();
     }
 
     public static function names(): array
