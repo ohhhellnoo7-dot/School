@@ -6,19 +6,45 @@ use App\Models\Program;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\DB;
 
 class ProgramController extends Controller
 {
     public function destroy(string $program)
     {
-        $record = Program::where('name', $program)->firstOrFail();
-        if (\App\Models\ClassGroup::where('program', $record->name)->exists()
-            || \App\Models\SchoolClass::where('program', $record->name)->exists()
-            || \App\Models\User::where('program', $record->name)->exists()) {
-            throw ValidationException::withMessages(['program' => 'This program is in use. Reassign its classes and users before deleting it.']);
-        }
+        DB::transaction(function () use ($program) {
+            $record = Program::where('name', $program)->lockForUpdate()->firstOrFail();
+            $groups = DB::table('class_groups')->where('program', $record->name)->pluck('id');
+            $classes = DB::table('school_classes')->where('program', $record->name)->pluck('id');
+            $subjects = DB::table('subjects')->whereIn('school_class_id', $classes)->pluck('id');
+            $schedules = DB::table('schedules')->whereIn('school_class_id', $classes)
+                ->orWhereIn('subject_id', $subjects)->pluck('id');
+            $studentAccounts = DB::table('students')->whereIn('school_class_id', $classes)->pluck('user_id')->filter();
 
-        $record->delete();
+            DB::table('lesson_room_corrections')->whereIn('schedule_id', $schedules)->delete();
+            DB::table('schedules')->whereIn('id', $schedules)->delete();
+            DB::table('examinations')->whereIn('subject_id', $subjects)->delete();
+            DB::table('subjects')->whereIn('id', $subjects)->delete();
+            // Attendance, grades and fees cascade from students.
+            DB::table('students')->whereIn('school_class_id', $classes)->delete();
+            DB::table('school_classes')->whereIn('shared_timetable_class_id', $classes)
+                ->update(['shared_timetable_class_id' => null]);
+            DB::table('school_classes')->whereIn('id', $classes)->delete();
+            DB::table('classroom_bookings')->whereIn('class_group_id', $groups)->delete();
+            DB::table('class_groups')->whereIn('id', $groups)->delete();
+
+            // Keep employees and shared parent accounts; remove student logins
+            // only when they no longer belong to a surviving student record.
+            $accounts = DB::table('users')->where('role', 'student')
+                ->where(fn ($q) => $q->where('program', $record->name)->orWhereIn('id', $studentAccounts))
+                ->whereNotIn('id', DB::table('students')->whereNotNull('user_id')->select('user_id'))
+                ->pluck('id');
+            DB::table('announcements')->whereIn('created_by', $accounts)->update(['created_by' => null]);
+            DB::table('sessions')->whereIn('user_id', $accounts)->delete();
+            DB::table('users')->whereIn('id', $accounts)->delete();
+            DB::table('users')->where('program', $record->name)->where('role', '!=', 'teacher')->update(['program' => null]);
+            $record->delete();
+        });
 
         return redirect()->route('classrooms.index')->with('success', $program.' program deleted.');
     }

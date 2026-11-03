@@ -69,7 +69,7 @@
         @else
             <span class="stat-icon tint-{{ $color }}"><i class="bi bi-{{ $icon }}"></i></span>
         @endif
-    </div><div class="stat-value">{{ number_format($value) }}</div><div class="stat-note"><i class="bi bi-arrow-up-right"></i>{{ $note }}</div></div></div>
+    </div><div class="stat-value">{{ number_format($value) }}</div><div class="stat-note"><i class="bi bi-arrow-up-right"></i>{{ $note }}</div><i class="bi bi-{{ $icon }} stat-watermark" aria-hidden="true"></i></div></div>
     @endforeach
 </div>
 <p class="dashboard-scope">{{ $scope }}</p>

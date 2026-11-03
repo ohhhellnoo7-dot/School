@@ -104,13 +104,19 @@ class DashboardController extends Controller
             foreach (\App\Models\Program::names() as $program) {
                 $programBreakdowns['people'][$program] = (clone $students)
                     ->whereHas('schoolClass', fn ($q) => $q->where('program', $program))->count();
-                $programBreakdowns['person-workspace'][$program] = User::where('role', 'teacher')->where('program', $program)->count();
                 $programBreakdowns['building'][$program] = $normalizedClassCount > 0
                     ? ClassGroup::where('program', $program)->count()
                     : SchoolClass::where('program', $program)
                         ->select('name', 'section')->distinct()->get()->count();
                 $programBreakdowns['book'][$program] = SchoolModules::subjects($user)
                     ->whereHas('schoolClass', fn ($q) => $q->where('program', $program))->distinct()->count('name');
+            }
+            $teacherCounts = User::where('role', 'teacher')->selectRaw('program, COUNT(*) as total')
+                ->groupBy('program')->pluck('total', 'program');
+            $programBreakdowns['person-workspace'] = array_fill_keys(\App\Models\Program::names(), 0);
+            foreach ($teacherCounts as $program => $count) {
+                $label = trim((string) $program) !== '' ? $program : 'Unassigned';
+                $programBreakdowns['person-workspace'][$label] = (int) $count;
             }
         }
 

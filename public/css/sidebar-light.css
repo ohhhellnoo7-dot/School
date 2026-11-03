@@ -1,0 +1,79 @@
+/* Opaque sidebar surfaces keep navigation readable in the light workspace. */
+:root[data-theme="light"]:root:root:root:root .sidebar {
+    --sidebar-bg: #10265b;
+    --sidebar-text: #dce8ff;
+    --sidebar-heading: #ffffff;
+    --sidebar-active: #2274ef;
+    background: linear-gradient(165deg, #153877 0%, #10265b 60%, #173d80 100%);
+    background-color: #10265b !important;
+    color: #dce8ff;
+    border-right: 1px solid #24447f;
+    box-shadow: 5px 0 24px #112a5912;
+    isolation: isolate;
+}
+:root[data-theme="light"]:root:root:root:root .sidebar .brand {
+    margin: 27px 24px 30px;
+    color: #fff;
+    letter-spacing: -1px;
+    gap: 0;
+}
+:root[data-theme="light"]:root:root:root:root .sidebar .brand-mark {
+    width: 44px;
+    height: 44px;
+    border-radius: 15px;
+    margin-right: 12px;
+    background: linear-gradient(145deg, #55b5ff, #1264ed);
+    border: 1px solid #80bbff;
+    box-shadow: 0 5px 12px #06183c33;
+    color: #fff;
+}
+:root[data-theme="light"]:root:root:root:root .sidebar :is(.brand-name, .brand-name small, .brand-dot) { color: #fff; }
+:root[data-theme="light"]:root:root:root:root .sidebar :is(.nav-caption, .nav-group-caption) {
+    color: #9fb9e5;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.6px;
+    opacity: 1;
+}
+:root[data-theme="light"]:root:root:root:root .sidebar .nav-caption { margin-left: 27px; margin-bottom: 12px; }
+:root[data-theme="light"]:root:root:root:root .sidebar .school-nav { padding: 0 16px 18px; gap: 5px; scrollbar-color: #6b8dc066 transparent; }
+:root[data-theme="light"]:root:root:root:root .sidebar .school-nav a {
+    color: #e2ecff;
+    min-height: 45px;
+    padding: 11px 14px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    font-size: 12px;
+    gap: 13px;
+}
+:root[data-theme="light"]:root:root:root:root .sidebar .school-nav a i { color: #b9d3ff; font-size: 19px; }
+:root[data-theme="light"]:root:root:root:root .sidebar .school-nav a:hover { color: #fff; background: #ffffff10; border-color: #ffffff12; }
+:root[data-theme="light"]:root:root:root:root .sidebar .school-nav a.active {
+    background: linear-gradient(110deg, #0865f5, #388cff);
+    color: #fff;
+    border-color: #65a4ff;
+    box-shadow: 0 5px 14px #051b4430, inset 0 1px #ffffff18;
+}
+:root[data-theme="light"]:root:root:root:root .sidebar .school-nav a.active i { color: #fff; }
+:root[data-theme="light"]:root:root:root:root .sidebar .school-nav a.active:before { display: none; }
+:root[data-theme="light"]:root:root:root:root .sidebar .school-nav a:focus-visible { outline: 2px solid #b7d8ff; outline-offset: -2px; }
+:root[data-theme="light"]:root:root:root:root .sidebar .school-switch {
+    margin: 12px 16px 18px;
+    padding: 16px 12px;
+    border: 1px solid #6a98dd55;
+    background: linear-gradient(120deg, #224b8c, #19386d);
+    border-radius: 17px;
+    box-shadow: inset 0 1px #ffffff0c;
+}
+:root[data-theme="light"]:root:root:root:root .sidebar .school-switch strong { color: #fff; font-size: 12px; }
+:root[data-theme="light"]:root:root:root:root .sidebar .school-switch small { color: #bbceee; font-size: 10px; }
+:root[data-theme="light"]:root:root:root:root .sidebar .school-icon { background: #ffffff12; color: #b9d9ff; border: 1px solid #ffffff15; border-radius: 12px; }
+@media (min-width: 992px) {
+    :root[data-theme="light"][data-sidebar="collapsed"]:root:root:root:root .sidebar .brand { margin: 27px auto 30px; }
+    :root[data-theme="light"][data-sidebar="collapsed"]:root:root:root:root .sidebar .brand-mark { margin-right: 0; }
+    :root[data-theme="light"][data-sidebar="collapsed"]:root:root:root:root .sidebar .school-nav { padding-inline: 10px; }
+    :root[data-theme="light"][data-sidebar="collapsed"]:root:root:root:root .sidebar .school-nav a { justify-content: center; padding-inline: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    :root[data-theme="light"] .sidebar .school-nav a { transition: none; transform: none; }
+}

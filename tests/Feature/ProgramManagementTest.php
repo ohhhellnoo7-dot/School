@@ -24,12 +24,29 @@ class ProgramManagementTest extends TestCase
         }
     }
 
-    public function test_program_in_use_cannot_be_deleted(): void
+    public function test_program_in_use_is_deleted_and_teachers_are_preserved(): void
     {
         $this->actingAs(User::factory()->create(['role' => 'administrator']));
-        \App\Models\SchoolClass::create(['name' => 'Grade 7', 'section' => 'A', 'program' => 'Khmer', 'session' => 'Morning']);
-        $this->delete(route('programs.destroy', ['program' => 'Khmer']))->assertSessionHasErrors('program');
-        $this->assertDatabaseHas('programs', ['name' => 'Khmer']);
+        $teacher = User::factory()->create(['role' => 'teacher', 'program' => 'Khmer']);
+        $student = User::factory()->create(['role' => 'student', 'program' => 'Khmer']);
+        $other = \App\Models\SchoolClass::create(['name' => 'English 1', 'section' => 'A', 'program' => 'English', 'session' => 'Morning']);
+        $class = \App\Models\SchoolClass::create(['name' => 'Grade 7', 'section' => 'A', 'program' => 'Khmer', 'session' => 'Morning', 'teacher_id' => $teacher->id]);
+        $subject = \App\Models\Subject::create(['name' => 'Math', 'code' => 'M1', 'school_class_id' => $class->id, 'teacher_id' => $teacher->id]);
+        $exam = \App\Models\Examination::create(['name' => 'Final', 'subject_id' => $subject->id, 'date' => '2026-11-03', 'total_marks' => 100]);
+        $profile = \App\Models\Student::factory()->create(['school_class_id' => $class->id, 'user_id' => $student->id]);
+        \App\Models\Attendance::create(['student_id' => $profile->id, 'date' => '2026-11-03', 'status' => 'present']);
+        \App\Models\Grade::create(['student_id' => $profile->id, 'examination_id' => $exam->id, 'marks' => 90]);
+        $this->delete(route('programs.destroy', ['program' => 'Khmer']))->assertSessionHasNoErrors()->assertRedirect(route('classrooms.index'));
+        $this->assertDatabaseMissing('programs', ['name' => 'Khmer']);
+        $this->assertDatabaseMissing('school_classes', ['id' => $class->id]);
+        $this->assertDatabaseMissing('subjects', ['id' => $subject->id]);
+        $this->assertDatabaseMissing('examinations', ['id' => $exam->id]);
+        $this->assertDatabaseMissing('users', ['id' => $student->id]);
+        $this->assertDatabaseMissing('students', ['id' => $profile->id]);
+        $this->assertDatabaseMissing('attendances', ['student_id' => $profile->id]);
+        $this->assertDatabaseMissing('grades', ['student_id' => $profile->id]);
+        $this->assertDatabaseHas('users', ['id' => $teacher->id, 'role' => 'teacher', 'program' => 'Khmer']);
+        $this->assertDatabaseHas('school_classes', ['id' => $other->id]);
     }
 
     public function test_student_cannot_delete_programs(): void

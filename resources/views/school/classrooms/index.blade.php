@@ -17,7 +17,7 @@
                     <div class="program-option-row">
                         <button type="button" data-program="{{ $program }}">{{ $program }}</button>
                         @if(auth()->user()->role === 'administrator')
-                            <form method="post" action="{{ route('programs.destroy', ['program' => $program]) }}" data-confirm="Delete the {{ $program }} program? This cannot be undone. Programs in use must have their classes and users reassigned first.">
+                            <form method="post" action="{{ route('programs.destroy', ['program' => $program]) }}" data-confirm="Delete the {{ $program }} program and its classes, students, student accounts, attendance, fees, grades, subjects, exams, assignments and timetable bookings? Teachers and shared parent accounts will be kept. This cannot be undone.">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="program-delete" aria-label="Delete {{ $program }} program" title="Delete {{ $program }} program"><i class="bi bi-trash" aria-hidden="true"></i></button>

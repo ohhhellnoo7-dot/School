@@ -106,6 +106,19 @@ class DashboardAjaxTest extends TestCase
         $this->assertStringContainsString('<dd>12</dd>', $html);
     }
 
+    public function test_teacher_breakdown_includes_program_labels_without_a_program_record(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        User::factory()->count(2)->create(['role' => 'teacher', 'program' => 'Japanese']);
+        User::factory()->create(['role' => 'teacher', 'program' => null]);
+        $this->actingAs($admin)->get('/dashboard')->assertOk()
+            ->assertViewHas('programBreakdowns', fn ($counts) => $counts['person-workspace']['Japanese'] === 2
+                && $counts['person-workspace']['Unassigned'] === 1);
+        $html = $this->getJson('/dashboard/data')->assertOk()->json('html');
+        $this->assertStringContainsString('Japanese', $html);
+        $this->assertStringContainsString('Unassigned', $html);
+    }
+
     public function test_dashboard_counts_a_grade_and_section_once_across_programs_and_sessions(): void
     {
         $admin = User::factory()->create();

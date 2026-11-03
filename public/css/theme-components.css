@@ -1,0 +1,73 @@
+/* Explicit semantic tokens keep shared components consistent on every route. */
+:root[data-theme]:root:root:root:root:root:root {
+    --topnav-bg:var(--surface); --card-bg:var(--surface); --button-bg:var(--action);
+    --button-hover:color-mix(in srgb,var(--action) 88%,var(--text-primary));
+    --input-bg:var(--surface); --dropdown-bg:var(--surface-raised); --modal-bg:var(--surface-raised);
+    --table-header-bg:var(--surface-tint); --table-row-bg:var(--surface);
+    --lesson-bg:color-mix(in srgb,var(--primary) 10%,var(--surface));
+    --lesson-border:color-mix(in srgb,var(--primary) 35%,var(--border-color));
+    --free-period-bg:var(--surface-tint); --status-success-bg:var(--success-soft);
+    --status-warning-bg:var(--warning-soft); --status-danger-bg:var(--danger-soft);
+    & .theme-options { width:390px; max-width:calc(100vw - 24px); max-height:min(660px,calc(100dvh - 110px)); display:block; padding:16px; overscroll-behavior:contain; scrollbar-width:thin; }
+    & .theme-options-heading { padding:3px 4px 12px; }
+    & .theme-options-heading small { display:block; font-size:11px; line-height:1.5; color:var(--muted); }
+    & .theme-search-label { display:block; font-size:11px; margin:10px 4px 5px; }
+    & .theme-search { width:100%; margin-bottom:12px; }
+    & .theme-group { margin:0 0 12px; }
+    & .theme-group h3 { color:var(--muted); font:700 10px system-ui,sans-serif; letter-spacing:1.5px; text-transform:uppercase; padding:9px 5px; margin:0; }
+    & .theme-group-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px; }
+    & .theme-option { padding:10px 8px; min-height:54px; border:1px solid transparent; }
+    & .theme-option strong { font-size:11px; white-space:normal; }
+    & .theme-option small { display:block; font-size:9px; margin-top:3px; }
+    & .theme-option[aria-pressed="true"] { border-color:var(--primary); }
+    & .theme-swatch { width:26px; height:30px; }
+    & [data-theme-menu] [hidden] { display:none !important; }
+    & .theme-search-empty { padding:20px 8px; color:var(--muted); font-size:12px; }
+    & :is(.modal-content,.toast,.dropdown-menu,.hover-select-menu) { background:var(--modal-bg); color:var(--ink); border-color:var(--border); }
+    & :is(.shared-timetable,.timetable-grid,.timetable-table) { background:var(--card-bg); color:var(--ink); }
+    & .shared-timetable :is(th,td) { border-color:var(--border); }
+    & .shared-timetable thead th { background:var(--table-header-bg); color:var(--ink); }
+    & .shared-timetable .timetable-hour-row > th { background:var(--free-period-bg); color:var(--muted); }
+    & .shared-timetable .timetable-session-heading th { background:var(--surface-tint); color:var(--ink); border-inline-start-color:var(--primary); }
+    & .shared-lesson { background:var(--lesson-bg); border:1px solid var(--lesson-border); border-inline-start:3px solid var(--primary); color:var(--ink); }
+    & .shared-lesson :is(strong,p,small) { color:inherit; }
+    & .timetable-conflict-card { border-color:var(--danger); background:var(--status-danger-bg); color:var(--danger); }
+    & :is(.timetable-lesson,.lesson-card,.tt-lesson) { background:var(--lesson-bg); color:var(--ink); border-color:var(--lesson-border); }
+    & .dashboard-stat-grid .stat-card { border-radius:var(--card-radius); }
+    & :is(.panel,.attendance-toolbar,.mini-stats) { border-radius:var(--card-radius); }
+    & :is(.form-control,.form-select,.btn) { border-radius:var(--control-radius); }
+}
+/* Distinct surface treatments; illustrations remain in place. */
+:root[data-theme="monochrome"]:root:root:root:root:root:root {
+    --success:#333; --warning:#555; --danger:#222; --violet:#666;
+    & .dashboard-stat-grid .stat-card { background:var(--surface); box-shadow:none; border-color:var(--border); }
+    & .school-hero { filter:grayscale(1); }
+    & :is(.panel,.mini-stats,.attendance-toolbar) { box-shadow:none; }
+    & .stat-watermark { opacity:.07; }
+}
+:root[data-theme="cyberpunk"]:root:root:root:root:root:root {
+    & :is(.panel,.stat-card) { box-shadow:0 0 16px color-mix(in srgb,var(--primary) 9%,transparent); }
+    & .school-hero { border-color:var(--primary); }
+    & .shared-lesson { border-inline-end:1px solid var(--accent); }
+    & .eyebrow { letter-spacing:.2em; }
+}
+:root[data-theme="arctic-glass"]:root:root:root:root:root:root {
+    & :is(.panel,.mini-stats,.topbar) { background:color-mix(in srgb,var(--surface) 88%,transparent); backdrop-filter:blur(12px); border-color:color-mix(in srgb,var(--accent) 45%,var(--surface)); }
+    & .stat-card { box-shadow:inset 0 1px var(--surface),0 8px 24px var(--shadow-color); }
+}
+:root[data-theme="retro-campus"]:root:root:root:root:root:root {
+    & .main-content { background-image:repeating-linear-gradient(0deg,transparent,transparent 27px,color-mix(in srgb,var(--accent) 8%,transparent) 28px); }
+    & :is(h1,h2) { font-family:Georgia,serif; letter-spacing:-.025em; }
+    & .stat-card { box-shadow:3px 3px 0 color-mix(in srgb,var(--accent) 38%,transparent); }
+}
+:root[data-theme="royal-violet"]:root:root:root:root:root:root {
+    & .school-hero { border-bottom:3px solid var(--accent); }
+    & .panel-header { border-bottom-color:color-mix(in srgb,var(--accent) 50%,var(--border)); }
+    & .brand-mark { border-color:var(--accent); }
+}
+@media (max-width:575px) {
+    :root[data-theme]:root:root:root:root:root:root .theme-options { position:fixed; inset:78px 12px auto; width:auto; max-width:none; max-height:calc(100dvh - 100px); }
+}
+@media (prefers-reduced-motion:reduce) {
+    :root[data-theme] :is(.theme-option,.theme-options,.shared-lesson) { animation:none; transition:none; }
+}
