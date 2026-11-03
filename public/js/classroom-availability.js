@@ -10,6 +10,57 @@
     const interval = Number(dashboard.dataset.interval || 30000);
     let followNow = dashboard.dataset.followNow === '1';
     let requestController = null;
+    let lessonFilter = 'all';
+
+    const applyLessonFilter = () => {
+        const cards = [...results.querySelectorAll('[data-lesson-state]')];
+        results.querySelectorAll('[data-lesson-filter]').forEach(button => {
+            const value = button.dataset.lessonFilter;
+            button.setAttribute('aria-pressed', String(value === lessonFilter));
+            button.querySelector('[data-lesson-count]').textContent = cards.filter(card => value === 'all' || card.dataset.lessonState === value).length;
+        });
+        cards.forEach(card => { card.hidden = lessonFilter !== 'all' && card.dataset.lessonState !== lessonFilter; });
+        const empty = results.querySelector('[data-lesson-empty]');
+        if (empty) empty.hidden = lessonFilter === 'all' || cards.some(card => !card.hidden);
+        const selection = results.querySelector('[data-lesson-selection]');
+        if (selection) selection.textContent = lessonFilter === 'all' ? '' : ` Showing: ${lessonFilter === 'studying' ? 'Studying' : 'Free period'}.`;
+    };
+    const openLessonPicker = open => {
+        results.querySelector('.lesson-picker')?.classList.toggle('is-open', open);
+        results.querySelector('[data-lesson-toggle]')?.setAttribute('aria-expanded', String(open));
+    };
+    results.addEventListener('mouseover', event => {
+        if (event.target.closest('.lesson-picker')) openLessonPicker(true);
+    });
+    results.addEventListener('mouseout', event => {
+        const picker = event.target.closest('.lesson-picker');
+        if (picker && !picker.contains(event.relatedTarget)) openLessonPicker(false);
+    });
+    results.addEventListener('focusin', event => {
+        if (event.target.closest('.lesson-picker')) openLessonPicker(true);
+    });
+    results.addEventListener('focusout', event => {
+        const picker = event.target.closest('.lesson-picker');
+        if (picker && !picker.contains(event.relatedTarget)) openLessonPicker(false);
+    });
+    results.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && event.target.closest('.lesson-picker')) {
+            results.querySelector('[data-lesson-toggle]').focus();
+            openLessonPicker(false);
+        }
+    });
+    document.addEventListener('click', event => {
+        if (!event.target.closest('.lesson-picker')) openLessonPicker(false);
+    });
+    results.addEventListener('click', event => {
+        if (event.target.closest('[data-lesson-toggle]')) openLessonPicker(true);
+        const button = event.target.closest('[data-lesson-filter]');
+        if (!button) return;
+        lessonFilter = button.dataset.lessonFilter;
+        applyLessonFilter();
+        openLessonPicker(false);
+    });
+    applyLessonFilter();
 
     const localDateParts = () => {
         const parts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
@@ -57,6 +108,7 @@
 
             const payload = await response.json();
             results.innerHTML = payload.html;
+            applyLessonFilter();
             if (status) status.textContent = `Showing room status for ${payload.label}. Refreshed just now; refreshes every 30 seconds.`;
             if (updateHistory) {
                 const browserUrl = `${form.action}?${query.toString()}`;

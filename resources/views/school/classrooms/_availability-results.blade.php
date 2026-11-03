@@ -9,7 +9,22 @@
     @endforeach
 </section>
 
-<div class="room-grid-heading"><div><h2>Physical classrooms</h2><p>{{ $availability->count() }} {{ \Illuminate\Support\Str::plural('room', $availability->count()) }} match the selected date, time, and filters.</p></div><span class="status-legend"><span class="legend-available">{{ __('Available') }}</span><span class="legend-busy">Busy</span><span class="legend-upcoming">Upcoming</span><span class="legend-out">Out of service</span></span></div>
+<div class="room-grid-heading">
+    <div>
+        <div class="lesson-picker">
+            <h2><button type="button" class="lesson-picker-toggle" data-lesson-toggle aria-expanded="false" aria-controls="lesson-filter-options">Physical classrooms <i class="bi bi-chevron-down" aria-hidden="true"></i></button></h2>
+            <div class="lesson-picker-menu" id="lesson-filter-options">
+                <div class="lesson-filters" role="group" aria-label="Filter by current lesson">
+                    <button type="button" data-lesson-filter="all" aria-pressed="true">All rooms <span data-lesson-count="all"></span></button>
+                    <button type="button" data-lesson-filter="studying" aria-pressed="false"><i class="bi bi-book" aria-hidden="true"></i> Studying <span data-lesson-count="studying"></span></button>
+                    <button type="button" data-lesson-filter="free" aria-pressed="false"><i class="bi bi-cup-hot" aria-hidden="true"></i> Free period <span data-lesson-count="free"></span></button>
+                </div>
+            </div>
+        </div>
+        <p>{{ $availability->count() }} {{ \Illuminate\Support\Str::plural('room', $availability->count()) }} match the selected date, time, and filters.<span data-lesson-selection></span></p>
+    </div>
+    <span class="status-legend"><span class="legend-available">{{ __('Available') }}</span><span class="legend-busy">Busy</span><span class="legend-upcoming">Upcoming</span><span class="legend-out">Out of service</span></span>
+</div>
 
 <section class="classroom-grid" aria-label="Physical classroom status">
     @forelse($availability as $entry)
@@ -21,15 +36,20 @@
             $displayBooking = $current ?: $next;
             $group = $displayBooking?->classGroup;
             $session = $displayBooking?->classSession;
+            $lesson = data_get($entry, 'currentLesson');
+            $lessonState = $status === 'out_of_service' ? 'unavailable' : ($lesson ? ($lesson->isRelaxation() ? 'relaxation' : 'studying') : ($current && data_get($entry, 'activity') === 'Free Period' ? 'free' : 'none'));
             $icons = ['available' => 'check-circle-fill', 'busy' => 'record-circle-fill', 'upcoming' => 'clock-fill', 'out_of_service' => 'tools'];
         @endphp
-        <article class="classroom-card room-status-{{ $status }}">
+        <article class="classroom-card room-status-{{ $status }}" data-lesson-state="{{ $lessonState }}">
             <div class="room-card-head">
                 <span class="room-icon"><i class="bi bi-door-open" aria-hidden="true"></i></span>
                 <span class="room-heading"><small>{{ $room->buildingRecord ? $room->buildingRecord->name.' / ' : '' }}{{ __('Room') }}</small><strong>{{ $room->room_number }}</strong>@if($room->name && $room->name !== $room->room_number)<span>{{ $room->name }}</span>@endif</span>
                 <span class="room-status"><i class="bi bi-{{ $icons[$status] ?? 'circle-fill' }}" aria-hidden="true"></i> {{ str_replace('_', ' ', ucfirst($status)) }}</span>
             </div>
             <div class="room-card-body">
+                @if(in_array($lessonState, ['studying', 'free'], true))
+                    <span class="lesson-state lesson-state-{{ $lessonState }}">{{ $lessonState === 'studying' ? 'Studying now' : 'Free period' }}</span>
+                @endif
                 @if($status === 'out_of_service')
                     <div class="room-empty-message"><strong>Temporarily unavailable</strong><span>{{ $room->notes ?: 'This room is marked out of service.' }}</span></div>
                 @elseif($displayBooking)
@@ -52,3 +72,4 @@
         <div class="empty-state classroom-empty"><i class="bi bi-door-closed" aria-hidden="true"></i>No physical classrooms match these filters.</div>
     @endforelse
 </section>
+<p class="empty-state" data-lesson-empty hidden>No classrooms match this lesson filter at the selected time.</p>
