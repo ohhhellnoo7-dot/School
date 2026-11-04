@@ -372,7 +372,7 @@ a.class-summary-card:hover {
     white-space: nowrap;
 }
 
-.room-card-body { min-height: 145px; padding: 5px 17px 17px; }
+.room-card-body { min-height: 0; padding: 5px 17px 17px; }
 .booking-context { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 8px; padding: 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--soft); }
 .booking-context small { grid-column: 1 / -1; color: var(--muted); font-size: 8px; text-transform: uppercase; letter-spacing: .6px; }
 .booking-context strong { overflow: hidden; color: var(--ink); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
@@ -668,7 +668,7 @@ a.class-summary-card:hover {
 .weekday-menu-item:focus-visible { outline: 3px solid #df8e79; outline-offset: 2px; }
 @media (max-width: 700px) { .weekday-subject-planner { grid-template-columns: minmax(0, 1fr); } .weekday-menu { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .room-program-section { padding: 0 18px 16px; min-width: 0; }
-.room-program-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px; background: var(--soft); border-radius: 12px; margin-bottom: 18px; }
+.room-program-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px; background: var(--soft); border-radius: 12px; margin-bottom: 12px; }
 .room-program-tabs button { flex: 1; padding: 8px 12px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; }
 .room-program-tabs button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 2px 6px rgb(0 0 0 / 7%); font-weight: 600; }
 .room-program-tabs button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
@@ -693,4 +693,100 @@ a.class-summary-card:hover {
 .room-detail-group h3 span { margin-left: 4px; font-weight: 400; }
 .room-detail-group ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 5px; }
 .room-detail-group li { background: var(--soft); color: var(--ink); padding: 5px 8px; border-radius: 7px; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; max-width: 100%; }
-.classroom-card .room-empty-message { min-height: 96px; }
+.classroom-card .room-empty-message { min-height: 64px; padding: 12px; }
+.classroom-card .room-session-tags { margin: 10px 0 0; }
+
+/* Availability workspace: all colors follow the active Scholar theme. */
+.classroom-availability-page {
+    --room-available: var(--success);
+    --room-busy: var(--danger);
+    --room-upcoming: var(--warning);
+    --room-out: var(--text-secondary);
+    --room-blue: var(--primary);
+    --room-available-soft: color-mix(in srgb, var(--success) 12%, var(--surface));
+    --room-busy-soft: color-mix(in srgb, var(--danger) 12%, var(--surface));
+    --room-upcoming-soft: color-mix(in srgb, var(--warning) 12%, var(--surface));
+    --room-out-soft: var(--surface-tint);
+    --room-blue-soft: var(--surface-tint);
+}
+.classroom-availability-page .classroom-heading {
+    position: relative; isolation: isolate; display: flex; flex-wrap: wrap;
+    align-items: center; gap: 24px; padding: 32px 26px 24px;
+    border: 1px solid var(--border-color); border-radius: var(--card-radius);
+    background: var(--surface-tint); margin-bottom: 22px;
+}
+.classroom-availability-page .classroom-heading::before {
+    content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    border-radius: inherit; opacity: .22;
+    background: linear-gradient(90deg, var(--surface-tint) 34%, transparent), url('../images/classroom-availability-hero.png') right 60% / cover no-repeat;
+}
+.classroom-availability-page .classroom-heading .eyebrow { color: var(--primary); letter-spacing: 1.8px; font-size: 10px; }
+.classroom-availability-page .classroom-heading h1 { font-size: clamp(25px, 2.4vw, 38px); line-height: 1.25; margin: 12px 0 8px; }
+.classroom-availability-page .classroom-heading h1 span,
+.classroom-availability-page .classroom-heading h1 > i { color: var(--primary); }
+.classroom-availability-page .classroom-heading h1 > i { margin-right: 8px; }
+.classroom-availability-page .classroom-heading p { font-size: 13px; color: var(--text-secondary); }
+.classroom-availability-page .classroom-heading-actions { margin-left: auto; align-self: flex-end; }
+.classroom-availability-page .btn { border-radius: var(--control-radius); min-height: 40px; display: inline-flex; align-items: center; justify-content: center; }
+.classroom-availability-page .classroom-heading .btn-outline-secondary { background: var(--surface); border-color: var(--border-color); color: var(--text-primary); box-shadow: 0 3px 9px var(--shadow-color); }
+.classroom-availability-page .classroom-heading .btn-outline-secondary:hover { background: var(--surface-tint); border-color: var(--primary); }
+.classroom-availability-page .availability-filter-panel { border-radius: var(--card-radius); box-shadow: 0 5px 18px var(--shadow-color); }
+.classroom-availability-page .availability-filters { gap: 14px; padding: 20px; align-items: end; }
+.classroom-availability-page .availability-filters > div { min-width: 0; }
+.classroom-availability-page .availability-filters .form-label { font-size: 11px; font-weight: 600; margin-bottom: 8px; }
+.classroom-availability-page .availability-filters :is(.form-control, .form-select) { min-height: 40px; border-radius: var(--control-radius); background-color: var(--surface); color: var(--text-primary); border-color: var(--border-color); }
+.classroom-availability-page .availability-live-region { font-size: 10px; margin-bottom: 18px; }
+.classroom-availability-page .availability-stats { gap: 16px; }
+.classroom-availability-page .availability-stat { position: relative; overflow: hidden; border-radius: var(--card-radius); padding: 20px; gap: 16px; min-height: 100px; background: linear-gradient(120deg, var(--surface), color-mix(in srgb, var(--tile-color) 13%, var(--surface))); border-color: color-mix(in srgb, var(--tile-color) 18%, var(--border-color)); box-shadow: 0 5px 16px var(--shadow-color); }
+.classroom-availability-page .stat-total { --tile-color: var(--primary); }
+.classroom-availability-page .stat-busy { --tile-color: var(--danger); }
+.classroom-availability-page .stat-available { --tile-color: var(--success); }
+.classroom-availability-page .stat-upcoming { --tile-color: var(--warning); }
+.classroom-availability-page .availability-stat::after { content: ""; position: absolute; width: 64px; height: 64px; border: 12px solid var(--tile-color); opacity: .08; border-radius: 18px; right: -12px; bottom: -18px; transform: rotate(-20deg); }
+.classroom-availability-page .availability-stat-icon { width: 50px; height: 50px; flex-basis: 50px; border-radius: 14px; color: var(--tile-color); background: color-mix(in srgb, var(--tile-color) 15%, var(--surface)); font-size: 25px; }
+.classroom-availability-page .availability-stat small { color: var(--text-primary); font-size: 11px; }
+.classroom-availability-page .availability-stat strong { font-size: 32px; }
+.classroom-availability-page .room-grid-heading { margin: 28px 4px 18px; }
+.classroom-availability-page .room-section-icon { color: var(--primary); margin-right: 8px; }
+.classroom-availability-page .classroom-grid { gap: 18px; align-items: start; }
+.classroom-availability-page .classroom-card { border: 1px solid var(--border-color); border-radius: var(--card-radius); box-shadow: 0 5px 18px var(--shadow-color); padding-top: 9px; }
+.room-card-visual { position: relative; margin: 0 9px; border-radius: 12px; overflow: hidden; background: var(--surface-tint); }
+.room-card-visual img { display: block; width: 100%; height: 112px; object-fit: cover; }
+.room-visual-label { position: absolute; top: 9px; right: 9px; display: inline-flex; align-items: center; gap: 5px; padding: 6px 9px; border: 1px solid color-mix(in srgb, var(--status-color) 25%, var(--surface)); border-radius: 999px; background: var(--status-soft); color: var(--status-color); font-size: 9px; font-weight: 800; text-transform: uppercase; }
+.classroom-availability-page .room-card-head { padding: 15px 18px; }
+.classroom-availability-page .room-card-head > .room-status { display: none; }
+.classroom-availability-page .room-icon { width: 42px; height: 42px; flex-basis: 42px; color: var(--primary); background: var(--surface-tint); }
+.classroom-availability-page .room-heading small { font-size: 9px; }
+.classroom-availability-page .room-heading strong { font-size: 23px; }
+.classroom-availability-page .room-card-body { padding: 0 16px 12px; }
+.classroom-availability-page .room-empty-message { min-height: 58px; }
+.classroom-availability-page .room-empty-message strong { font-size: 12px; }
+.classroom-availability-page .room-program-section { padding: 0 16px 14px; }
+.classroom-availability-page .room-program-tabs { margin-bottom: 10px; }
+.classroom-availability-page .room-program-tabs button { padding: 6px 9px; font-size: 11px; }
+.classroom-availability-page .room-enrollment-summary strong { font-size: 21px; }
+.classroom-availability-page .room-card-footer { padding: 11px 16px; background: color-mix(in srgb, var(--surface-tint) 50%, var(--surface)); font-size: 11px; }
+.classroom-availability-page .room-card-footer a { display: inline-flex; align-items: center; gap: 10px; color: var(--action); padding: 6px 12px; border-radius: var(--control-radius); background: var(--surface); border: 1px solid var(--border-color); text-decoration: none; }
+.classroom-availability-page .room-card-footer a:hover { background: var(--action); color: var(--on-action); }
+.classroom-availability-page :is(.lesson-picker-menu .lesson-filters, .program-options, .building-options) { background: var(--surface); color: var(--text-primary); border-color: var(--border-color); box-shadow: 0 10px 28px var(--shadow-color); }
+.classroom-availability-page .lesson-filters button { background: var(--surface); color: var(--text-primary); border-color: var(--border-color); }
+.classroom-availability-page .lesson-filters button[aria-pressed="true"] { background: var(--action); color: var(--on-action); border-color: var(--action); }
+@media (max-width: 1450px) and (min-width: 851px) {
+    .classroom-availability-page .availability-filters { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (min-width: 1350px) { .classroom-availability-page .classroom-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 850px) {
+    .classroom-availability-page .classroom-heading { padding: 24px 20px; }
+    .classroom-availability-page .classroom-heading-actions { margin-left: 0; }
+    .classroom-availability-page .availability-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .classroom-availability-page .availability-stat { padding: 16px; }
+}
+@media (max-width: 620px) {
+    .classroom-availability-page .availability-filters { grid-template-columns: minmax(0, 1fr); }
+    .classroom-availability-page .classroom-heading-actions { width: 100%; }
+    .classroom-availability-page .classroom-heading-actions > * { flex: 1 1 auto; }
+    .classroom-availability-page .classroom-heading-actions .btn { width: 100%; }
+    .classroom-availability-page .room-heading small { white-space: normal; }
+    .room-card-visual img { height: 130px; }
+}
+@media print { .room-card-visual, .classroom-availability-page .classroom-heading::before { display: none; } }

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="220" viewBox="0 0 640 220" fill="none">
+<defs><linearGradient id="wall" x2="0" y2="220" gradientUnits="userSpaceOnUse"><stop stop-color="#f1e7d8"/><stop offset="1" stop-color="#d8c8b0"/></linearGradient><linearGradient id="sky" x2="0" y2="160" gradientUnits="userSpaceOnUse"><stop stop-color="#94cce2"/><stop offset="1" stop-color="#e7f5f8"/></linearGradient><linearGradient id="floor" x2="0" y2="220" gradientUnits="userSpaceOnUse"><stop stop-color="#c7ac8a"/><stop offset="1" stop-color="#e8d3b7"/></linearGradient><g id="desk"><path d="M0 0h82l16 13H-15z" fill="#c99560"/><path d="M-15 13H98v6H-15z" fill="#9e6d42"/><path d="M-8 19v37m98-37v37" stroke="#4f6269" stroke-width="5"/><path d="M20 28h40v26H20z" fill="#68858b"/><path d="M23 54v17m34-17v17" stroke="#4f6269" stroke-width="4"/></g></defs>
+<path fill="url(#wall)" d="M0 0h640v220H0z"/><path d="M0 0h640l-58 36H94z" fill="#faf5ec"/><path d="M0 163l108-35h470l62 35v57H0z" fill="url(#floor)"/><path d="M0 0l108 36v92L0 185z" fill="#c3cbd0"/>
+<path d="M15 25l69 22v77l-69 30z" fill="url(#sky)" stroke="#f8faf8" stroke-width="8"/><path d="M47 36v103M16 91l68-5" stroke="#f8faf8" stroke-width="5"/>
+<rect x="233" y="49" width="233" height="83" rx="3" fill="#a5825c"/><rect x="240" y="56" width="219" height="68" rx="1" fill="#365c56"/><path d="M265 77h67m-67 10h103m-103 10h49" stroke="#c4d4c5" stroke-width="2" stroke-linecap="round" opacity=".65"/><path d="M244 127h210" stroke="#dfd7c4" stroke-width="3"/>
+<path d="M151 12h104l-8 9h-88zM391 12h104l-8 9h-88z" fill="#fff" stroke="#dbd7cf"/>
+<path d="M540 48h44v78h-44z" fill="#b79570"/><path d="M546 55h32v33h-32z" fill="#bfd7dc"/><circle cx="575" cy="105" r="2" fill="#72573c"/>
+<path d="M81 130h18l-3 25H84z" fill="#b98762"/><path d="M89 133v-27m0 12c-24 0-18-22-4-11m5 3c19-24 29 1 0 11" stroke="#5c8562" stroke-width="6" stroke-linecap="round"/>
+<use href="#desk" transform="translate(168 137) scale(.65)"/><use href="#desk" transform="translate(328 137) scale(.65)"/><use href="#desk" transform="translate(487 137) scale(.65)"/>
+<use href="#desk" transform="translate(123 174)"/><use href="#desk" transform="translate(318 174)"/><use href="#desk" transform="translate(514 174)"/>
+<path d="M105 220l94-85m440 85l-97-85" stroke="#b79874" opacity=".3"/>
+</svg>

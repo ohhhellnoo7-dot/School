@@ -14,6 +14,22 @@
 
 <section class="room-detail-hero"><div class="room-detail-icon"><i class="bi bi-door-open" aria-hidden="true"></i></div><div><h2>{{ $classroom->name }}</h2><p>Lesson activity and room occupancy are shown separately below.</p></div><dl><div><dt>Room number</dt><dd>{{ $classroom->room_number }}</dd></div><div><dt>Capacity</dt><dd>{{ $classroom->capacity }} students</dd></div><div><dt>Maintenance</dt><dd>{{ str_replace('_', ' ', ucfirst($classroom->status)) }}</dd></div></dl></section>
 
+<section class="panel p-4 my-4" aria-label="Room program details">
+    <h2 class="h5">Programs and classes</h2>
+    @forelse(collect(data_get($snapshot, 'programDetails', [])) as $programName => $details)
+        <article class="mb-4">
+            <h3 class="h6">{{ $programName }}</h3>
+            <p class="small text-secondary">{{ $details['students'] }} enrolled students &middot; {{ $classroom->capacity }} seats &middot; {{ $details['sessions']->join(', ') }}</p>
+            @foreach(['Classes' => $details['classes'], 'Teachers' => $details['teachers'], 'Subjects' => $details['subjects']] as $label => $items)
+                <div class="room-detail-group"><h3>{{ $label }} <span>{{ $items->count() }}</span></h3><ul>@forelse($items as $item)<li>{{ $item }}</li>@empty<li>Not assigned yet</li>@endforelse</ul></div>
+            @endforeach
+        </article>
+    @empty
+        <p class="text-secondary">No programs assigned yet.</p>
+    @endforelse
+    @if($classroom->notes)<div class="mt-3"><h3 class="h6">Room notes</h3><p>{{ $classroom->notes }}</p></div>@endif
+</section>
+
 <section class="panel p-4 my-4" data-room-live data-endpoint="{{ route('classrooms.lesson-status', $classroom) }}" data-live="{{ (!request()->filled('date') && !request()->filled('time')) || request()->boolean('live') ? '1' : '0' }}" data-date="{{ $moment->format('Y-m-d') }}" data-time="{{ $moment->format('H:i') }}">
 <div class="d-flex justify-content-between gap-3"><h2 class="h5">Current and next lesson</h2><a class="btn btn-outline-secondary" href="{{ route('classrooms.show', ['classroom' => $classroom, 'live' => 1]) }}">Follow current time</a></div>
 <p class="small text-secondary" data-room-live-label aria-live="polite">{{ $moment->format('D, M j, Y H:i') }}</p><div data-room-live-content>@include('school.classrooms._lesson-status')</div>

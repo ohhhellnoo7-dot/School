@@ -12,13 +12,6 @@
     let requestController = null;
     let lessonFilter = 'all';
     const roomPrograms = new Map();
-    const expandedRoomDetails = new Map();
-    results.addEventListener('toggle', event => {
-        const details = event.target;
-        if (!details.matches('[data-room-disclosure]')) return;
-        const card = details.closest('[data-room-card]');
-        if (card) expandedRoomDetails.set(`${card.dataset.roomCard}:${details.dataset.roomDisclosure}`, details.open);
-    }, true);
     const selectRoomProgram = (card, program) => {
         const panels = [...card.querySelectorAll('[data-room-program-panel]')];
         const selected = panels.find(panel => panel.dataset.roomProgramPanel === program);
@@ -133,9 +126,6 @@
             results.querySelectorAll('[data-room-card]').forEach(card => {
                 const selected = roomPrograms.get(card.dataset.roomCard);
                 if (selected) selectRoomProgram(card, selected);
-                card.querySelectorAll('[data-room-disclosure]').forEach(details => {
-                    details.open = expandedRoomDetails.get(`${card.dataset.roomCard}:${details.dataset.roomDisclosure}`) || false;
-                });
             });
             applyLessonFilter();
             if (status) status.textContent = `Showing room status for ${payload.label}. Refreshed just now; refreshes every 30 seconds.`;

@@ -2,13 +2,14 @@
 @section('title', 'Classroom Availability')
 
 @section('content')
+<div class="classroom-availability-page">
 <div class="page-heading classroom-heading">
     <div>
         <div class="eyebrow"><span class="live-dot" aria-hidden="true"></span> Live room monitor</div>
-        <h1>Classroom Availability</h1>
+        <h1><i class="bi bi-calendar2-week" aria-hidden="true"></i> Classroom <span>Availability</span></h1>
         <p>Monitor classroom usage across all academic programs.</p>
     </div>
-    <div class="d-flex flex-wrap gap-2">
+    <div class="d-flex flex-wrap gap-2 classroom-heading-actions">
         <div class="program-picker">
             <button class="btn btn-outline-secondary" type="button" data-program-toggle aria-expanded="false" aria-controls="program-options"><i class="bi bi-book me-1" aria-hidden="true"></i> <span data-program-label>{{ $filters['program'] ?? 'Program' }}</span> <i class="bi bi-chevron-down ms-1" aria-hidden="true"></i></button>
             <div class="program-options" id="program-options">
@@ -86,6 +87,7 @@
     <div id="availability-results" data-availability-results>
         @include('school.classrooms._availability-results')
     </div>
+</div>
 </div>
 @endsection
 

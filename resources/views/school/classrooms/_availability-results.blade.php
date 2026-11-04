@@ -12,7 +12,7 @@
 <div class="room-grid-heading">
     <div>
         <div class="lesson-picker">
-            <h2><button type="button" class="lesson-picker-toggle" data-lesson-toggle aria-expanded="false" aria-controls="lesson-filter-options">Physical classrooms <i class="bi bi-chevron-down" aria-hidden="true"></i></button></h2>
+            <h2><i class="bi bi-buildings room-section-icon" aria-hidden="true"></i> <button type="button" class="lesson-picker-toggle" data-lesson-toggle aria-expanded="false" aria-controls="lesson-filter-options">Physical classrooms <i class="bi bi-chevron-down" aria-hidden="true"></i></button></h2>
             <div class="lesson-picker-menu" id="lesson-filter-options">
                 <div class="lesson-filters" role="group" aria-label="Filter by current lesson">
                     <button type="button" data-lesson-filter="all" aria-pressed="true">All rooms <span data-lesson-count="all"></span></button>
@@ -43,6 +43,7 @@
             $selectedProgram = $programDetails->has(request('program')) ? request('program') : $programDetails->keys()->first();
         @endphp
         <article class="classroom-card room-status-{{ $status }}" data-room-card="{{ $room->id }}" data-lesson-state="{{ $lessonState }}">
+            <div class="room-card-visual" aria-hidden="true"><img src="{{ asset('images/classroom-interior.svg') }}" alt="" loading="lazy" width="640" height="220"><span class="room-visual-label"><i class="bi bi-{{ $icons[$status] ?? 'circle-fill' }}"></i> {{ str_replace('_', ' ', ucfirst($status)) }}</span></div>
             <div class="room-card-head">
                 <span class="room-icon"><i class="bi bi-door-open" aria-hidden="true"></i></span>
                 <span class="room-heading"><small>{{ $room->buildingRecord ? $room->buildingRecord->name.' / ' : '' }}{{ __('Room') }}</small><strong>{{ $room->room_number }}</strong>@if($room->name && $room->name !== $room->room_number)<span>{{ $room->name }}</span>@endif</span>
@@ -79,21 +80,11 @@
                             <div><strong>{{ $details['students'] }}</strong><span>enrolled students</span></div>
                             <span class="room-seat-limit">{{ $room->capacity }} seats</span>
                         </div>
-                        <div class="room-seat-meter" role="meter" aria-label="{{ $programName }} enrolled students against room capacity" aria-valuemin="0" aria-valuemax="{{ max(1, $room->capacity, $details['students']) }}" aria-valuenow="{{ $details['students'] }}"><span style="width:{{ min(100, round($details['students'] / max(1, $room->capacity) * 100)) }}%"></span></div>
                         <div class="room-session-tags">@foreach($details['sessions'] as $sessionName)<span><i class="bi bi-clock" aria-hidden="true"></i> {{ $sessionName }}</span>@endforeach</div>
-                        <details class="room-detail-disclosure" data-room-disclosure="program-{{ $loop->index }}">
-                            <summary>Program details <span>{{ $details['classes']->count() }} classes · {{ $details['subjects']->count() }} subjects</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
-                            <div class="room-detail-content">
-                                @foreach(['Classes' => $details['classes'], 'Teachers' => $details['teachers'], 'Subjects' => $details['subjects']] as $label => $items)
-                                    <div class="room-detail-group"><h3>{{ $label }} <span>{{ $items->count() }}</span></h3><ul>@forelse($items as $item)<li>{{ $item }}</li>@empty<li>Not assigned yet</li>@endforelse</ul></div>
-                                @endforeach
-                            </div>
-                        </details>
                     </div>
                 @endforeach
-                <details class="room-detail-disclosure" data-room-disclosure="live"><summary>Live room details <i class="bi bi-chevron-down" aria-hidden="true"></i></summary><div class="room-detail-content">@include('school.classrooms._lesson-status', ['snapshot' => $entry])</div></details>
             </div>
-            <div class="room-card-footer"><span><i class="bi bi-people" aria-hidden="true"></i> Capacity {{ $room->capacity }}@if($selectedProgram) / <span data-room-enrolled>{{ $programDetails[$selectedProgram]['students'] }}</span>@endif</span><a href="{{ route('classrooms.show', ['classroom' => $room, 'date' => $moment->format('Y-m-d'), 'time' => $moment->format('H:i'), 'live' => request()->boolean('live') || (!request()->filled('date') && !request()->filled('time')) ? 1 : 0]) }}#{{ $displayBooking ? 'reservation-'.$displayBooking->id : 'weekly-lessons' }}">View Lessons <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
+            <div class="room-card-footer"><span>Room details</span><a aria-label="View details for room {{ $room->room_number }}" href="{{ route('classrooms.show', ['classroom' => $room, 'date' => $moment->format('Y-m-d'), 'time' => $moment->format('H:i'), 'academic_year' => request('academic_year'), 'live' => request()->boolean('live') || (!request()->filled('date') && !request()->filled('time')) ? 1 : 0]) }}">View <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
         </article>
     @empty
         <div class="empty-state classroom-empty"><i class="bi bi-door-closed" aria-hidden="true"></i>No physical classrooms match these filters.</div>
