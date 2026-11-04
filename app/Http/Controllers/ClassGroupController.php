@@ -108,6 +108,9 @@ class ClassGroupController extends Controller
     {
         return view('school.class-groups.form', [
             'classGroup' => new ClassGroup(['capacity' => 30, 'status' => 'active']),
+            'programSubjects' => \App\Models\Subject::with('schoolClass:id,program')->whereHas('schoolClass')->orderBy('id')->get()
+                ->groupBy(fn ($subject) => $subject->schoolClass->program)
+                ->map(fn ($subjects) => $subjects->pluck('name')->unique()->values()),
             'teachers' => $this->teachers(),
             'programSessions' => $this->programSessions(),
         ]);
@@ -116,8 +119,23 @@ class ClassGroupController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $attributes = $this->validated($request);
-        $classGroup = ClassGroup::create($attributes);
-        $this->syncSessions($classGroup);
+        $curriculum = $request->validate(['curriculum' => 'nullable|string|max:5000']);
+        $classGroup = \Illuminate\Support\Facades\DB::transaction(function () use ($attributes, $curriculum) {
+            $classGroup = ClassGroup::create($attributes);
+            $this->syncSessions($classGroup);
+            $names = collect(preg_split('/\r\n|\r|\n/', $curriculum['curriculum'] ?? ''))->map(fn ($name) => trim($name))->filter()->unique();
+            foreach ($classGroup->sessions as $session) {
+                $class = $classGroup->schoolClasses()->create([
+                    'name' => $classGroup->name, 'section' => $classGroup->section ?? '',
+                    'program' => $classGroup->program, 'session' => $session->session,
+                    'teacher_id' => $classGroup->teacher_id,
+                ]);
+                foreach ($names as $name) {
+                    $class->subjects()->create(['name' => $name, 'code' => (string) \Illuminate\Support\Str::uuid()]);
+                }
+            }
+            return $classGroup;
+        });
 
         return redirect()->route('class-groups.show', $classGroup)
             ->with('success', "{$classGroup->display_name} was created with its study sessions.");

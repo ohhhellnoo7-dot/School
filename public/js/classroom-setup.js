@@ -35,13 +35,20 @@
     const program = form.elements.program;
     const session = form.elements.session;
     const cohort = form.elements.school_class_id;
+    const classTeacher = form.elements.class_teacher_id;
     const day = form.elements.day;
     const year = form.elements.academic_year;
     const periods = root.querySelector('[data-lesson-periods]');
     const message = root.querySelector('[data-planner-message]');
     let generation = 0;
     let choices = {};
-    Object.values(config.old.slots || {}).forEach(slot => { choices[slot.starts_at] = slot; });
+    let displayedDay = day.value;
+    let weeklyChoices = {};
+    Object.values(config.old.slots || {}).forEach(slot => {
+        const weekday = slot.day || config.old.day || day.value;
+        (weeklyChoices[weekday] ||= {})[slot.starts_at] = slot;
+    });
+    choices = weeklyChoices[displayedDay] ||= {};
     const node = (tag, text, className) => {
         const element = document.createElement(tag);
         if (text) element.textContent = text;
@@ -83,12 +90,14 @@
         const status = row.querySelector('[data-slot-status]');
         const details = row.querySelector('[data-teacher-details]');
         const inspect = row.querySelector('[data-inspect]');
-        const wanted = choices[row.dataset.start]?.teacher_id;
+        const japanese = program.value === 'Japan';
+        const wanted = japanese ? classTeacher.value : choices[row.dataset.start]?.teacher_id;
         select.replaceChildren(option('', 'Loading teachers...'));
         select.disabled = true;
         status.textContent = 'Checking qualifications, teaching hours, lessons and breaks...';
         try {
             const query = new URLSearchParams({school_class_id: cohort.value, subject_id: subject.id, day: day.value, academic_year: year.value, starts_at: row.dataset.start, ends_at: time(end)});
+            if (japanese && classTeacher.value) query.set('class_teacher_id', classTeacher.value);
             const response = await fetch(`${root.dataset.endpoint}?${query}`, {headers: {Accept: 'application/json'}, cache: 'no-store'});
             if (!response.ok) throw new Error('Could not check teacher availability. Check the academic year and try again.');
             const payload = await response.json();
@@ -102,8 +111,13 @@
             });
             select.disabled = false;
             if (payload.teachers.some(t => String(t.id) === String(wanted) && t.available)) select.value = wanted;
+            if (japanese) choices[row.dataset.start] = {...choices[row.dataset.start], starts_at: row.dataset.start, subject_id: subject.id, teacher_id: select.value};
             const free = payload.teachers.filter(t => t.available).length;
             status.textContent = `${free} available teacher${free === 1 ? '' : 's'} for this period`;
+            if (japanese) {
+                const teacher = payload.teachers.find(t => String(t.id) === String(wanted));
+                status.textContent = teacher ? `${teacher.name}: ${teacher.available ? 'Available' : teacher.reasons.join('; ')}` : 'Choose the Japanese class teacher above. The same teacher teaches Monday to Friday.';
+            }
             status.dataset.availability = free ? 'available' : 'none';
             const show = id => teacherDetails(details, payload.teachers.find(t => String(t.id) === id));
             select.addEventListener('change', () => { remember(); inspect.value = select.value; show(select.value); });
@@ -121,8 +135,19 @@
     };
     const render = () => {
         const currentGeneration = ++generation;
+        root.querySelector('[data-active-weekday]').textContent = `${day.value} subjects`;
+        root.querySelectorAll('[data-weekday]').forEach(button => {
+            button.setAttribute('aria-pressed', String(button.dataset.weekday === day.value));
+            const names = Object.values(weeklyChoices[button.dataset.weekday] || {})
+                .map(slot => selectedClass()?.subjects.find(subject => String(subject.id) === String(slot.subject_id))?.name).filter(Boolean);
+            button.querySelector('[data-day-subjects]').textContent = names.join(', ') || 'No subjects selected';
+        });
         periods.replaceChildren();
         const cls = selectedClass();
+        const japanese = program.value === 'Japan';
+        root.querySelector('[data-class-teacher-field]').hidden = !japanese;
+        classTeacher.disabled = !japanese;
+        classTeacher.required = japanese;
         if (!cls || !enabled.checked) {
             message.textContent = cohort.options.length === 1 ? 'No student classes exist for this program and session. Create a class and its curriculum first, or save the room without lessons.' : 'Choose a student class to see its hourly study periods.';
             return;
@@ -161,6 +186,7 @@
             const teachers = node('select', '', 'form-select'); teachers.id = teacherLabel.htmlFor; teachers.name = `slots[${index}][teacher_id]`; teachers.dataset.teacher = ''; teachers.disabled = true;
             teachers.append(option('', 'Select a subject first'));
             teacherWrap.append(teacherLabel, teachers);
+            teacherWrap.hidden = japanese;
             grid.append(subjectWrap, teacherWrap);
             row.append(grid);
             const status = node('p', '', 'mt-2 text-muted'); status.dataset.slotStatus = ''; status.setAttribute('role', 'status'); row.append(status);
@@ -178,7 +204,7 @@
                 render();
             });
             if (subject && subjects.value) {
-                teachers.required = true;
+                teachers.required = !japanese;
                 coveredUntil = start + subject.minutes;
                 loadTeachers(row, subject, coveredUntil, currentGeneration);
             }
@@ -195,21 +221,63 @@
         if (config.sessions[program.value].includes(wanted)) session.value = wanted;
     };
     enabled.addEventListener('change', () => { fields.disabled = !enabled.checked; fields.hidden = !enabled.checked; render(); });
-    program.addEventListener('change', () => { choices = {}; syncSessions(); syncClasses(); });
-    session.addEventListener('change', () => { choices = {}; syncClasses(); });
-    cohort.addEventListener('change', () => { choices = {}; render(); });
-    day.addEventListener('change', () => { remember(); render(); });
+    const resetChoices = () => { weeklyChoices = {}; choices = weeklyChoices[displayedDay] = {}; };
+    const syncClassTeacher = () => {
+        classTeacher.value = String(selectedClass()?.teacher_id || '');
+    };
+    classTeacher.addEventListener('change', () => {
+        remember();
+        Object.values(weeklyChoices).forEach(slots => Object.values(slots).forEach(slot => { slot.teacher_id = classTeacher.value; }));
+        render();
+    });
+    program.addEventListener('change', () => { resetChoices(); syncSessions(); syncClasses(); });
+    session.addEventListener('change', () => { resetChoices(); syncClasses(); });
+    cohort.addEventListener('change', () => { resetChoices(); syncClassTeacher(); render(); });
+    day.addEventListener('change', () => {
+        remember();
+        displayedDay = day.value;
+        choices = weeklyChoices[displayedDay] ||= {};
+        render();
+    });
+    root.querySelectorAll('[data-weekday]').forEach(button => {
+        const activate = () => {
+            if (day.value === button.dataset.weekday) return;
+            day.value = button.dataset.weekday;
+            day.dispatchEvent(new Event('change', {bubbles: true}));
+        };
+        button.addEventListener('mouseenter', activate);
+        button.addEventListener('focus', activate);
+        button.addEventListener('click', activate);
+    });
     year.addEventListener('change', () => { remember(); render(); });
     syncSessions(config.old.session || 'Morning');
     syncClasses(String(config.old.school_class_id || ''));
+    syncClassTeacher();
+    if (config.old.class_teacher_id) classTeacher.value = config.old.class_teacher_id;
+    render();
     updateSummary();
     form.addEventListener('submit', event => {
         if (!enabled.checked) return;
-        const assigned = [...periods.querySelectorAll('[data-subject]')].filter(select => select.value);
-        if (!assigned.length || assigned.some(select => !select.closest('[data-period]').querySelector('[data-teacher]').value)) {
+        remember();
+        const assigned = Object.entries(weeklyChoices).flatMap(([weekday, slots]) =>
+            Object.values(slots).filter(slot => slot.subject_id).map(slot => ({...slot, day: weekday})));
+        if (!assigned.length || assigned.some(slot => !slot.teacher_id)) {
             event.preventDefault();
             message.textContent = 'Choose at least one subject and a free teacher for each selected subject. Wait for availability checks to finish.';
             message.scrollIntoView({block: 'center'});
+            return;
         }
+        form.querySelectorAll('[data-weekly-slot]').forEach(input => input.remove());
+        periods.querySelectorAll('[name^="slots["]').forEach(input => { input.disabled = true; });
+        assigned.forEach((slot, index) => {
+            ['day', 'starts_at', 'subject_id', 'teacher_id'].forEach(key => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = `slots[${index}][${key}]`;
+                input.value = slot[key];
+                input.dataset.weeklySlot = '';
+                fields.append(input);
+            });
+        });
     });
 })();

@@ -639,3 +639,10 @@ a.class-summary-card:hover {
     .room-editor-actions { bottom: 8px; padding: 12px; justify-content: flex-end; }
     .room-editor-actions > span { display: none; }
 }
+.weekday-subject-planner { display: grid; grid-template-columns: 155px minmax(0, 1fr); gap: 20px; align-items: start; }
+.weekday-menu { display: grid; gap: 8px; }
+.weekday-menu-item { text-align: left; border: 1px solid var(--border-color, #e6d9d5); border-radius: 12px; background: transparent; color: inherit; padding: 12px; cursor: pointer; }
+.weekday-menu-item small { display: block; margin-top: 5px; font-size: 12px; }
+.weekday-menu-item[aria-pressed="true"] { background: var(--primary-color, #a84536); color: #fff; }
+.weekday-menu-item:focus-visible { outline: 3px solid #df8e79; outline-offset: 2px; }
+@media (max-width: 700px) { .weekday-subject-planner { grid-template-columns: minmax(0, 1fr); } .weekday-menu { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

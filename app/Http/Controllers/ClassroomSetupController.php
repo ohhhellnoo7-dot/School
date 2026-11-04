@@ -17,10 +17,13 @@ class ClassroomSetupController extends Controller
             'day' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday',
             'starts_at' => 'required|date_format:H:i', 'ends_at' => 'required|date_format:H:i|after:starts_at',
             'academic_year' => ['required', 'regex:/^\d{4}-\d{4}$/'],
+            'class_teacher_id' => 'nullable|integer|exists:users,id',
         ]);
         $class = SchoolClass::findOrFail($data['school_class_id'])->timetableOwner();
         $subject = $class->subjects()->findOrFail($data['subject_id']);
-        $teachers = User::where('role', 'teacher')->orderBy('name')->get()->map(function ($teacher) use ($rules, $subject, $class, $data) {
+        $teachers = User::where('role', 'teacher')->where('program', $class->program)
+            ->when($class->program === 'Japan', fn ($query) => $query->whereKey($data['class_teacher_id'] ?? $class->teacher_id ?? 0))
+            ->orderBy('name')->get()->map(function ($teacher) use ($rules, $subject, $class, $data) {
             $qualifications = $rules->qualifications($teacher);
             $lessons = $rules->lessons($teacher)->filter(fn ($s) => AcademicYear::overlaps($s->academic_year, $data['academic_year']));
             $breaks = $rules->breaks($teacher);

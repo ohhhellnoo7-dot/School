@@ -15,7 +15,7 @@ class ClassroomSetupService
     {
         $classes = SchoolClass::with('subjects', 'classGroup')->orderBy('name')->orderBy('section')->get();
         $plannerClasses = $classes->map(function ($class) {
-            return ['id' => $class->id, 'label' => $class->label, 'program' => $class->program, 'session' => $class->session,
+            return ['id' => $class->id, 'label' => $class->label, 'program' => $class->program, 'session' => $class->session, 'teacher_id' => $class->teacher_id,
                 'hours' => $class->sessionHours(), 'subjects' => $class->timetableOwner()->subjects->map(fn ($subject) => [
                     'id' => $subject->id, 'name' => $subject->name,
                     'minutes' => $class->program === 'Khmer' ? KhmerLessonDuration::minutes($subject) : 60,
@@ -23,6 +23,7 @@ class ClassroomSetupService
         })->values();
 
         return ['buildings' => Building::orderBy('name')->get(), 'plannerClasses' => $plannerClasses,
+            'japaneseTeachers' => \App\Models\User::where('role', 'teacher')->where('program', 'Japan')->where('status', 'active')->orderBy('name')->get(['id', 'name']),
             'programSessions' => \App\Models\Program::sessionMap()];
     }
 
@@ -36,7 +37,9 @@ class ClassroomSetupService
             'day' => 'required_if:plan_enabled,1|nullable|in:Monday,Tuesday,Wednesday,Thursday,Friday',
             'academic_year' => ['required_if:plan_enabled,1', 'nullable', 'regex:/^\d{4}-\d{4}$/'],
             'room_change_reason' => 'nullable|string|max:500',
-            'slots' => 'nullable|array|max:4',
+            'class_teacher_id' => 'nullable|integer|exists:users,id',
+            'slots' => 'nullable|array|max:20',
+            'slots.*.day' => 'sometimes|required|in:Monday,Tuesday,Wednesday,Thursday,Friday',
             'slots.*.subject_id' => 'nullable|integer|exists:subjects,id',
             'slots.*.teacher_id' => 'nullable|integer|exists:users,id',
             'slots.*.starts_at' => 'required|date_format:H:i',
@@ -59,9 +62,23 @@ class ClassroomSetupService
                 $this->fail('Choose a class matching the selected program and session.');
             }
             $owner = $class->timetableOwner();
+            if ($class->program === 'Japan') {
+                $teacherId = $plan['class_teacher_id'] ?? $owner->teacher_id;
+                $teacher = \App\Models\User::where('role', 'teacher')->where('program', 'Japan')->where('status', 'active')->find($teacherId);
+                if (! $teacher) $this->fail('Choose an active Japanese class teacher for Monday through Friday.');
+                $otherClasses = SchoolClass::where('program', 'Japan')->where('teacher_id', $teacher->id)
+                    ->whereKeyNot($owner->id)->get();
+                if ($otherClasses->contains(fn ($other) => ! $owner->class_group_id || $other->class_group_id !== $owner->class_group_id)) {
+                    $this->fail('This Japanese teacher is already assigned to another class. Choose a teacher who can teach this class Monday through Friday.');
+                }
+                if ($owner->schedules()->where('teacher_id', '!=', $teacher->id)->exists()) $this->fail('This class already has lessons with another teacher. Update those lessons before changing its class teacher.');
+                $owner->update(['teacher_id' => $teacher->id]);
+                $owner->classGroup?->update(['teacher_id' => $teacher->id]);
+            }
             $selected = collect($plan['slots'] ?? [])->filter(fn ($slot) => ! empty($slot['subject_id']) || ! empty($slot['teacher_id']));
             if ($selected->isEmpty()) $this->fail('Choose a subject and teacher for at least one period, or turn off lesson setup.');
             foreach ($selected as $index => $slot) {
+                if ($class->program === 'Japan') $slot['teacher_id'] = $teacher->id;
                 if (empty($slot['subject_id']) || empty($slot['teacher_id'])) $this->fail('Select both subject and teacher for each planned period.');
                 $subject = $owner->subjects()->find($slot['subject_id']);
                 if (! $subject) $this->fail('Choose a subject from this class curriculum.');
@@ -72,7 +89,7 @@ class ClassroomSetupService
                     app(LessonManagementService::class)->save([
                         'school_class_id' => $owner->id, 'subject_id' => $subject->id, 'teacher_id' => $slot['teacher_id'],
                         'classroom_id' => $classroom->id, 'program' => $class->program, 'session' => $class->session,
-                        'day' => $plan['day'], 'academic_year' => $plan['academic_year'],
+                        'day' => $slot['day'] ?? $plan['day'], 'academic_year' => $plan['academic_year'],
                         'starts_at' => $slot['starts_at'], 'ends_at' => $end,
                         'room_change_reason' => $plan['room_change_reason'] ?? null,
                     ]);

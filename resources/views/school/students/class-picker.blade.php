@@ -2,9 +2,9 @@
     <div data-program-controls hidden>
         <label class="form-label" for="class-program">Class program *</label>
         <div class="position-relative mb-2" data-program-dropdown>
-            <button type="button" class="form-select text-start" id="class-program" aria-expanded="false" aria-controls="class-program-options">Select Khmer, English or Chinese</button>
+            <button type="button" class="form-select text-start" id="class-program" aria-expanded="false" aria-controls="class-program-options">Select a program</button>
             <div id="class-program-options" class="position-absolute start-0 end-0 border rounded shadow p-2 bg-body" style="z-index:1050" hidden>
-                @foreach(['Khmer', 'English', 'Chinese'] as $program)
+                @foreach($classes->pluck('program')->filter()->unique() as $program)
                     @php($gradeCount = $classes->where('program', $program)->pluck('name')->unique()->count())
                     <button type="button" class="btn btn-light w-100 text-start mb-1" data-program="{{ $program }}">{{ $program }} <span class="small text-secondary">({{ $gradeCount }} grades)</span></button>
                 @endforeach

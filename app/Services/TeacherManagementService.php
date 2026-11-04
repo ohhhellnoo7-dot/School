@@ -46,8 +46,8 @@ class TeacherManagementService
 
     public function eligibleForBreaks(User $teacher): bool
     {
-        // These programs fill their working shifts with lessons rather than automatic free periods.
-        if (in_array($teacher->program, ['English', 'Chinese'], true)) return false;
+        // Unassigned legacy profiles follow the Khmer rules.
+        if (filled($teacher->program) && $teacher->program !== 'Khmer') return false;
         return $this->periods($teacher)->where('unavailable', false)->pluck('weekday')->unique()->count() >= 3;
     }
 
@@ -147,6 +147,7 @@ class TeacherManagementService
 
     public function validateBreak(User $teacher, array $break): void
     {
+        if (filled($teacher->program) && $teacher->program !== 'Khmer') $this->fail('Designated free periods are only available for Khmer teachers.');
         $day = $break['weekday']; $start = $break['start_time']; $end = $break['end_time'];
         $sessions = ($teacher->program ?: 'Khmer') === 'Khmer' ? array_slice(self::SESSIONS, 0, 2) : ($teacher->program === 'Chinese' ? [['17:30','18:30'],['18:30','19:30']] : self::SESSIONS);
         $session = collect($sessions)->contains(fn ($hours) => self::minute($start) >= self::minute($hours[0]) && self::minute($end) <= self::minute($hours[1]) && (self::minute($start) - self::minute($hours[0])) % 60 === 0);
@@ -174,6 +175,7 @@ class TeacherManagementService
 
     public function proposeBreaks(User $teacher): array
     {
+        if (filled($teacher->program) && $teacher->program !== 'Khmer') $this->fail('Designated free periods are only available for Khmer teachers.');
         if ($teacher->status !== 'active') $this->fail('Breaks can only be generated for active teachers.');
         $options = [];
         $sessions = $teacher->program === 'Chinese' ? [['17:30','18:30'],['18:30','19:30']] : self::SESSIONS;

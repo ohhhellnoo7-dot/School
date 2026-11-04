@@ -48,7 +48,7 @@ class ClassroomAvailabilityService
         $minute = ($selected->hour * 60) + $selected->minute;
         $day = $selected->englishDayOfWeek;
         $academicYear = $filters['academic_year'] ?? $selected->year.'-'.($selected->year+1);
-        $lessons = Schedule::with(['subject.teacher', 'teacher', 'schoolClass'])->where('day', $day)->where(fn ($q)=>$q->where('academic_year',$academicYear)->orWhereNull('academic_year'))->get();
+        $lessons = Schedule::with(['subject.teacher', 'teacher', 'schoolClass.classGroup'])->where('day', $day)->where(fn ($q)=>$q->where('academic_year',$academicYear)->orWhereNull('academic_year'))->get();
 
         $rooms = Classroom::query()
             ->with(['buildingRecord', 'bookings' => fn ($query) => $query
@@ -74,6 +74,8 @@ class ClassroomAvailabilityService
 
                 $activity = app(RoomLessonService::class)->activity($classroom, $lessons, $minute, $current);
                 if ($activity['currentLesson'] && $status !== self::STATUS_OUT_OF_SERVICE) $status = self::STATUS_BUSY;
+                if ($activity['nextLesson'] && $status === self::STATUS_AVAILABLE) $status = self::STATUS_UPCOMING;
+                $roomLessons = app(RoomLessonService::class)->lessons($classroom, $lessons);
                 if (auth()->check() && in_array(auth()->user()->role, ['student', 'parent'], true)) {
                     $cohorts = \App\Models\Student::visibleTo(auth()->user())->with('schoolClass')->get()->pluck('schoolClass')->filter();
                     $visibleBooking = fn ($b) => ! $b || $cohorts->contains(fn ($c) => $c->class_group_id === $b->class_group_id && $c->session === $b->classSession?->session);
@@ -83,7 +85,7 @@ class ClassroomAvailabilityService
                     if (! $visibleBooking($current)) { $current = null; $activity['activity'] = 'Reserved for another cohort'; }
                     if (! $visibleBooking($next)) $next = null;
                 }
-                return compact('classroom', 'status', 'current', 'next') + $activity;
+                return compact('classroom', 'status', 'current', 'next', 'roomLessons') + $activity;
             })
             ->filter(fn (array $entry) => $this->matchesFilters($entry, $filters))
             ->values();
@@ -151,7 +153,16 @@ class ClassroomAvailabilityService
             return true;
         }
 
-        return $classroom->bookings->contains(function (ClassroomBooking $booking) use ($bookingFilters) {
+        $matchesLesson = $entry['roomLessons']->contains(function (Schedule $lesson) use ($bookingFilters) {
+            $class = $lesson->schoolClass;
+            if (! $class) return false;
+            if (isset($bookingFilters['program']) && $class->program !== $bookingFilters['program']) return false;
+            if (isset($bookingFilters['grade']) && (int) $class->classGroup?->grade !== (int) $bookingFilters['grade']) return false;
+            if (isset($bookingFilters['session']) && $class->session !== $bookingFilters['session']) return false;
+            return true;
+        });
+
+        return $matchesLesson || $classroom->bookings->contains(function (ClassroomBooking $booking) use ($bookingFilters) {
             if (isset($bookingFilters['program']) && $booking->classGroup?->program !== $bookingFilters['program']) {
                 return false;
             }

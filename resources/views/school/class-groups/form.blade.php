@@ -63,6 +63,15 @@
             </select>
             @error('status')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
+        @unless($classGroup->exists)
+        <div>
+            <label class="form-label" for="curriculum">Subjects to study</label>
+            <textarea class="form-control" id="curriculum" name="curriculum" rows="5" maxlength="5000" placeholder="Enter one subject per line">{{ old('curriculum') }}</textarea>
+            <script type="application/json" data-program-subjects>@json($programSubjects)</script>
+            <div class="form-text">Enter one subject per line. The class starts with zero students; students can enroll after registration. These subjects will appear in the weekday lesson planner.</div>
+            @error('curriculum')<div class="text-danger">{{ $message }}</div>@enderror
+        </div>
+        @endunless
         <aside class="session-preview" aria-live="polite">
             <strong>Program sessions</strong>
             @foreach($programSessions as $program => $sessions)
@@ -79,7 +88,21 @@
 
 @push('scripts')
 <script>
-document.querySelector('[data-program-select]')?.addEventListener('change', event => {
+const programSelect = document.querySelector('[data-program-select]');
+const curriculum = document.querySelector('#curriculum');
+const programSubjects = JSON.parse(document.querySelector('[data-program-subjects]')?.textContent || '{}');
+const curriculumDrafts = new Map();
+let previousProgram = programSelect?.value || '';
+if (curriculum?.value) curriculumDrafts.set(previousProgram, curriculum.value);
+const fillCurriculum = () => {
+    if (!curriculum) return;
+    curriculum.value = curriculumDrafts.get(programSelect.value) ?? (programSubjects[programSelect.value] || []).join('\n');
+};
+fillCurriculum();
+programSelect?.addEventListener('change', event => {
+    if (curriculum) curriculumDrafts.set(previousProgram, curriculum.value);
+    fillCurriculum();
+    previousProgram = event.target.value;
     document.querySelectorAll('[data-session-preview]').forEach(item => item.hidden = item.dataset.sessionPreview !== event.target.value);
     const empty = document.querySelector('[data-session-empty]');
     if (empty) empty.hidden = Boolean(event.target.value);
