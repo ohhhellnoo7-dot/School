@@ -17,8 +17,8 @@ class TeacherTimetableProgramFilterTest extends TestCase
         foreach ($teachers as $program=>$teacher) {
             $response = $this->actingAs($admin)->get(route('timetables.index',['view'=>'teachers','program'=>$program,'academic_year'=>'2026-2027']))
                 ->assertOk()->assertSee('data-teacher-program-menu',false)->assertSee($teacher->name)
-                ->assertSee('name="program" value="'.$program.'"',false)
-                ->assertSee(strtoupper($program).' TEACHERS')
+                ->assertSee('value="'.$program.'" selected',false)
+                ->assertViewHas('teacherProgram', $program)
                 ->assertViewHas('selected',$teacher->id)->assertViewHas('academicYear','2026-2027');
             foreach ($teachers->except($program) as $other) $response->assertDontSee($other->name);
             if ($program === 'Khmer') $response->assertSee('Morning schedule')->assertSee('Afternoon schedule')->assertDontSee('Evening schedule')->assertDontSee('17:30');

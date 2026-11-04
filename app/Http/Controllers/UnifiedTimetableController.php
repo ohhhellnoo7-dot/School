@@ -18,14 +18,20 @@ class UnifiedTimetableController extends Controller
         $classes = SchoolClass::query()->when($restricted, fn ($q) => $q->whereIn('id', Student::visibleTo($request->user())->select('school_class_id')))->orderBy('name')->orderBy('section')->orderBy('session')->get();
         $view = $request->input('view', 'students');
         $studentClasses = null;
-        $request->validate(['program' => ['nullable', \Illuminate\Validation\Rule::in(\App\Models\Program::names())]]);
-        $teacherProgram = $view === 'teachers' ? $request->input('program') : null;
+        $programs = \App\Models\Program::names();
+        $request->validate(['program' => ['nullable', \Illuminate\Validation\Rule::in($programs)]]);
+        $timetableProgram = $request->input('program');
+        $teacherProgram = $view === 'teachers' ? $timetableProgram : null;
         $availableTeacherSessions = \App\Support\ProgramSessions::for($teacherProgram);
         $teacherSession = $teacherProgram ? $request->input('session') : null;
         if ($teacherSession) $request->validate(['session' => \Illuminate\Validation\Rule::in($availableTeacherSessions)]);
         $teachers = User::where('role', 'teacher')->when($teacherProgram, fn ($q) => $q->where('program', $teacherProgram))->orderBy('name')->get();
-        $rooms = Classroom::orderBy('room_number')->get();
+        $rooms = Classroom::when($timetableProgram, fn ($q) => $q->where(function ($q) use ($timetableProgram) {
+            $q->whereHas('bookings.classGroup', fn ($q) => $q->where('program', $timetableProgram))
+                ->orWhereHas('lessons.schoolClass', fn ($q) => $q->where('program', $timetableProgram));
+        }))->orderBy('room_number')->get();
         $query = Schedule::with(['subject', 'teacher', 'classroom', 'schoolClass.classGroup']);
+        if ($timetableProgram && $view !== 'teachers') $query->whereHas('schoolClass', fn ($q) => $q->where('program', $timetableProgram));
         $academicYear = $request->input('academic_year') ?: now('Asia/Phnom_Penh')->year.'-'.(now('Asia/Phnom_Penh')->year+1);
         $query->where(fn ($q)=>$q->where('academic_year',$academicYear)->orWhereNull('academic_year'));
         if ($restricted) $query->whereIn('school_class_id', $classes->map->timetableOwnerId()->unique()->all());
@@ -49,16 +55,16 @@ class UnifiedTimetableController extends Controller
             abort_if($selected && ! $teachers->contains('id', $selected), 404);
             if ($selected) $query->where('teacher_id', $selected); else $query->whereRaw('1 = 0');
         } elseif ($view === 'classrooms') {
-            $selected = $request->integer('classroom') ?: $rooms->first()?->id;
-            abort_if($selected && ! $rooms->contains('id', $selected), 404);
+            $requestedRoom = $request->integer('classroom');
             if ($restricted) {
                 $allowed = \App\Models\ClassroomBooking::whereIn('class_group_id', $classes->pluck('class_group_id'))->pluck('classroom_id')->merge(Schedule::whereIn('school_class_id', $classes->modelKeys())->pluck('classroom_id'));
-                abort_unless($allowed->contains($selected), 404);
+                abort_if($requestedRoom && ! $allowed->contains($requestedRoom), 404);
                 $rooms = $rooms->whereIn('id', $allowed);
             }
-            $query->where('classroom_id', $selected);
+            $selected = $rooms->contains('id', $requestedRoom) ? $requestedRoom : $rooms->first()?->id;
+            if ($selected) $query->where('classroom_id', $selected); else $query->whereRaw('1 = 0');
         } else {
-            $filtered = $classes->when($request->filled('grade'), fn ($c) => $c->filter(fn ($class) => (int) ($class->classGroup?->grade) === $request->integer('grade')))->when($request->filled('session'), fn ($c) => $c->where('session', $request->input('session')));
+            $filtered = $classes->when($timetableProgram, fn ($c) => $c->where('program', $timetableProgram))->when($request->filled('grade'), fn ($c) => $c->filter(fn ($class) => (int) ($class->classGroup?->grade) === $request->integer('grade')))->when($request->filled('session'), fn ($c) => $c->where('session', $request->input('session')));
             $requestedClass = $request->integer('class');
             abort_if($requestedClass && ! $classes->contains('id', $requestedClass), 404);
             $selected = $requestedClass && $filtered->contains('id',$requestedClass) ? $requestedClass : $filtered->first()?->id;
@@ -110,7 +116,7 @@ class UnifiedTimetableController extends Controller
             $excess = $subjects->filter(fn ($s)=>$s->required_weekly_minutes !== null && $lessons->where('subject_id',$s->id)->sum(fn ($entry)=>TeacherManagementService::duration($entry->starts_at,$entry->ends_at)) > $s->required_weekly_minutes)->pluck('name')->all();
             $curriculum = ['unknown'=>$unknown,'missing'=>array_values(array_unique($missing)), 'excess'=>array_values(array_unique($excess))];
         }
-        return compact('view', 'classes', 'teachers', 'rooms', 'selected', 'lessons', 'periods', 'breaks','roomIssues','curriculum','academicYear','studentClasses','teacherProgram','teacherSession','availableTeacherSessions') + TimetableGrid::build($lessons, $periods);
+        return compact('programs', 'timetableProgram', 'view', 'classes', 'teachers', 'rooms', 'selected', 'lessons', 'periods', 'breaks','roomIssues','curriculum','academicYear','studentClasses','teacherProgram','teacherSession','availableTeacherSessions') + TimetableGrid::build($lessons, $periods);
     }
 
     public function index(Request $request)

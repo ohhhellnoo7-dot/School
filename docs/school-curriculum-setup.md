@@ -10,7 +10,8 @@ Weekly subject hours are configured for every existing class/session. Incomplete
 |Grade 10 · B · Khmer · Morning|17|3|20|
 |Grade 10 · C · Khmer · Morning|17|3|20|
 |Grade 11 · A · Khmer · Morning|17|3|20|
-|Grade 1 · A · English · Morning|17|3|20|
+|Grade 5 · A · English · Evening|10|0|10|
+|Grade 5 · B · English · Evening|10|0|10|
 |Grade 7 · A · Khmer · Morning|20|0|20|
 |Grade 8 · A · Khmer · Morning|20|0|20|
 |Grade 9 · A · Khmer · Morning|20|0|20|
@@ -20,104 +21,126 @@ Weekly subject hours are configured for every existing class/session. Incomplete
 |Grade 8 · B · Khmer · Morning|20|0|20|
 |Grade 8 · C · Khmer · Morning|20|0|20|
 |Grade 9 · B · Khmer · Morning|20|0|20|
-|Grade 9 · A · English · Evening|2|3|5|
-|Grade 9 · B · English · Morning|17|3|20|
-|Grade 9 · B · English · Afternoon|17|3|20|
-|Grade 9 · B · English · Evening|2|3|5|
-|Grade 10 · A · English · Morning|17|3|20|
-|Grade 10 · A · English · Afternoon|17|3|20|
-|Grade 10 · A · English · Evening|2|3|5|
-|Grade 10 · B · English · Morning|17|3|20|
-|Grade 10 · B · English · Afternoon|17|3|20|
-|Grade 10 · B · English · Evening|2|3|5|
-|Grade 11 · A · English · Morning|17|3|20|
-|Grade 11 · A · English · Afternoon|17|3|20|
-|Grade 11 · A · English · Evening|2|3|5|
-|Grade 11 · B · English · Morning|17|3|20|
-|Grade 11 · B · English · Afternoon|17|3|20|
-|Grade 11 · B · English · Evening|2|3|5|
-|Grade 12 · A · English · Morning|17|3|20|
-|Grade 12 · A · English · Afternoon|17|3|20|
-|Grade 12 · A · English · Evening|2|3|5|
-|Grade 12 · B · English · Morning|17|3|20|
-|Grade 12 · B · English · Afternoon|17|3|20|
-|Grade 12 · B · English · Evening|2|3|5|
-|Grade 1 · A · Chinese · Evening|2|3|5|
-|Grade 1 · B · Chinese · Evening|2|3|5|
-|Grade 2 · A · Chinese · Evening|2|3|5|
-|Grade 2 · B · Chinese · Evening|2|3|5|
-|Grade 3 · A · Chinese · Evening|2|3|5|
-|Grade 3 · B · Chinese · Evening|2|3|5|
-|Grade 4 · A · Chinese · Evening|2|3|5|
-|Grade 4 · B · Chinese · Evening|2|3|5|
-|Grade 5 · A · Chinese · Evening|2|3|5|
-|Grade 5 · B · Chinese · Evening|2|3|5|
-|Grade 6 · A · Chinese · Evening|2|3|5|
-|Grade 6 · B · Chinese · Evening|2|3|5|
-|Grade 7 · A · Chinese · Evening|2|3|5|
-|Grade 12 · A · Khmer · Morning|20|0|20|
+|Grade 7 · D · Khmer · Morning|17|3|20|
+|Grade 7 · D · Khmer · Afternoon|17|3|20|
+|Grade 7 · E · Khmer · Morning|17|3|20|
+|Grade 7 · E · Khmer · Afternoon|17|3|20|
+|Grade 8 · D · Khmer · Morning|17|3|20|
+|Grade 8 · D · Khmer · Afternoon|17|3|20|
+|Grade 8 · E · Khmer · Morning|17|3|20|
+|Grade 8 · E · Khmer · Afternoon|17|3|20|
+|Grade 9 · D · Khmer · Morning|17|3|20|
+|Grade 9 · D · Khmer · Afternoon|17|3|20|
+|Grade 9 · E · Khmer · Morning|17|3|20|
+|Grade 9 · E · Khmer · Afternoon|17|3|20|
+|Grade 10 · D · Khmer · Morning|17|3|20|
+|Grade 10 · D · Khmer · Afternoon|17|3|20|
+|Grade 10 · E · Khmer · Morning|17|3|20|
+|Grade 10 · E · Khmer · Afternoon|17|3|20|
+|Grade 11 · C · Khmer · Morning|17|3|20|
+|Grade 11 · C · Khmer · Afternoon|17|3|20|
+|Grade 11 · D · Khmer · Morning|17|3|20|
+|Grade 11 · D · Khmer · Afternoon|17|3|20|
+|Grade 11 · E · Khmer · Morning|17|3|20|
+|Grade 11 · E · Khmer · Afternoon|17|3|20|
+|Grade 12 · C · Khmer · Morning|17|3|20|
+|Grade 12 · C · Khmer · Afternoon|17|3|20|
+|Grade 12 · D · Khmer · Morning|17|3|20|
+|Grade 12 · D · Khmer · Afternoon|17|3|20|
+|Grade 12 · E · Khmer · Morning|17|3|20|
+|Grade 12 · E · Khmer · Afternoon|17|3|20|
+|Grade 6 · A · English · Evening|10|0|10|
+|Grade 6 · B · English · Evening|10|0|10|
+|Grade 7 · B · Chinese · Evening|10|0|10|
+|Grade 1 · A · English · Morning|20|0|20|
 |Grade 5 · B · English · Morning|20|0|20|
+|Grade 5 · A · English · Afternoon|20|0|20|
+|Grade 5 · B · English · Afternoon|20|0|20|
+|Grade 6 · A · English · Afternoon|20|0|20|
+|Grade 6 · B · English · Afternoon|20|0|20|
+|Grade 7 · A · English · Afternoon|20|0|20|
+|Grade 7 · B · English · Afternoon|20|0|20|
 |Grade 6 · A · English · Morning|20|0|20|
 |Grade 6 · B · English · Morning|20|0|20|
 |Grade 7 · A · English · Morning|20|0|20|
 |Grade 7 · B · English · Morning|20|0|20|
+|Grade 8 · A · English · Morning|20|0|20|
+|Grade 8 · A · English · Afternoon|20|0|20|
+|Grade 8 · B · English · Afternoon|20|0|20|
+|Grade 4 · B · Chinese · Evening|10|0|10|
+|Grade 5 · A · Chinese · Evening|10|0|10|
+|Grade 9 · A · English · Afternoon|20|0|20|
+|Grade 9 · B · English · Afternoon|20|0|20|
+|Grade 5 · B · Chinese · Evening|10|0|10|
+|Grade 6 · A · Chinese · Evening|10|0|10|
+|Grade 10 · A · English · Afternoon|20|0|20|
+|Grade 10 · B · English · Afternoon|20|0|20|
+|Grade 6 · B · Chinese · Evening|10|0|10|
+|Grade 7 · A · Chinese · Evening|10|0|10|
+|C02 · Japan · Evening|5|0|5|
+|C04 · Japan · Evening|5|0|5|
+|Grade 12 · B · English · Evening|10|0|10|
+|Grade 8 · B · English · Morning|20|0|20|
+|Grade 9 · B · English · Morning|20|0|20|
+|Grade 10 · A · English · Morning|20|0|20|
+|Grade 1 · A · Chinese · Evening|10|0|10|
+|Grade 1 · B · Chinese · Evening|10|0|10|
+|Grade 10 · B · English · Morning|20|0|20|
+|Grade 11 · A · English · Morning|20|0|20|
+|Grade 11 · B · English · Morning|20|0|20|
+|Grade 12 · A · English · Morning|20|0|20|
+|Grade 2 · A · Chinese · Evening|10|0|10|
+|Grade 2 · B · Chinese · Evening|10|0|10|
+|Grade 12 · B · English · Morning|20|0|20|
+|Grade 8 · A · English · Evening|10|0|10|
+|Grade 8 · B · English · Evening|10|0|10|
+|Grade 9 · A · English · Evening|10|0|10|
+|Grade 3 · A · Chinese · Evening|10|0|10|
+|Grade 3 · B · Chinese · Evening|10|0|10|
+|Grade 9 · B · English · Evening|10|0|10|
+|Grade 10 · A · English · Evening|10|0|10|
+|Grade 10 · B · English · Evening|10|0|10|
+|Grade 11 · A · English · Evening|10|0|10|
+|Grade 11 · A · English · Afternoon|20|0|20|
+|Grade 11 · B · English · Afternoon|20|0|20|
+|Grade 12 · A · English · Afternoon|20|0|20|
+|Grade 12 · B · English · Afternoon|20|0|20|
+|Grade 11 · B · English · Evening|10|0|10|
+|Grade 12 · A · English · Evening|10|0|10|
+|Grade 4 · A · Chinese · Evening|10|0|10|
+|Grade 1 · A · English · Afternoon|20|0|20|
+|Grade 1 · B · English · Afternoon|20|0|20|
+|Grade 2 · A · English · Afternoon|20|0|20|
+|Grade 2 · B · English · Afternoon|20|0|20|
+|Grade 3 · A · English · Afternoon|20|0|20|
+|Grade 3 · B · English · Afternoon|20|0|20|
+|Grade 12 · A · Khmer · Morning|20|0|20|
+|Grade 4 · A · English · Afternoon|20|0|20|
+|Grade 4 · B · English · Afternoon|20|0|20|
+|Grade 1 · B · English · Morning|20|0|20|
 |Grade 11 · B · Khmer · Morning|17|3|20|
-|Grade 1 · A · English · Afternoon|17|3|20|
-|Grade 1 · A · English · Evening|2|3|5|
-|Grade 1 · B · English · Morning|17|3|20|
-|Grade 1 · B · English · Afternoon|17|3|20|
-|Grade 1 · B · English · Evening|2|3|5|
-|Grade 2 · A · English · Morning|17|3|20|
-|Grade 2 · A · English · Afternoon|17|3|20|
-|Grade 2 · A · English · Evening|2|3|5|
-|Grade 2 · B · English · Morning|17|3|20|
-|Grade 2 · B · English · Afternoon|17|3|20|
-|Grade 2 · B · English · Evening|2|3|5|
-|Grade 3 · A · English · Morning|17|3|20|
-|Grade 3 · A · English · Afternoon|17|3|20|
-|Grade 3 · A · English · Evening|2|3|5|
-|Grade 3 · B · English · Morning|17|3|20|
-|Grade 3 · B · English · Afternoon|17|3|20|
-|Grade 3 · B · English · Evening|2|3|5|
-|Grade 4 · A · English · Morning|17|3|20|
-|Grade 4 · A · English · Afternoon|17|3|20|
-|Grade 4 · A · English · Evening|2|3|5|
-|Grade 4 · B · English · Morning|17|3|20|
-|Grade 4 · B · English · Afternoon|17|3|20|
-|Grade 4 · B · English · Evening|2|3|5|
-|Grade 5 · A · English · Morning|17|3|20|
-|Grade 5 · A · English · Afternoon|17|3|20|
-|Grade 5 · A · English · Evening|2|3|5|
-|Grade 5 · B · English · Afternoon|17|3|20|
-|Grade 5 · B · English · Evening|2|3|5|
-|Grade 6 · A · English · Afternoon|17|3|20|
-|Grade 6 · A · English · Evening|2|3|5|
-|Grade 6 · B · English · Afternoon|17|3|20|
-|Grade 6 · B · English · Evening|2|3|5|
-|Grade 7 · A · English · Afternoon|17|3|20|
-|Grade 7 · A · English · Evening|2|3|5|
-|Grade 7 · B · English · Afternoon|17|3|20|
-|Grade 7 · B · English · Evening|2|3|5|
-|Grade 8 · A · English · Morning|17|3|20|
-|Grade 8 · A · English · Afternoon|17|3|20|
-|Grade 8 · A · English · Evening|2|3|5|
-|Grade 8 · B · English · Morning|17|3|20|
-|Grade 8 · B · English · Afternoon|17|3|20|
-|Grade 8 · B · English · Evening|2|3|5|
-|Grade 9 · A · English · Morning|17|3|20|
-|Grade 9 · A · English · Afternoon|17|3|20|
-|Grade 7 · B · Chinese · Evening|2|3|5|
-|Grade 8 · A · Chinese · Evening|2|3|5|
+|Grade 2 · A · English · Morning|20|0|20|
+|Grade 2 · B · English · Morning|20|0|20|
+|Grade 1 · A · English · Evening|10|0|10|
+|Grade 3 · A · English · Morning|20|0|20|
+|Grade 3 · B · English · Morning|20|0|20|
+|Grade 4 · A · English · Morning|20|0|20|
+|Grade 4 · B · English · Morning|20|0|20|
+|Grade 1 · B · English · Evening|10|0|10|
+|Grade 5 · A · English · Morning|20|0|20|
+|Grade 9 · A · English · Morning|20|0|20|
+|Grade 2 · A · English · Evening|10|0|10|
+|Grade 2 · B · English · Evening|10|0|10|
+|Grade 3 · A · English · Evening|10|0|10|
+|Grade 3 · B · English · Evening|10|0|10|
+|Grade 4 · A · English · Evening|10|0|10|
+|Grade 4 · B · English · Evening|10|0|10|
+|Grade 7 · A · English · Evening|10|0|10|
+|Grade 7 · B · English · Evening|10|0|10|
+|Grade 8 · A · Chinese · Evening|10|0|10|
+|C03 · Japan · Evening|5|0|5|
+|Grade 8 · B · Chinese · Evening|10|0|10|
 |Grade 12 · B · Khmer · Morning|20|0|20|
-|Grade 8 · B · Chinese · Evening|2|3|5|
-|Grade 9 · A · Chinese · Evening|2|3|5|
-|Grade 9 · B · Chinese · Evening|2|3|5|
-|Grade 10 · A · Chinese · Evening|2|3|5|
-|Grade 10 · B · Chinese · Evening|2|3|5|
-|Grade 11 · A · Chinese · Evening|2|3|5|
-|Grade 11 · B · Chinese · Evening|2|3|5|
-|Grade 12 · A · Chinese · Evening|2|3|5|
-|Grade 12 · B · Chinese · Evening|2|3|5|
 |Grade 7 · A · Khmer · Afternoon|17|3|20|
 |Grade 8 · A · Khmer · Afternoon|17|3|20|
 |Grade 9 · A · Khmer · Afternoon|17|3|20|
@@ -134,6 +157,15 @@ Weekly subject hours are configured for every existing class/session. Incomplete
 |Grade 11 · B · Khmer · Afternoon|17|3|20|
 |Grade 12 · A · Khmer · Afternoon|17|3|20|
 |Grade 12 · B · Khmer · Afternoon|17|3|20|
+|Grade 9 · A · Chinese · Evening|10|0|10|
+|Grade 9 · B · Chinese · Evening|10|0|10|
+|Grade 10 · A · Chinese · Evening|10|0|10|
+|Grade 10 · B · Chinese · Evening|10|0|10|
+|Grade 11 · A · Chinese · Evening|10|0|10|
+|Grade 11 · B · Chinese · Evening|10|0|10|
+|Grade 12 · A · Chinese · Evening|10|0|10|
+|Grade 12 · B · Chinese · Evening|10|0|10|
+|C01 · Japan · Evening|5|0|5|
 
 ## Teacher setup and capacity
 
@@ -141,166 +173,134 @@ English and Chinese qualifications were imported from existing assignments with 
 
 | Teacher | Program | Qualifications | Duty windows | Scheduled / limit (hours) |
 |---|---|---|---|---|
-|Sarah Williams|Khmer||0|0 / 20|
-|James Anderson|Khmer||0|0 / 20|
-|Prof. Margaretta Harvey I|Khmer||0|14 / 20|
-|Prof. Benedict Cummerata|Khmer||0|17 / 20|
-|Sample Sok Dara|Khmer|Mathematics, Khmer|10|19 / 20|
-|Sample Chan Sophea|Khmer|Khmer, Physics|10|20 / 20|
-|Sample Chea Vanna|Khmer|Physics, Biology|10|20 / 20|
-|Sample Heng Bopha|Khmer|Biology, History|10|20 / 20|
-|Sample Lim Piseth|Khmer|History, Geography|10|20 / 20|
-|Sample Seng Sreymom|Khmer|Geography, Mathematics|10|20 / 20|
-|Sample Phan Rithy|Khmer|Mathematics, Khmer|10|20 / 20|
-|Sample Keo Sreyneang|Khmer|Khmer, Physics|10|20 / 20|
-|Sample Ouk Visal|Khmer|Physics, Biology|10|20 / 20|
-|Sample Long Chenda|Khmer|Biology, History|10|20 / 20|
-|Sample Sao Sophal|Khmer|History, Geography|10|20 / 20|
-|Sample Kim Sreypov|Khmer|Geography, Mathematics|10|20 / 20|
-|Sample Meas Vuthy|Khmer|Mathematics, Khmer|10|19 / 20|
-|Sample Yim Kanha|Khmer|Khmer, Physics|10|20 / 20|
-|Sample Nhem Panha|Khmer|Physics, Biology|10|20 / 20|
-|Sample Ros Sreyka|Khmer|Biology, History|10|20 / 20|
-|Sample Touch Samnang|Khmer|History, Geography|10|20 / 20|
-|Miss Betsy Kerluke|Khmer||0|21 / 20|
-|Sample Chum Malis|Khmer|Geography, Mathematics|10|20 / 20|
-|Sample Prak Sovan|Khmer|Mathematics, Khmer|10|20 / 20|
-|Sample Kong Rachana|Khmer|Khmer, Physics|10|20 / 20|
-|Mrs. Una Keeling|Khmer||0|0 / 20|
-|Sok Sovann|English|Mathematics, English language, English reading, English writing|15|45 / 20|
-|Chan Sovann|English|English, English language, English reading, English writing|15|45 / 20|
-|Chea Sovann|English|Khmer, English language, English reading, English writing|15|45 / 20|
-|Kim Sovann|English|Physics, English language, English reading, English writing|15|45 / 20|
-|Heng Sovann|English|Chemistry, English language, English reading, English writing|15|45 / 20|
-|Lim Sovann|English|Biology, English language, English reading, English writing|15|45 / 20|
-|Phan Sovann|English|History, English writing, English language, English reading|15|45 / 20|
-|Ros Sovann|English|Geography, English reading, English writing, English language|15|45 / 20|
-|Seng Sovann|English|Computer Science, English language, English reading, English writing|15|45 / 20|
-|Vann Sovann|English|Physical Education, English writing, English language, English reading|15|45 / 20|
-|Sok Sothea|Chinese|Mathematics, Chinese reading, Chinese language, Chinese writing|5|10 / 20|
-|Chan Sothea|Chinese|English, Chinese reading, Chinese language, Chinese writing|5|10 / 20|
-|Chea Sothea|Chinese|Khmer, Chinese language, Chinese reading, Chinese writing|5|10 / 20|
-|Kim Sothea|Chinese|Physics, Chinese language, Chinese reading, Chinese writing|5|10 / 20|
-|Heng Sothea|Chinese|Chemistry, Chinese language, Chinese writing, Chinese reading|5|10 / 20|
-|Lim Sothea|Chinese|Biology, Chinese language, Chinese reading, Chinese writing|5|10 / 20|
-|Phan Sothea|Chinese|Chinese language, History, Chinese reading, Chinese writing|5|10 / 20|
-|Ros Sothea|Chinese|Geography, Chinese language, Chinese writing, Chinese reading|5|10 / 20|
-|Seng Sothea|Chinese|Computer Science, Chinese language, Chinese reading, Chinese writing|5|10 / 20|
-|Vann Sothea|Chinese|Chinese language, Physical Education, Chinese reading, Chinese writing|5|10 / 20|
-|Bernadette Marquardt|Khmer||0|0 / 20|
-|Berry Keebler|Khmer||0|0 / 20|
-|Isabel Berge|Khmer||0|0 / 20|
-|Dr. Ron Gibson PhD|Khmer||0|6 / 20|
+|Sarah Williams|Khmer|English, Mathematics|10|8 / 40|
+|James Anderson|Khmer|English, Mathematics|10|8 / 40|
+|Prof. Margaretta Harvey I|Khmer|History, Khmer|10|7 / 40|
+|Prof. Benedict Cummerata|Khmer|Mathematics, Physics|10|7 / 40|
+|Chan Sovann|English|English Grammar, English Vocabulary, English Reading, English Writing, English Listening, English Speaking|15|40 / 40|
+|Chea Sovann|English|English Grammar, English Vocabulary, English Reading, English Writing, English Listening, English Speaking|15|40 / 40|
+|Kim Sovann|English|English Grammar, English Vocabulary, English Reading, English Writing, English Listening, English Speaking|15|40 / 40|
+|Heng Sovann|English|English Grammar, English Vocabulary, English Reading, English Writing, English Listening, English Speaking|15|40 / 40|
+|Lim Sovann|English|English Grammar, English Vocabulary, English Reading, English Writing, English Listening, English Speaking|15|40 / 40|
+|Phan Sovann|English|English Grammar, English Vocabulary, English Reading, English Writing, English Listening, English Speaking|15|40 / 40|
+|Ros Sovann|English|English Grammar, English Vocabulary, English Reading, English Writing, English Listening, English Speaking|15|40 / 40|
+|Seng Sovann|English|English Grammar, English Vocabulary, English Reading, English Writing, English Listening, English Speaking|15|40 / 40|
+|Vann Sovann|English|English Grammar, English Vocabulary, English Reading, English Writing, English Listening, English Speaking|15|40 / 40|
+|Nhem Dara|English|English Grammar, English Vocabulary, English Reading, English Writing, English Listening, English Speaking|15|40 / 40|
+|Mao Piseth|English|English Grammar, English Vocabulary, English Reading, English Writing, English Listening, English Speaking|5|10 / 10|
+|Meas Sopheak|Chinese|Chinese language, Chinese reading, Chinese writing, Chinese Vocabulary, Chinese Reading, Chinese Writing, Chinese Listening, Chinese Speaking|5|10 / 10|
+|Yim Sreynich|Chinese|Chinese language, Chinese reading, Chinese writing, Chinese Vocabulary, Chinese Reading, Chinese Writing, Chinese Listening, Chinese Speaking|5|10 / 10|
+|Jet Kdab|Japan|Japanese Grammar, Japanese Listening/Reading, Japanese Speaking, Japanese Vocabulary, Japanese Writing|5|5 / 5|
+|Chum Sovan|Japan|Japanese Grammar, Japanese Vocabulary, Japanese Speaking, Japanese Writing, Japanese Listening/Reading|5|5 / 20|
+|Miss Betsy Kerluke|Khmer|History, Biology|10|5 / 40|
+|Mrs. Una Keeling|Khmer|English, Mathematics|10|7 / 40|
+|Pich Sreymom|English|English Grammar, English Vocabulary, English Reading, English Writing, English Listening, English Speaking|5|10 / 10|
+|Suon Rithy|English|English Grammar, English Vocabulary, English Reading, English Writing, English Listening, English Speaking|5|10 / 10|
+|Sok Dara|Khmer|Mathematics, Khmer|10|20 / 40|
+|Chan Sophea|Khmer|Mathematics, Khmer|10|22 / 40|
+|Chea Vanna|Khmer|Mathematics, Khmer|10|20 / 40|
+|Heng Bopha|Khmer|Mathematics, Khmer|10|20 / 40|
+|Lim Piseth|Khmer|History, Geography|10|32 / 40|
+|Seng Sreymom|Khmer|History, Geography|10|32 / 40|
+|Sok Sothea|Chinese|Chinese language, Chinese reading, Chinese writing, Chinese Vocabulary, Chinese Reading, Chinese Writing, Chinese Listening, Chinese Speaking|5|10 / 10|
+|Chan Sothea|Chinese|Chinese language, Chinese reading, Chinese writing, Chinese Vocabulary, Chinese Reading, Chinese Writing, Chinese Listening, Chinese Speaking|5|10 / 10|
+|Chea Sothea|Chinese|Chinese language, Chinese reading, Chinese writing, Chinese Vocabulary, Chinese Reading, Chinese Writing, Chinese Listening, Chinese Speaking|5|10 / 10|
+|Bernadette Marquardt|Khmer|English, Mathematics|10|7 / 40|
+|Berry Keebler|Khmer|Khmer, English|10|8 / 40|
+|Isabel Berge|Khmer|Khmer, English|10|8 / 40|
+|Dr. Ron Gibson PhD|Khmer|English, Mathematics|10|9 / 40|
+|Kim Sothea|Chinese|Chinese language, Chinese reading, Chinese writing, Chinese Vocabulary, Chinese Reading, Chinese Writing, Chinese Listening, Chinese Speaking|5|10 / 10|
+|Heng Sothea|Chinese|Chinese language, Chinese reading, Chinese writing, Chinese Vocabulary, Chinese Reading, Chinese Writing, Chinese Listening, Chinese Speaking|5|10 / 10|
+|Lim Sothea|Chinese|Chinese language, Chinese reading, Chinese writing, Chinese Vocabulary, Chinese Reading, Chinese Writing, Chinese Listening, Chinese Speaking|5|10 / 10|
+|Phan Sothea|Chinese|Chinese language, Chinese reading, Chinese writing, Chinese Vocabulary, Chinese Reading, Chinese Writing, Chinese Listening, Chinese Speaking|5|10 / 10|
+|Ros Sothea|Chinese|Chinese language, Chinese reading, Chinese writing, Chinese Vocabulary, Chinese Reading, Chinese Writing, Chinese Listening, Chinese Speaking|5|10 / 10|
+|Seng Sothea|Chinese|Chinese language, Chinese reading, Chinese writing, Chinese Vocabulary, Chinese Reading, Chinese Writing, Chinese Listening, Chinese Speaking|5|10 / 10|
+|Vann Sothea|Chinese|Chinese language, Chinese reading, Chinese writing, Chinese Vocabulary, Chinese Reading, Chinese Writing, Chinese Listening, Chinese Speaking|5|10 / 10|
+|Phan Rithy|Khmer|History, Geography|10|32 / 40|
+|Keo Sreyneang|Khmer|History, Geography|10|32 / 40|
+|Ouk Visal|Khmer|Physics, Biology|10|32 / 40|
+|Long Chenda|Khmer|Physics, Biology|10|33 / 40|
+|Sao Sophal|Khmer|Physics, Biology|10|33 / 40|
+|Kim Sreypov|Khmer|Physics, Biology|10|32 / 40|
+|Meas Vuthy|Khmer|English, Chemistry|10|11 / 40|
+|Yim Kanha|Khmer|English, Chemistry|10|8 / 40|
+|Nhem Panha|Khmer|Computer Science, Physical Education|10|16 / 40|
+|Ros Sreyka|Khmer|Science, Computer Studies|10|15 / 40|
+|Touch Samnang|Khmer|Art, History|10|32 / 40|
+|Chum Malis|Khmer|Mathematics, Physics|10|15 / 40|
+|Prak Sovan|Khmer|Khmer, Biology|10|23 / 40|
+|Kong Rachana|Khmer|Geography, English|10|32 / 40|
+|Touch Bopha|English|English Grammar, English Vocabulary, English Reading, English Writing, English Listening, English Speaking|5|10 / 10|
+|Chum Sopheak|English|English Grammar, English Vocabulary, English Reading, English Writing, English Listening, English Speaking|5|10 / 10|
+|Keo Vichea|English|English Grammar, English Vocabulary, English Reading, English Writing, English Listening, English Speaking|5|10 / 10|
+|Long Sreyneang|English|English Grammar, English Vocabulary, English Reading, English Writing, English Listening, English Speaking|5|10 / 10|
+|Ouk Sreypov|English|English Grammar, English Vocabulary, English Reading, English Writing, English Listening, English Speaking|15|40 / 40|
+|Duy Kanika|English|English Grammar, English Vocabulary, English Reading, English Writing, English Listening, English Speaking|5|10 / 10|
+|Em Vannak|English|English Grammar, English Vocabulary, English Reading, English Writing, English Listening, English Speaking|5|10 / 10|
+|Hem Sophea|English|English Grammar, English Vocabulary, English Reading, English Writing, English Listening, English Speaking|5|10 / 10|
+|Ly Rachana|English|English Grammar, English Vocabulary, English Reading, English Writing, English Listening, English Speaking|5|10 / 10|
+|Nou Visal|English|English Grammar, English Vocabulary, English Reading, English Writing, English Listening, English Speaking|5|10 / 10|
+|Sok Bopha|Japan|Japanese Grammar, Japanese Vocabulary, Japanese Speaking, Japanese Writing, Japanese Listening/Reading|5|0 / 20|
+|Chan Dara|Japan|Japanese Grammar, Japanese Vocabulary, Japanese Speaking, Japanese Writing, Japanese Listening/Reading|5|5 / 20|
+|Chea Sopheak|Japan|Japanese Grammar, Japanese Vocabulary, Japanese Speaking, Japanese Writing, Japanese Listening/Reading|5|5 / 20|
+|Heng Sreyneang|Japan|Japanese Grammar, Japanese Vocabulary, Japanese Speaking, Japanese Writing, Japanese Listening/Reading|5|0 / 20|
+|Lim Vannak|Japan|Japanese Grammar, Japanese Vocabulary, Japanese Speaking, Japanese Writing, Japanese Listening/Reading|5|0 / 20|
+|Seng Sophea|Japan|Japanese Grammar, Japanese Vocabulary, Japanese Speaking, Japanese Writing, Japanese Listening/Reading|5|0 / 20|
+|Phan Rachana|Japan|Japanese Grammar, Japanese Vocabulary, Japanese Speaking, Japanese Writing, Japanese Listening/Reading|5|0 / 20|
+|Kong Piseth|Japan|Japanese Grammar, Japanese Vocabulary, Japanese Speaking, Japanese Writing, Japanese Listening/Reading|5|0 / 20|
+|Ly Sreypov|Japan|Japanese Grammar, Japanese Vocabulary, Japanese Speaking, Japanese Writing, Japanese Listening/Reading|5|0 / 20|
+|Keo Visal|Japan|Japanese Grammar, Japanese Vocabulary, Japanese Speaking, Japanese Writing, Japanese Listening/Reading|5|0 / 20|
+|Meas Kanika|Japan|Japanese Grammar, Japanese Vocabulary, Japanese Speaking, Japanese Writing, Japanese Listening/Reading|5|0 / 20|
+|Sok Sovann|English|English Grammar, English Vocabulary, English Reading, English Writing, English Listening, English Speaking|15|40 / 40|
 
 ## Remaining unscheduled periods
 
-Last scheduling pass: 0 additional lessons; 934 hourly periods could not be assigned under current constraints. These are genuine timetable shortages, separate from the resolved missing-hour configuration.
+Last scheduling pass: 499 additional lessons; 487 hourly periods could not be assigned under current constraints. These are genuine timetable shortages, separate from the resolved missing-hour configuration.
 
 | Class | Unfilled hourly periods | Reasons |
 |---|---|---|
-|Grade 9 · C · Khmer · Morning|2|No qualified English teacher; No qualified Science teacher; No qualified Computer Studies teacher; No qualified Art teacher; Weekly subject target already met|
-|Grade 10 · B · Khmer · Morning|1|No qualified English teacher; No qualified Science teacher; No qualified Computer Studies teacher; No qualified Art teacher; No qualified Chemistry teacher; No qualified Computer Science teacher; No qualified Physical Education teacher; Teacher workload limit; Weekly subject target already met|
-|Grade 10 · C · Khmer · Morning|1|Teacher workload limit; No qualified English teacher; No qualified Science teacher; No qualified Computer Studies teacher; No qualified Art teacher; Weekly subject target already met|
-|Grade 11 · A · Khmer · Morning|5|No qualified English teacher; No qualified Chemistry teacher; Teacher workload limit; No qualified Computer Science teacher; No qualified Physical Education teacher; Weekly subject target already met|
-|Grade 11 · B · Khmer · Morning|2|No qualified English teacher; Teacher workload limit; No qualified Chemistry teacher; No qualified Computer Science teacher; No qualified Physical Education teacher; Weekly subject target already met|
-|Grade 1 · A · English · Morning|18|Teacher workload limit|
-|Grade 1 · A · English · Afternoon|13|Teacher workload limit|
-|Grade 1 · A · English · Evening|1|Weekly subject target already met|
-|Grade 1 · B · English · Morning|20|Teacher workload limit|
-|Grade 1 · B · English · Afternoon|16|Teacher workload limit|
-|Grade 1 · B · English · Evening|2|Weekly subject target already met|
-|Grade 2 · A · English · Morning|20|Teacher workload limit|
-|Grade 2 · A · English · Afternoon|20|Teacher workload limit|
-|Grade 2 · A · English · Evening|5|Teacher workload limit|
-|Grade 2 · B · English · Morning|20|Teacher workload limit|
-|Grade 2 · B · English · Afternoon|20|Teacher workload limit|
-|Grade 2 · B · English · Evening|5|Teacher workload limit|
-|Grade 3 · A · English · Morning|18|Teacher workload limit|
-|Grade 3 · A · English · Afternoon|20|Teacher workload limit|
-|Grade 3 · A · English · Evening|5|Teacher workload limit|
-|Grade 3 · B · English · Morning|14|Teacher workload limit|
-|Grade 3 · B · English · Afternoon|20|Teacher workload limit|
-|Grade 3 · B · English · Evening|5|Teacher workload limit|
-|Grade 4 · A · English · Morning|10|Teacher workload limit|
-|Grade 4 · A · English · Afternoon|18|Teacher workload limit|
-|Grade 4 · A · English · Evening|5|Teacher workload limit; Weekly subject target already met|
-|Grade 4 · B · English · Morning|6|Teacher workload limit; Weekly subject target already met|
-|Grade 4 · B · English · Afternoon|15|Teacher workload limit|
-|Grade 4 · B · English · Evening|5|Teacher workload limit; Weekly subject target already met|
-|Grade 5 · A · English · Morning|2|Teacher workload limit; Weekly subject target already met|
-|Grade 5 · A · English · Afternoon|12|Teacher workload limit|
-|Grade 5 · A · English · Evening|4|Weekly subject target already met|
-|Grade 5 · B · English · Afternoon|9|Teacher workload limit; Weekly subject target already met|
-|Grade 5 · B · English · Evening|3|Weekly subject target already met|
-|Grade 6 · A · English · Afternoon|6|Teacher workload limit; Weekly subject target already met|
-|Grade 6 · A · English · Evening|2|Weekly subject target already met|
-|Grade 6 · B · English · Afternoon|5|Teacher workload limit; Weekly subject target already met|
-|Grade 6 · B · English · Evening|1|Weekly subject target already met|
-|Grade 7 · A · English · Afternoon|5|Teacher workload limit; Weekly subject target already met|
-|Grade 7 · B · English · Afternoon|5|Teacher workload limit; Weekly subject target already met|
-|Grade 8 · A · English · Morning|2|Teacher workload limit; Weekly subject target already met|
-|Grade 8 · A · English · Afternoon|5|Teacher workload limit; Weekly subject target already met|
-|Grade 8 · B · English · Morning|6|Teacher workload limit; Weekly subject target already met|
-|Grade 8 · B · English · Afternoon|5|Teacher workload limit; Weekly subject target already met|
-|Grade 9 · A · English · Morning|10|Teacher workload limit|
-|Grade 9 · A · English · Afternoon|7|Teacher workload limit; Weekly subject target already met|
-|Grade 9 · B · English · Morning|14|Teacher workload limit|
-|Grade 9 · B · English · Afternoon|10|Teacher workload limit; Weekly subject target already met|
-|Grade 10 · A · English · Morning|20|Teacher workload limit|
-|Grade 10 · A · English · Afternoon|19|Teacher workload limit|
-|Grade 10 · A · English · Evening|3|Weekly subject target already met|
-|Grade 10 · B · English · Morning|20|Teacher workload limit|
-|Grade 10 · B · English · Afternoon|20|Teacher workload limit|
-|Grade 10 · B · English · Evening|4|Weekly subject target already met|
-|Grade 11 · A · English · Morning|20|Teacher workload limit|
-|Grade 11 · A · English · Afternoon|20|Teacher workload limit|
-|Grade 11 · A · English · Evening|5|Teacher workload limit|
-|Grade 11 · B · English · Morning|20|Teacher workload limit|
-|Grade 11 · B · English · Afternoon|20|Teacher workload limit|
-|Grade 11 · B · English · Evening|5|Teacher workload limit|
-|Grade 12 · A · English · Morning|20|Teacher workload limit|
-|Grade 12 · A · English · Afternoon|20|Teacher workload limit|
-|Grade 12 · A · English · Evening|5|Teacher workload limit|
-|Grade 12 · B · English · Morning|20|Teacher workload limit|
-|Grade 12 · B · English · Afternoon|20|Teacher workload limit|
-|Grade 12 · B · English · Evening|5|Teacher workload limit|
-|Grade 1 · A · Chinese · Evening|2|Teacher, class or room already occupied; Weekly subject target already met|
-|Grade 1 · B · Chinese · Evening|2|Teacher, class or room already occupied; Weekly subject target already met|
-|Grade 2 · A · Chinese · Evening|3|Teacher, class or room already occupied; Weekly subject target already met|
-|Grade 2 · B · Chinese · Evening|3|Teacher, class or room already occupied; Weekly subject target already met|
-|Grade 3 · A · Chinese · Evening|3|Teacher, class or room already occupied; Weekly subject target already met|
-|Grade 3 · B · Chinese · Evening|3|Teacher, class or room already occupied; Weekly subject target already met|
-|Grade 4 · A · Chinese · Evening|3|Teacher, class or room already occupied; Weekly subject target already met|
-|Grade 4 · B · Chinese · Evening|3|Teacher, class or room already occupied; Weekly subject target already met|
-|Grade 5 · A · Chinese · Evening|3|Weekly subject target already met|
-|Grade 5 · B · Chinese · Evening|3|Weekly subject target already met|
-|Grade 6 · A · Chinese · Evening|3|Weekly subject target already met|
-|Grade 6 · B · Chinese · Evening|3|Weekly subject target already met|
-|Grade 7 · A · Chinese · Evening|3|Weekly subject target already met|
-|Grade 7 · B · Chinese · Evening|3|Weekly subject target already met|
-|Grade 8 · A · Chinese · Evening|3|Weekly subject target already met|
-|Grade 8 · B · Chinese · Evening|3|Weekly subject target already met|
-|Grade 9 · A · Chinese · Evening|3|Weekly subject target already met|
-|Grade 9 · B · Chinese · Evening|3|Weekly subject target already met|
-|Grade 10 · A · Chinese · Evening|3|Teacher, class or room already occupied; Weekly subject target already met|
-|Grade 10 · B · Chinese · Evening|3|Teacher, class or room already occupied; Weekly subject target already met|
-|Grade 11 · A · Chinese · Evening|3|Teacher, class or room already occupied; Weekly subject target already met|
-|Grade 11 · B · Chinese · Evening|3|Teacher, class or room already occupied; Weekly subject target already met|
-|Grade 12 · A · Chinese · Evening|3|Teacher, class or room already occupied; Weekly subject target already met|
-|Grade 12 · B · Chinese · Evening|3|Teacher, class or room already occupied; Weekly subject target already met|
-|Grade 7 · A · Khmer · Afternoon|5|Weekly subject target already met; Teacher workload limit|
-|Grade 8 · A · Khmer · Afternoon|5|Weekly subject target already met; Teacher workload limit|
-|Grade 9 · A · Khmer · Afternoon|8|Teacher workload limit; Weekly subject target already met|
-|Grade 10 · A · Khmer · Afternoon|19|Teacher workload limit|
-|Grade 7 · B · Khmer · Afternoon|4|Weekly subject target already met; Teacher workload limit|
-|Grade 7 · C · Khmer · Afternoon|5|Weekly subject target already met; Teacher workload limit|
-|Grade 8 · B · Khmer · Afternoon|5|Weekly subject target already met; Teacher workload limit|
-|Grade 8 · C · Khmer · Afternoon|10|Teacher workload limit; Weekly subject target already met|
-|Grade 9 · B · Khmer · Afternoon|16|Teacher workload limit; Weekly subject target already met|
-|Grade 9 · C · Khmer · Afternoon|16|Teacher workload limit; Weekly subject target already met|
-|Grade 10 · B · Khmer · Afternoon|20|Teacher workload limit|
-|Grade 10 · C · Khmer · Afternoon|18|Teacher workload limit|
-|Grade 11 · A · Khmer · Afternoon|15|Teacher workload limit|
-|Grade 11 · B · Khmer · Afternoon|12|Teacher workload limit; Weekly subject target already met|
-|Grade 12 · A · Khmer · Afternoon|9|Teacher workload limit; Weekly subject target already met|
-|Grade 12 · B · Khmer · Afternoon|6|Weekly subject target already met; Teacher workload limit|
+|Grade 9 · C · Khmer · Morning|2|Teacher has a designated free period.; Teacher, class or room already occupied; Weekly subject target already met|
+|Grade 10 · B · Khmer · Morning|2|Weekly subject target already met; Teacher, class or room already occupied|
+|Grade 10 · C · Khmer · Morning|2|Teacher has a designated free period.; Teacher, class or room already occupied; Weekly subject target already met|
+|Grade 11 · A · Khmer · Morning|4|Teacher, class or room already occupied; Teacher has a designated free period.; Weekly subject target already met|
+|Grade 11 · B · Khmer · Morning|4|Teacher, class or room already occupied; Weekly subject target already met|
+|Grade 12 · B · Khmer · Morning|10|Teacher, class or room already occupied; Teacher has a designated free period.; Weekly subject target already met|
+|Grade 7 · A · Khmer · Afternoon|2|Weekly subject target already met; Teacher, class or room already occupied|
+|Grade 8 · A · Khmer · Afternoon|2|Weekly subject target already met; Teacher, class or room already occupied|
+|Grade 9 · A · Khmer · Afternoon|2|Weekly subject target already met; Teacher, class or room already occupied|
+|Grade 7 · C · Khmer · Afternoon|2|Weekly subject target already met; Teacher, class or room already occupied|
+|Grade 8 · C · Khmer · Afternoon|6|Teacher, class or room already occupied; Weekly subject target already met; Teacher has a designated free period.|
+|Grade 10 · B · Khmer · Afternoon|5|Teacher has a designated free period.; Teacher, class or room already occupied|
+|Grade 10 · C · Khmer · Afternoon|3|Teacher, class or room already occupied; Teacher has a designated free period.|
+|Grade 11 · A · Khmer · Afternoon|12|Teacher has a designated free period.; Teacher, class or room already occupied; Weekly subject target already met|
+|Grade 11 · B · Khmer · Afternoon|12|Teacher, class or room already occupied; Weekly subject target already met; Teacher has a designated free period.|
+|Grade 12 · A · Khmer · Afternoon|6|Teacher, class or room already occupied; Weekly subject target already met; Teacher has a designated free period.|
+|Grade 12 · B · Khmer · Afternoon|13|Teacher has a designated free period.; Teacher, class or room already occupied; Weekly subject target already met|
+|Grade 7 · D · Khmer · Morning|8|Teacher has a designated free period.; Teacher, class or room already occupied; Weekly subject target already met|
+|Grade 7 · D · Khmer · Afternoon|12|Teacher has a designated free period.; Teacher, class or room already occupied; Weekly subject target already met|
+|Grade 7 · E · Khmer · Morning|9|Teacher has a designated free period.; Teacher, class or room already occupied; Weekly subject target already met|
+|Grade 7 · E · Khmer · Afternoon|14|Teacher has a designated free period.; Teacher, class or room already occupied|
+|Grade 8 · D · Khmer · Morning|9|Teacher, class or room already occupied; Teacher has a designated free period.; Weekly subject target already met|
+|Grade 8 · D · Khmer · Afternoon|17|Teacher, class or room already occupied; Teacher has a designated free period.|
+|Grade 8 · E · Khmer · Morning|9|Teacher, class or room already occupied; Teacher has a designated free period.; Weekly subject target already met|
+|Grade 8 · E · Khmer · Afternoon|17|Teacher, class or room already occupied; Teacher has a designated free period.|
+|Grade 9 · D · Khmer · Morning|10|Teacher, class or room already occupied; Teacher has a designated free period.; Weekly subject target already met|
+|Grade 9 · D · Khmer · Afternoon|17|Teacher has a designated free period.; Teacher, class or room already occupied|
+|Grade 9 · E · Khmer · Morning|13|Teacher, class or room already occupied; Teacher has a designated free period.; Weekly subject target already met|
+|Grade 9 · E · Khmer · Afternoon|17|Teacher, class or room already occupied; Teacher has a designated free period.|
+|Grade 10 · D · Khmer · Morning|13|Teacher, class or room already occupied; Teacher has a designated free period.; Weekly subject target already met|
+|Grade 10 · D · Khmer · Afternoon|17|Teacher, class or room already occupied; Teacher has a designated free period.|
+|Grade 10 · E · Khmer · Morning|13|Teacher, class or room already occupied; Teacher has a designated free period.; Weekly subject target already met|
+|Grade 10 · E · Khmer · Afternoon|17|Teacher, class or room already occupied; Teacher has a designated free period.|
+|Grade 11 · C · Khmer · Morning|13|Teacher, class or room already occupied; Teacher has a designated free period.; Weekly subject target already met|
+|Grade 11 · C · Khmer · Afternoon|16|Teacher, class or room already occupied; Teacher has a designated free period.|
+|Grade 11 · D · Khmer · Morning|13|Teacher, class or room already occupied; Teacher has a designated free period.; Weekly subject target already met|
+|Grade 11 · D · Khmer · Afternoon|17|Teacher, class or room already occupied; Teacher has a designated free period.|
+|Grade 11 · E · Khmer · Morning|13|Teacher, class or room already occupied; Teacher has a designated free period.; Weekly subject target already met|
+|Grade 11 · E · Khmer · Afternoon|17|Teacher has a designated free period.; Teacher, class or room already occupied|
+|Grade 12 · C · Khmer · Morning|15|Teacher, class or room already occupied; Teacher has a designated free period.; Weekly subject target already met|
+|Grade 12 · C · Khmer · Afternoon|15|Teacher, class or room already occupied; Teacher has a designated free period.|
+|Grade 12 · D · Khmer · Morning|16|Teacher, class or room already occupied; Teacher has a designated free period.|
+|Grade 12 · D · Khmer · Afternoon|17|Teacher, class or room already occupied; Teacher has a designated free period.|
+|Grade 12 · E · Khmer · Morning|17|Teacher, class or room already occupied; Teacher has a designated free period.|
+|Grade 12 · E · Khmer · Afternoon|17|Teacher, class or room already occupied; Teacher has a designated free period.|
