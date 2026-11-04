@@ -34,6 +34,38 @@
     </div>
     <div class="room-editor-actions"><span><i class="bi bi-check2-circle" aria-hidden="true"></i> You can update these details anytime.</span><div><a class="btn btn-light" href="{{ route('classrooms.index') }}">Cancel</a><button class="btn btn-primary" type="submit">{{ $classroom->exists ? 'Save changes' : 'Create classroom' }} <i class="bi bi-arrow-right ms-2" aria-hidden="true"></i></button></div></div>
 </form>
+<dialog data-create-program-dialog style="border:1px solid var(--border-color);border-radius:20px;padding:28px;width:min(520px,90vw)">
+    <form data-create-program-form action="{{ route('programs.store') }}" method="post">
+        @csrf
+        <h2>Create new program</h2>
+        <p>Add a program without leaving your classroom setup.</p>
+        <label class="form-label" for="inline-program-name">Program name</label>
+        <input class="form-control mb-3" id="inline-program-name" name="name" maxlength="20" required>
+        <fieldset><legend class="h5">Study sessions</legend>
+            @foreach(['Morning' => 'Morning 7–11 AM', 'Afternoon' => 'Afternoon 1–5 PM', 'Evening' => 'Evening 5:30–6:30 PM'] as $value => $label)
+                <label class="d-block mb-2"><input class="form-check-input" type="checkbox" name="sessions[]" value="{{ $value }}"> {{ $label }}</label>
+            @endforeach
+        </fieldset>
+        <p data-create-program-error role="alert" class="text-danger"></p>
+        <div class="d-flex gap-2 mt-3"><button type="button" class="btn btn-light" data-cancel-create-program>Cancel</button><button type="submit" class="btn btn-primary">Create program</button></div>
+    </form>
+</dialog>
+<dialog data-create-class-dialog style="border:1px solid var(--border-color);border-radius:20px;padding:28px;width:min(640px,90vw);max-height:90vh;overflow:auto">
+    <form data-create-class-form action="{{ route('class-groups.store') }}" method="post">
+        @csrf
+        <h2>Create student class</h2>
+        <p>Program: <strong data-inline-class-program></strong>. Students can enroll later.</p>
+        <input type="hidden" name="program"><input type="hidden" name="status" value="active">
+        <label class="form-label" for="inline-class-name">Class name</label><input class="form-control mb-3" id="inline-class-name" name="name" maxlength="100" required>
+        <label class="form-label" for="inline-class-grade">Grade</label><select class="form-select mb-3" id="inline-class-grade" name="grade" required><option value="">Choose a grade</option>@foreach(range(1,12) as $grade)<option value="{{ $grade }}">Grade {{ $grade }}</option>@endforeach</select>
+        <label class="form-label" for="inline-class-section">Section</label><select class="form-select mb-3" id="inline-class-section" name="section"><option value="">No section</option>@foreach(range('A','E') as $section)<option>{{ $section }}</option>@endforeach</select>
+        <label class="form-label" for="inline-class-teacher">Class teacher</label><select class="form-select mb-3" id="inline-class-teacher" name="teacher_id"><option value="">Unassigned</option>@foreach($classTeachers as $teacher)<option value="{{ $teacher->id }}" data-program="{{ $teacher->program }}">{{ $teacher->name }}</option>@endforeach</select>
+        <label class="form-label" for="inline-class-capacity">Student capacity</label><input class="form-control mb-3" id="inline-class-capacity" type="number" name="capacity" value="30" min="1" max="500" required>
+        <label class="form-label" for="inline-class-curriculum">Subjects to study</label><textarea class="form-control mb-3" id="inline-class-curriculum" name="curriculum" rows="5" maxlength="5000"></textarea>
+        <p data-create-class-error role="alert" class="text-danger"></p>
+        <div class="d-flex gap-2"><button type="button" class="btn btn-light" data-cancel-create-class>Cancel</button><button type="submit" class="btn btn-primary">Create student class</button></div>
+    </form>
+</dialog>
 @endsection
 
 @push('scripts')

@@ -299,6 +299,83 @@
     if (config.old.class_teacher_id) classTeacher.value = config.old.class_teacher_id;
     render();
     updateSummary();
+    const programDialog = document.querySelector('[data-create-program-dialog]');
+    const programForm = programDialog.querySelector('form');
+    const programError = programDialog.querySelector('[data-create-program-error]');
+    root.querySelector('[data-open-create-program]').addEventListener('click', () => {
+        programError.textContent = '';
+        programDialog.showModal();
+    });
+    programDialog.querySelector('[data-cancel-create-program]').addEventListener('click', () => programDialog.close());
+    programForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        const submit = programForm.querySelector('[type="submit"]');
+        submit.disabled = true;
+        programError.textContent = '';
+        try {
+            const response = await fetch(programForm.action, {method: 'POST', body: new FormData(programForm), headers: {Accept: 'application/json'}});
+            const payload = await response.json();
+            if (!response.ok) throw new Error(payload.errors ? Object.values(payload.errors).flat().join(' ') : payload.message || 'Could not create the program. Please try again.');
+            config.sessions[payload.program.name] = payload.program.sessions;
+            program.add(option(payload.program.name, payload.program.name));
+            program.value = payload.program.name;
+            program.dispatchEvent(new Event('change', {bubbles: true}));
+            programDialog.close();
+            programForm.reset();
+        } catch (error) {
+            programError.textContent = error.message;
+        } finally {
+            submit.disabled = false;
+        }
+    });
+    const classDialog = document.querySelector('[data-create-class-dialog]');
+    const classForm = classDialog.querySelector('form');
+    const classError = classDialog.querySelector('[data-create-class-error]');
+    const classTeacherOptions = [...classForm.elements.teacher_id.options].filter(item => item.value).map(item => ({id: item.value, name: item.textContent, program: item.dataset.program}));
+    root.querySelector('[data-open-create-class]').addEventListener('click', () => {
+        classForm.reset();
+        classError.textContent = '';
+        classForm.elements.program.value = program.value;
+        classDialog.querySelector('[data-inline-class-program]').textContent = program.value;
+        const khmer = program.value === 'Khmer';
+        classForm.elements.section.disabled = !khmer;
+        classForm.elements.section.required = khmer;
+        [...classForm.elements.grade.options].forEach(item => { item.disabled = khmer && Number(item.value) < 7; });
+        classForm.elements.teacher_id.replaceChildren(option('', 'Unassigned'), ...classTeacherOptions.filter(item => item.program === program.value).map(item => {
+            const assignments = config.classes.filter(cls => String(cls.teacher_id) === String(item.id));
+            const label = assignments.length ? `Busy — ${[...new Set(assignments.map(cls => cls.label))].join(', ')}` : 'No classroom yet';
+            return option(item.id, `${item.name} — ${label}`, program.value === 'Japan' && assignments.length > 0);
+        }));
+        classForm.elements.curriculum.value = [...new Set(config.classes.filter(cls => cls.program === program.value).flatMap(cls => cls.subjects.map(subject => subject.name)))].join('\n');
+        classDialog.showModal();
+    });
+    classDialog.querySelector('[data-cancel-create-class]').addEventListener('click', () => classDialog.close());
+    classForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        const submit = classForm.querySelector('[type="submit"]');
+        submit.disabled = true;
+        classError.textContent = '';
+        try {
+            const response = await fetch(classForm.action, {method: 'POST', body: new FormData(classForm), headers: {Accept: 'application/json'}});
+            const payload = await response.json();
+            if (!response.ok) throw new Error(payload.errors ? Object.values(payload.errors).flat().join(' ') : payload.message || 'Could not create the class. Please try again.');
+            config.classes.push(...payload.classes);
+            const created = payload.classes.find(cls => cls.session === session.value) || payload.classes[0];
+            if (!created) throw new Error('The class was saved, but no study session was returned. Refresh to load it.');
+            program.value = created.program;
+            syncSessions(created.session);
+            resetChoices();
+            syncClasses(String(created.id));
+            syncClassTeacher();
+            render();
+            updateSummary();
+            classDialog.close();
+        } catch (error) {
+            classError.textContent = error.message;
+        } finally {
+            submit.disabled = false;
+        }
+    });
     let submitting = false;
     let readyToSubmit = false;
     form.addEventListener('submit', async event => {

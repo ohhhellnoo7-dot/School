@@ -23,7 +23,7 @@ class StudentController extends Controller
         if ($request->input('program') === 'Khmer' && $request->input('session') === 'Evening') {
             $request->merge(['session' => null]);
         }
-        $request->validate(['program' => 'nullable|in:Khmer,Chinese,English', 'session' => 'nullable|in:Morning,Afternoon,Evening', 'search' => 'nullable|string|max:255', 'class' => 'nullable|integer|exists:school_classes,id', 'status' => 'nullable|in:active,inactive,graduated', 'sort' => 'nullable|in:name,student_number,gender,date_of_birth,enrollment_date,email,phone,status,school_class_id', 'direction' => 'nullable|in:asc,desc']);
+        $request->validate(['program' => ['nullable', Rule::in(\App\Models\Program::names())], 'session' => 'nullable|in:Morning,Afternoon,Evening', 'search' => 'nullable|string|max:255', 'class' => 'nullable|integer|exists:school_classes,id', 'status' => 'nullable|in:active,inactive,graduated', 'sort' => 'nullable|in:name,student_number,gender,date_of_birth,enrollment_date,email,phone,status,school_class_id', 'direction' => 'nullable|in:asc,desc']);
         // A class from a previous program/session selection must not hide matching students.
         if ($request->filled('class') && ! SchoolClass::whereKey($request->input('class'))
             ->when($request->program, fn ($q, $program) => $q->where('program', $program))

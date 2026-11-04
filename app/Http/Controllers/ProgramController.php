@@ -65,6 +65,7 @@ class ProgramController extends Controller
             throw ValidationException::withMessages(['name' => 'A program with this name already exists.']);
         }
         Program::create($data);
+        if ($request->expectsJson()) return response()->json(['program' => $data], 201);
 
         return redirect()->route('classrooms.index', ['program' => $data['name']])
             ->with('success', $data['name'].' program created. You can now select it for classes and classroom lessons.');

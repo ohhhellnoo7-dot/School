@@ -109,6 +109,30 @@ class ClassroomSetupTest extends TestCase
         $this->get(route('students.create'))->assertOk()->assertSee('Japanese Beginners')->assertSee('data-program="Japan"', false);
     }
 
+    public function test_inline_class_creation_returns_the_new_class_and_curriculum_without_redirecting(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'administrator']));
+        \App\Models\Program::firstOrCreate(['name' => 'Japan'], ['sessions' => ['Evening']]);
+        $this->postJson(route('class-groups.store'), [
+            'name' => 'Japan Beginners', 'program' => 'Japan', 'grade' => 1, 'capacity' => 30,
+            'status' => 'active', 'curriculum' => "Japanese Writing\nJapanese Vocabulary",
+        ])->assertCreated()->assertJsonCount(1, 'classes')->assertJsonPath('classes.0.program', 'Japan')
+            ->assertJsonPath('classes.0.session', 'Evening')->assertJsonCount(2, 'classes.0.subjects');
+        $this->assertDatabaseHas('school_classes', ['name' => 'Japan Beginners', 'program' => 'Japan']);
+    }
+
+    public function test_duplicate_class_name_in_another_grade_returns_validation_instead_of_database_error(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'administrator']));
+        \App\Models\Program::firstOrCreate(['name' => 'Japan'], ['sessions' => ['Evening']]);
+        $data = ['name' => 'C03', 'program' => 'Japan', 'grade' => 3, 'capacity' => 30, 'status' => 'active'];
+        $this->postJson(route('class-groups.store'), $data)->assertCreated();
+        $data['grade'] = 4;
+        $this->postJson(route('class-groups.store'), $data)->assertUnprocessable()->assertJsonValidationErrors('name');
+        $this->assertSame(1, ClassGroup::where('name', 'C03')->count());
+        $this->assertSame(1, SchoolClass::where('name', 'C03')->count());
+    }
+
     public function test_teacher_options_only_include_the_selected_program(): void
     {
         $f = $this->fixture();

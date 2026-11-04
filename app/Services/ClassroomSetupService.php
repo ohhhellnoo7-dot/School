@@ -32,6 +32,7 @@ class ClassroomSetupService
         }
         return ['buildings' => Building::orderBy('name')->get(), 'plannerClasses' => $plannerClasses,
             'japaneseTeachers' => $teachers,
+            'classTeachers' => \App\Models\User::where('role', 'teacher')->where('status', 'active')->orderBy('name')->get(['id', 'name', 'program']),
             'programSessions' => \App\Models\Program::sessionMap()];
     }
 

@@ -116,7 +116,7 @@ class ClassGroupController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $attributes = $this->validated($request);
         $curriculum = $request->validate(['curriculum' => 'nullable|string|max:5000']);
@@ -137,6 +137,10 @@ class ClassGroupController extends Controller
             return $classGroup;
         });
 
+        if ($request->expectsJson()) {
+            $planner = app(\App\Services\ClassroomSetupService::class)->formData();
+            return response()->json(['classes' => $planner['plannerClasses']->filter(fn ($class) => $class['class_group_id'] === $classGroup->id)->values()], 201);
+        }
         return redirect()->route('class-groups.show', $classGroup)
             ->with('success', "{$classGroup->display_name} was created with its study sessions.");
     }
@@ -230,6 +234,18 @@ class ClassGroupController extends Controller
         if ($duplicate) {
             throw ValidationException::withMessages([
                 'name' => 'That program, grade, and section already identify an existing class group.',
+            ]);
+        }
+
+        $existingClass = \App\Models\SchoolClass::where('name', $attributes['name'])
+            ->where('section', $attributes['section'] ?? '')
+            ->where('program', $attributes['program'])
+            ->whereIn('session', array_keys($this->programSessions()[$attributes['program']]))
+            ->when($classGroup, fn ($query) => $query->where(fn ($other) => $other->whereNull('class_group_id')->orWhere('class_group_id', '!=', $classGroup->id)))
+            ->exists();
+        if ($existingClass) {
+            throw ValidationException::withMessages([
+                'name' => 'A class named '.$attributes['name'].' already exists for this program and study session. Select the existing class or enter a different class name.',
             ]);
         }
 
