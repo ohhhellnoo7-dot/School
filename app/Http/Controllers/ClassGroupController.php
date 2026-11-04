@@ -270,13 +270,25 @@ class ClassGroupController extends Controller
 
     private function teachers()
     {
+        $assignments = collect();
+        $groups = ClassGroup::with(['schoolClasses.subjects', 'schoolClasses.schedules', 'bookings'])->get();
+        foreach ($groups as $group) {
+            $teacherIds = collect([$group->teacher_id])->merge($group->bookings->pluck('teacher_id'));
+            foreach ($group->schoolClasses as $class) {
+                $teacherIds = $teacherIds->push($class->teacher_id)->merge($class->subjects->pluck('teacher_id'))->merge($class->schedules->pluck('teacher_id'));
+            }
+            foreach ($teacherIds->filter()->unique() as $teacherId) {
+                $assignments->push(['teacher_id' => $teacherId, 'class_group_id' => $group->id, 'name' => $group->name]);
+            }
+        }
         return User::query()
             ->where('role', 'teacher')
             ->where(function ($query) {
                 $query->whereNull('status')->orWhere('status', 'active');
             })
             ->orderBy('name')
-            ->get(['id', 'name', 'program']);
+            ->get(['id', 'name', 'program'])
+            ->each(fn ($teacher) => $teacher->setAttribute('class_assignments', $assignments->where('teacher_id', $teacher->id)->values()));
     }
 
     private function visibleClassGroups(User $user)

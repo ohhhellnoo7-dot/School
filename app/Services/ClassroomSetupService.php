@@ -15,15 +15,23 @@ class ClassroomSetupService
     {
         $classes = SchoolClass::with('subjects', 'classGroup')->orderBy('name')->orderBy('section')->get();
         $plannerClasses = $classes->map(function ($class) {
-            return ['id' => $class->id, 'label' => $class->label, 'program' => $class->program, 'session' => $class->session, 'teacher_id' => $class->teacher_id,
+            return ['id' => $class->id, 'class_group_id' => $class->class_group_id, 'label' => $class->label, 'program' => $class->program, 'session' => $class->session, 'teacher_id' => $class->teacher_id,
                 'hours' => $class->sessionHours(), 'subjects' => $class->timetableOwner()->subjects->map(fn ($subject) => [
                     'id' => $subject->id, 'name' => $subject->name,
                     'minutes' => $class->program === 'Khmer' ? KhmerLessonDuration::minutes($subject) : 60,
                 ])->values()];
         })->values();
 
+        $lessons = \App\Models\Schedule::whereHas('schoolClass', fn ($query) => $query->where('program', 'Japan'))->get(['teacher_id', 'school_class_id']);
+        $teachers = \App\Models\User::where('role', 'teacher')->where('program', 'Japan')->where('status', 'active')->orderBy('name')->get(['id', 'name']);
+        foreach ($teachers as $teacher) {
+            $lessonClasses = $lessons->where('teacher_id', $teacher->id)->pluck('school_class_id');
+            $teacher->setAttribute('assignments', $classes->filter(fn ($class) => $class->program === 'Japan' &&
+                ($class->teacher_id === $teacher->id || $class->classGroup?->teacher_id === $teacher->id || $lessonClasses->contains($class->id)))
+                ->map(fn ($class) => ['id' => $class->id, 'class_group_id' => $class->class_group_id, 'name' => $class->name])->values());
+        }
         return ['buildings' => Building::orderBy('name')->get(), 'plannerClasses' => $plannerClasses,
-            'japaneseTeachers' => \App\Models\User::where('role', 'teacher')->where('program', 'Japan')->where('status', 'active')->orderBy('name')->get(['id', 'name']),
+            'japaneseTeachers' => $teachers,
             'programSessions' => \App\Models\Program::sessionMap()];
     }
 
@@ -53,6 +61,7 @@ class ClassroomSetupService
                 $building = Building::firstOrCreate(['name' => $newName], ['code' => (string) Str::uuid()]);
                 $attributes['building'] = $building->code;
             }
+            $editing = $classroom?->exists ?? false;
             $classroom ??= new Classroom;
             $classroom->fill($attributes)->save();
             if (! $request->boolean('plan_enabled')) return $classroom;
@@ -87,13 +96,16 @@ class ClassroomSetupService
                 $endMinute = TeacherManagementService::minute($slot['starts_at']) + $minutes;
                 $end = sprintf('%02d:%02d', intdiv($endMinute, 60), $endMinute % 60);
                 try {
+                    $existing = $editing ? \App\Models\Schedule::where('classroom_id', $classroom->id)->where('school_class_id', $owner->id)
+                        ->where('academic_year', $plan['academic_year'])->where('day', $slot['day'] ?? $plan['day'])
+                        ->get()->first(fn ($lesson) => substr($lesson->starts_at, 0, 5) === $slot['starts_at']) : null;
                     app(LessonManagementService::class)->save([
                         'school_class_id' => $owner->id, 'subject_id' => $subject->id, 'teacher_id' => $slot['teacher_id'],
                         'classroom_id' => $classroom->id, 'program' => $class->program, 'session' => $class->session,
                         'day' => $slot['day'] ?? $plan['day'], 'academic_year' => $plan['academic_year'],
                         'starts_at' => $slot['starts_at'], 'ends_at' => $end,
                         'room_change_reason' => $plan['room_change_reason'] ?? null,
-                    ]);
+                    ], $existing);
                 } catch (ValidationException $e) {
                     throw ValidationException::withMessages(['slots.'.$index.'.teacher_id' => $slot['starts_at'].': '.collect($e->errors())->flatten()->join(' ')]);
                 }

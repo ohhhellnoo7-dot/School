@@ -1,4 +1,4 @@
-<section class="classroom-setup room-editor-card" data-classroom-setup data-endpoint="{{ route('classrooms.setup-options') }}">
+<section class="classroom-setup room-editor-card" data-classroom-setup data-classroom-id="{{ $classroom->id }}" data-endpoint="{{ route('classrooms.setup-options') }}">
     @php($plannerConfig = ['classes' => $plannerClasses, 'sessions' => $programSessions, 'japaneseTeachers' => $japaneseTeachers, 'old' => old()])
     <script type="application/json" data-planner-config>@json($plannerConfig)</script>
     <div class="room-section-heading"><span class="room-step">02</span><div><h2>Program & lesson setup</h2><p>Plan a session now, or save your room and do this later.</p></div><span class="room-section-tag">Optional</span></div>
@@ -18,7 +18,7 @@
                 <label class="form-label" for="setup-class-teacher">Japanese class teacher — Monday to Friday</label>
                 <select class="form-select" id="setup-class-teacher" name="class_teacher_id" disabled>
                     <option value="">Choose one Japanese teacher for this class</option>
-                    @foreach($japaneseTeachers as $teacher)<option value="{{ $teacher->id }}">{{ $teacher->name }}</option>@endforeach
+                    @foreach($japaneseTeachers as $teacher)<option value="{{ $teacher->id }}">{{ $teacher->name }} — {{ $teacher->assignments->isEmpty() ? 'No classroom yet' : 'Busy — assigned to a class' }}</option>@endforeach
                 </select>
                 <p class="text-muted">The same teacher teaches all subjects in this class throughout the week. @if($japaneseTeachers->isEmpty())No active Japanese teachers are registered yet. Add or assign a Japanese teacher in Teachers first.@endif</p>
             </div>

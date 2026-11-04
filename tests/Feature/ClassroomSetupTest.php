@@ -189,6 +189,25 @@ class ClassroomSetupTest extends TestCase
         $this->assertSame(0, Schedule::count());
     }
 
+    public function test_editing_existing_room_does_not_count_its_own_lesson_as_busy_or_extra_workload(): void
+    {
+        $f = $this->fixture();
+        $data = $this->data($f);
+        $this->post(route('classrooms.store'), $data)->assertSessionHasNoErrors();
+        $room = Classroom::where('room_number', 'NEW1')->firstOrFail();
+        \Illuminate\Support\Facades\DB::table('teacher_profiles')->where('teacher_id', $f['teacher']->id)->update(['weekly_minutes' => 60]);
+        $query = ['school_class_id' => $f['class']->id, 'subject_id' => $f['subject']->id, 'day' => 'Monday',
+            'starts_at' => '07:00', 'ends_at' => '08:00', 'academic_year' => '2026-2027'];
+        $rows = collect($this->getJson(route('classrooms.setup-options', $query))->assertOk()->json('teachers'));
+        $this->assertFalse($rows->firstWhere('id', $f['teacher']->id)['available']);
+        $query['classroom_id'] = $room->id;
+        $rows = collect($this->getJson(route('classrooms.setup-options', $query))->assertOk()->json('teachers'));
+        $this->assertTrue($rows->firstWhere('id', $f['teacher']->id)['available']);
+        $this->put(route('classrooms.update', $room), $data)->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertSame(1, Schedule::count());
+        $this->assertSame(1, Classroom::count());
+    }
+
     public function test_program_filter_includes_rooms_with_lessons_without_reservations(): void
     {
         $f = $this->fixture();

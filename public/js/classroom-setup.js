@@ -98,6 +98,7 @@
         try {
             const query = new URLSearchParams({school_class_id: cohort.value, subject_id: subject.id, day: day.value, academic_year: year.value, starts_at: row.dataset.start, ends_at: time(end)});
             if (japanese && classTeacher.value) query.set('class_teacher_id', classTeacher.value);
+            if (root.dataset.classroomId) query.set('classroom_id', root.dataset.classroomId);
             const response = await fetch(`${root.dataset.endpoint}?${query}`, {headers: {Accept: 'application/json'}, cache: 'no-store'});
             if (!response.ok) throw new Error('Could not check teacher availability. Check the academic year and try again.');
             const payload = await response.json();
@@ -143,6 +144,16 @@
         });
         periods.replaceChildren();
         const cls = selectedClass();
+        (config.japaneseTeachers || []).forEach(teacher => {
+            const entry = [...classTeacher.options].find(item => item.value === String(teacher.id));
+            if (!entry) return;
+            const assignments = teacher.assignments || [];
+            const sameClass = assignment => cls && (String(assignment.id) === String(cls.id) || (cls.class_group_id && String(assignment.class_group_id) === String(cls.class_group_id)));
+            const other = assignments.filter(assignment => !sameClass(assignment));
+            const label = other.length ? `Busy — ${[...new Set(other.map(assignment => assignment.name))].join(', ')}` : assignments.some(sameClass) ? 'Assigned to this class' : 'No classroom yet';
+            entry.textContent = `${teacher.name} — ${label}`;
+            entry.disabled = other.length > 0;
+        });
         const japanese = program.value === 'Japan';
         root.querySelector('[data-class-teacher-field]').hidden = !japanese;
         classTeacher.disabled = !japanese;
@@ -310,6 +321,7 @@
                 const subject = selectedClass().subjects.find(item => String(item.id) === String(slot.subject_id));
                 const query = new URLSearchParams({school_class_id: cohort.value, subject_id: slot.subject_id, day: slot.day, academic_year: year.value, starts_at: slot.starts_at, ends_at: time(minute(slot.starts_at) + subject.minutes)});
                 if (program.value === 'Japan') query.set('class_teacher_id', classTeacher.value);
+                if (root.dataset.classroomId) query.set('classroom_id', root.dataset.classroomId);
                 const response = await fetch(`${root.dataset.endpoint}?${query}`, {headers: {Accept: 'application/json'}, cache: 'no-store'});
                 if (!response.ok) throw new Error(`Could not check ${slot.day} at ${slot.starts_at}. Please try saving again.`);
                 const payload = await response.json();

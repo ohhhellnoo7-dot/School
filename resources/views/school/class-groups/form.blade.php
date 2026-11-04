@@ -46,7 +46,11 @@
             <label class="form-label" for="teacher_id">Class teacher</label>
             <select class="form-select @error('teacher_id') is-invalid @enderror" id="teacher_id" name="teacher_id">
                 <option value="">Unassigned</option>
-                @foreach($teachers as $teacher)<option value="{{ $teacher->id }}" data-program="{{ $teacher->program }}" @selected((string) old('teacher_id', $classGroup->teacher_id) === (string) $teacher->id)>{{ $teacher->name }}{{ $teacher->program ? ' · '.$teacher->program : '' }}</option>@endforeach
+                @foreach($teachers as $teacher)
+                    @php($otherAssignments = $teacher->class_assignments->filter(fn ($assignment) => $assignment['class_group_id'] !== $classGroup->id))
+                    @php($assignmentLabel = $otherAssignments->isNotEmpty() ? 'Busy — '.$otherAssignments->pluck('name')->unique()->join(', ') : ($teacher->class_assignments->isNotEmpty() ? 'Assigned to this class' : 'No classroom yet'))
+                    <option value="{{ $teacher->id }}" data-program="{{ $teacher->program }}" @selected((string) old('teacher_id', $classGroup->teacher_id) === (string) $teacher->id)>{{ $teacher->name }}{{ $teacher->program ? ' · '.$teacher->program : '' }} — {{ $assignmentLabel }}</option>
+                @endforeach
             </select>
             @error('teacher_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
