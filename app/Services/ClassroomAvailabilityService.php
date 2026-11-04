@@ -48,7 +48,12 @@ class ClassroomAvailabilityService
         $minute = ($selected->hour * 60) + $selected->minute;
         $day = $selected->englishDayOfWeek;
         $academicYear = $filters['academic_year'] ?? $selected->year.'-'.($selected->year+1);
-        $lessons = Schedule::with(['subject.teacher', 'teacher', 'schoolClass.classGroup'])->where('day', $day)->where(fn ($q)=>$q->where('academic_year',$academicYear)->orWhereNull('academic_year'))->get();
+        $weeklyLessons = Schedule::with(['subject.teacher', 'teacher', 'schoolClass.classGroup'])->where(fn ($q)=>$q->where('academic_year',$academicYear)->orWhereNull('academic_year'))->get();
+        $lessons = $weeklyLessons->where('day', $day);
+        $weeklyBookings = ClassroomBooking::with('classGroup', 'classSession', 'teacher')->get()->groupBy('classroom_id');
+        $programsByRoom = $weeklyLessons->groupBy('classroom_id')->map(fn ($entries) => $entries->pluck('schoolClass.program')->filter());
+        $cohorts = \App\Models\SchoolClass::withCount(['students as enrolled_count' => fn ($query) => $query->where('status', 'active')])->get();
+        $lessonsByRoom = $weeklyLessons->groupBy('classroom_id');
 
         $rooms = Classroom::query()
             ->with(['buildingRecord', 'bookings' => fn ($query) => $query
@@ -59,7 +64,24 @@ class ClassroomAvailabilityService
             ->get();
 
         return $rooms
-            ->map(function (Classroom $classroom) use ($minute, $lessons) {
+            ->map(function (Classroom $classroom) use ($minute, $lessons, $weeklyBookings, $programsByRoom, $cohorts, $lessonsByRoom) {
+                $programs = ($programsByRoom->get($classroom->id) ?? collect())
+                    ->merge(($weeklyBookings->get($classroom->id) ?? collect())->pluck('classGroup.program'))
+                    ->filter()->unique()->sort()->values();
+                $programDetails = $programs->mapWithKeys(function ($program) use ($classroom, $weeklyBookings, $lessonsByRoom, $cohorts) {
+                    $programLessons = ($lessonsByRoom->get($classroom->id) ?? collect())->filter(fn ($lesson) => $lesson->schoolClass?->program === $program);
+                    $programBookings = ($weeklyBookings->get($classroom->id) ?? collect())->filter(fn ($booking) => $booking->classGroup?->program === $program);
+                    $ownerIds = $programLessons->pluck('school_class_id');
+                    $classes = $cohorts->filter(fn ($class) => $class->program === $program && ($ownerIds->contains($class->timetableOwnerId()) ||
+                        $programBookings->contains(fn ($booking) => $booking->class_group_id === $class->class_group_id && $booking->classSession?->session === $class->session)));
+                    return [$program => [
+                        'students' => $classes->sum('enrolled_count'),
+                        'classes' => $classes->pluck('label')->unique()->values(),
+                        'teachers' => $programLessons->pluck('teacher.name')->merge($programBookings->pluck('teacher.name'))->filter()->unique()->values(),
+                        'subjects' => $programLessons->pluck('subject.name')->filter()->unique()->values(),
+                        'sessions' => $classes->pluck('session')->merge($programBookings->pluck('classSession.session'))->filter()->unique()->values(),
+                    ]];
+                });
                 $bookings = $classroom->bookings;
                 $current = $bookings->first(fn (ClassroomBooking $booking) => $booking->starts_minute <= $minute && $booking->ends_minute > $minute
                 );
@@ -85,7 +107,7 @@ class ClassroomAvailabilityService
                     if (! $visibleBooking($current)) { $current = null; $activity['activity'] = 'Reserved for another cohort'; }
                     if (! $visibleBooking($next)) $next = null;
                 }
-                return compact('classroom', 'status', 'current', 'next', 'roomLessons') + $activity;
+                return compact('classroom', 'status', 'current', 'next', 'roomLessons', 'programs', 'programDetails') + $activity;
             })
             ->filter(fn (array $entry) => $this->matchesFilters($entry, $filters))
             ->values();

@@ -246,6 +246,26 @@ class ClassroomSetupTest extends TestCase
         $this->assertCount(0, $service->forMoment('2026-11-02 07:30', ['program' => 'Khmer', 'grade' => 8]));
     }
 
+    public function test_room_program_details_count_active_students_once_across_weekday_lessons(): void
+    {
+        $f = $this->fixture();
+        app(TeacherManagementService::class)->saveProfile($f['teacher'], ['History'], 1200, [
+            ['weekday' => 'Monday', 'start_time' => '07:00', 'end_time' => '11:00', 'unavailable' => false],
+            ['weekday' => 'Tuesday', 'start_time' => '07:00', 'end_time' => '11:00', 'unavailable' => false],
+        ]);
+        $this->post(route('classrooms.store'), $this->data($f))->assertSessionHasNoErrors();
+        \App\Models\Student::factory()->count(2)->create(['school_class_id' => $f['class']->id, 'status' => 'active']);
+        \App\Models\Student::factory()->create(['school_class_id' => $f['class']->id, 'status' => 'inactive']);
+        $lesson = Schedule::firstOrFail()->replicate();
+        $lesson->day = 'Tuesday';
+        $lesson->saveQuietly();
+        $rooms = app(\App\Services\ClassroomAvailabilityService::class)->forMoment('2026-11-07 12:00');
+        $details = $rooms->first()['programDetails']['Khmer'];
+        $this->assertSame(2, $details['students']);
+        $this->assertCount(1, $details['classes']);
+        $this->get(route('classrooms.index'))->assertOk()->assertSee('data-room-program="Khmer"', false)->assertSee('data-enrolled-count="2"', false);
+    }
+
     public function test_teacher_options_include_busy_and_free_teachers_with_real_schedule_data(): void
     {
         $f = $this->fixture();

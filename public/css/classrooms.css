@@ -381,6 +381,27 @@ a.class-summary-card:hover {
 .room-facts dt, .room-facts dd { margin: 0; font-size: 9px; }
 .room-facts dt { color: var(--muted); }
 .room-facts dd { overflow: hidden; color: var(--ink); text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+.classroom-card .room-facts > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+    align-items: start;
+    gap: 8px;
+}
+.classroom-card .room-facts dt,
+.classroom-card .room-facts dd {
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.5;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+}
+.classroom-card .room-facts dd { overflow: visible; }
+.classroom-card [data-room-program] { white-space: normal; }
+.classroom-card [data-room-program-panel] .room-facts > div:has(dd[data-long-detail]) { grid-template-columns: minmax(0, 1fr); gap: 3px; }
+.classroom-card dd[data-long-detail] { text-align: left; }
 .room-empty-message { min-height: 125px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 17px; text-align: center; border-radius: 9px; background: var(--status-soft); }
 .room-empty-message strong { margin-bottom: 5px; color: var(--status-color); font-size: 12px; }
 .room-empty-message span { color: var(--muted); font-size: 9px; line-height: 1.6; }
@@ -646,3 +667,30 @@ a.class-summary-card:hover {
 .weekday-menu-item[aria-pressed="true"] { background: var(--primary-color, #a84536); color: #fff; }
 .weekday-menu-item:focus-visible { outline: 3px solid #df8e79; outline-offset: 2px; }
 @media (max-width: 700px) { .weekday-subject-planner { grid-template-columns: minmax(0, 1fr); } .weekday-menu { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.room-program-section { padding: 0 18px 16px; min-width: 0; }
+.room-program-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px; background: var(--soft); border-radius: 12px; margin-bottom: 18px; }
+.room-program-tabs button { flex: 1; padding: 8px 12px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; }
+.room-program-tabs button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 2px 6px rgb(0 0 0 / 7%); font-weight: 600; }
+.room-program-tabs button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.room-enrollment-summary { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.room-enrollment-summary > div { display: flex; align-items: baseline; gap: 8px; }
+.room-enrollment-summary strong { font-size: 26px; line-height: 1.2; color: var(--ink); }
+.room-enrollment-summary span { font-size: 11px; color: var(--muted); }
+.room-seat-limit { white-space: nowrap; }
+.room-seat-meter { height: 5px; background: var(--soft); border-radius: 8px; overflow: hidden; margin: 10px 0 12px; }
+.room-seat-meter > span { display: block; height: 100%; background: var(--room-available, #27836d); border-radius: inherit; }
+.room-session-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.room-session-tags span { font-size: 10px; color: var(--muted); background: var(--soft); border-radius: 6px; padding: 4px 7px; }
+.room-detail-disclosure { border-top: 1px solid var(--border); }
+.room-detail-disclosure > summary { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; cursor: pointer; padding: 12px 0; list-style: none; color: var(--ink); font-size: 11px; font-weight: 600; }
+.room-detail-disclosure > summary::-webkit-details-marker { display: none; }
+.room-detail-disclosure > summary > span { color: var(--muted); font-size: 10px; font-weight: 400; }
+.room-detail-disclosure > summary > i { margin-left: auto; font-size: 10px; }
+.room-detail-disclosure[open] > summary > i { transform: rotate(180deg); }
+.room-detail-content { padding-bottom: 14px; }
+.room-detail-group + .room-detail-group { margin-top: 14px; }
+.room-detail-group h3 { font-size: 11px; color: var(--muted); margin: 0 0 7px; }
+.room-detail-group h3 span { margin-left: 4px; font-weight: 400; }
+.room-detail-group ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 5px; }
+.room-detail-group li { background: var(--soft); color: var(--ink); padding: 5px 8px; border-radius: 7px; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; max-width: 100%; }
+.classroom-card .room-empty-message { min-height: 96px; }
