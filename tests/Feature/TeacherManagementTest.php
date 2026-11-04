@@ -264,6 +264,40 @@ class TeacherManagementTest extends TestCase
         $this->assertSame(1, User::where('email', 'new@school.test')->count());
     }
 
+    public function test_japan_teacher_uses_program_subjects_and_five_weekday_hours(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'administrator']));
+        \App\Models\Program::firstOrCreate(['name' => 'Japan'], ['sessions' => ['Evening']]);
+        $class = SchoolClass::create(['name' => 'Japan Beginners', 'section' => '', 'program' => 'Japan', 'session' => 'Evening']);
+        foreach (['Japanese Writing', 'Japanese Vocabulary'] as $index => $name) Subject::create(['name' => $name, 'code' => 'JP'.$index, 'school_class_id' => $class->id]);
+        $data = ['name' => 'Sok Bopha', 'gender' => 'female', 'email' => 'bopha@example.test', 'program' => 'Japan',
+            'additional_subjects' => ['Japanese Writing', 'Japanese Vocabulary'], 'weekly_hours' => 40,
+            'working_sessions' => 'Evening', 'status' => 'active'];
+        $this->post(route('teacher-management.store'), $data)->assertSessionHasNoErrors()->assertRedirect();
+        $teacher = User::where('email', 'bopha@example.test')->firstOrFail();
+        $rules = app(TeacherManagementService::class);
+        $this->assertSame(300, $rules->limit($teacher));
+        $this->assertCount(5, $rules->periods($teacher));
+        foreach (TeacherManagementService::DAYS as $day) $this->assertTrue($rules->onDuty($teacher, $day, '17:30', '18:30'));
+        $this->assertEqualsCanonicalizing($data['additional_subjects'], $rules->qualifications($teacher)->all());
+        $data['email'] = 'other@example.test';
+        $data['working_sessions'] = 'Morning';
+        $this->post(route('teacher-management.store'), $data)->assertSessionHasErrors('working_sessions');
+        $this->assertDatabaseMissing('users', ['email' => 'other@example.test']);
+    }
+
+    public function test_teacher_subjects_must_belong_to_selected_program(): void
+    {
+        $this->fixture();
+        $this->actingAs(User::factory()->create(['role' => 'administrator']));
+        \App\Models\Program::firstOrCreate(['name' => 'Japan'], ['sessions' => ['Evening']]);
+        $this->post(route('teacher-management.store'), [
+            'name' => 'Sok Bopha', 'gender' => 'female', 'email' => 'bopha@example.test', 'program' => 'Japan',
+            'additional_subjects' => ['Mathematics'], 'working_sessions' => 'Evening', 'status' => 'active',
+        ])->assertSessionHasErrors('additional_subjects');
+        $this->assertDatabaseMissing('users', ['email' => 'bopha@example.test']);
+    }
+
     public function test_successful_break_confirmation_saves_only_previewed_breaks_and_cannot_replay(): void
     {
         [$teacher, $subject, $service] = $this->fixture(); $admin = User::factory()->create(['role' => 'administrator']);

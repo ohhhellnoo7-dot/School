@@ -66,21 +66,29 @@ class TeacherManagementController extends Controller
 
     public function form(?User $teacher = null)
     {
-        return view('school.teachers.form', ['teacher' => $teacher ?? new User, 'catalog' => Subject::distinct()->orderBy('name')->pluck('name'), 'service' => app(TeacherManagementService::class)]);
+        return view('school.teachers.form', ['teacher' => $teacher ?? new User, 'catalog' => Subject::distinct()->orderBy('name')->pluck('name'), 'service' => app(TeacherManagementService::class), 'programOptions' => app(TeacherManagementService::class)->programFormOptions()]);
     }
 
     public function save(Request $request, TeacherManagementService $service, ?User $teacher = null)
     {
         if ($teacher) abort_unless($teacher->role === 'teacher', 404);
         $data = $request->validate(['name' => 'required|string|max:255', 'gender' => 'required|in:male,female,other', 'phone' => 'nullable|string|max:50', 'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($teacher?->id)],
-            'program' => ['required', Rule::in(\App\Models\Program::names())], 'subject1' => ['required', Rule::exists('subjects', 'name')], 'subject2' => ['required_if:program,Khmer', 'nullable', 'different:subject1', Rule::exists('subjects', 'name')],
+            'program' => ['required', Rule::in(\App\Models\Program::names())], 'subject1' => ['required_if:program,Khmer', 'nullable', Rule::exists('subjects', 'name')], 'subject2' => ['nullable', 'different:subject1', Rule::exists('subjects', 'name')],
             'additional_subjects' => 'nullable|array', 'additional_subjects.*' => ['required','distinct',Rule::exists('subjects','name')],
             'weekly_hours' => 'nullable|numeric|min:1|max:40', 'working_sessions' => 'required|in:Morning,Afternoon,Both,Evening,EnglishFullTime,EnglishPartTime,Custom', 'part_time_start' => 'nullable|date_format:H:i', 'status' => 'required|in:active,inactive',
             'periods' => 'nullable|array|max:25', 'periods.*.weekday' => ['required', Rule::in(TeacherManagementService::DAYS)], 'periods.*.start_time' => 'required|date_format:H:i', 'periods.*.end_time' => 'required|date_format:H:i|after:periods.*.start_time', 'periods.*.unavailable' => 'required|boolean']);
         if ($data['program'] === 'Khmer' && ! empty($data['additional_subjects'])) {
             throw ValidationException::withMessages(['additional_subjects' => 'Khmer teachers must have exactly two distinct subjects.']);
         }
-        $teacher = $service->locked(function () use ($teacher, $data, $service) {
+        $programOptions = $service->programFormOptions()[$data['program']];
+        if ($data['working_sessions'] === 'Custom' && ! in_array($data['program'], ['Khmer', 'English'], true)) throw ValidationException::withMessages(['working_sessions' => 'Choose a working session offered by this program.']);
+        if ($data['working_sessions'] !== 'Custom' && ! in_array($data['working_sessions'], ['EnglishFullTime', 'EnglishPartTime'], true)) {
+            $sessions = $data['working_sessions'] === 'Both' ? ['Morning', 'Afternoon'] : [$data['working_sessions']];
+            foreach ($sessions as $session) if (! isset($programOptions['sessions'][$session])) throw ValidationException::withMessages(['working_sessions' => 'Choose a working session offered by this program.']);
+        }
+        $names = collect([$data['subject1'] ?? null, $data['subject2'] ?? null])->merge($data['additional_subjects'] ?? [])->filter()->unique()->values()->all();
+        if (! $names || array_diff($names, $programOptions['subjects'])) throw ValidationException::withMessages(['additional_subjects' => 'Choose subjects belonging to the selected program.']);
+        $teacher = $service->locked(function () use ($teacher, $data, $service, $programOptions, $names) {
             $t = $teacher ?: new User;
             $t->fill(collect($data)->only(['name', 'gender', 'phone', 'email', 'program', 'status'])->all());
             if (! $t->exists) { $t->role = 'teacher'; $t->password = Str::random(40); }
@@ -99,12 +107,12 @@ class TeacherManagementController extends Controller
                 if ($data['program'] === 'Khmer' && $data['working_sessions'] === 'Evening') $service->fail('Khmer teachers work morning or afternoon sessions.');
                 $selected = $data['working_sessions'] === 'Both' ? ['Morning', 'Afternoon'] : [$data['working_sessions']];
                 foreach (TeacherManagementService::DAYS as $day) foreach ($selected as $session) {
-                    [$start, $end] = TeacherManagementService::SESSIONS[$session];
+                    [$start, $end] = $programOptions['sessions'][$session];
                     $periods[] = ['weekday' => $day, 'start_time' => $start, 'end_time' => $end, 'unavailable' => false];
                 }
             }
             if (! collect($periods)->contains(fn ($p) => ! $p['unavailable'])) $service->fail('Confirm at least one on-duty working period.');
-            $names = collect([$data['subject1'], $data['subject2'] ?? null])->merge($data['additional_subjects'] ?? [])->filter()->unique()->values()->all();
+            if ($data['program'] !== 'Khmer') $data['weekly_hours'] = collect($periods)->where('unavailable', false)->sum(fn ($p) => $service::duration($p['start_time'], $p['end_time'])) / 60;
             $service->saveProfile($t, $names, isset($data['weekly_hours']) ? (int) round($data['weekly_hours'] * 60) : null, $periods);
             return $t;
         });

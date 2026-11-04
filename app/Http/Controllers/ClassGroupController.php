@@ -193,7 +193,7 @@ class ClassGroupController extends Controller
             'program' => ['required', Rule::in(array_keys($this->programSessions()))],
             'teacher_id' => [
                 'nullable',
-                Rule::exists('users', 'id')->where(fn ($query) => $query->where('role', 'teacher')),
+                Rule::exists('users', 'id')->where(fn ($query) => $query->where('role', 'teacher')->where('program', $request->input('program'))),
             ],
             'capacity' => ['required', 'integer', 'between:1,500'],
             'status' => ['required', Rule::in(['active', 'inactive'])],

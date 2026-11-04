@@ -126,7 +126,8 @@ class ClassroomSetupTest extends TestCase
     {
         \App\Models\Program::firstOrCreate(['name' => 'Japan'], ['sessions' => ['Evening']]);
         $f = $this->fixture('Japan', 'Evening');
-        app(TeacherManagementService::class)->saveProfile($f['teacher'], ['Japan'], 1200, [
+        $secondSubject = Subject::create(['name' => 'Japanese Writing', 'code' => 'JP-WRITING', 'school_class_id' => $f['class']->id]);
+        app(TeacherManagementService::class)->saveProfile($f['teacher'], ['Japan', 'Japanese Writing'], 1200, [
             ['weekday' => 'Monday', 'start_time' => $f['start'], 'end_time' => $f['end'], 'unavailable' => false],
             ['weekday' => 'Tuesday', 'start_time' => $f['start'], 'end_time' => $f['end'], 'unavailable' => false],
         ]);
@@ -135,7 +136,7 @@ class ClassroomSetupTest extends TestCase
         $data['class_teacher_id'] = $f['teacher']->id;
         $data['slots'][0]['day'] = 'Monday';
         $data['slots'][0]['teacher_id'] = $other->id;
-        $data['slots'][] = array_replace($data['slots'][0], ['day' => 'Tuesday']);
+        $data['slots'][] = array_replace($data['slots'][0], ['day' => 'Tuesday', 'subject_id' => $secondSubject->id]);
         $this->post(route('classrooms.store'), $data)->assertSessionHasNoErrors()->assertRedirect();
         $this->assertSame([$f['teacher']->id], Schedule::pluck('teacher_id')->unique()->values()->all());
         $this->assertSame($f['teacher']->id, $f['class']->fresh()->teacher_id);
@@ -173,6 +174,19 @@ class ClassroomSetupTest extends TestCase
         $this->assertCount(0, $rules->breaks($f['teacher']));
         $this->expectException(\Illuminate\Validation\ValidationException::class);
         $rules->proposeBreaks($f['teacher']);
+    }
+
+    public function test_japan_weekly_plan_rejects_reusing_a_subject_on_another_day(): void
+    {
+        \App\Models\Program::firstOrCreate(['name' => 'Japan'], ['sessions' => ['Evening']]);
+        $f = $this->fixture('Japan', 'Evening');
+        $data = $this->data($f);
+        $data['class_teacher_id'] = $f['teacher']->id;
+        $data['slots'][0]['day'] = 'Monday';
+        $data['slots'][] = array_replace($data['slots'][0], ['day' => 'Tuesday']);
+        $this->post(route('classrooms.store'), $data)->assertSessionHasErrors('slots');
+        $this->assertDatabaseMissing('classrooms', ['room_number' => 'NEW1']);
+        $this->assertSame(0, Schedule::count());
     }
 
     public function test_program_filter_includes_rooms_with_lessons_without_reservations(): void

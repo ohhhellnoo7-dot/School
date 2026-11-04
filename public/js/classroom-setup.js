@@ -66,7 +66,7 @@
     const remember = () => {
         periods.querySelectorAll('[data-period]').forEach(row => {
             if (row.dataset.covered === '1') return;
-            choices[row.dataset.start] = {starts_at: row.dataset.start, subject_id: row.querySelector('[data-subject]').value, teacher_id: row.querySelector('[data-teacher]').value};
+            choices[row.dataset.start] = {starts_at: row.dataset.start, subject_id: row.querySelector('[data-subject]').value, teacher_id: program.value === 'Japan' ? classTeacher.value : row.querySelector('[data-teacher]').value};
         });
     };
     const teacherDetails = (target, teacher) => {
@@ -111,7 +111,6 @@
             });
             select.disabled = false;
             if (payload.teachers.some(t => String(t.id) === String(wanted) && t.available)) select.value = wanted;
-            if (japanese) choices[row.dataset.start] = {...choices[row.dataset.start], starts_at: row.dataset.start, subject_id: subject.id, teacher_id: select.value};
             const free = payload.teachers.filter(t => t.available).length;
             status.textContent = `${free} available teacher${free === 1 ? '' : 's'} for this period`;
             if (japanese) {
@@ -176,7 +175,10 @@
             const subjectLabel = node('label', 'Subject', 'form-label'); subjectLabel.htmlFor = `slot-${index}-subject`;
             const subjects = node('select', '', 'form-select'); subjects.id = subjectLabel.htmlFor; subjects.name = `slots[${index}][subject_id]`; subjects.dataset.subject = '';
             subjects.append(option('', 'Leave this period empty'));
-            cls.subjects.forEach(subject => subjects.append(option(subject.id, `${subject.name}${subject.minutes === 120 ? ' (2 consecutive hours)' : ''}`, start + subject.minutes > finish)));
+            const usedElsewhere = new Set(Object.entries(weeklyChoices).flatMap(([weekday, slots]) =>
+                Object.values(slots).filter(slot => weekday !== displayedDay || slot.starts_at !== startTime).map(slot => String(slot.subject_id))));
+            cls.subjects.filter(subject => !japanese || !usedElsewhere.has(String(subject.id)) || String(choices[startTime]?.subject_id) === String(subject.id))
+                .forEach(subject => subjects.append(option(subject.id, `${subject.name}${subject.minutes === 120 ? ' (2 consecutive hours)' : ''}`, start + subject.minutes > finish)));
             if (choices[startTime]?.subject_id) subjects.value = choices[startTime].subject_id;
             const subject = cls.subjects.find(s => String(s.id) === subjects.value);
             if (subject && start + subject.minutes > finish) subjects.value = '';
@@ -250,21 +252,76 @@
         button.addEventListener('click', activate);
     });
     year.addEventListener('change', () => { remember(); render(); });
+    root.querySelector('[data-autofill-week]').addEventListener('click', () => {
+        remember();
+        const cls = selectedClass();
+        if (!cls) { message.textContent = 'Choose a student class before filling the week.'; return; }
+        const used = new Set(Object.values(weeklyChoices).flatMap(slots => Object.values(slots).map(slot => String(slot.subject_id))));
+        const remaining = cls.subjects.filter(subject => !used.has(String(subject.id)));
+        let added = 0;
+        ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].forEach(weekday => {
+            const slots = weeklyChoices[weekday] ||= {};
+            const finish = minute(cls.hours[1]);
+            for (let start = minute(cls.hours[0]); start + 60 <= finish; start += 60) {
+                const startTime = time(start);
+                const existing = slots[startTime];
+                if (existing?.subject_id) {
+                    const subject = cls.subjects.find(item => String(item.id) === String(existing.subject_id));
+                    start += (subject?.minutes || 60) - 60;
+                    continue;
+                }
+                const index = remaining.findIndex(subject => start + subject.minutes <= finish);
+                if (index < 0) continue;
+                const subject = remaining.splice(index, 1)[0];
+                slots[startTime] = {starts_at: startTime, subject_id: subject.id, teacher_id: program.value === 'Japan' ? classTeacher.value : ''};
+                added++;
+                start += subject.minutes - 60;
+            }
+        });
+        choices = weeklyChoices[displayedDay] ||= {};
+        render();
+        message.textContent = added ? `Filled ${added} periods with different subjects. Your existing choices were kept. You can edit any day.` : 'No empty periods or unused subjects remain. You can edit the existing choices.';
+    });
     syncSessions(config.old.session || 'Morning');
     syncClasses(String(config.old.school_class_id || ''));
     syncClassTeacher();
     if (config.old.class_teacher_id) classTeacher.value = config.old.class_teacher_id;
     render();
     updateSummary();
-    form.addEventListener('submit', event => {
-        if (!enabled.checked) return;
+    let submitting = false;
+    let readyToSubmit = false;
+    form.addEventListener('submit', async event => {
+        if (!enabled.checked || readyToSubmit) return;
+        event.preventDefault();
+        if (submitting) return;
         remember();
         const assigned = Object.entries(weeklyChoices).flatMap(([weekday, slots]) =>
-            Object.values(slots).filter(slot => slot.subject_id).map(slot => ({...slot, day: weekday})));
+            Object.values(slots).filter(slot => slot.subject_id).map(slot => ({...slot, teacher_id: program.value === 'Japan' ? classTeacher.value : slot.teacher_id, day: weekday})));
         if (!assigned.length || assigned.some(slot => !slot.teacher_id)) {
-            event.preventDefault();
-            message.textContent = 'Choose at least one subject and a free teacher for each selected subject. Wait for availability checks to finish.';
+            message.textContent = !assigned.length ? 'Choose at least one subject for the week.' : 'Choose a teacher for every planned lesson.';
             message.scrollIntoView({block: 'center'});
+            return;
+        }
+        submitting = true;
+        const version = generation;
+        message.textContent = 'Checking the teacher for every planned weekday...';
+        try {
+            const errors = await Promise.all(assigned.map(async slot => {
+                const subject = selectedClass().subjects.find(item => String(item.id) === String(slot.subject_id));
+                const query = new URLSearchParams({school_class_id: cohort.value, subject_id: slot.subject_id, day: slot.day, academic_year: year.value, starts_at: slot.starts_at, ends_at: time(minute(slot.starts_at) + subject.minutes)});
+                if (program.value === 'Japan') query.set('class_teacher_id', classTeacher.value);
+                const response = await fetch(`${root.dataset.endpoint}?${query}`, {headers: {Accept: 'application/json'}, cache: 'no-store'});
+                if (!response.ok) throw new Error(`Could not check ${slot.day} at ${slot.starts_at}. Please try saving again.`);
+                const payload = await response.json();
+                const teacher = payload.teachers.find(item => String(item.id) === String(slot.teacher_id));
+                return teacher?.available ? null : `${slot.day} ${slot.starts_at}: ${teacher ? teacher.reasons.join('; ') : 'Choose an eligible teacher for this program.'}`;
+            }));
+            if (version !== generation) throw new Error('Your choices changed during the check. Save again to check the updated week.');
+            if (errors.some(Boolean)) throw new Error(errors.filter(Boolean).join(' '));
+        } catch (error) {
+            message.textContent = error.message;
+            message.scrollIntoView({block: 'center'});
+            submitting = false;
             return;
         }
         form.querySelectorAll('[data-weekly-slot]').forEach(input => input.remove());
@@ -279,5 +336,7 @@
                 fields.append(input);
             });
         });
+        readyToSubmit = true;
+        form.requestSubmit();
     });
 })();

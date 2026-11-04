@@ -21,6 +21,20 @@ class TeacherManagementService
     }
 
     public function settings(): object { return DB::table('teacher_management_settings')->where('id', 1)->first(); }
+    public function programFormOptions(): array
+    {
+        $catalog = Subject::with('schoolClass:id,program')->whereHas('schoolClass')->orderBy('name')->get();
+        $options = [];
+        foreach (\App\Models\Program::sessionMap() as $program => $sessions) {
+            $hours = [];
+            foreach ($sessions as $session) {
+                $window = config('classrooms.program_session_hours.'.$program.'.'.$session, config('classrooms.sessions.'.$session));
+                $hours[$session] = [$window['starts_at'], $window['ends_at']];
+            }
+            $options[$program] = ['subjects' => $catalog->filter(fn ($subject) => $subject->schoolClass->program === $program)->pluck('name')->unique()->values()->all(), 'sessions' => $hours];
+        }
+        return $options;
+    }
     public function weeklyWorkPlan(User|string|null $teacher = null): array
     {
         $settings = $this->settings();

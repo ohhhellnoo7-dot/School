@@ -24,6 +24,7 @@
             </div>
             <div class="room-schedule-hint"><i class="bi bi-info-circle" aria-hidden="true"></i> Choose subjects and teachers for each weekday. Switching days keeps your choices; saving includes all planned days. Leave unused periods empty. Khmer Mathematics and Khmer Literature take two consecutive hours.</div>
             <p data-planner-message role="status" aria-live="polite"></p>
+            <button type="button" class="btn btn-outline-secondary mb-3" data-autofill-week>Auto-fill Monday–Friday</button>
             <div class="weekday-subject-planner">
                 <div class="weekday-menu" role="group" aria-label="Choose a weekday">
                     @foreach(['Monday','Tuesday','Wednesday','Thursday','Friday'] as $weekday)

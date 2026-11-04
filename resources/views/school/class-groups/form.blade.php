@@ -89,6 +89,14 @@
 @push('scripts')
 <script>
 const programSelect = document.querySelector('[data-program-select]');
+const classTeacher = document.querySelector('#teacher_id');
+const teacherOptions = [...classTeacher.options].filter(option => option.value).map(option => ({value: option.value, text: option.textContent, program: option.dataset.program}));
+const filterTeachers = () => {
+    const selected = classTeacher.value;
+    classTeacher.replaceChildren(new Option('Unassigned', ''), ...teacherOptions.filter(option => option.program === programSelect.value).map(option => new Option(option.text, option.value)));
+    if ([...classTeacher.options].some(option => option.value === selected)) classTeacher.value = selected;
+};
+filterTeachers();
 const curriculum = document.querySelector('#curriculum');
 const programSubjects = JSON.parse(document.querySelector('[data-program-subjects]')?.textContent || '{}');
 const curriculumDrafts = new Map();
@@ -100,6 +108,7 @@ const fillCurriculum = () => {
 };
 fillCurriculum();
 programSelect?.addEventListener('change', event => {
+    filterTeachers();
     if (curriculum) curriculumDrafts.set(previousProgram, curriculum.value);
     fillCurriculum();
     previousProgram = event.target.value;

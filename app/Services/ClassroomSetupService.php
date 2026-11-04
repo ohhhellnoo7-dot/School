@@ -77,6 +77,7 @@ class ClassroomSetupService
             }
             $selected = collect($plan['slots'] ?? [])->filter(fn ($slot) => ! empty($slot['subject_id']) || ! empty($slot['teacher_id']));
             if ($selected->isEmpty()) $this->fail('Choose a subject and teacher for at least one period, or turn off lesson setup.');
+            if ($class->program === 'Japan' && $selected->pluck('subject_id')->filter()->duplicates()->isNotEmpty()) $this->fail('Choose each Japan subject only once in the weekly plan.');
             foreach ($selected as $index => $slot) {
                 if ($class->program === 'Japan') $slot['teacher_id'] = $teacher->id;
                 if (empty($slot['subject_id']) || empty($slot['teacher_id'])) $this->fail('Select both subject and teacher for each planned period.');
