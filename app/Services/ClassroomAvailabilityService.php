@@ -49,8 +49,14 @@ class ClassroomAvailabilityService
         $day = $selected->englishDayOfWeek;
         $academicYear = $filters['academic_year'] ?? $selected->year.'-'.($selected->year+1);
         $weeklyLessons = Schedule::with(['subject.teacher', 'teacher', 'schoolClass.classGroup'])->where(fn ($q)=>$q->where('academic_year',$academicYear)->orWhereNull('academic_year'))->get();
+        // Detail selectors scope the contents, while ordinary availability filters only find rooms.
+        $scopeProgram = $filters['detail_program'] ?? null;
+        $scopeSession = $filters['detail_session'] ?? null;
+        $weeklyLessons = $weeklyLessons->filter(fn ($lesson) =>
+            (! $scopeProgram || $lesson->schoolClass?->program === $scopeProgram) &&
+            (! $scopeSession || $lesson->schoolClass?->session === $scopeSession));
         $lessons = $weeklyLessons->where('day', $day);
-        $weeklyBookings = ClassroomBooking::with('classGroup', 'classSession', 'teacher')->get()->groupBy('classroom_id');
+        $weeklyBookings = ClassroomBooking::with('classGroup', 'classSession', 'teacher')->get()->filter(fn ($booking) => (! $scopeProgram || $booking->classGroup?->program === $scopeProgram) && (! $scopeSession || $booking->classSession?->session === $scopeSession))->groupBy('classroom_id');
         $programsByRoom = $weeklyLessons->groupBy('classroom_id')->map(fn ($entries) => $entries->pluck('schoolClass.program')->filter());
         $cohorts = \App\Models\SchoolClass::withCount(['students as enrolled_count' => fn ($query) => $query->where('status', 'active')])->get();
         $lessonsByRoom = $weeklyLessons->groupBy('classroom_id');
@@ -66,11 +72,11 @@ class ClassroomAvailabilityService
             ->get();
 
         return $rooms
-            ->map(function (Classroom $classroom) use ($minute, $lessons, $weeklyBookings, $programsByRoom, $cohorts, $lessonsByRoom, $visibleStudyClasses) {
+            ->map(function (Classroom $classroom) use ($minute, $lessons, $weeklyBookings, $programsByRoom, $cohorts, $lessonsByRoom, $visibleStudyClasses, $scopeProgram, $scopeSession) {
                 $programs = ($programsByRoom->get($classroom->id) ?? collect())
                     ->merge(($weeklyBookings->get($classroom->id) ?? collect())->pluck('classGroup.program'))
                     ->filter()->unique()->sort()->values();
-                $programDetails = $programs->mapWithKeys(function ($program) use ($classroom, $weeklyBookings, $lessonsByRoom, $cohorts, $visibleStudyClasses) {
+                $programDetails = $programs->mapWithKeys(function ($program) use ($classroom, $weeklyBookings, $lessonsByRoom, $cohorts, $visibleStudyClasses, $scopeProgram, $scopeSession) {
                     $programLessons = ($lessonsByRoom->get($classroom->id) ?? collect())->filter(fn ($lesson) => $lesson->schoolClass?->program === $program);
                     $programBookings = ($weeklyBookings->get($classroom->id) ?? collect())->filter(fn ($booking) => $booking->classGroup?->program === $program);
                     if ($visibleStudyClasses !== null) {
@@ -90,7 +96,7 @@ class ClassroomAvailabilityService
                         'sessions' => $classes->pluck('session')->merge($programBookings->pluck('classSession.session'))->filter()->unique()->values(),
                     ]];
                 });
-                $bookings = $classroom->bookings;
+                $bookings = $classroom->bookings->filter(fn ($booking) => (! $scopeProgram || $booking->classGroup?->program === $scopeProgram) && (! $scopeSession || $booking->classSession?->session === $scopeSession));
                 $current = $bookings->first(fn (ClassroomBooking $booking) => $booking->starts_minute <= $minute && $booking->ends_minute > $minute
                 );
                 $next = $bookings->first(fn (ClassroomBooking $booking) => $booking->starts_minute > $minute);

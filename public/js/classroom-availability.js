@@ -20,6 +20,13 @@
         card.querySelectorAll('[data-room-program]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.roomProgram === program)));
         const count = card.querySelector('[data-room-enrolled]');
         if (count) count.textContent = selected.dataset.enrolledCount;
+        const detailLink = card.querySelector('.room-card-footer a');
+        if (detailLink) {
+            const url = new URL(detailLink.href);
+            url.searchParams.set('program', program);
+            url.searchParams.set('session', program === 'Chinese' ? 'Evening' : 'Morning');
+            detailLink.href = url.toString();
+        }
         roomPrograms.set(card.dataset.roomCard, program);
     };
     results.addEventListener('click', event => {

@@ -90,7 +90,7 @@
                     </div>
                 @endforeach
             </div>
-            <div class="room-card-footer"><span>Room details</span><a aria-label="View details for room {{ $room->room_number }}" href="{{ route('classrooms.show', ['classroom' => $room, 'date' => $moment->format('Y-m-d'), 'time' => $moment->format('H:i'), 'academic_year' => request('academic_year'), 'live' => request()->boolean('live') || (!request()->filled('date') && !request()->filled('time')) ? 1 : 0]) }}">View <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
+            <div class="room-card-footer"><span>Room details</span><a aria-label="View details for room {{ $room->room_number }}" href="{{ route('classrooms.show', ['classroom' => $room, 'date' => $moment->format('Y-m-d'), 'time' => $moment->format('H:i'), 'academic_year' => request('academic_year'), 'program' => $selectedProgram, 'session' => request('session'), 'live' => request()->boolean('live') || (!request()->filled('date') && !request()->filled('time')) ? 1 : 0]) }}">View <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
         </article>
     @empty
         <div class="empty-state classroom-empty"><i class="bi bi-door-closed" aria-hidden="true"></i>No physical classrooms match these filters.</div>

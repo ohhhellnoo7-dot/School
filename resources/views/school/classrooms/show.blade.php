@@ -14,6 +14,21 @@
 
 <section class="room-detail-hero"><div class="room-detail-icon"><i class="bi bi-door-open" aria-hidden="true"></i></div><div><h2>{{ $classroom->name }}</h2><p>Lesson activity and room occupancy are shown separately below.</p></div><dl><div><dt>Room number</dt><dd>{{ $classroom->room_number }}</dd></div><div><dt>Capacity</dt><dd>{{ $classroom->capacity }} students</dd></div><div><dt>Maintenance</dt><dd>{{ str_replace('_', ' ', ucfirst($classroom->status)) }}</dd></div></dl></section>
 
+<section class="panel p-4 my-4" aria-label="Program and session">
+    <h2 class="h5">Choose program and session</h2>
+    <div class="d-flex flex-wrap gap-2 mb-3" role="group" aria-label="Program">
+        @forelse($programOptions as $program)
+            <a class="btn {{ $program === $selectedProgram ? 'btn-primary' : 'btn-outline-primary' }}" aria-current="{{ $program === $selectedProgram ? 'true' : 'false' }}" href="{{ route('classrooms.show', ['classroom' => $classroom] + array_merge(request()->only('date', 'time', 'live', 'academic_year'), ['program' => $program, 'session' => $program === 'Chinese' ? 'Evening' : 'Morning'])) }}">{{ $program }}</a>
+        @empty <p>No programs assigned yet.</p> @endforelse
+    </div>
+    <div class="d-flex flex-wrap gap-2" role="group" aria-label="Session">
+        @foreach($sessionOptions as $option)
+            <a class="btn {{ $option === $selectedSession ? 'btn-primary' : 'btn-outline-primary' }}" aria-current="{{ $option === $selectedSession ? 'true' : 'false' }}" href="{{ route('classrooms.show', ['classroom' => $classroom] + array_merge(request()->only('date', 'time', 'live', 'academic_year'), ['program' => $selectedProgram, 'session' => $option])) }}">{{ $option }}</a>
+        @endforeach
+    </div>
+    <p class="small text-secondary mt-3 mb-0">Showing {{ $selectedProgram }} &middot; {{ $selectedSession }} schedules, students and teachers.@if($selectedProgram === 'Chinese') Chinese uses the Evening session automatically.@endif</p>
+</section>
+
 @include('school.classrooms._class-levels')
 <section class="panel p-4 my-4" aria-label="Room program details">
     <h2 class="h5">Programs and classes</h2>
@@ -32,8 +47,8 @@
     @if($classroom->notes)<div class="mt-3"><h3 class="h6">Room notes</h3><p>{{ $classroom->notes }}</p></div>@endif
 </section>
 
-<section class="panel p-4 my-4" data-room-live data-endpoint="{{ route('classrooms.lesson-status', $classroom) }}" data-live="{{ (!request()->filled('date') && !request()->filled('time')) || request()->boolean('live') ? '1' : '0' }}" data-date="{{ $moment->format('Y-m-d') }}" data-time="{{ $moment->format('H:i') }}">
-<div class="d-flex justify-content-between gap-3"><h2 class="h5">Current and next lesson</h2><a class="btn btn-outline-secondary" href="{{ route('classrooms.show', ['classroom' => $classroom, 'live' => 1]) }}">Follow current time</a></div>
+<section class="panel p-4 my-4" data-room-live data-program="{{ $selectedProgram }}" data-session="{{ $selectedSession }}" data-academic-year="{{ request('academic_year', $moment->year.'-'.($moment->year+1)) }}" data-endpoint="{{ route('classrooms.lesson-status', $classroom) }}" data-live="{{ (!request()->filled('date') && !request()->filled('time')) || request()->boolean('live') ? '1' : '0' }}" data-date="{{ $moment->format('Y-m-d') }}" data-time="{{ $moment->format('H:i') }}">
+<div class="d-flex justify-content-between gap-3"><h2 class="h5">Current and next lesson</h2><a class="btn btn-outline-secondary" href="{{ route('classrooms.show', ['classroom' => $classroom, 'live' => 1, 'program' => $selectedProgram, 'session' => $selectedSession, 'academic_year' => request('academic_year')]) }}">Follow current time</a></div>
 <p class="small text-secondary" data-room-live-label aria-live="polite">{{ $moment->format('D, M j, Y H:i') }}</p><div data-room-live-content>@include('school.classrooms._lesson-status')</div>
 </section>
 <section class="panel p-4 mb-4"><h2 class="h5">Daily lessons &middot; {{ $moment->englishDayOfWeek }}</h2>
@@ -43,7 +58,7 @@
 </section>
 <section class="panel p-4 mb-4"><h2 class="h5">Weekly lesson rotation</h2><div class="table-responsive"><table class="table"><thead><tr>@foreach($days as $day)<th>{{ $day }}</th>@endforeach</tr></thead><tbody><tr>@foreach($days as $day)<td>@forelse($lessons->where('day', $day) as $lesson)<article class="schedule-cell"><strong>{{ $lesson->isRelaxation() ? 'Scheduled relaxation' : $lesson->subject?->name }}</strong><span>{{ $lesson->schoolClass?->label }}</span><small>{{ substr($lesson->starts_at, 0, 5) }}&ndash;{{ substr($lesson->ends_at, 0, 5) }} &middot; {{ $lesson->isRelaxation() ? 'No teacher' : $lesson->teacher?->name }}</small></article>@empty<span>No Class</span>@endforelse</td>@endforeach</tr></tbody></table></div></section>
 <section class="panel weekly-room-panel" id="weekly-lessons">
-    <div class="panel-header"><div><h2>Room reservations</h2><p>Recurring classroom bookings from Monday to Friday.</p></div><form class="detail-moment-form" method="get"><label class="visually-hidden" for="detail-date">Date</label><input class="form-control" id="detail-date" type="date" name="date" value="{{ $moment->format('Y-m-d') }}"><label class="visually-hidden" for="detail-time">{{ __('Time') }}</label><input class="form-control" id="detail-time" type="time" name="time" value="{{ $moment->format('H:i') }}"><button class="btn btn-outline-secondary">Check time</button></form></div>
+    <div class="panel-header"><div><h2>Room reservations</h2><p>Recurring classroom bookings from Monday to Friday.</p></div><form class="detail-moment-form" method="get"><input type="hidden" name="program" value="{{ $selectedProgram }}"><input type="hidden" name="session" value="{{ $selectedSession }}"><input type="hidden" name="academic_year" value="{{ request('academic_year', $moment->year.'-'.($moment->year+1)) }}"><label class="visually-hidden" for="detail-date">Date</label><input class="form-control" id="detail-date" type="date" name="date" value="{{ $moment->format('Y-m-d') }}"><label class="visually-hidden" for="detail-time">{{ __('Time') }}</label><input class="form-control" id="detail-time" type="time" name="time" value="{{ $moment->format('H:i') }}"><button class="btn btn-outline-secondary">Check time</button></form></div>
     <div class="table-responsive"><table class="table weekly-room-table"><thead><tr><th>{{ __('Session') }}</th>@foreach($days as $day)<th>{{ $day }}</th>@endforeach</tr></thead><tbody>
         @foreach($sessions as $session)
             <tr><th><span class="session-row-title">{{ $session }}</span></th>

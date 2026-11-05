@@ -6,6 +6,9 @@
         if (pending || document.hidden) return;
         pending = true;
         const query = new URLSearchParams(panel.dataset.live === '1' ? {live: '1'} : {date: panel.dataset.date, time: panel.dataset.time});
+        if (panel.dataset.program) query.set('program', panel.dataset.program);
+        if (panel.dataset.session) query.set('session', panel.dataset.session);
+        if (panel.dataset.academicYear) query.set('academic_year', panel.dataset.academicYear);
         try {
             const response = await fetch(`${panel.dataset.endpoint}?${query}`, {headers: {Accept: 'application/json'}, cache: 'no-store'});
             if (!response.ok) throw new Error('Refresh failed');

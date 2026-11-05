@@ -22,6 +22,30 @@ class ClassroomManagementTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_room_details_scope_program_session_roster_and_bookings(): void
+    {
+        $admin = $this->user('administrator');
+        $room = $this->classroom('8B', 40);
+        $expected = [];
+        foreach ([['Khmer', 'Morning', '07:00', '11:00'], ['Khmer', 'Afternoon', '13:00', '17:00'], ['Chinese', 'Evening', '17:30', '18:30']] as [$program, $session, $start, $end]) {
+            $group = ClassGroup::firstOrCreate(['program' => $program, 'grade' => 8, 'section' => 'B'], ['name' => $program.' Grade 8B', 'status' => 'active']);
+            $classSession = $this->classSession($group, $session, $start, $end);
+            $teacher = $this->user('teacher', ['name' => $session.' Teacher']);
+            ClassroomBooking::create(collect($this->bookingData($group, $classSession, $room, $teacher, 'Monday', $start, $end))->except('session')->all());
+            $cohort = SchoolClass::create(['name' => $session.' Class', 'section' => 'B', 'program' => $program, 'session' => $session, 'class_group_id' => $group->id]);
+            $student = Student::factory()->create(['school_class_id' => $cohort->id, 'status' => 'active']);
+            $expected[$session] = $student->id;
+        }
+        foreach (['Morning', 'Afternoon', 'Evening'] as $session) {
+            $program = $session === 'Evening' ? 'Chinese' : 'Khmer';
+            $this->actingAs($admin)->get(route('classrooms.show', ['classroom' => $room, 'program' => $program, 'session' => $session === 'Evening' ? 'Morning' : $session]))
+                ->assertOk()->assertViewHas('selectedSession', $session)
+                ->assertViewHas('roomStudents', fn ($students) => $students->pluck('id')->all() === [$expected[$session]])
+                ->assertViewHas('classroom', fn ($value) => $value->bookings->count() === 1 && $value->bookings->first()->classSession->session === $session)
+                ->assertViewHas('snapshot', fn ($value) => $value['programDetails']->keys()->all() === [$program] && $value['programDetails'][$program]['teachers']->all() === [$session.' Teacher']);
+        }
+    }
+
     public function test_building_filter_includes_shared_rooms_without_bookings(): void
     {
         Classroom::create(['room_number' => '7A', 'name' => 'Room 7A', 'building' => 'A', 'capacity' => 40, 'status' => 'active']);
