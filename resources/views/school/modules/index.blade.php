@@ -48,8 +48,8 @@
 @endforeach
 </div>
 @else
-<div class="page-heading {{ $module === 'parents' ? 'school-hero parent-hero' : '' }}"><div><div class="eyebrow">SCHOOL WORKSPACE</div><h1>{{ $meta['title'] }}</h1><p>{{ match ($module) {
- 'parents' => 'Manage family connections and guardian information.',
+<div class="page-heading {{ $module === 'parents' ? 'school-hero parent-hero' : '' }}"><div><div class="eyebrow">SCHOOL WORKSPACE</div><h1>@if($module === 'parents')Parents &amp; <span>guardians</span>@else{{ $meta['title'] }}@endif</h1><p>{{ match ($module) {
+ 'parents' => 'Manage family connections and guardian information for your school community.',
  'teachers' => 'Meet the educators shaping tomorrow.',
  'classes' => 'Organize classrooms and learning communities.',
  'subjects' => 'Explore and manage academic subjects.',
@@ -73,7 +73,7 @@
 </div>
 @endif
 <section class="panel directory-panel">
-<div class="panel-header"><h2>{{ $meta['title'] }} <span class="badge text-bg-light">{{ $module === 'classes' ? $uniqueClassCount : $records->total() }}</span></h2>@if($module === 'classes')<span class="small text-secondary">{{ $records->total() }} program / session entries · Classes counted by grade and section</span>@endif</div>
+<div class="panel-header"><h2>@if($module === 'parents')<i class="bi bi-people" aria-hidden="true"></i>@endif{{ $meta['title'] }} <span class="badge text-bg-light">{{ $module === 'classes' ? $uniqueClassCount : $records->total() }}</span></h2>@if($module === 'classes')<span class="small text-secondary">{{ $records->total() }} program / session entries · Classes counted by grade and section</span>@endif</div>
 <form class="filter-grid d-flex flex-wrap gap-2 px-4 pb-3" method="get">
     @if($module === 'parents')
         <div><label for="parent-program" class="form-label">{{ __('Program') }}</label><select id="parent-program" name="program" class="form-select"><option value="">{{ __('All programs') }}</option>@foreach(['Khmer', 'English', 'Chinese'] as $program)<option value="{{ $program }}" @selected(request('program') === $program)>{{ $program }}</option>@endforeach</select></div>

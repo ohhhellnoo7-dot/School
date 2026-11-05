@@ -169,8 +169,14 @@ class ClassGroupController extends Controller
             ]);
         }
 
-        $classGroup->update($attributes);
-        $this->syncSessions($classGroup);
+        app(\App\Services\TeacherManagementService::class)->locked(function () use ($classGroup, $attributes) {
+            if ($classGroup->program === 'Japan' && $attributes['program'] === 'Japan') {
+                app(\App\Services\JapanClassTeacherService::class)->assign($classGroup,
+                    isset($attributes['teacher_id']) ? (int) $attributes['teacher_id'] : null);
+            }
+            $classGroup->update($attributes);
+            $this->syncSessions($classGroup);
+        });
 
         return redirect()->route('class-groups.show', $classGroup)
             ->with('success', "{$classGroup->display_name} was updated.");

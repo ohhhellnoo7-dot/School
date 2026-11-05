@@ -67,6 +67,12 @@
                 @else
                     <div class="room-empty-message"><strong>Ready to use</strong><span>No class occupies this room at the selected time.</span></div>
                 @endif
+                @if($lessonState === 'studying' && $lesson?->teacher)
+                    <div class="room-current-teacher" data-current-teacher>
+                        <i class="bi bi-person-badge" aria-hidden="true"></i>
+                        <span><small>{{ substr((string) $lesson->starts_at, 0, 5) }}&ndash;{{ substr((string) $lesson->ends_at, 0, 5) }} · {{ __('Teacher') }}</small><strong>{{ $lesson->teacher->name }}</strong></span>
+                    </div>
+                @endif
             </div>
             <div class="room-program-section">
                 <div class="room-program-tabs" role="group" aria-label="Programs in room {{ $room->room_number }}">

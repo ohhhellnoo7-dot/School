@@ -53,6 +53,9 @@
                 @endforeach
             </select>
             @error('teacher_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            @if($classGroup->exists && $classGroup->teacher_id)
+            <button type="button" class="btn btn-outline-primary mt-3" data-open-teacher-swap aria-haspopup="dialog" aria-controls="teacher-swap-dialog"><i class="bi bi-arrow-left-right me-2" aria-hidden="true"></i>Swap teacher with another classroom</button>
+            @endif
         </div>
         <div>
             <label class="form-label" for="capacity">Student capacity <span aria-hidden="true">*</span></label>
@@ -89,9 +92,11 @@
     <div class="form-footer"><a class="btn btn-light" href="{{ route('class-groups.index') }}">Cancel</a><button class="btn btn-primary" type="submit">{{ $classGroup->exists ? 'Save changes' : 'Create class group' }}</button></div>
 </form>
 @if($classGroup->exists && $classGroup->teacher_id)
-<form class="panel p-4 mt-4" method="post" action="{{ route('class-groups.swap-teacher', $classGroup) }}">
+<dialog id="teacher-swap-dialog" aria-labelledby="teacher-swap-heading" style="width:min(640px,calc(100vw - 32px));max-height:85vh;overflow:auto;padding:0;border:1px solid var(--border-color);border-radius:24px;background:var(--surface);color:var(--text-primary)">
+<form class="p-4" method="post" action="{{ route('class-groups.swap-teacher', $classGroup) }}">
     @csrf
-    <h2 class="h5">Swap class teachers</h2>
+    <h2 class="h5" id="teacher-swap-heading">Swap class teachers</h2>
+    <p><strong>{{ $classGroup->display_name }}</strong> &middot; {{ $teachers->firstWhere('id', $classGroup->teacher_id)?->name }}</p>
     <p>Exchange this class teacher with another class in {{ $classGroup->program }}. Their assigned subjects, lessons and reservations move with them; rooms and lesson times stay the same.</p>
     <p class="small text-secondary">Save any changes above before swapping. The entire swap is cancelled if a timetable conflict is found.</p>
     <input type="hidden" name="source_teacher_id" value="{{ $classGroup->teacher_id }}">
@@ -109,14 +114,21 @@
     @error('swap_class_group_id')<p class="text-danger" role="alert">{{ $message }}</p>@enderror
     @error('source_teacher_id')<p class="text-danger" role="alert">{{ $message }}</p>@enderror
     @error('target_teacher_id')<p class="text-danger" role="alert">{{ $message }}</p>@enderror
-    <button class="btn btn-primary" type="submit">Swap teachers</button>
+    <div class="d-flex justify-content-end gap-2"><button class="btn btn-light" type="button" data-close-teacher-swap>Cancel</button><button class="btn btn-primary" type="submit"><i class="bi bi-arrow-left-right me-2" aria-hidden="true"></i>Swap teachers</button></div>
 </form>
+</dialog>
 @endif
 @endsection
 
 @push('scripts')
 <script>
 const swapClass = document.querySelector('#swap-class');
+const swapDialog = document.querySelector('#teacher-swap-dialog');
+document.querySelector('[data-open-teacher-swap]')?.addEventListener('click', () => swapDialog.showModal());
+document.querySelector('[data-close-teacher-swap]')?.addEventListener('click', () => swapDialog.close());
+@if($errors->hasAny(['swap_class_group_id', 'source_teacher_id', 'target_teacher_id']))
+swapDialog?.showModal();
+@endif
 const syncSwapTeacher = () => {
     const target = document.querySelector('[data-swap-target-teacher]');
     if (target) target.value = swapClass?.selectedOptions[0]?.dataset.teacher || '';

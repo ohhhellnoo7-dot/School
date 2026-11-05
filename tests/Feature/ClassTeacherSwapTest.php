@@ -93,5 +93,30 @@ class ClassTeacherSwapTest extends TestCase
             $this->assertEquals($cohort['teacher']->id, $cohort['lesson']->fresh()->teacher_id);
         }
     }
+
+    public function test_changing_a_japanese_class_teacher_updates_lessons_and_reservations(): void
+    {
+        $a = $this->cohort(3);
+        $a['teacher']->update(['program' => 'Japan']);
+        $a['class']->update(['program' => 'Japan']);
+        $a['group']->update(['program' => 'Japan']);
+        $replacement = User::factory()->create(['role' => 'teacher', 'program' => 'Japan', 'status' => 'active']);
+        app(TeacherManagementService::class)->saveProfile($replacement, ['Writing'], 1200, [
+            ['weekday' => 'Monday', 'start_time' => '17:30', 'end_time' => '19:30', 'unavailable' => false],
+        ]);
+        app(\App\Services\JapanClassTeacherService::class)->assign($a['group'], $replacement->id);
+        foreach (['group', 'class', 'subject', 'lesson', 'booking'] as $key) {
+            $this->assertEquals($replacement->id, $a[$key]->fresh()->teacher_id);
+        }
+        $other = ClassGroup::create(['name' => 'Other', 'program' => 'Japan', 'grade' => 8, 'teacher_id' => $a['teacher']->id, 'status' => 'active']);
+        try {
+            app(\App\Services\JapanClassTeacherService::class)->assign($a['group'], $a['teacher']->id);
+            $this->fail('Expected busy teacher rejection.');
+        } catch (\Illuminate\Validation\ValidationException $error) {
+            $this->assertArrayHasKey('teacher_id', $error->errors());
+        }
+        $this->assertEquals($replacement->id, $a['lesson']->fresh()->teacher_id);
+        $this->assertEquals($replacement->id, $a['group']->fresh()->teacher_id);
+    }
 }
 

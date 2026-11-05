@@ -37,6 +37,24 @@ class ClassroomSetupTest extends TestCase
             'slots' => [['starts_at' => $f['start'], 'subject_id' => $f['subject']->id, 'teacher_id' => $f['teacher']->id]]];
     }
 
+    public function test_room_card_shows_teacher_only_during_the_current_lesson(): void
+    {
+        $f = $this->fixture('Chinese', 'Evening');
+        $this->post(route('classrooms.store'), $this->data($f))->assertSessionHasNoErrors();
+        foreach (['17:29' => false, '17:30' => true, '18:29' => true, '18:30' => false] as $time => $visible) {
+            $response = $this->getJson(route('classrooms.data', ['date' => '2026-11-02', 'time' => $time]));
+            $response->assertOk();
+            $html = $response->json('html');
+            if ($visible) {
+                $this->assertStringContainsString('data-current-teacher', $html);
+                $this->assertStringContainsString(e($f['teacher']->name), $html);
+                $this->assertStringContainsString('17:30&ndash;18:30', $html);
+            } else {
+                $this->assertStringNotContainsString('data-current-teacher', $html);
+            }
+        }
+    }
+
     public function test_new_building_is_saved_and_appears_in_room_form_and_dashboard_filter(): void
     {
         $f = $this->fixture();
