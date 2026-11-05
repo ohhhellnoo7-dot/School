@@ -57,7 +57,7 @@ class ProfileController extends Controller
             || (clone $students)->where(fn ($q) => $q->where('user_id', $user->id)->orWhere('parent_id', $user->id))->exists()
             || ($user->role === 'teacher' && (
                 \App\Support\SchoolModules::subjects($viewer)->where('teacher_id', $user->id)->exists()
-                || \App\Models\SchoolClass::whereIn('id', (clone $students)->select('school_class_id'))->where('teacher_id', $user->id)->exists()
+                || \App\Models\SchoolClass::enrolledFor($viewer)->where('teacher_id', $user->id)->exists()
             ));
         abort_unless($visible, 403);
         $path = $user->profile_photo_path;

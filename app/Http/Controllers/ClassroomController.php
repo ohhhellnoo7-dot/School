@@ -70,7 +70,7 @@ class ClassroomController extends Controller
             ->orderBy('starts_at')]);
 
         $visibleCohorts = in_array($request->user()->role, ['student', 'parent'], true)
-            ? \App\Models\SchoolClass::whereIn('id', \App\Models\Student::visibleTo($request->user())->select('school_class_id'))->get() : null;
+            ? \App\Models\SchoolClass::whereIn('id', \App\Models\SchoolClass::enrolledFor($request->user())->select('school_classes.id'))->get() : null;
         if ($visibleCohorts !== null) $classroom->setRelation('bookings', $classroom->bookings->filter(fn ($b) => $visibleCohorts->contains(fn ($c) => $c->class_group_id === $b->class_group_id && $c->session === $b->classSession?->session)));
 
         $weekly = collect(self::SESSIONS)->mapWithKeys(function (string $session) use ($classroom) {
@@ -80,9 +80,15 @@ class ClassroomController extends Controller
         });
 
         $lessons = app(\App\Services\RoomLessonService::class)->lessons($classroom, \App\Models\Schedule::with(['schoolClass', 'subject', 'teacher'])->where(fn ($q)=>$q->where('academic_year',$academicYear)->orWhereNull('academic_year'))->when($visibleCohorts !== null, fn ($q) => $q->whereIn('school_class_id', $visibleCohorts->map->timetableOwnerId()->unique()->all()))->get());
+        $roomClassIds = collect(data_get($snapshot, 'programDetails', []))->flatMap(fn ($details) => $details['class_ids'] ?? [])->unique()->values();
+        $roomStudents = \App\Models\Student::visibleTo($request->user())->where('status', 'active')
+            ->enrolledIn($roomClassIds)->with(['user', 'parent',
+                'studyClasses' => fn ($q) => $q->whereIn('school_classes.id', $roomClassIds),
+            ])->orderBy('name')->orderBy('id')->get();
         return view('school.classrooms.show', [
             'classroom' => $classroom,
             'snapshot' => $snapshot,
+            'roomStudents' => $roomStudents,
             'moment' => $moment,
             'weekly' => $weekly,
             'days' => self::DAYS,

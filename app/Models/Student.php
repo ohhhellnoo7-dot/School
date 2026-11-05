@@ -12,6 +12,31 @@ class Student extends Model
 
     protected $guarded = [];
 
+    protected static function booted(): void
+    {
+        static::saved(function (Student $student) {
+            if (!\Illuminate\Support\Facades\Schema::hasTable('student_class_enrollments')) return;
+            if ($student->wasChanged('school_class_id')) {
+                $student->studyClasses()->detach($student->getOriginal('school_class_id'));
+            }
+            if ($student->school_class_id) {
+                $student->studyClasses()->syncWithoutDetaching([
+                    $student->school_class_id => ['class_group_id' => SchoolClass::find($student->school_class_id)?->class_group_id],
+                ]);
+            }
+        });
+    }
+
+    public function studyClasses()
+    {
+        return $this->belongsToMany(SchoolClass::class, 'student_class_enrollments');
+    }
+
+    public function scopeEnrolledIn(Builder $query, $classIds): Builder
+    {
+        return $query->whereHas('studyClasses', fn ($classes) => $classes->whereIn('school_classes.id', $classIds));
+    }
+
     protected function casts(): array
     {
         return ['date_of_birth' => 'date', 'enrollment_date' => 'date'];
@@ -98,7 +123,7 @@ class Student extends Model
     {
         return match ($user->role) {
             'administrator' => $query,
-            'teacher' => $query->whereHas('schoolClass', fn ($q) => $q->where('teacher_id', $user->id)->orWhereHas('subjects', fn ($s) => $s->where('teacher_id', $user->id))),
+            'teacher' => $query->whereHas('studyClasses', fn ($q) => $q->where('teacher_id', $user->id)->orWhereHas('subjects', fn ($s) => $s->where('teacher_id', $user->id))),
             'parent' => $query->where('parent_id', $user->id),
             default => $query->where('user_id', $user->id),
         };

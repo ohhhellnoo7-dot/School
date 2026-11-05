@@ -15,7 +15,7 @@ class UnifiedTimetableController extends Controller
     {
         $request->validate(['view' => 'nullable|in:teachers,students,classrooms', 'teacher' => 'nullable|integer', 'class' => 'nullable|integer', 'classroom' => 'nullable|integer', 'grade' => 'nullable|integer|between:1,12', 'session' => 'nullable|in:Morning,Afternoon,Evening','academic_year'=>['nullable','regex:/^\d{4}-\d{4}$/']]);
         $restricted = in_array($request->user()->role, ['student', 'parent'], true);
-        $classes = SchoolClass::query()->when($restricted, fn ($q) => $q->whereIn('id', Student::visibleTo($request->user())->select('school_class_id')))->orderBy('name')->orderBy('section')->orderBy('session')->get();
+        $classes = SchoolClass::query()->when($restricted, fn ($q) => $q->whereIn('id', SchoolClass::enrolledFor($request->user())->select('school_classes.id')))->orderBy('name')->orderBy('section')->orderBy('session')->get();
         $view = $request->input('view', 'students');
         $studentClasses = null;
         $programs = \App\Models\Program::names();

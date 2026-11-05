@@ -24,6 +24,7 @@
             @foreach(['Classes' => $details['classes'], 'Teachers' => $details['teachers'], 'Subjects' => $details['subjects']] as $label => $items)
                 <div class="room-detail-group"><h3>{{ $label }} <span>{{ $items->count() }}</span></h3><ul>@forelse($items as $item)<li>{{ $item }}</li>@empty<li>Not assigned yet</li>@endforelse</ul></div>
             @endforeach
+            @include('school.classrooms._student-roster', ['programStudents' => $roomStudents->filter(fn ($student) => $student->studyClasses->contains('program', $programName))])
         </article>
     @empty
         <p class="text-secondary">No programs assigned yet.</p>

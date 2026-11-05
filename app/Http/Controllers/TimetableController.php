@@ -129,7 +129,7 @@ class TimetableController extends Controller
     private function authorizeView(Request $request, SchoolClass $schoolClass): void
     {
         if ($request->user()->role === 'parent') {
-            abort_unless(Student::visibleTo($request->user())->where('school_class_id', $schoolClass->id)->exists(), 404);
+            abort_unless(Student::visibleTo($request->user())->enrolledIn([$schoolClass->id])->exists(), 404);
 
             return;
         }
@@ -145,7 +145,7 @@ class TimetableController extends Controller
     private function visibleClasses(Request $request): Builder
     {
         if ($request->user()->role === 'parent') {
-            return SchoolClass::query()->whereIn('id', Student::visibleTo($request->user())->select('school_class_id'));
+            return SchoolClass::query()->whereIn('id', SchoolClass::enrolledFor($request->user())->select('school_classes.id'));
         }
 
         return SchoolModules::query('classes', $request->user());

@@ -273,7 +273,9 @@ class TeacherManagementService
         $cohorts = [];
         foreach ($sessions->groupBy('class_group_id') as $groupSessions) {
             $group = $groupSessions->first()->classGroup;
-            $students = \App\Models\Student::with('schoolClass')->where('status', 'active')->whereHas('schoolClass', fn ($q) => $q->where('class_group_id', $group->id))->get()->groupBy('schoolClass.session');
+            $students = \App\Models\SchoolClass::where('class_group_id', $group->id)
+                ->with(['students' => fn ($q) => $q->where('status', 'active')])->get()
+                ->groupBy('session')->map(fn ($classes) => $classes->flatMap->students->unique('id'));
             $morning = $students->get('Morning', collect()); $afternoon = $students->get('Afternoon', collect());
             $identity = fn ($s) => mb_strtolower(trim($s->name)).'|'.substr((string)$s->date_of_birth, 0, 10);
             $shared = $morning->map($identity)->intersect($afternoon->map($identity))->count();

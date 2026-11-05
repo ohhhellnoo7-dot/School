@@ -30,11 +30,12 @@ class StudentController extends Controller
             ->when($request->session, fn ($q, $session) => $q->where('session', $session))->exists()) {
             $request->merge(['class' => null]);
         }
-        $students = Student::visibleTo($request->user())->with(['schoolClass', 'user', 'parent'])
+        $students = Student::visibleTo($request->user())->with(['schoolClass', 'studyClasses', 'user', 'parent'])
             ->search($request->input('search'))
-            ->when($request->class, fn ($q, $class) => $q->where('school_class_id', $class))
-            ->when($request->program, fn ($q, $program) => $q->whereHas('schoolClass', fn ($c) => $c->where('program', $program)))
-            ->when($request->session, fn ($q, $session) => $q->whereHas('schoolClass', fn ($c) => $c->where('session', $session)))
+            ->when($request->class || $request->program || $request->session, fn ($q) => $q->whereHas('studyClasses', fn ($classes) => $classes
+                ->when($request->class, fn ($c, $id) => $c->where('school_classes.id', $id))
+                ->when($request->program, fn ($c, $program) => $c->where('program', $program))
+                ->when($request->session, fn ($c, $session) => $c->where('session', $session))))
             ->when($request->status, fn ($q, $status) => $q->where('status', $status))
             ->orderBy($request->input('sort', 'name'), $request->input('direction', 'asc'))->orderBy('id')->paginate(12)->withQueryString();
 
@@ -72,7 +73,34 @@ class StudentController extends Controller
     {
         Gate::authorize('view', $student);
 
-        return view('school.students.show', ['student' => $student->load(['schoolClass', 'user', 'parent', 'attendances' => fn ($q) => $q->latest('date')->limit(30), 'grades.examination.subject', 'fees'])]);
+        return view('school.students.show', ['student' => $student->load(['schoolClass', 'studyClasses', 'user', 'parent', 'attendances' => fn ($q) => $q->latest('date')->limit(30), 'grades.examination.subject', 'fees']),
+            'classes' => SchoolClass::orderBy('program')->orderBy('name')->get()]);
+    }
+
+    public function registerSession(Request $request, Student $student)
+    {
+        Gate::authorize('registerSession', $student);
+        $data = $request->validate(['additional_class_id' => 'required|integer|exists:school_classes,id']);
+        app(\App\Services\TeacherManagementService::class)->locked(function () use ($student, $data) {
+            $additional = $student->studyClasses()->where('school_classes.id', '!=', $student->school_class_id)->pluck('school_classes.id')->all();
+            $additional[] = $data['additional_class_id'];
+            app(\App\Services\StudentStudySessionService::class)->sync($student, $additional);
+        });
+        return redirect()->route('students.show', $student)->with('success', 'Additional study session registered. Your existing classes are unchanged.');
+    }
+
+    private function syncStudySessions(Request $request, Student $student): void
+    {
+        if (!$request->has('study_sessions_submitted')) {
+            $existing = $student->studyClasses()->where('school_classes.id', '!=', $student->school_class_id)->pluck('school_classes.id')->all();
+            if ($existing) app(\App\Services\StudentStudySessionService::class)->sync($student, $existing);
+            return;
+        }
+        $data = $request->validate([
+            'additional_class_ids' => 'nullable|array|max:2',
+            'additional_class_ids.*' => 'required|integer|distinct|exists:school_classes,id',
+        ]);
+        app(\App\Services\StudentStudySessionService::class)->sync($student, $data['additional_class_ids'] ?? []);
     }
 
     public function store(Request $request)
@@ -91,7 +119,7 @@ class StudentController extends Controller
             'guardian_address' => 'nullable|string|max:2000',
         ]);
         $credentials = [];
-        $student = DB::transaction(function () use ($data, $request, $accountData, &$credentials) {
+        $student = app(\App\Services\TeacherManagementService::class)->locked(function () use ($data, $request, $accountData, &$credentials) {
             $data['user_id'] = $this->enrollmentAccount($data['user_id'] ?? null, $data['email'], $data['name'], 'student', $accountData['student_password'] ?? null, $credentials);
             $data['parent_id'] = $this->enrollmentAccount($data['parent_id'] ?? null, $accountData['guardian_email'] ?? null, $data['guardian_name'], 'parent', $accountData['parent_password'] ?? null, $credentials);
             $this->saveParentDetails($data['parent_id'], $data['guardian_phone'], $accountData);
@@ -102,6 +130,7 @@ class StudentController extends Controller
             } while (Student::where('student_number', $data['student_number'])->exists());
             DB::table('student_number_sequences')->where('id', 1)->update(['last_number' => $number]);
             $student = Student::create($data);
+            $this->syncStudySessions($request, $student);
             if ($request->boolean('create_test_fee')) {
                 $student->fees()->create(['description' => 'QR payment test (USD 0.10)', 'amount' => '0.10', 'paid' => 0, 'due_date' => today()]);
             }
@@ -189,8 +218,9 @@ class StudentController extends Controller
             unset($data['photo']);
         }
         $parentDetails = $request->validate(['guardian_gender' => 'nullable|in:male,female,other', 'guardian_address' => 'nullable|string|max:2000']);
-        DB::transaction(function () use ($student, $data, $parentDetails) {
+        app(\App\Services\TeacherManagementService::class)->locked(function () use ($student, $data, $parentDetails, $request) {
             $student->update($data);
+            $this->syncStudySessions($request, $student);
             $this->saveParentDetails($student->parent_id, $data['guardian_phone'], $parentDetails);
         });
         $this->saveParentPhoto($request, $student);

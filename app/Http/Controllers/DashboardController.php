@@ -103,7 +103,7 @@ class DashboardController extends Controller
         if ($user->role === 'administrator') {
             foreach (\App\Models\Program::names() as $program) {
                 $programBreakdowns['people'][$program] = (clone $students)
-                    ->whereHas('schoolClass', fn ($q) => $q->where('program', $program))->count();
+                    ->whereHas('studyClasses', fn ($q) => $q->where('program', $program))->count();
                 $programBreakdowns['building'][$program] = $normalizedClassCount > 0
                     ? ClassGroup::where('program', $program)->count()
                     : SchoolClass::where('program', $program)
@@ -137,7 +137,7 @@ class DashboardController extends Controller
                     ? SchoolClass::query()
                     : ($user->role === 'teacher'
                         ? SchoolModules::query('classes', $user)
-                        : SchoolClass::whereIn('id', (clone $students)->select('school_class_id'))))
+                        : SchoolClass::enrolledFor($user)))
                     ->select('name', 'section')->distinct()->get()->count(),
             'subjectCount' => SchoolModules::subjects($user)->distinct()->count('name'),
             'presentCount' => (clone $attendance)->where('status', 'present')->count(),

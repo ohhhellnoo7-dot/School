@@ -67,7 +67,7 @@ class LessonManagementService
         if ($this->rules::minute($lesson->starts_at) < $this->rules::minute($start) || $this->rules::minute($lesson->ends_at) > $this->rules::minute($end) || ($this->rules::minute($lesson->starts_at) - $this->rules::minute($start)) % 60 !== 0) $this->rules->fail('Lesson is outside its configured program/session hours.');
         if (! ClassSession::where('class_group_id', $class->class_group_id)->where('session', $class->session)->where('starts_at', '<=', $lesson->starts_at)->where('ends_at', '>=', $lesson->ends_at)->exists()) $this->rules->fail('Confirm the class session first.');
         $cohortIds = SchoolClass::whereKey($class->id)->orWhere('shared_timetable_class_id', $class->id)->pluck('id');
-        $studentCount = \App\Models\Student::whereIn('school_class_id', $cohortIds)->where('status', 'active')->count();
+        $studentCount = \App\Models\Student::enrolledIn($cohortIds)->where('status', 'active')->count();
         if ($room->status !== 'active' || $room->capacity < $studentCount) $this->rules->fail('The physical classroom is inactive or too small.');
         $bookings = ClassroomBooking::with('classSession')->where('day_of_week', $lesson->day)->where('starts_at', '<', $lesson->ends_at)->where('ends_at', '>', $lesson->starts_at)->get();
         if ($bookings->contains(fn ($b) => $b->classroom_id === $room->id && ($b->class_group_id !== $class->class_group_id || $b->classSession?->session !== $class->session))) $this->rules->fail('The physical classroom is reserved for another cohort.');

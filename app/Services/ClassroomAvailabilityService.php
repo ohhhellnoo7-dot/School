@@ -54,6 +54,8 @@ class ClassroomAvailabilityService
         $programsByRoom = $weeklyLessons->groupBy('classroom_id')->map(fn ($entries) => $entries->pluck('schoolClass.program')->filter());
         $cohorts = \App\Models\SchoolClass::withCount(['students as enrolled_count' => fn ($query) => $query->where('status', 'active')])->get();
         $lessonsByRoom = $weeklyLessons->groupBy('classroom_id');
+        $visibleStudyClasses = auth()->check() && in_array(auth()->user()->role, ['student', 'parent'], true)
+            ? \App\Models\SchoolClass::enrolledFor(auth()->user())->get() : null;
 
         $rooms = Classroom::query()
             ->with(['buildingRecord', 'bookings' => fn ($query) => $query
@@ -64,19 +66,25 @@ class ClassroomAvailabilityService
             ->get();
 
         return $rooms
-            ->map(function (Classroom $classroom) use ($minute, $lessons, $weeklyBookings, $programsByRoom, $cohorts, $lessonsByRoom) {
+            ->map(function (Classroom $classroom) use ($minute, $lessons, $weeklyBookings, $programsByRoom, $cohorts, $lessonsByRoom, $visibleStudyClasses) {
                 $programs = ($programsByRoom->get($classroom->id) ?? collect())
                     ->merge(($weeklyBookings->get($classroom->id) ?? collect())->pluck('classGroup.program'))
                     ->filter()->unique()->sort()->values();
-                $programDetails = $programs->mapWithKeys(function ($program) use ($classroom, $weeklyBookings, $lessonsByRoom, $cohorts) {
+                $programDetails = $programs->mapWithKeys(function ($program) use ($classroom, $weeklyBookings, $lessonsByRoom, $cohorts, $visibleStudyClasses) {
                     $programLessons = ($lessonsByRoom->get($classroom->id) ?? collect())->filter(fn ($lesson) => $lesson->schoolClass?->program === $program);
                     $programBookings = ($weeklyBookings->get($classroom->id) ?? collect())->filter(fn ($booking) => $booking->classGroup?->program === $program);
+                    if ($visibleStudyClasses !== null) {
+                        $programLessons = $programLessons->filter(fn ($lesson) => $visibleStudyClasses->contains(fn ($class) => $class->timetableOwnerId() === (int) $lesson->school_class_id));
+                        $programBookings = $programBookings->filter(fn ($booking) => $visibleStudyClasses->contains(fn ($class) => $class->class_group_id === $booking->class_group_id && $class->session === $booking->classSession?->session));
+                        $cohorts = $cohorts->whereIn('id', $visibleStudyClasses->modelKeys());
+                    }
                     $ownerIds = $programLessons->pluck('school_class_id');
                     $classes = $cohorts->filter(fn ($class) => $class->program === $program && ($ownerIds->contains($class->timetableOwnerId()) ||
                         $programBookings->contains(fn ($booking) => $booking->class_group_id === $class->class_group_id && $booking->classSession?->session === $class->session)));
                     return [$program => [
                         'students' => $classes->sum('enrolled_count'),
                         'classes' => $classes->pluck('label')->unique()->values(),
+                        'class_ids' => $classes->pluck('id')->values(),
                         'teachers' => $programLessons->pluck('teacher.name')->merge($programBookings->pluck('teacher.name'))->filter()->unique()->values(),
                         'subjects' => $programLessons->pluck('subject.name')->filter()->unique()->values(),
                         'sessions' => $classes->pluck('session')->merge($programBookings->pluck('classSession.session'))->filter()->unique()->values(),
@@ -99,7 +107,7 @@ class ClassroomAvailabilityService
                 if ($activity['nextLesson'] && $status === self::STATUS_AVAILABLE) $status = self::STATUS_UPCOMING;
                 $roomLessons = app(RoomLessonService::class)->lessons($classroom, $lessons);
                 if (auth()->check() && in_array(auth()->user()->role, ['student', 'parent'], true)) {
-                    $cohorts = \App\Models\Student::visibleTo(auth()->user())->with('schoolClass')->get()->pluck('schoolClass')->filter();
+                    $cohorts = \App\Models\SchoolClass::enrolledFor(auth()->user())->get();
                     $visibleBooking = fn ($b) => ! $b || $cohorts->contains(fn ($c) => $c->class_group_id === $b->class_group_id && $c->session === $b->classSession?->session);
                     $visibleLesson = fn ($lesson) => $cohorts->contains(fn ($class) => $class->timetableOwnerId() === (int) $lesson->school_class_id);
                     if ($activity['currentLesson'] && ! $visibleLesson($activity['currentLesson'])) { $activity['currentLesson'] = null; $activity['activity'] = 'Reserved for another cohort'; }

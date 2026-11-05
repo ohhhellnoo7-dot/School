@@ -73,6 +73,7 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
     Route::get('/users/{user}/photo', [ProfileController::class, 'userPhoto'])->name('users.photo');
     Route::get('/students/{student}/photo', [ProfileController::class, 'studentPhoto'])->name('students.photo');
     Route::resource('/students', StudentController::class);
+    Route::post('/students/{student}/study-sessions', [StudentController::class, 'registerSession'])->name('students.study-sessions.store');
     Route::get('/teachers/{teacher}/schedule', [SchoolModuleController::class, 'teacherTimetable'])->name('teachers.schedule');
     Route::get('/classes/{schoolClass}/timetable', [TimetableController::class, 'show'])->name('classes.timetable');
     Route::get('/teachers/{teacher}/schedule/status', [SchoolModuleController::class, 'teacherLessonStatus'])->name('teachers.schedule.status');

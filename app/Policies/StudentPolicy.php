@@ -7,6 +7,11 @@ use App\Models\User;
 
 class StudentPolicy
 {
+    public function registerSession(User $user, Student $student): bool
+    {
+        return $student->status === 'active' && ($user->role === 'administrator' ||
+            ($user->role === 'student' && (int) $student->user_id === (int) $user->id));
+    }
     public function view(User $user, Student $student): bool
     {
         return Student::visibleTo($user)->whereKey($student->id)->exists();

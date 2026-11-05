@@ -69,11 +69,11 @@ class ClassGroup extends Model
     {
         return $this->hasManyThrough(
             Student::class,
-            SchoolClass::class,
+            StudentClassEnrollment::class,
             'class_group_id',
-            'school_class_id',
             'id',
-            'id'
+            'id',
+            'student_id'
         );
     }
 

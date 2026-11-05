@@ -10,6 +10,11 @@ class SchoolClass extends Model
 
     protected static function booted(): void
     {
+        static::saved(function (SchoolClass $class) {
+            if ($class->wasChanged('class_group_id') && \Illuminate\Support\Facades\Schema::hasTable('student_class_enrollments')) {
+                StudentClassEnrollment::where('school_class_id', $class->id)->update(['class_group_id' => $class->class_group_id]);
+            }
+        });
         static::saving(function (SchoolClass $class) {
             if (! $class->shared_timetable_class_id) return;
             $owner = self::findOrFail($class->shared_timetable_class_id);
@@ -55,7 +60,12 @@ class SchoolClass extends Model
 
     public function students()
     {
-        return $this->hasMany(Student::class);
+        return $this->belongsToMany(Student::class, 'student_class_enrollments');
+    }
+
+    public function scopeEnrolledFor($query, User $user)
+    {
+        return $query->whereHas('students', fn ($students) => $students->visibleTo($user));
     }
 
     public function subjects()

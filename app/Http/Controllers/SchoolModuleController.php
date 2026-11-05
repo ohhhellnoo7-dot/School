@@ -57,7 +57,7 @@ class SchoolModuleController extends Controller
                     ->orWhereIn('session', ['Morning', 'Afternoon']));
             $classSummary = [
                 'total' => (clone $query)->select('name', 'section')->distinct()->get()->count(),
-                'students' => Student::whereIn('school_class_id', (clone $query)->select('school_classes.id'))->count(),
+                'students' => Student::enrolledIn((clone $query)->select('school_classes.id'))->count(),
                 'teachers' => (clone $query)->whereNotNull('teacher_id')->distinct()->count('teacher_id'),
                 'occupied' => (clone $query)->whereHas('students')->count(),
             ];
@@ -112,7 +112,7 @@ class SchoolModuleController extends Controller
                 ->sort(fn ($a, $b) => strnatcasecmp($a->name.$a->section, $b->name.$b->section))->values();
             [$gradeName, $gradeSection] = array_pad(explode('::', $request->input('grade', '') ?? '', 2), 2, null);
             if ($request->filled('program') || $request->filled('session') || $request->filled('grade')) {
-                $query->whereHas('children.schoolClass', fn ($q) => $q
+                $query->whereHas('children.studyClasses', fn ($q) => $q
                     ->when($request->program, fn ($q, $program) => $q->where('program', $program))
                     ->when($request->session, fn ($q, $session) => $q->where('session', $session))
                     ->when($gradeName, fn ($q) => $q->where('name', $gradeName))
@@ -504,7 +504,7 @@ class SchoolModuleController extends Controller
         if ($module === 'grades') {
             $exam = Examination::with('subject')->findOrFail($data['examination_id']);
             $student = Student::findOrFail($data['student_id']);
-            if ($exam->subject->school_class_id !== $student->school_class_id || $data['marks'] > $exam->total_marks) {
+            if (!$student->studyClasses()->where('school_classes.id', $exam->subject->school_class_id)->exists() || $data['marks'] > $exam->total_marks) {
                 throw ValidationException::withMessages(['marks' => 'Choose an exam for this student’s class and marks within the examination total.']);
             }
         }

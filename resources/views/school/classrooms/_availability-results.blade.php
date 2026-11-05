@@ -43,7 +43,7 @@
             $selectedProgram = $programDetails->has(request('program')) ? request('program') : $programDetails->keys()->first();
         @endphp
         <article class="classroom-card room-status-{{ $status }}" data-room-card="{{ $room->id }}" data-lesson-state="{{ $lessonState }}">
-            <div class="room-card-visual" aria-hidden="true"><img src="{{ asset('images/classroom-interior.svg') }}" alt="" loading="lazy" width="640" height="220"><span class="room-visual-label"><i class="bi bi-{{ $icons[$status] ?? 'circle-fill' }}"></i> {{ str_replace('_', ' ', ucfirst($status)) }}</span></div>
+            <div class="room-card-visual" aria-hidden="true"><img src="{{ asset('images/classroom-card.png') }}" alt="" loading="lazy" width="1672" height="941"><span class="room-visual-label"><i class="bi bi-{{ $icons[$status] ?? 'circle-fill' }}"></i> {{ str_replace('_', ' ', ucfirst($status)) }}</span></div>
             <div class="room-card-head">
                 <span class="room-icon"><i class="bi bi-door-open" aria-hidden="true"></i></span>
                 <span class="room-heading"><small>{{ $room->buildingRecord ? $room->buildingRecord->name.' / ' : '' }}{{ __('Room') }}</small><strong>{{ $room->room_number }}</strong>@if($room->name && $room->name !== $room->room_number)<span>{{ $room->name }}</span>@endif</span>
