@@ -26,7 +26,7 @@
             @error('program')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
         <div>
-            <label class="form-label" for="grade">{{ __('Grade') }} <span aria-hidden="true">*</span></label>
+            <label class="form-label" for="grade">Grade / Level <span aria-hidden="true">*</span></label>
             <select class="form-select @error('grade') is-invalid @enderror" id="grade" name="grade" required>
                 <option value="">Choose a grade</option>
                 @for($grade = 1; $grade <= 12; $grade++)<option value="{{ $grade }}" @selected((string) old('grade', $classGroup->grade) === (string) $grade)>Grade {{ $grade }}</option>@endfor
@@ -88,10 +88,41 @@
     </div>
     <div class="form-footer"><a class="btn btn-light" href="{{ route('class-groups.index') }}">Cancel</a><button class="btn btn-primary" type="submit">{{ $classGroup->exists ? 'Save changes' : 'Create class group' }}</button></div>
 </form>
+@if($classGroup->exists && $classGroup->teacher_id)
+<form class="panel p-4 mt-4" method="post" action="{{ route('class-groups.swap-teacher', $classGroup) }}">
+    @csrf
+    <h2 class="h5">Swap class teachers</h2>
+    <p>Exchange this class teacher with another class in {{ $classGroup->program }}. Their assigned subjects, lessons and reservations move with them; rooms and lesson times stay the same.</p>
+    <p class="small text-secondary">Save any changes above before swapping. The entire swap is cancelled if a timetable conflict is found.</p>
+    <input type="hidden" name="source_teacher_id" value="{{ $classGroup->teacher_id }}">
+    <input type="hidden" name="target_teacher_id" data-swap-target-teacher>
+    <label class="form-label" for="swap-class">Swap with class / room</label>
+    <select class="form-select mb-3" id="swap-class" name="swap_class_group_id" required>
+        <option value="">Choose a class</option>
+        @foreach($swapClasses as $other)
+            @php($rooms = $other->bookings->pluck('classroom.name')->merge($other->schoolClasses->flatMap(fn ($class) => $class->schedules->pluck('classroom.name')))->filter()->unique())
+            @if($other->teacher_id !== $classGroup->teacher_id)
+            <option value="{{ $other->id }}" data-teacher="{{ $other->teacher_id }}" @selected((string) old('swap_class_group_id') === (string) $other->id)>{{ $other->display_name }} · {{ $other->teacher?->name }}{{ $rooms->isNotEmpty() ? ' · Room '.$rooms->join(', ') : '' }}</option>
+            @endif
+        @endforeach
+    </select>
+    @error('swap_class_group_id')<p class="text-danger" role="alert">{{ $message }}</p>@enderror
+    @error('source_teacher_id')<p class="text-danger" role="alert">{{ $message }}</p>@enderror
+    @error('target_teacher_id')<p class="text-danger" role="alert">{{ $message }}</p>@enderror
+    <button class="btn btn-primary" type="submit">Swap teachers</button>
+</form>
+@endif
 @endsection
 
 @push('scripts')
 <script>
+const swapClass = document.querySelector('#swap-class');
+const syncSwapTeacher = () => {
+    const target = document.querySelector('[data-swap-target-teacher]');
+    if (target) target.value = swapClass?.selectedOptions[0]?.dataset.teacher || '';
+};
+swapClass?.addEventListener('change', syncSwapTeacher);
+syncSwapTeacher();
 const programSelect = document.querySelector('[data-program-select]');
 const classTeacher = document.querySelector('#teacher_id');
 const teacherOptions = [...classTeacher.options].filter(option => option.value).map(option => ({value: option.value, text: option.textContent, program: option.dataset.program}));

@@ -151,6 +151,9 @@ class ClassGroupController extends Controller
 
         return view('school.class-groups.form', [
             'classGroup' => $classGroup,
+            'swapClasses' => ClassGroup::where('program', $classGroup->program)->whereKeyNot($classGroup->id)
+                ->whereNotNull('teacher_id')->with(['teacher', 'bookings.classroom', 'schoolClasses.schedules.classroom'])
+                ->orderBy('name')->get(),
             'teachers' => $this->teachers(),
             'programSessions' => $this->programSessions(),
         ]);
@@ -171,6 +174,21 @@ class ClassGroupController extends Controller
 
         return redirect()->route('class-groups.show', $classGroup)
             ->with('success', "{$classGroup->display_name} was updated.");
+    }
+
+    public function swapTeacher(Request $request, ClassGroup $classGroup): RedirectResponse
+    {
+        $data = $request->validate([
+            'swap_class_group_id' => ['required', 'integer', 'exists:class_groups,id'],
+            'source_teacher_id' => ['required', 'integer'],
+            'target_teacher_id' => ['required', 'integer'],
+        ]);
+        $target = ClassGroup::findOrFail($data['swap_class_group_id']);
+        app(\App\Services\ClassTeacherSwapService::class)->swap($classGroup, $target,
+            (int) $data['source_teacher_id'], (int) $data['target_teacher_id']);
+
+        return redirect()->route('class-groups.edit', $classGroup)
+            ->with('success', "Class teachers were swapped between {$classGroup->display_name} and {$target->display_name}.");
     }
 
     public function destroy(ClassGroup $classGroup): RedirectResponse

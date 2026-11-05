@@ -329,10 +329,46 @@
         }
     });
     const classDialog = document.querySelector('[data-create-class-dialog]');
+    const roomDetails = document.querySelector('[aria-labelledby="room-details-heading"]');
+    const roomDetailsHome = document.createComment('Room details position');
+    roomDetails.before(roomDetailsHome);
+    // Keep the room controls owned by the room form while showing them in the dialog.
+    roomDetails.querySelectorAll('input, select, textarea, button').forEach(control => {
+        control.setAttribute('form', 'room-editor-form');
+    });
+    classDialog.addEventListener('close', () => {
+        roomDetailsHome.after(roomDetails);
+        roomDetails.hidden = roomDetails.hasAttribute('data-room-dialog-only');
+        updateSummary();
+    });
     const classForm = classDialog.querySelector('form');
+    const roomDone = classDialog.querySelector('[data-done-room-details]');
+    const openRoomDetails = () => {
+        if (classDialog.open) return;
+        classForm.hidden = true;
+        roomDone.hidden = false;
+        roomDetails.hidden = false;
+        classDialog.querySelector('[data-inline-room-details]').append(roomDetails);
+        classDialog.showModal();
+    };
+    form.querySelector('[data-open-room-details]')?.addEventListener('click', openRoomDetails);
+    roomDetails.addEventListener('input', updateSummary);
+    roomDetails.addEventListener('change', updateSummary);
+    roomDetails.querySelectorAll('input, select, textarea').forEach(control => {
+        control.addEventListener('invalid', openRoomDetails);
+    });
+    roomDone.addEventListener('click', () => {
+        for (const control of roomDetails.querySelectorAll('input, select, textarea')) {
+            if (!control.reportValidity()) return;
+        }
+        classDialog.close();
+    });
     const classError = classDialog.querySelector('[data-create-class-error]');
     const classTeacherOptions = [...classForm.elements.teacher_id.options].filter(item => item.value).map(item => ({id: item.value, name: item.textContent, program: item.dataset.program}));
     root.querySelector('[data-open-create-class]').addEventListener('click', () => {
+        classForm.hidden = false;
+        roomDone.hidden = true;
+        roomDetails.hidden = false;
         classForm.reset();
         classError.textContent = '';
         classForm.elements.program.value = program.value;
@@ -347,6 +383,7 @@
             return option(item.id, `${item.name} — ${label}`, program.value === 'Japan' && assignments.length > 0);
         }));
         classForm.elements.curriculum.value = [...new Set(config.classes.filter(cls => cls.program === program.value).flatMap(cls => cls.subjects.map(subject => subject.name)))].join('\n');
+        classDialog.querySelector('[data-inline-room-details]').append(roomDetails);
         classDialog.showModal();
     });
     classDialog.querySelector('[data-cancel-create-class]').addEventListener('click', () => classDialog.close());

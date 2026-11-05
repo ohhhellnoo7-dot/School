@@ -14,6 +14,7 @@
 
 <section class="room-detail-hero"><div class="room-detail-icon"><i class="bi bi-door-open" aria-hidden="true"></i></div><div><h2>{{ $classroom->name }}</h2><p>Lesson activity and room occupancy are shown separately below.</p></div><dl><div><dt>Room number</dt><dd>{{ $classroom->room_number }}</dd></div><div><dt>Capacity</dt><dd>{{ $classroom->capacity }} students</dd></div><div><dt>Maintenance</dt><dd>{{ str_replace('_', ' ', ucfirst($classroom->status)) }}</dd></div></dl></section>
 
+@include('school.classrooms._class-levels')
 <section class="panel p-4 my-4" aria-label="Room program details">
     <h2 class="h5">Programs and classes</h2>
     @forelse(collect(data_get($snapshot, 'programDetails', [])) as $programName => $details)

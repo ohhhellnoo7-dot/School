@@ -4,11 +4,11 @@
 @section('content')
 <div class="page-heading room-editor-heading"><div><a class="room-back-link" href="{{ route('classrooms.index') }}"><i class="bi bi-arrow-left" aria-hidden="true"></i> Classrooms</a><h1>{{ $classroom->exists ? 'Edit room '.$classroom->room_number : 'Add a classroom' }}</h1><p>Set up your room, then add a teaching schedule when you are ready.</p></div><a class="btn btn-outline-secondary" href="{{ $classroom->exists ? route('classrooms.show', $classroom) : route('classrooms.index') }}">Cancel</a></div>
 
-<form class="room-editor" data-room-editor method="post" action="{{ $classroom->exists ? route('classrooms.update', $classroom) : route('classrooms.store') }}">
+<form id="room-editor-form" class="room-editor" data-room-editor method="post" action="{{ $classroom->exists ? route('classrooms.update', $classroom) : route('classrooms.store') }}">
     @csrf @if($classroom->exists) @method('PUT') @endif
     <div class="room-editor-layout">
     <div class="room-editor-main">
-    <section class="room-editor-card" aria-labelledby="room-details-heading">
+    <section class="room-editor-card" aria-labelledby="room-details-heading" @if(!$classroom->exists) hidden data-room-dialog-only @endif>
     <div class="room-section-heading"><span class="room-step">01</span><div><h2 id="room-details-heading">Room details</h2><p>Give your classroom a name and a place.</p></div><span class="room-section-tag">Required</span></div>
     <div class="room-fields form-section-grid">
         <div><label class="form-label" for="room_number">Room number <span aria-hidden="true">*</span></label><input class="form-control @error('room_number') is-invalid @enderror" id="room_number" name="room_number" value="{{ old('room_number', $classroom->room_number) }}" maxlength="30" placeholder="e.g. 7A" required aria-describedby="room-number-help"><small id="room-number-help" class="room-field-help">A unique number or code for this room.</small>@error('room_number')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
@@ -21,6 +21,7 @@
         <details class="room-notes form-wide" @if(old('notes', $classroom->notes) || $errors->has('notes')) open @endif><summary><i class="bi bi-card-text" aria-hidden="true"></i> Add notes <span>Optional</span></summary><div><div><label class="form-label" for="notes">Notes</label><textarea class="form-control @error('notes') is-invalid @enderror" id="notes" name="notes" rows="3" maxlength="1000" placeholder="Accessibility, equipment, or maintenance information">{{ old('notes', $classroom->notes) }}</textarea>@error('notes')<div class="invalid-feedback">{{ $message }}</div>@enderror</div></div></details>
     </div>
     </section>
+    @include('school.classrooms._class-levels')
     @include('school.classrooms._setup-planner')
     </div>
     <aside class="room-editor-summary" aria-label="Room summary">
@@ -28,6 +29,7 @@
         <span class="room-summary-eyebrow">Your classroom</span>
         <h2 data-room-summary-name>{{ old('name', $classroom->name) ?: 'New classroom' }}</h2>
         <p data-room-summary-number>{{ old('room_number', $classroom->room_number) ?: 'Room number not set' }}</p>
+        @if(!$classroom->exists)<button type="button" class="btn btn-sm btn-outline-secondary mb-3" data-open-room-details>Edit room details</button>@endif
         <dl><div><dt>Building</dt><dd data-room-summary-building></dd></div><div><dt>Capacity</dt><dd data-room-summary-capacity></dd></div><div><dt>Status</dt><dd data-room-summary-status></dd></div><div><dt>Lesson setup</dt><dd data-room-summary-plan>Room only</dd></div></dl>
         <div class="room-summary-tip"><i class="bi bi-info-circle" aria-hidden="true"></i><p>One room, multiple programs. Add lessons for different classes whenever their times do not overlap.</p></div>
     </aside>
@@ -51,13 +53,15 @@
     </form>
 </dialog>
 <dialog data-create-class-dialog style="border:1px solid var(--border-color);border-radius:20px;padding:28px;width:min(640px,90vw);max-height:90vh;overflow:auto">
+    <div data-inline-room-details></div>
+    <button type="button" class="btn btn-primary my-3" data-done-room-details hidden>Done</button>
     <form data-create-class-form action="{{ route('class-groups.store') }}" method="post">
         @csrf
         <h2>Create student class</h2>
-        <p>Program: <strong data-inline-class-program></strong>. Students can enroll later.</p>
+        <p>Program: <strong data-inline-class-program></strong>. Students can enroll later. Room details are kept in the classroom form; save them with Create classroom or Save changes after setting up the class.</p>
         <input type="hidden" name="program"><input type="hidden" name="status" value="active">
         <label class="form-label" for="inline-class-name">Class name</label><input class="form-control mb-3" id="inline-class-name" name="name" maxlength="100" required>
-        <label class="form-label" for="inline-class-grade">Grade</label><select class="form-select mb-3" id="inline-class-grade" name="grade" required><option value="">Choose a grade</option>@foreach(range(1,12) as $grade)<option value="{{ $grade }}">Grade {{ $grade }}</option>@endforeach</select>
+        <label class="form-label" for="inline-class-grade">Grade / Level</label><select class="form-select mb-3" id="inline-class-grade" name="grade" required><option value="">Choose a grade / level</option>@foreach(range(1,12) as $grade)<option value="{{ $grade }}">{{ $grade }}</option>@endforeach</select>
         <label class="form-label" for="inline-class-section">Section</label><select class="form-select mb-3" id="inline-class-section" name="section"><option value="">No section</option>@foreach(range('A','E') as $section)<option>{{ $section }}</option>@endforeach</select>
         <label class="form-label" for="inline-class-teacher">Class teacher</label><select class="form-select mb-3" id="inline-class-teacher" name="teacher_id"><option value="">Unassigned</option>@foreach($classTeachers as $teacher)<option value="{{ $teacher->id }}" data-program="{{ $teacher->program }}">{{ $teacher->name }}</option>@endforeach</select>
         <label class="form-label" for="inline-class-capacity">Student capacity</label><input class="form-control mb-3" id="inline-class-capacity" type="number" name="capacity" value="30" min="1" max="500" required>

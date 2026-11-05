@@ -88,6 +88,7 @@ class ClassroomController extends Controller
             'days' => self::DAYS,
             'sessions' => self::SESSIONS,
             'lessons' => $lessons,
+            'assignedClassGroups' => $this->assignedClassGroups($classroom),
         ]);
     }
 
@@ -119,7 +120,19 @@ class ClassroomController extends Controller
 
     public function edit(Classroom $classroom): View
     {
-        return view('school.classrooms.form', compact('classroom') + app(\App\Services\ClassroomSetupService::class)->formData());
+        return view('school.classrooms.form', [
+            'classroom' => $classroom,
+            'assignedClassGroups' => $this->assignedClassGroups($classroom),
+        ] + app(\App\Services\ClassroomSetupService::class)->formData());
+    }
+
+    private function assignedClassGroups(Classroom $classroom): \Illuminate\Database\Eloquent\Collection
+    {
+        return ClassGroup::query()
+            ->where(fn ($query) => $query
+                ->whereHas('bookings', fn ($bookings) => $bookings->where('classroom_id', $classroom->id))
+                ->orWhereHas('schoolClasses.schedules', fn ($lessons) => $lessons->where('classroom_id', $classroom->id)))
+            ->orderBy('program')->orderBy('grade')->get();
     }
 
     public function update(Request $request, Classroom $classroom): RedirectResponse
