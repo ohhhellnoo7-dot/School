@@ -49,10 +49,7 @@
 <section class="panel availability-filter-panel">
     <form class="availability-filters" method="get" action="{{ route('classrooms.index') }}" data-availability-filters>
         <input type="hidden" name="building" value="{{ $filters['building'] ?? '' }}">
-        <div>
-            <label class="form-label" for="availability-program">{{ __('Program') }}</label>
-            <select class="form-select" id="availability-program" name="program"><option value="">{{ __('All programs') }}</option>@foreach($programs as $program)<option value="{{ $program }}" @selected(($filters['program'] ?? '') === $program)>{{ $program }}</option>@endforeach</select>
-        </div>
+        <input type="hidden" name="program" value="{{ $filters['program'] ?? '' }}">
         <div>
             <label class="form-label" for="availability-grade">{{ __('Grade') }}</label>
             <select class="form-select" id="availability-grade" name="grade"><option value="">{{ __('All grades') }}</option>@for($grade = 1; $grade <= 12; $grade++)<option value="{{ $grade }}" @selected((string) ($filters['grade'] ?? '') === (string) $grade)>Grade {{ $grade }}</option>@endfor</select>

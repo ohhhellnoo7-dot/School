@@ -3,7 +3,7 @@
     <div class="theme-options" role="group" aria-label="{{ __('Color theme') }}">
         <div class="theme-options-heading"><strong>{{ __('Make yourself at home') }}</strong><small>{{ __('Preview on hover. Click to keep your favorite.') }}</small></div>
         <label class="theme-search-label" for="theme-search">{{ __('Find a theme') }}</label>
-        <input id="theme-search" type="search" class="form-control theme-search" data-theme-search placeholder="{{ __('Search 20 themes...') }}" autocomplete="off">
+        <input id="theme-search" type="search" class="form-control theme-search" data-theme-search placeholder="{{ __('Search :count themes...', ['count' => count(config('scholar-themes'))]) }}" autocomplete="off">
         @foreach(collect(config('scholar-themes'))->groupBy('group', true) as $group => $themes)
         <section class="theme-group" data-theme-group aria-label="{{ __($group) }}">
             <h3>{{ __($group) }}</h3>

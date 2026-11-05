@@ -711,6 +711,8 @@ a.class-summary-card:hover {
 }
 .classroom-availability-page .classroom-heading {
     position: relative; isolation: isolate; display: flex; flex-wrap: wrap;
+    /* Keep header dropdowns above subsequent filters and room cards in every theme. */
+    z-index: 30;
     align-items: center; gap: 24px; padding: 32px 26px 24px;
     border: 1px solid var(--border-color); border-radius: var(--card-radius);
     background: var(--surface-tint); margin-bottom: 22px;
@@ -731,7 +733,7 @@ a.class-summary-card:hover {
 .classroom-availability-page .classroom-heading .btn-outline-secondary { background: var(--surface); border-color: var(--border-color); color: var(--text-primary); box-shadow: 0 3px 9px var(--shadow-color); }
 .classroom-availability-page .classroom-heading .btn-outline-secondary:hover { background: var(--surface-tint); border-color: var(--primary); }
 .classroom-availability-page .availability-filter-panel { border-radius: var(--card-radius); box-shadow: 0 5px 18px var(--shadow-color); }
-.classroom-availability-page .availability-filters { gap: 14px; padding: 20px; align-items: end; }
+.classroom-availability-page .availability-filters { grid-template-columns: repeat(5, minmax(115px, 1fr)) minmax(140px, 1.2fr) auto; gap: 14px; padding: 20px; align-items: end; }
 .classroom-availability-page .availability-filters > div { min-width: 0; }
 .classroom-availability-page .availability-filters .form-label { font-size: 11px; font-weight: 600; margin-bottom: 8px; }
 .classroom-availability-page .availability-filters :is(.form-control, .form-select) { min-height: 40px; border-radius: var(--control-radius); background-color: var(--surface); color: var(--text-primary); border-color: var(--border-color); }

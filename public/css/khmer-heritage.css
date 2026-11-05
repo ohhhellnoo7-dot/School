@@ -1,0 +1,40 @@
+/* Sandstone, royal blue, gold and woven checks inspired by Cambodian textiles. */
+:root[data-theme="khmer-heritage"] {
+    --theme-nav-start: #244e82;
+    --theme-nav-end: #162e55;
+    --theme-nav-muted: #e3cfaa;
+    --theme-nav-active: #a23d3a;
+    --theme-tile-1: #244e82;
+    --theme-tile-2: #387665;
+    --theme-tile-3: #946923;
+    --theme-tile-4: #a23d3a;
+    --heritage-weave: repeating-linear-gradient(0deg, #c3944509 0 2px, transparent 2px 12px),
+        repeating-linear-gradient(90deg, #c3944509 0 2px, transparent 2px 12px);
+}
+
+:root[data-theme="khmer-heritage"] .scholar-workspace {
+    background-image: var(--heritage-weave);
+}
+
+:root[data-theme="khmer-heritage"] .topbar {
+    border-bottom: 3px solid #c39445;
+}
+
+/* A quiet woven band adds detail without obscuring text or dropdown menus. */
+:root[data-theme="khmer-heritage"]:root:root:root:root:root :is(.school-hero, .classroom-availability-page .classroom-heading) {
+    border-color: #d8c49d;
+    border-bottom: 5px solid #c39445;
+    background-color: var(--surface-tint);
+    background-image: repeating-linear-gradient(90deg, #a23d3a22 0 3px, transparent 3px 9px, #244e8222 9px 12px, transparent 12px 18px);
+    background-size: auto 6px;
+    background-position: left top;
+    background-repeat: repeat-x;
+}
+
+:root[data-theme="khmer-heritage"] .theme-preview {
+    background: linear-gradient(135deg, #162e55 50%, #c39445 50%);
+}
+
+@media print {
+    :root[data-theme="khmer-heritage"] .scholar-workspace { background-image: none; }
+}

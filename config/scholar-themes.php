@@ -10,6 +10,7 @@ return [
     'sunset' => ['name'=>'Sunset', 'group'=>'Signature', 'dark'=>false],
     'luxury' => ['name'=>'Luxury', 'group'=>'Signature', 'dark'=>true],
     'galaxy' => ['name'=>'Galaxy', 'group'=>'Signature', 'dark'=>true],
+    'khmer-heritage' => ['name'=>'Khmer Heritage', 'group'=>'Culture', 'dark'=>false, 'radius'=>18, 'palette'=>['#FAF5E9','#162E55','#244E82','#C39445','#FFFCF5','#29364A','#696352','#244E82']],
     'emerald-forest' => ['name'=>'Emerald Forest', 'group'=>'Nature', 'dark'=>false, 'radius'=>22, 'palette'=>['#F4F8F2','#123D32','#25856C','#9BC9A8','#FFFFFF','#203B31','#526E60','#20745D']],
     'desert-sand' => ['name'=>'Desert Sand', 'group'=>'Nature', 'dark'=>false, 'radius'=>18, 'palette'=>['#FFF9F1','#76513F','#A65C42','#D7A67A','#FFFFFF','#49382F','#7E6656','#A65C42']],
     'mint-fresh' => ['name'=>'Mint Fresh', 'group'=>'Nature', 'dark'=>false, 'radius'=>26, 'palette'=>['#EFFBF8','#0F766E','#14998C','#75D5C3','#FFFFFF','#164D46','#4D756E','#08786D']],

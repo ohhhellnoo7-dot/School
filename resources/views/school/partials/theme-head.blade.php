@@ -6,6 +6,7 @@
 <link href="{{ asset('css/sidebar-light.css') }}?v={{ filemtime(public_path('css/sidebar-light.css')) }}" rel="stylesheet">
 <link href="{{ asset('css/workspace-themes.css') }}?v={{ filemtime(public_path('css/workspace-themes.css')) }}" rel="stylesheet">
 @include('school.partials.theme-tokens')
+<link href="{{ asset('css/khmer-heritage.css') }}?v={{ filemtime(public_path('css/khmer-heritage.css')) }}" rel="stylesheet">
 <link href="{{ asset('css/theme-components.css') }}?v={{ filemtime(public_path('css/theme-components.css')) }}" rel="stylesheet">
 <script src="{{ asset('js/scholar-ui.js') }}?v={{ filemtime(public_path('js/scholar-ui.js')) }}" defer></script>
 <script src="{{ asset('js/hover-select.js') }}?v={{ filemtime(public_path('js/hover-select.js')) }}" defer></script>

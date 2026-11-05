@@ -10,11 +10,11 @@ class ThemeRegistryTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_all_twenty_themes_render_on_login_and_dashboard(): void
+    public function test_all_twenty_one_themes_render_on_login_and_dashboard(): void
     {
         $themes = config('scholar-themes');
-        $this->assertCount(20, $themes);
-        $this->assertCount(5, array_unique(array_column($themes, 'group')));
+        $this->assertCount(21, $themes);
+        $this->assertCount(6, array_unique(array_column($themes, 'group')));
         $login = $this->get('/login')->assertOk();
         $dashboard = $this->actingAs(User::factory()->create(['role'=>'administrator']))->get('/dashboard')->assertOk();
         foreach ($themes as $id => $theme) {
@@ -29,7 +29,7 @@ class ThemeRegistryTest extends TestCase
     public function test_new_palettes_have_complete_tokens_and_readable_body_and_button_text(): void
     {
         $newThemes = array_filter(config('scholar-themes'), fn ($theme) => isset($theme['palette']));
-        $this->assertCount(12, $newThemes);
+        $this->assertCount(13, $newThemes);
         foreach ($newThemes as $id => $theme) {
             $this->assertCount(8, $theme['palette']);
             foreach ($theme['palette'] as $color) $this->assertMatchesRegularExpression('/^#[0-9A-F]{6}$/i', $color);
