@@ -32,6 +32,8 @@
     margin-bottom: 22px;
 }
 
+.class-summary-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+
 .class-summary-card,
 .availability-stat {
     min-height: 108px;
@@ -91,6 +93,8 @@ a.class-summary-card:hover {
 .summary-khmer .summary-icon { background: var(--room-blue-soft); color: var(--room-blue); }
 .summary-english .summary-icon { background: var(--room-available-soft); color: var(--room-available); }
 .summary-chinese .summary-icon { background: var(--room-busy-soft); color: var(--room-busy); }
+.summary-japan .summary-icon { background: var(--room-blue-soft); color: var(--room-blue); }
+.summary-program .summary-icon { background: var(--room-blue-soft); color: var(--room-blue); }
 .summary-total .summary-icon { background: var(--room-upcoming-soft); color: var(--room-upcoming); }
 .summary-rooms { border-style: dashed; }
 

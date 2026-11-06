@@ -17,6 +17,7 @@
 
 @if(request()->routeIs('modules.index') && in_array(request()->route('module'), ['teachers', 'classes', 'subjects']))<link href="{{ asset('css/teacher-directory.css') }}?v={{ filemtime(public_path('css/teacher-directory.css')) }}" rel="stylesheet">@endif
     <link href="{{ asset('css/workspace-polish.css') }}?v={{ filemtime(public_path('css/workspace-polish.css')) }}" rel="stylesheet">
+    @if(request()->routeIs('class-groups.index'))<link href="{{ asset('css/class-groups-directory.css') }}?v={{ filemtime(public_path('css/class-groups-directory.css')) }}" rel="stylesheet">@endif
 </head>
 <body class="scholar-workspace {{ request()->routeIs('modules.index') && request()->route('module') === 'subjects' ? 'subjects-page' : '' }} {{ request()->routeIs('class-groups.*') ? 'classes-page' : '' }} {{ request()->routeIs('classrooms.*', 'classroom-bookings.*') ? 'classrooms-page' : '' }} {{ request()->routeIs('modules.index') && request()->route('module') === 'teachers' ? 'teachers-page' : '' }} {{ request()->routeIs('modules.index') && request()->route('module') === 'parents' ? 'parents-page' : '' }} {{ request()->routeIs('students.index') ? 'students-page' : '' }}">
 <a href="#main-content" class="skip-link">{{ __('Skip to content') }}</a>

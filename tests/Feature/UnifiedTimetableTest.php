@@ -154,6 +154,22 @@ class UnifiedTimetableTest extends TestCase
         return compact('admin', 'primary', 'substitute', 'classes', 'rooms', 'subjects', 'student', 'otherStudent', 'parent');
     }
 
+    private function completeCurriculumFixture(): array
+    {
+        $f = $this->fixture();
+        $rules = app(TeacherManagementService::class);
+        DB::table('teacher_management_settings')->where('id', 1)->update(['khmer_teacher_free_periods' => 0]);
+        DB::table('teacher_break_plans')->delete();
+        foreach ($f['classes'] as $index => $class) {
+            $f['subjects'][$index]->update(['required_weekly_minutes' => 600, 'teacher_id' => $index === 0 ? $f['primary']->id : $f['substitute']->id]);
+            $history = Subject::create(['name' => 'History', 'code' => 'H-FULL-'.$class->id, 'school_class_id' => $class->id, 'required_weekly_minutes' => 600, 'lesson_minutes' => 60]);
+            $teacher = User::factory()->create(['role' => 'teacher', 'program' => 'Khmer', 'status' => 'active']);
+            $rules->saveProfile($teacher, ['History'], 1200, array_map(fn ($day) => ['weekday' => $day, 'start_time' => '07:00', 'end_time' => '11:00', 'unavailable' => false], $rules::DAYS));
+            $history->update(['teacher_id' => $teacher->id]);
+        }
+        return $f;
+    }
+
     private function data(array $f, int $index = 0): array
     {
         return ['program' => 'Khmer', 'session' => 'Morning', 'school_class_id' => $f['classes'][$index]->id, 'subject_id' => $f['subjects'][$index]->id, 'teacher_id' => $f['primary']->id, 'classroom_id' => $f['rooms'][$index]->id, 'day' => 'Monday', 'starts_at' => '07:00', 'ends_at' => '09:00', 'academic_year' => '2026-2027'];
@@ -169,7 +185,7 @@ class UnifiedTimetableTest extends TestCase
         $this->assertCount(28, collect($draft['blockers'])->where('type', 'identity'));
         $this->assertSame(0, Schedule::withoutGlobalScope('active')->count());
         $this->assertSame($before, DB::table('teacher_breaks')->orderBy('id')->get()->toJson());
-        $this->actingAs($f['admin'])->post(route('timetables.generate.preview'), ['academic_year' => '2026-2027'])->assertOk()->assertSee('Khmer replacement draft is blocked')->assertDontSee('Publish approved timetable');
+        $this->actingAs($f['admin'])->post(route('timetables.generate.preview'), ['academic_year' => '2026-2027'])->assertOk()->assertSee('Khmer replacement timetable is INCOMPLETE')->assertDontSee('Publish approved timetable');
         $this->assertNull(session('unified_timetable_preview'));
     }
 
@@ -296,7 +312,7 @@ class UnifiedTimetableTest extends TestCase
 
     public function test_batch_preview_rolls_back_simulation_and_saves_all_cohorts_atomically(): void
     {
-        $f = $this->fixture();
+        $f = $this->completeCurriculumFixture();
         $generator = app(UnifiedTimetableGenerator::class);
         DB::table('teacher_break_plans')->delete();
         $batch = $generator->preview(array_column(array_map(fn ($c) => ['id' => $c->id], $f['classes']), 'id'));
@@ -304,9 +320,9 @@ class UnifiedTimetableTest extends TestCase
         $this->assertSame(0, Schedule::withoutGlobalScope('active')->count());
         $this->assertSame(0, DB::table('teacher_breaks')->count());
         $generator->confirm($batch);
-        $this->assertSame(8, Schedule::count());
-        $this->assertSame(2, Schedule::where('entry_type', 'academic')->count());
-        $this->assertSame(3, DB::table('teacher_breaks')->count());
+        $this->assertSame(30, Schedule::count());
+        $this->assertSame(30, Schedule::where('entry_type', 'academic')->count());
+        $this->assertSame(0, DB::table('teacher_breaks')->count());
         foreach (app(TeacherManagementService::class)->lessons($f['primary']) as $lesson) app(TeacherManagementService::class)->validateLesson($lesson->subject, $lesson);
     }
 
@@ -323,7 +339,7 @@ class UnifiedTimetableTest extends TestCase
 
     public function test_batch_http_flow_requires_confirmation_and_cannot_be_replayed(): void
     {
-        $f = $this->fixture();
+        $f = $this->completeCurriculumFixture();
         $this->actingAs($f['admin'])->post(route('timetables.generate.preview'), ['classes' => array_map(fn ($c) => $c->id, $f['classes'])])->assertOk()->assertSee('Unified Timetable Preview');
         $token = session('unified_timetable_preview.token');
         $this->post(route('timetables.generate.confirm'), ['token' => $token])->assertSessionHasErrors('confirm');
@@ -376,7 +392,7 @@ class UnifiedTimetableTest extends TestCase
 
     public function test_stale_batch_and_unconfirmed_replacement_preserve_existing_lessons(): void
     {
-        $f = $this->fixture();
+        $f = $this->completeCurriculumFixture();
         $lesson = app(LessonManagementService::class)->save($this->data($f));
         $original = $lesson->getAttributes();
         $this->actingAs($f['admin'])->post(route('timetables.generate.preview'), ['classes' => [$f['classes'][0]->id], 'academic_year' => '2027-2028'])->assertOk()->assertSee('2027-2028');
@@ -415,7 +431,7 @@ class UnifiedTimetableTest extends TestCase
 
     public function test_a_late_batch_failure_rolls_back_every_previously_saved_cohort(): void
     {
-        $f = $this->fixture();
+        $f = $this->completeCurriculumFixture();
         $batch = app(UnifiedTimetableGenerator::class)->preview(array_map(fn ($c) => $c->id, $f['classes']));
         foreach ($batch['plans'][1]['rows'] as &$row) if ($row['subject_id']) { $row['classroom_id'] = 999999; break; }
         unset($row);
