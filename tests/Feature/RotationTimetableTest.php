@@ -21,14 +21,16 @@ class RotationTimetableTest extends TestCase
         $class = SchoolClass::create(['class_group_id' => $group->id, 'name' => 'Grade 10', 'section' => 'A', 'program' => 'Khmer', 'session' => 'Morning', 'room' => '10A']);
         $room = Classroom::create(['room_number' => '10A', 'name' => 'Room 10A', 'capacity' => 40, 'status' => 'active']);
         foreach (TeacherManagementService::DAYS as $day) app(ClassroomBookingService::class)->create(['class_group_id' => $group->id, 'class_session_id' => $session->id, 'classroom_id' => $room->id, 'teacher_id' => null, 'day_of_week' => $day, 'starts_at' => '07:00', 'ends_at' => '11:00']);
-        $math = Subject::create(['name' => 'Mathematics', 'code' => 'M10A', 'school_class_id' => $class->id, 'required_weekly_minutes' => 240, 'lesson_minutes' => 120]);
-        $history = Subject::create(['name' => 'History', 'code' => 'H10A', 'school_class_id' => $class->id, 'required_weekly_minutes' => 180, 'lesson_minutes' => 60]);
+        $math = Subject::create(['name' => 'Mathematics', 'code' => 'M10A', 'school_class_id' => $class->id, 'required_weekly_minutes' => 480, 'lesson_minutes' => 120]);
+        $history = Subject::create(['name' => 'History', 'code' => 'H10A', 'school_class_id' => $class->id, 'required_weekly_minutes' => 480, 'lesson_minutes' => 60]);
+        $english = Subject::create(['name'=>'English','code'=>'E10A','school_class_id'=>$class->id,'required_weekly_minutes'=>240,'lesson_minutes'=>60]);
         $teachers = [];
-        foreach ([$math, $history] as $subject) {
+        foreach ([$math, $history, $english] as $subject) {
             $teacher = User::factory()->create(['role' => 'teacher', 'program' => 'Khmer', 'status' => 'active']);
             $periods = [];
             foreach (TeacherManagementService::DAYS as $day) $periods[] = ['weekday' => $day, 'start_time' => '07:00', 'end_time' => '11:00', 'unavailable' => false];
             app(TeacherManagementService::class)->saveProfile($teacher, [$subject->name], 1200, $periods);
+            app(TeacherManagementService::class)->saveBreaks($teacher, array_map(fn ($day)=>['weekday'=>$day,'start_time'=>$subject->name === 'History' ? '07:00' : '10:00','end_time'=>$subject->name === 'History' ? '08:00' : '11:00'], ['Monday','Wednesday','Friday']));
             $subject->update(['teacher_id' => $teacher->id]);
             $teachers[] = $teacher;
         }
@@ -36,17 +38,17 @@ class RotationTimetableTest extends TestCase
         return [$class, $room, $math, $history, $teachers, $admin];
     }
 
-    public function test_approved_curriculum_produces_mixed_durations_free_time_and_shared_lessons(): void
+    public function test_approved_curriculum_produces_full_study_and_shared_lessons(): void
     {
         [$class, $room, $math, $history, $teachers, $admin] = $this->fixture();
         $generator = app(RotationTimetableGenerator::class);
         $plan = $generator->preview($class);
         $this->assertSame(0, Schedule::count());
-        $this->assertSame(0, DB::table('teacher_breaks')->count());
-        $this->assertCount(2, array_filter($plan['rows'], fn ($r) => $r['subject_id'] === $math->id));
-        $this->assertCount(3, array_filter($plan['rows'], fn ($r) => $r['subject_id'] === $history->id));
+        $this->assertSame(9, DB::table('teacher_breaks')->count());
+        $this->assertCount(4, array_filter($plan['rows'], fn ($r) => $r['subject_id'] === $math->id));
+        $this->assertCount(8, array_filter($plan['rows'], fn ($r) => $r['subject_id'] === $history->id));
         $generator->confirm($plan);
-        $this->assertSame(8, Schedule::count()); // Seven teaching hours, three relaxation hours, ten unscheduled hours.
+        $this->assertSame(16, Schedule::count()); // Twenty academic hours, no optional student free periods.
         foreach ($teachers as $teacher) {
             $rules = app(TeacherManagementService::class);
             $this->assertCount(3, $rules->breaks($teacher));
@@ -56,7 +58,7 @@ class RotationTimetableTest extends TestCase
                 $this->assertSame($class->id, $lesson->school_class_id);
             }
         }
-        $page = $this->actingAs($admin)->get(route('classes.timetable', $class))->assertOk()->assertSee('rowspan="2"', false)->assertSee('FREE PERIOD')->assertSee('Scheduled relaxation')->assertSee('Scheduling Settings');
+        $page = $this->actingAs($admin)->get(route('classes.timetable', $class))->assertOk()->assertSee('rowspan="2"', false)->assertDontSee('Scheduled relaxation')->assertSee('Scheduling Settings');
         foreach (['Light', 'Night', 'Relax', 'Cute'] as $theme) $page->assertSee($theme);
         $this->get(route('teachers.schedule', $teachers[0]))->assertOk()->assertSee('Mathematics')->assertSee('10A');
         $this->actingAs($teachers[0])->get(route('classrooms.show', $room))->assertOk()->assertSee('Weekly lesson rotation');
@@ -89,7 +91,7 @@ class RotationTimetableTest extends TestCase
         try { $generator->confirm($plan); $this->fail('Stale plan accepted'); }
         catch (ValidationException $e) { $this->assertStringContainsString('changed after preview', $e->getMessage()); }
         $this->assertSame(0, Schedule::count());
-        $this->assertSame(0, DB::table('teacher_breaks')->count());
+        $this->assertSame(9, DB::table('teacher_breaks')->count());
     }
 
     public function test_unknown_and_excess_curriculum_are_rejected_without_writes(): void
@@ -120,7 +122,7 @@ class RotationTimetableTest extends TestCase
         $this->get(route('teachers.schedule.status', $teachers[0]))->assertForbidden();
         CarbonImmutable::setTestNow();
         $this->assertSame('Occupied', $at('10:00')['occupancy']);
-        $this->assertSame('Free Period', $at('10:00')['activity']);
+        $this->assertSame('Incomplete timetable', $at('10:00')['activity']);
         $this->assertNull($at('10:00')['currentLesson']);
         $this->assertSame('Available', $at('11:00')['occupancy']);
         $this->assertSame('No Class', $service->forDateAndTime('2026-11-07', '08:30')->first()['activity']);
@@ -131,6 +133,7 @@ class RotationTimetableTest extends TestCase
     public function test_teacher_can_rotate_rooms_and_overlap_is_rejected(): void
     {
         [$class, $room, $math, , $teachers] = $this->fixture();
+        app(TeacherManagementService::class)->saveBreaks($teachers[0], array_map(fn ($day)=>['weekday'=>$day,'start_time'=>'10:00','end_time'=>'11:00'], ['Tuesday','Wednesday','Friday']), true);
         $other = SchoolClass::create(['name' => 'Grade 10', 'section' => 'B', 'program' => 'Khmer', 'session' => 'Morning', 'room' => '10B']);
         $otherRoom = Classroom::create(['room_number' => '10B', 'name' => 'Room 10B', 'capacity' => 40, 'status' => 'active']);
         $subject = Subject::create(['name' => 'Mathematics', 'code' => 'M10B', 'school_class_id' => $other->id, 'teacher_id' => $teachers[0]->id]);
@@ -151,18 +154,18 @@ class RotationTimetableTest extends TestCase
         $this->assertEquals(0, app(TeacherManagementService::class)->workload($teachers[0])['weekly']);
         $snapshot = app(ClassroomAvailabilityService::class)->forDateAndTime('2026-11-02', '08:00')->first();
         $this->assertSame('Occupied', $snapshot['occupancy']);
-        $this->assertSame('Free Period', $snapshot['activity']);
+        $this->assertSame('Incomplete timetable', $snapshot['activity']);
         $this->get(route('classes.timetable', $class))->assertOk()->assertSee('Cancelled lesson history');
     }
 
     public function test_curriculum_settings_require_admin_confirmation_and_preserve_lessons(): void
     {
         [$class, , $math, $history, $teachers, $admin] = $this->fixture();
-        $data = ['subjects' => [['id' => $math->id, 'weekly_hours' => 4, 'lesson_minutes' => 120], ['id' => $history->id, 'weekly_hours' => 2, 'lesson_minutes' => 60]], 'relaxation_hours' => 3];
+        $data = ['subjects' => [['id' => $math->id, 'weekly_hours' => 8, 'lesson_minutes' => 120], ['id' => $history->id, 'weekly_hours' => 8, 'lesson_minutes' => 60], ['id'=>$class->subjects()->where('name','English')->firstOrFail()->id,'weekly_hours'=>4,'lesson_minutes'=>60]], 'relaxation_hours' => 0];
         $this->actingAs($teachers[0])->post(route('classes.timetable.settings', $class), $data)->assertForbidden();
         $this->actingAs($admin)->post(route('classes.timetable.settings', $class), $data)->assertSessionHasErrors('confirm');
         $this->post(route('classes.timetable.settings', $class), $data + ['confirm' => 1])->assertSessionHasNoErrors();
-        $this->assertSame(120, (int) $history->fresh()->required_weekly_minutes);
+        $this->assertSame(480, (int) $history->fresh()->required_weekly_minutes);
         $this->assertSame(0, Schedule::count());
     }
 
@@ -175,7 +178,7 @@ class RotationTimetableTest extends TestCase
         $this->assertNull($math->fresh()->teacher_id);
         $generator->confirm($plan);
         $this->assertSame($teachers[0]->id, $math->fresh()->teacher_id);
-        $this->assertSame(2, Schedule::where('subject_id', $math->id)->where('teacher_id', $teachers[0]->id)->count());
+        $this->assertSame(4, Schedule::where('subject_id', $math->id)->where('teacher_id', $teachers[0]->id)->count());
     }
 
     public function test_planner_rejects_unqualified_teachers_and_weekly_overload(): void
@@ -206,13 +209,13 @@ class RotationTimetableTest extends TestCase
     {
         [$class, $room, $math, , $teachers] = $this->fixture();
         $plan = app(\App\Services\TeacherScheduleGenerator::class)->preview($teachers[0]);
-        $this->assertCount(2, $plan['lessons']);
+        $this->assertCount(4, $plan['lessons']);
         foreach ($plan['lessons'] as $row) {
             $this->assertSame(120, TeacherManagementService::duration($row['starts_at'], $row['ends_at']));
             $this->assertSame($room->id, $row['classroom_id']);
         }
-        app(\App\Services\TeacherScheduleGenerator::class)->confirm($plan, false);
-        $this->assertEquals(4, app(TeacherManagementService::class)->workload($teachers[0])['weekly']);
+        app(\App\Services\TeacherScheduleGenerator::class)->confirm($plan, true);
+        $this->assertEquals(8, app(TeacherManagementService::class)->workload($teachers[0])['weekly']);
         $this->actingAs($teachers[0])->get(route('teachers.schedule', $teachers[0]))->assertOk()->assertSee('rowspan="2"', false);
     }
 }

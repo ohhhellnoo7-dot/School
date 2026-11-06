@@ -20,7 +20,7 @@ class SchoolTimetableAudit
             $years = $lessons->where('school_class_id',$class->timetableOwnerId())->pluck('academic_year')->unique();
             if ($years->isEmpty()) $years = collect([null]);
             foreach ($years as $year) {
-                $actual = $lessons->where('subject_id',$subject->id)->filter(fn ($s)=>AcademicYear::overlaps($s->academic_year,$year))->sum(fn ($s)=>TeacherManagementService::duration($s->starts_at,$s->ends_at));
+                $actual = $lessons->where('school_class_id',$class->timetableOwnerId())->where('subject_id',$subject->id)->filter(fn ($s)=>AcademicYear::overlaps($s->academic_year,$year))->sum(fn ($s)=>TeacherManagementService::duration($s->starts_at,$s->ends_at));
                 $entry = ['program'=>$class->program,'class'=>$class->label,'cohort_id'=>$class->id,'academic_year'=>$year,'subject'=>$subject->name,'subject_id'=>$subject->id,'required_minutes'=>$subject->required_weekly_minutes,'scheduled_minutes'=>$actual];
                 if ($subject->required_weekly_minutes === null) $unknown[] = $entry + ['reason'=>'Approved weekly curriculum hours are missing; empty periods cannot be classified as intentional free time.'];
                 elseif ($actual < $subject->required_weekly_minutes) $missing[] = $entry + ['missing_minutes'=>$subject->required_weekly_minutes-$actual];

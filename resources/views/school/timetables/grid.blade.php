@@ -36,7 +36,7 @@
 <td class="timetable-hour-cell day-{{ strtolower($day) }}">
 @if($cell && $cell['lessons']->count() > 1)<article class="timetable-conflict-card"><strong>CONFLICT DETECTED</strong><p>{{ $cell['lessons']->count() }} lessons assigned</p>@if(auth()->user()->role === 'administrator')<a href="{{ route('timetables.conflicts', $cell['lessons']->first()) }}">View Conflict</a>@endif</article>
 @elseif($cell)@include('school.timetables.lesson', ['entry'=>$cell['lessons']->first(), 'continuation' => $continuation])
-@else @php($free = $breaks->first(fn ($b) => $b->weekday === $day && substr($b->start_time,0,5) === $from))<span class="text-secondary">{{ $free ? 'Designated teacher free period' : 'No lesson scheduled' }}</span>@endif
+@else @php($free = $breaks->first(fn ($b) => $b->weekday === $day && substr($b->start_time,0,5) === $from))<span class="text-secondary">{{ $free ? 'Designated teacher free period' : ((($view ?? null) === 'students' && $classes->firstWhere('id', $selected)?->program === 'Khmer') ? 'INCOMPLETE: required lesson missing' : 'No lesson scheduled') }}</span>@endif
 </td>@endforeach</tr>@endforeach
 </tbody>
 @endforeach

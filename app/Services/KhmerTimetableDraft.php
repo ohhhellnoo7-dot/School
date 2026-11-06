@@ -12,6 +12,8 @@ class KhmerTimetableDraft
     {
         $diagnostics = app(TimetableDiagnostics::class)->report();
         $blockers = collect($diagnostics['issues'])->whereIn('type', ['identity', 'cohort', 'curriculum', 'qualification'])->values()->all();
+        $capacity = app(KhmerTeachingCapacity::class)->report();
+        if ($capacity['shortage_hours'] > 0) $blockers[] = ['type' => 'staffing', 'message' => 'INCOMPLETE: '.$capacity['cohorts'].' Khmer cohorts need '.$capacity['required_hours'].' teaching hours weekly; '.$capacity['teachers'].' teachers can provide at most '.$capacity['available_hours'].' hours after availability, designated breaks, workload limits and other-program lessons. At least '.$capacity['shortage_hours'].' additional qualified teaching hours are needed.'];
         $classes = SchoolClass::with(['subjects','classGroup.sessions'])->where('program', 'Khmer')->get();
         $groups = ClassGroup::where('program', 'Khmer')->where('status','active')->get();
         foreach ($groups as $group) {
@@ -19,9 +21,8 @@ class KhmerTimetableDraft
         }
         foreach ($classes as $class) {
             foreach ($class->subjects as $subject) if ($subject->required_weekly_minutes !== null && (int) $subject->required_weekly_minutes % \App\Support\KhmerLessonDuration::minutes($subject) !== 0) $blockers[] = ['type' => 'duration', 'message' => $class->label.' / '.$subject->name.': weekly hours must fit complete '.(\App\Support\KhmerLessonDuration::minutes($subject) / 60).'-hour blocks.'];
-            if ($class->weekly_relaxation_minutes !== 180) $blockers[] = ['type' => 'relaxation', 'message' => $class->label.': approve three weekly relaxation hours in Scheduling Settings.'];
-            $demand = $class->subjects->sum('required_weekly_minutes') + (int) $class->weekly_relaxation_minutes;
-            if ($demand > 1200) $blockers[] = ['type' => 'capacity', 'message' => $class->label.': demand exceeds session capacity by '.($demand-1200).' minutes.'];
+            $demand = $class->subjects->sum('required_weekly_minutes');
+            if ($demand !== 1200) $blockers[] = ['type' => 'capacity', 'message' => $class->label.': INCOMPLETE; approved curriculum totals '.($demand / 60).' hours; full session requires 20 hours (difference '.(($demand-1200) / 60).' hours). Administrator must adjust approved curriculum.'];
         }
         $plan = null;
         if (! $blockers) {
@@ -37,6 +38,6 @@ class KhmerTimetableDraft
             }
             catch (ValidationException $e) { foreach ($e->errors() as $messages) foreach ($messages as $message) $blockers[] = ['type' => 'generation', 'message' => $message]; }
         }
-        return ['status' => $blockers ? 'blocked' : 'draft', 'academic_year' => $academicYear, 'created_at' => now('Asia/Phnom_Penh')->toIso8601String(), 'diagnostics' => $diagnostics, 'blockers' => $blockers, 'plan' => $plan];
+        return ['status' => $blockers ? 'blocked' : 'draft', 'academic_year' => $academicYear, 'created_at' => now('Asia/Phnom_Penh')->toIso8601String(), 'teaching_capacity' => $capacity, 'diagnostics' => $diagnostics, 'blockers' => $blockers, 'plan' => $plan];
     }
 }

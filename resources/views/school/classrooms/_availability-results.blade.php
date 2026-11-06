@@ -18,6 +18,7 @@
                     <button type="button" data-lesson-filter="all" aria-pressed="true">All rooms <span data-lesson-count="all"></span></button>
                     <button type="button" data-lesson-filter="studying" aria-pressed="false"><i class="bi bi-book" aria-hidden="true"></i> Studying <span data-lesson-count="studying"></span></button>
                     <button type="button" data-lesson-filter="free" aria-pressed="false"><i class="bi bi-cup-hot" aria-hidden="true"></i> Free period <span data-lesson-count="free"></span></button>
+                    <button type="button" data-lesson-filter="incomplete" aria-pressed="false"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i> Incomplete timetable <span data-lesson-count="incomplete"></span></button>
                 </div>
             </div>
         </div>
@@ -38,6 +39,7 @@
             $session = $displayBooking?->classSession;
             $lesson = data_get($entry, 'currentLesson');
             $lessonState = $status === 'out_of_service' ? 'unavailable' : ($lesson ? ($lesson->isRelaxation() ? 'relaxation' : 'studying') : ($current && data_get($entry, 'activity') === 'Free Period' ? 'free' : 'none'));
+            if ($status !== 'out_of_service' && data_get($entry, 'activity') === 'Incomplete timetable') $lessonState = 'incomplete';
             $icons = ['available' => 'check-circle-fill', 'busy' => 'record-circle-fill', 'upcoming' => 'clock-fill', 'out_of_service' => 'tools'];
             $programDetails = collect(data_get($entry, 'programDetails', []));
             $selectedProgram = $programDetails->has(request('program')) ? request('program') : $programDetails->keys()->first();
@@ -50,8 +52,9 @@
                 <span class="room-status"><i class="bi bi-{{ $icons[$status] ?? 'circle-fill' }}" aria-hidden="true"></i> {{ str_replace('_', ' ', ucfirst($status)) }}</span>
             </div>
             <div class="room-card-body">
-                @if(in_array($lessonState, ['studying', 'free'], true))
-                    <span class="lesson-state lesson-state-{{ $lessonState }}">{{ $lessonState === 'studying' ? 'Studying now' : 'Free period' }}</span>
+                @if(in_array($lessonState, ['studying', 'free', 'incomplete'], true))
+                    <span class="lesson-state lesson-state-{{ $lessonState }}">{{ match ($lessonState) { 'studying' => 'Studying now', 'incomplete' => 'Incomplete timetable', default => 'Free period' } }}</span>
+                    @if($lessonState === 'incomplete')<p class="text-warning-emphasis small">An academic lesson is missing. This is not a planned student free period.</p>@endif
                 @endif
                 @if($status === 'out_of_service')
                     <div class="room-empty-message"><strong>Temporarily unavailable</strong><span>{{ $room->notes ?: 'This room is marked out of service.' }}</span></div>

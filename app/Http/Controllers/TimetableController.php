@@ -106,6 +106,7 @@ class TimetableController extends Controller
         $service->locked(function () use ($data, $schoolClass, $service) {
             [$from, $to] = $schoolClass->sessionHours();
             $capacity = TeacherManagementService::duration($from, $to) * count(TeacherManagementService::DAYS) / 60;
+            if ($schoolClass->program === 'Khmer' && ($data['relaxation_hours'] !== 0 || collect($data['subjects'])->sum('weekly_hours') !== $capacity)) $service->fail('Khmer curriculum must cover all '.$capacity.' weekly teaching hours with no optional student relaxation.');
             if (collect($data['subjects'])->sum('weekly_hours') + $data['relaxation_hours'] > $capacity) $service->fail('Curriculum and relaxation exceed the '.$capacity.' available weekly session hours.');
             if (collect($data['subjects'])->pluck('id')->unique()->count() !== count($data['subjects']) || count($data['subjects']) !== $schoolClass->subjects()->count()) $service->fail('Configure every class subject exactly once.');
             foreach ($data['subjects'] as $row) {

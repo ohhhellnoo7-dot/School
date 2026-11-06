@@ -27,7 +27,16 @@ class KhmerClassTimetableReport
                 if (! in_array($class->session, ['Morning', 'Afternoon'], true)) $issues[] = 'Cohort must use the morning or afternoon session.';
                 if (! $class->classGroup?->sessions->contains('session', $class->session)) $issues[] = 'No class session is linked to this cohort.';
                 if ($class->subjects->isEmpty()) $issues[] = 'No curriculum subjects are linked to this cohort.';
-                if ($lessons->where('entry_type', 'relaxation')->sum(fn ($s) => $rules::duration($s->starts_at, $s->ends_at)) !== (int) $class->weekly_relaxation_minutes) $issues[] = 'Scheduled relaxation does not match the cohort requirement.';
+                if ($lessons->contains(fn ($s) => $s->entry_type !== 'academic')) $issues[] = 'Optional student free or relaxation periods are not permitted.';
+                [$from, $to] = SchoolClass::SESSION_HOURS[$class->session] ?? ['00:00', '00:00'];
+                foreach ($rules::DAYS as $day) {
+                    $cursor = $rules::minute($from);
+                    foreach ($lessons->where('day', $day)->sortBy('starts_at') as $lesson) {
+                        if ($rules::minute($lesson->starts_at) !== $cursor) $issues[] = 'INCOMPLETE: teaching gap or overlap on '.$day.' at '.sprintf('%02d:%02d', intdiv($cursor, 60), $cursor % 60).'.';
+                        $cursor = $rules::minute($lesson->ends_at);
+                    }
+                    if ($cursor !== $rules::minute($to)) $issues[] = 'INCOMPLETE: full teaching session is not covered on '.$day.'.';
+                }
                 foreach ($class->subjects as $subject) {
                     $actual = $lessons->where('subject_id', $subject->id)->sum(fn ($s) => $rules::duration($s->starts_at, $s->ends_at));
                     $required = $subject->required_weekly_minutes;
@@ -60,7 +69,7 @@ class KhmerClassTimetableReport
                         $teacher = $lesson->teacher;
                         if (! isset($teacherState[$teacher->id])) $teacherState[$teacher->id] = ['qualifications' => $rules->qualifications($teacher), 'breaks' => $rules->breaks($teacher), 'workload' => $rules->workload($teacher)];
                         $state = $teacherState[$teacher->id];
-                        if ($state['breaks']->count() !== 3 || $state['breaks']->pluck('weekday')->unique()->count() !== 3) $issues[] = $prefix.'teacher needs three designated one-hour free periods on separate weekdays.';
+                        if ($state['breaks']->count() !== $rules->requiredBreaks($teacher) || $state['breaks']->pluck('weekday')->unique()->count() !== $rules->requiredBreaks($teacher)) $issues[] = $prefix.'teacher needs three designated one-hour free periods on separate weekdays.';
                         if ($teacher->role !== 'teacher' || $teacher->status !== 'active' || ! $state['qualifications']->contains($lesson->subject->name)) $issues[] = $prefix.'teacher is inactive or lacks the approved subject qualification.';
                         if (! $rules->onDuty($teacher, $lesson->day, $lesson->starts_at, $lesson->ends_at)) $issues[] = $prefix.'teacher is outside confirmed availability.';
                         if ($state['breaks']->contains(fn ($b) => $b->weekday === $lesson->day && $rules::overlaps($b->start_time, $b->end_time, $lesson->starts_at, $lesson->ends_at))) $issues[] = $prefix.'overlaps a designated teacher free period.';

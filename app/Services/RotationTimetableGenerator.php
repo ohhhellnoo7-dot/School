@@ -31,10 +31,12 @@ class RotationTimetableGenerator
             if ($existing->isNotEmpty() && ! $replace) $this->rules->fail('This class already has a timetable. Choose Regenerate Schedule to preview replacement.');
             if ($preservedRelaxation !== null) $existing = $existing->merge($preservedRelaxation);
             if ($class->subjects->isEmpty() || $class->subjects->contains(fn ($s) => $s->required_weekly_minutes === null)) $this->rules->fail('Configure approved weekly hours for every class subject in Scheduling Settings first.');
+            foreach ($class->subjects as $subject) \App\Support\KhmerLessonDuration::validateWeeklyHours($subject, (int) $subject->required_weekly_minutes);
             $required = $class->subjects->sum('required_weekly_minutes');
-            $relaxMinutes = (int) $class->weekly_relaxation_minutes;
+            $relaxMinutes = $class->program === 'Khmer' ? 0 : (int) $class->weekly_relaxation_minutes;
             $capacity = $this->rules::duration($session->starts_at, $session->ends_at) * count($this->rules::DAYS);
             if ($required + $relaxMinutes > $capacity) $this->rules->fail('Approved curriculum and relaxation exceed the '.($capacity / 60).' available weekly session hours. No subject was removed.');
+            if ($class->program === 'Khmer' && $required !== $capacity) $this->rules->fail($class->label.': INCOMPLETE curriculum; approved '.($required / 60).' hours, available '.($capacity / 60).' hours. Adjust approved curriculum; optional free periods cannot fill the difference.');
             $outside = Schedule::with(['subject', 'schoolClass'])->where('school_class_id', '!=', $class->id)->get();
             $bookings = ClassroomBooking::with(['classSession', 'classroom'])->get();
             $rooms = Classroom::where('status', 'active')->get();
@@ -66,7 +68,7 @@ class RotationTimetableGenerator
                 }
                 foreach ($eligible as $teacher) {
                     $periods = collect($breaks[$teacher->id]);
-                    if ($periods->count() !== 3 || $periods->pluck('weekday')->unique()->count() !== 3) $this->rules->fail($teacher->name.' needs three one-hour designated free periods on different weekdays.');
+                    if ($periods->count() !== $this->rules->requiredBreaks($teacher) || $periods->pluck('weekday')->unique()->count() !== $this->rules->requiredBreaks($teacher)) $this->rules->fail($teacher->name.' needs three one-hour designated free periods on different weekdays.');
                     foreach ($periods as $period) $this->rules->validateBreak($teacher, (array) $period);
                 }
                 while ($minutes > 0) {
@@ -76,7 +78,7 @@ class RotationTimetableGenerator
                 }
             }
             // Preserve existing relaxation times as fixed commitments when compatible.
-            $fixed = $existing->where('entry_type', 'relaxation')->map(fn ($s) => $s->only(['school_class_id', 'day', 'starts_at', 'ends_at', 'room', 'classroom_id', 'entry_type', 'subject_id', 'teacher_id', 'title_en', 'title_km']))->values()->all();
+            $fixed = ($class->program === 'Khmer' ? collect() : $existing)->where('entry_type', 'relaxation')->map(fn ($s) => $s->only(['school_class_id', 'day', 'starts_at', 'ends_at', 'room', 'classroom_id', 'entry_type', 'subject_id', 'teacher_id', 'title_en', 'title_km']))->values()->all();
             $validatedFixed = [];
             foreach ($fixed as &$row) {
                 if ($this->rules::duration($row['starts_at'], $row['ends_at']) !== 60) $this->rules->fail('Existing relaxation periods must each last one hour. Review before regeneration.');
@@ -179,7 +181,21 @@ class RotationTimetableGenerator
                 $actual = $rows->where('subject_id', $subject->id)->sum(fn ($row) => $this->rules::duration($row['starts_at'], $row['ends_at']));
                 if ($subject->required_weekly_minutes === null || $actual !== (int) $subject->required_weekly_minutes) $this->rules->fail('Preview does not cover approved hours for '.$subject->name.'.');
             }
-            if ($rows->where('entry_type', 'relaxation')->sum(fn ($row) => $this->rules::duration($row['starts_at'], $row['ends_at'])) !== (int) $class->weekly_relaxation_minutes) $this->rules->fail('Preview does not include the required relaxation hours.');
+            if ($rows->where('entry_type', 'relaxation')->sum(fn ($row) => $this->rules::duration($row['starts_at'], $row['ends_at'])) !== ($class->program === 'Khmer' ? 0 : (int) $class->weekly_relaxation_minutes)) $this->rules->fail('Preview does not include the required relaxation hours.');
+            if ($class->program === 'Khmer') {
+                $approvedIds = $class->subjects->modelKeys();
+                if ($rows->contains(fn ($row) => ($row['entry_type'] ?? null) !== 'academic' || ! in_array($row['subject_id'], $approvedIds, true))) $this->rules->fail('Khmer previews may contain approved academic lessons only.');
+                [$from, $to] = $class->sessionHours();
+                foreach ($this->rules::DAYS as $day) {
+                    $cursor = $this->rules::minute($from);
+                    foreach ($rows->where('day', $day)->sortBy('starts_at') as $row) {
+                        if ($this->rules::minute($row['starts_at']) !== $cursor) $this->rules->fail('INCOMPLETE Khmer timetable: gap or overlap on '.$day.'.');
+                        $cursor = $this->rules::minute($row['ends_at']);
+                    }
+                    if ($cursor !== $this->rules::minute($to)) $this->rules->fail('INCOMPLETE Khmer timetable: full session coverage is required on '.$day.'.');
+                }
+            }
+            if ($class->program === 'Khmer') $class->update(['weekly_relaxation_minutes' => 0]);
             Schedule::where('school_class_id', $plan['class_id'])->update(['cancelled_at' => now()]);
             foreach ($plan['new_breaks'] as $id => $breaks) $this->rules->saveBreaks(User::findOrFail($id), $breaks);
             foreach ($plan['rows'] as $row) {

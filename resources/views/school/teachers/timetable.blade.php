@@ -26,7 +26,7 @@
 <section class="panel p-3 mb-3" aria-label="{{ __('Teacher workload') }}">
 <?php $activity = $service->availability($teacher); ?>
 <div data-teacher-live data-refresh-error="{{ __('Refresh unavailable') }}" data-endpoint="{{ route('teachers.schedule.status', $teacher) }}"><p><strong>{{ __('Current availability:') }}</strong> <span data-teacher-status>{{ __($activity['status']) }}</span> · <span data-teacher-time>{{ $activity['time'] }}</span></p><p>{{ __('Current:') }} <span data-teacher-current>{{ $activity['current'] }}</span></p><p>{{ __('Next:') }} <span data-teacher-next>{{ $activity['next'] }}</span></p></div>
-<p>{{ __('Teaching Hours:') }} <strong>{{ $workload['weekly'] }} / {{ $workload['limit'] }}</strong> · {{ __('Designated Free Periods:') }} <strong>{{ $breaks->count() }} / 3</strong> · {{ __($workload['status']) }}</p>
+<p>{{ __('Teaching Hours:') }} <strong>{{ $workload['weekly'] }} / {{ $workload['limit'] }}</strong> · {{ __('Designated Free Periods:') }} <strong>{{ $breaks->count() }} / {{ app(\App\Services\TeacherManagementService::class)->requiredBreaks($teacher) }}</strong> · {{ __($workload['status']) }}</p>
 <p>{{ __('Subjects:') }} {{ $workload['subjects']->join(', ') ?: __('Not assigned') }}</p>
 <p class="mb-0">{{ __('Assigned Classes:') }} {{ $workload['classes']->map(fn ($c) => $c->label)->join(', ') ?: __('Not assigned') }}</p>
 </section>
@@ -47,7 +47,7 @@
     ];
 @endphp
 <section class="panel p-3 mb-4">
-    <p>{{ __('Teaching:') }} {{ $workload['weekly'] }} / {{ $workload['limit'] }} {{ __('hours') }} · {{ __('Breaks:') }} {{ $workload['breaks'] }} / 3 {{ __('hours') }} · {{ __($workload['status']) }}</p>
+    <p>{{ __('Teaching:') }} {{ $workload['weekly'] }} / {{ $workload['limit'] }} {{ __('hours') }} · {{ __('Breaks:') }} {{ $workload['breaks'] }} / {{ app(\App\Services\TeacherManagementService::class)->requiredBreaks($teacher) }} {{ __('hours') }} · {{ __($workload['status']) }}</p>
     @if($teacherBreaks->isNotEmpty())<div class="mb-3"><strong>{{ __('Scheduled teacher breaks') }}</strong><ul>@foreach($teacherBreaks as $break)<li>{{ __($break->weekday) }} · {{ substr($break->start_time, 0, 5) }}–{{ substr($break->end_time, 0, 5) }} · {{ __('BREAK TIME') }} · {{ __('1 HOUR') }}</li>@endforeach</ul></div>@endif
     <strong>{{ __('View a session') }}</strong>
     <nav class="d-flex flex-wrap gap-2 mt-2" aria-label="{{ __('Schedule sessions') }}">

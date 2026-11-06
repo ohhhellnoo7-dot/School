@@ -24,11 +24,17 @@ class AllKhmerClassTimetablesTest extends TestCase
         foreach (TeacherManagementService::DAYS as $day) app(ClassroomBookingService::class)->create(['class_group_id'=>$group->id, 'class_session_id'=>$session->id, 'classroom_id'=>$room->id, 'teacher_id'=>null, 'day_of_week'=>$day, 'starts_at'=>$from, 'ends_at'=>$to]);
         $teacher = User::factory()->create(['role'=>'teacher','program'=>'Khmer','status'=>'active']);
         $subjects = [];
-        foreach (['Mathematics', 'Khmer Literature'] as $index=>$name) $subjects[] = Subject::create(['school_class_id'=>$class->id,'teacher_id'=>$teacher->id,'name'=>$name,'code'=>$class->id.'-'.$index,'required_weekly_minutes'=>120,'lesson_minutes'=>60]);
+        foreach (['Mathematics', 'Khmer Literature', 'History'] as $index=>$name) $subjects[] = Subject::create(['school_class_id'=>$class->id,'teacher_id'=>$teacher->id,'name'=>$name,'code'=>$class->id.'-'.$index,'required_weekly_minutes'=>$name === 'History' ? 240 : 480,'lesson_minutes'=>60]);
         $rules = app(TeacherManagementService::class);
         $rules->saveProfile($teacher, ['Mathematics','Khmer Literature'],1200, array_map(fn ($day)=>['weekday'=>$day,'start_time'=>$from,'end_time'=>$to,'unavailable'=>false],$rules::DAYS));
         $start = $sessionName === 'Morning' ? '10:00' : '16:00';
         $rules->saveBreaks($teacher, array_map(fn ($day)=>['weekday'=>$day,'start_time'=>$start,'end_time'=>$to],['Monday','Wednesday','Friday']));
+        foreach (array_slice($subjects, 1) as $subject) {
+            $other = User::factory()->create(['role'=>'teacher','program'=>'Khmer','status'=>'active']);
+            $rules->saveProfile($other, [$subject->name],1200,array_map(fn ($day)=>['weekday'=>$day,'start_time'=>$from,'end_time'=>$to,'unavailable'=>false],$rules::DAYS));
+            $rules->saveBreaks($other,array_map(fn ($day)=>['weekday'=>$day,'start_time'=>$subject->name === 'Khmer Literature' ? $from : $start,'end_time'=>$subject->name === 'Khmer Literature' ? ($sessionName === 'Morning' ? '08:00' : '14:00') : $to],['Monday','Wednesday','Friday']));
+            $subject->update(['teacher_id'=>$other->id]);
+        }
         return compact('class','room','teacher','subjects');
     }
 
@@ -45,7 +51,7 @@ class AllKhmerClassTimetablesTest extends TestCase
         $this->assertCount(31,$draft['plan']['plans']);
         $this->assertSame(30,$draft['plan']['validation']['valid_identities']);
         $this->assertSame(0,Schedule::withoutGlobalScope('active')->count());
-        foreach ($draft['plan']['plans'] as $plan) foreach ($plan['rows'] as $row) if ($row['subject_id']) $this->assertSame(120,TeacherManagementService::duration($row['starts_at'],$row['ends_at']));
+        foreach ($draft['plan']['plans'] as $plan) foreach ($plan['rows'] as $row) if ($row['subject_id']) $this->assertSame(KhmerLessonDuration::minutes(Subject::findOrFail($row['subject_id'])),TeacherManagementService::duration($row['starts_at'],$row['ends_at']));
         app(UnifiedTimetableGenerator::class)->confirm($draft['plan']);
         $report = app(KhmerClassTimetableReport::class)->report();
         $this->assertSame(30,$report['identity_count']);
@@ -53,19 +59,17 @@ class AllKhmerClassTimetablesTest extends TestCase
         $this->assertSame(30,$report['valid_identities']);
         $admin = User::factory()->create(['role'=>'administrator']);
         foreach ([$fixtures[0],$fixtures[30]] as $fixture) {
-            $lesson = Schedule::where('school_class_id',$fixture['class']->id)->where('entry_type','academic')->firstOrFail();
-            foreach ([['view'=>'students','class'=>$fixture['class']->id],['view'=>'teachers','teacher'=>$fixture['teacher']->id],['view'=>'classrooms','classroom'=>$fixture['room']->id]] as $query) $this->actingAs($admin)->get(route('timetables.index',$query))->assertOk()->assertSee('data-lesson-id="'.$lesson->id.'"',false)->assertSee('rowspan="2"',false);
+            $lesson = Schedule::where('school_class_id',$fixture['class']->id)->where('entry_type','academic')->where('teacher_id',$fixture['teacher']->id)->firstOrFail();
+            foreach ([['view'=>'students','class'=>$fixture['class']->id],['view'=>'teachers','teacher'=>$fixture['teacher']->id],['view'=>'classrooms','classroom'=>$fixture['room']->id]] as $query) $this->actingAs($admin)->get(route('timetables.index',$query))->assertOk()->assertSee('data-lesson-id="'.$lesson->id.'"',false)->assertSee('two-hour-entry',false);
         }
     }
 
-    public function test_batch_replacement_preserves_the_exact_existing_relaxation_times(): void
+    public function test_batch_replacement_removes_optional_relaxation_from_draft_only(): void
     {
         $f = $this->cohort(10,'B');
         $original = app(LessonManagementService::class)->saveRelaxation(['school_class_id'=>$f['class']->id,'classroom_id'=>$f['room']->id,'day'=>'Thursday','starts_at'=>'09:00','ends_at'=>'10:00']);
         $plan = app(UnifiedTimetableGenerator::class)->preview([$f['class']->id]);
-        $fixed = collect($plan['plans'][0]['rows'])->where('entry_type','relaxation')->first(fn ($row)=>$row['day']==='Thursday' && substr($row['starts_at'],0,5)==='09:00');
-        $this->assertNotNull($fixed);
-        $this->assertSame('10:00',substr($fixed['ends_at'],0,5));
+        $this->assertCount(0,collect($plan['plans'][0]['rows'])->where('entry_type','relaxation'));
         $this->assertSame(1,Schedule::count());
         $this->assertNull($original->fresh()->cancelled_at);
     }
@@ -93,15 +97,12 @@ class AllKhmerClassTimetablesTest extends TestCase
     public function test_history_is_generated_as_one_hour_blocks_even_with_an_old_two_hour_setting(): void
     {
         $f = $this->cohort(7,'A');
-        $f['subjects'][1]->update(['teacher_id'=>null,'required_weekly_minutes'=>0]);
-        $history = Subject::create(['school_class_id'=>$f['class']->id,'name'=>'History','code'=>'H-7A','required_weekly_minutes'=>120,'lesson_minutes'=>120]);
-        $rules = app(TeacherManagementService::class);
-        $rules->saveProfile($f['teacher'], ['Mathematics','History'],1200,array_map(fn ($day)=>['weekday'=>$day,'start_time'=>'07:00','end_time'=>'11:00','unavailable'=>false],$rules::DAYS));
-        $history->update(['teacher_id'=>$f['teacher']->id]);
+        $history = $f['subjects'][2];
+        $history->update(['lesson_minutes'=>120]);
         $plan = app(RotationTimetableGenerator::class)->preview($f['class']);
         $rows = collect($plan['rows'])->where('subject_id',$history->id);
-        $this->assertCount(2,$rows);
-        foreach ($rows as $row) $this->assertSame(60,$rules::duration($row['starts_at'],$row['ends_at']));
+        $this->assertCount(4,$rows);
+        foreach ($rows as $row) $this->assertSame(60,TeacherManagementService::duration($row['starts_at'],$row['ends_at']));
     }
 
     public function test_legacy_hourly_generator_cannot_publish_an_established_khmer_cohort(): void

@@ -48,6 +48,7 @@ class TeacherManagementService
         return (int) ($program === 'Khmer' ? ($settings->khmer_weekly_minutes ?? $settings->weekly_minutes) : $settings->weekly_minutes);
     }
     public function limit(User $teacher): int { return (int) (DB::table('teacher_profiles')->where('teacher_id', $teacher->id)->value('weekly_minutes') ?? $this->defaultLimit($teacher->program)); }
+    public function requiredBreaks(User $teacher): int { return ($teacher->program ?: 'Khmer') === 'Khmer' ? (int) ($this->settings()->khmer_teacher_free_periods ?? 3) : 0; }
     public static function minute(string $time): int { return (int) substr($time, 0, 2) * 60 + (int) substr($time, 3, 2); }
     public static function duration(string $start, string $end): int { return max(0, self::minute($end) - self::minute($start)); }
     public static function overlaps(string $start, string $end, string $otherStart, string $otherEnd): bool { return self::minute($start) < self::minute($otherEnd) && self::minute($end) > self::minute($otherStart); }
@@ -60,6 +61,7 @@ class TeacherManagementService
 
     public function eligibleForBreaks(User $teacher): bool
     {
+        if ($this->requiredBreaks($teacher) === 0) return false;
         // Unassigned legacy profiles follow the Khmer rules.
         if (filled($teacher->program) && $teacher->program !== 'Khmer') return false;
         return $this->periods($teacher)->where('unavailable', false)->pluck('weekday')->unique()->count() >= 3;
@@ -189,6 +191,7 @@ class TeacherManagementService
 
     public function proposeBreaks(User $teacher): array
     {
+        if ($this->requiredBreaks($teacher) === 0) return [];
         if (filled($teacher->program) && $teacher->program !== 'Khmer') $this->fail('Designated free periods are only available for Khmer teachers.');
         if ($teacher->status !== 'active') $this->fail('Breaks can only be generated for active teachers.');
         $options = [];
@@ -208,6 +211,11 @@ class TeacherManagementService
     {
         $this->locked(function () use ($teacher, $breaks, $replace) {
             if ($teacher->status !== 'active') $this->fail('The teacher is no longer active.');
+            if ($this->requiredBreaks($teacher) === 0) {
+                if ($breaks) $this->fail('Designated teacher free periods are disabled by the current program policy.');
+                DB::table('teacher_break_plans')->where('teacher_id', $teacher->id)->delete();
+                return;
+            }
             if (count($breaks) !== 3 || count(array_unique(array_column($breaks, 'weekday'))) !== 3) $this->fail('A completed schedule must have exactly three one-hour breaks on different weekdays.');
             foreach ($breaks as $b) $this->validateBreak($teacher, $b);
             $plan = DB::table('teacher_break_plans')->where('teacher_id', $teacher->id)->first();

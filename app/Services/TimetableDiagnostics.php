@@ -24,7 +24,7 @@ class TimetableDiagnostics
         foreach ($classes as $class) {
             if (! $class->class_group_id || ! $groups->contains('id', $class->class_group_id)) $issues[] = ['type' => 'cohort', 'message' => $class->label.': missing active class identity.'];
             if ($class->subjects->isEmpty() || $class->subjects->contains(fn ($s) => $s->required_weekly_minutes === null)) $issues[] = ['type' => 'curriculum', 'message' => $class->label.': approved weekly subject hours are missing.'];
-            if ((int) $class->weekly_relaxation_minutes !== 180) $issues[] = ['type' => 'relaxation', 'message' => $class->label.': configure three one-hour student relaxation periods.'];
+            if ($class->subjects->sum('required_weekly_minutes') !== 1200) $issues[] = ['type' => 'capacity', 'message' => $class->label.' '.$class->session.': approved curriculum must cover all 20 weekly teaching hours.'];
             foreach ($class->subjects as $subject) {
                 $actual = $lessons->where('subject_id', $subject->id)->sum(fn ($s) => $rules::duration($s->starts_at, $s->ends_at));
                 if ($subject->required_weekly_minutes !== null && $actual !== (int) $subject->required_weekly_minutes) $issues[] = ['type' => 'coverage', 'message' => $class->label.' / '.$subject->name.': required '.$subject->required_weekly_minutes.' minutes, scheduled '.$actual.'.'];
@@ -49,7 +49,7 @@ class TimetableDiagnostics
             if ($work['subjects']->count() > 2) $issues[] = ['type' => 'qualification', 'message' => $teacher->name.': more than two approved subject assignments.'];
             if ($work['weekly'] > $work['limit']) $issues[] = ['type' => 'workload', 'message' => $teacher->name.': weekly workload exceeded.'];
             $breaks = $rules->breaks($teacher);
-            if ($breaks->count() !== 3 || $breaks->pluck('weekday')->unique()->count() !== 3) $issues[] = ['type' => 'free_period', 'message' => $teacher->name.': three designated free periods on separate weekdays are not established.'];
+            if ($breaks->count() !== $rules->requiredBreaks($teacher) || $breaks->pluck('weekday')->unique()->count() !== $rules->requiredBreaks($teacher)) $issues[] = ['type' => 'free_period', 'message' => $teacher->name.': three designated free periods on separate weekdays are not established.'];
         }
         return ['timezone' => 'Asia/Phnom_Penh', 'identities' => $groups->count(), 'cohorts' => $classes->count(), 'active_lessons' => $lessons->count(), 'missing_room_ids' => $lessons->whereNull('classroom_id')->count(), 'issues' => $issues, 'class_validation' => app(KhmerClassTimetableReport::class)->report()];
     }

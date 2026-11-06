@@ -27,6 +27,7 @@ class RoomLessonService
         $occupancy = $reservation || $currentLesson ? 'Occupied' : 'Available';
         if ($room->status === Classroom::STATUS_OUT_OF_SERVICE) $occupancy = 'Out of service';
         $activity = $currentLesson ? ($currentLesson->isRelaxation() ? 'Scheduled relaxation' : $currentLesson->subject?->name) : ($reservation ? 'Free Period' : 'No Class');
+        if ($reservation && data_get($reservation, 'classGroup.program') === 'Khmer' && (! $currentLesson || $currentLesson->isRelaxation())) $activity = 'Incomplete timetable';
         $roomMismatch = $currentLesson && ! in_array(self::roomKey($currentLesson->room), [self::roomKey($room->room_number), self::roomKey($room->name)], true);
         return compact('currentLesson', 'nextLesson', 'occupancy', 'activity', 'roomMismatch') + ['lessonConflict' => $currentLessons->count() > 1];
     }

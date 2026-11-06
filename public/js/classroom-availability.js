@@ -45,7 +45,7 @@
         const empty = results.querySelector('[data-lesson-empty]');
         if (empty) empty.hidden = lessonFilter === 'all' || cards.some(card => !card.hidden);
         const selection = results.querySelector('[data-lesson-selection]');
-        if (selection) selection.textContent = lessonFilter === 'all' ? '' : ` Showing: ${lessonFilter === 'studying' ? 'Studying' : 'Free period'}.`;
+        if (selection) selection.textContent = lessonFilter === 'all' ? '' : ` Showing: ${{studying: 'Studying', free: 'Free period', incomplete: 'Incomplete timetable'}[lessonFilter] || lessonFilter}.`;
     };
     const openLessonPicker = open => {
         results.querySelector('.lesson-picker')?.classList.toggle('is-open', open);

@@ -63,7 +63,7 @@
  'users' => 'Manage school community accounts.',
  default => 'Browse and manage your school records.'
 } }}</p></div>
-@if($canWrite)<a href="{{ route('modules.create', $module) }}" class="btn btn-primary"><i class="bi bi-plus-lg me-2" aria-hidden="true"></i>Add record</a>@endif</div>
+@if($canWrite && $module !== 'parents')<a href="{{ route('modules.create', $module) }}" class="btn btn-primary"><i class="bi bi-plus-lg me-2" aria-hidden="true"></i>Add record</a>@endif</div>
 @endif
 @if($module === 'parents')
 <div class="parent-summary" aria-label="Parent overview">
