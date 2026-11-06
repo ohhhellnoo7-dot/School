@@ -22,6 +22,34 @@ class ClassroomManagementTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_room_cards_match_the_session_teachers_and_enrollment_in_room_details(): void
+    {
+        $admin = $this->user('administrator');
+        $room = $this->classroom('10B', 40);
+        $group = ClassGroup::create(['program' => 'Khmer', 'grade' => 10, 'section' => 'B', 'name' => 'Grade 10B', 'status' => 'active']);
+        foreach ([['Morning', '07:00', '11:00', 2], ['Afternoon', '13:00', '17:00', 3]] as [$session, $start, $end, $students]) {
+            $classSession = $this->classSession($group, $session, $start, $end);
+            $teacher = $this->user('teacher', ['name' => $session.' Subject Teacher']);
+            ClassroomBooking::create(collect($this->bookingData($group, $classSession, $room, $teacher, 'Monday', $start, $end))->except('session')->all());
+            $class = SchoolClass::create(['name' => 'Grade 10', 'section' => 'B', 'program' => 'Khmer', 'session' => $session, 'class_group_id' => $group->id]);
+            Student::factory()->count($students)->create(['school_class_id' => $class->id, 'status' => 'active']);
+            $subject = \App\Models\Subject::create(['school_class_id' => $class->id, 'name' => $session.' Subject', 'code' => 'CARD-'.$session]);
+            \Illuminate\Support\Facades\DB::table('schedules')->insert(['school_class_id' => $class->id, 'subject_id' => $subject->id, 'teacher_id' => $teacher->id, 'classroom_id' => $room->id, 'room' => $room->room_number, 'day' => 'Monday', 'starts_at' => $start, 'ends_at' => $end, 'entry_type' => 'academic', 'academic_year' => '2026-2027']);
+        }
+        $this->actingAs($admin);
+        foreach ([['18:00', null, 'Morning', 2], ['14:00', null, 'Afternoon', 3], ['14:00', 'Morning', 'Morning', 2], ['18:00', 'Afternoon', 'Afternoon', 3]] as [$time, $filter, $expected, $count]) {
+            $query = array_filter(['date' => '2026-11-02', 'time' => $time, 'session' => $filter]);
+            $html = $this->getJson(route('classrooms.data', $query))->assertOk()->json('html');
+            $other = $expected === 'Morning' ? 'Afternoon' : 'Morning';
+            $this->assertStringContainsString($expected.' Subject Teacher', $html);
+            $this->assertStringNotContainsString($other.' Subject Teacher', $html);
+            $this->assertStringContainsString('data-program-session="'.$expected.'" data-enrolled-count="'.$count.'"', $html);
+            $this->assertStringContainsString('session='.$expected, $html);
+            $this->get(route('classrooms.show', ['classroom' => $room, 'program' => 'Khmer', 'session' => $expected] + $query))
+                ->assertOk()->assertViewHas('snapshot', fn ($snapshot) => $snapshot['programDetails']['Khmer']['students'] === $count && $snapshot['programDetails']['Khmer']['teachers']->all() === [$expected.' Subject Teacher']);
+        }
+    }
+
     public function test_room_teacher_subjects_use_scoped_lessons_and_identify_booking_supervisors(): void
     {
         $admin = $this->user('administrator');
@@ -66,7 +94,13 @@ class ClassroomManagementTest extends TestCase
         foreach ([['2026-11-02','10:00','Japanese Vocabulary'],['2026-11-02','17:45','Japanese Vocabulary'],['2026-11-02','18:30','Japanese Grammar'],['2026-11-03','10:00','Japanese Writing'],['2026-11-02','19:30',null]] as [$date,$time,$expected]) {
             $entry = $service->forDateAndTime($date,$time)->first();
             $this->assertSame($expected,$entry['programDetails']['Japan']['display_lesson']?->subject?->name);
+            $this->assertSame(
+                $date === '2026-11-03' ? ['Japanese Writing'] : ['Japanese Vocabulary', 'Japanese Grammar'],
+                $entry['cardProgramDetails']['Japan']['teacher_assignments']->first()['subjects']->all()
+            );
         }
+        $entry = $service->forDateAndTime('2026-11-04', '10:00')->first();
+        $this->assertCount(0, $entry['cardProgramDetails']['Japan']['teacher_assignments']);
     }
 
     public function test_room_program_selection_follows_the_active_session_in_live_results(): void

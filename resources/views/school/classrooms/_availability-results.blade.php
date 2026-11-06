@@ -1,3 +1,6 @@
+@php
+    $subjectLabel = static fn ($name) => preg_replace('/^(?:Japanese|Japan|English|Chinese|Khmer)\s+(?=\S)/iu', '', (string) $name);
+@endphp
 <section class="availability-stats" aria-label="Classroom availability summary">
     @foreach([
         ['total', 'Total classrooms', 'building', 'stat-total'],
@@ -41,11 +44,12 @@
             $lessonState = $status === 'out_of_service' ? 'unavailable' : ($lesson ? ($lesson->isRelaxation() ? 'relaxation' : 'studying') : ($current && data_get($entry, 'activity') === 'Free Period' ? 'free' : 'none'));
             if ($status !== 'out_of_service' && data_get($entry, 'activity') === 'Incomplete timetable') $lessonState = 'incomplete';
             $icons = ['available' => 'check-circle-fill', 'busy' => 'record-circle-fill', 'upcoming' => 'clock-fill', 'out_of_service' => 'tools'];
-            $programDetails = collect(data_get($entry, 'programDetails', []));
+            $programDetails = collect(data_get($entry, 'cardProgramDetails', data_get($entry, 'programDetails', [])));
             $activeProgram = $lesson?->schoolClass?->program ?? $current?->classGroup?->program;
             $activeSession = $lesson?->schoolClass?->session ?? $current?->classSession?->session;
             $selectedProgram = $programDetails->has($activeProgram) ? $activeProgram : ($programDetails->has(request('program')) ? request('program') : ($programDetails->has($group?->program) ? $group->program : $programDetails->keys()->first()));
-            $selectedSession = $selectedProgram === $activeProgram ? $activeSession : collect(data_get($programDetails->get($selectedProgram), 'sessions', []))->first();
+            $selectedSession = collect(data_get($programDetails->get($selectedProgram), 'sessions', []))->first();
+            $activeOverviewProgram = collect(data_get($programDetails->get($activeProgram), 'sessions', []))->contains($activeSession) ? $activeProgram : '';
         @endphp
         <article class="classroom-card room-status-{{ $status }}" data-room-card="{{ $room->id }}" data-active-program="{{ $activeProgram }}" data-room-context="{{ $activeProgram }}|{{ $activeSession }}" data-lesson-state="{{ $lessonState }}">
             <div class="room-card-visual" aria-hidden="true"><img src="{{ asset('images/classroom-card.png') }}" alt="" loading="lazy" width="1672" height="941"><span class="room-visual-label"><i class="bi bi-{{ $icons[$status] ?? 'circle-fill' }}"></i> {{ str_replace('_', ' ', ucfirst($status)) }}</span></div>
@@ -55,7 +59,7 @@
                 <span class="room-status"><i class="bi bi-{{ $icons[$status] ?? 'circle-fill' }}" aria-hidden="true"></i> {{ str_replace('_', ' ', ucfirst($status)) }}</span>
             </div>
             <div class="room-card-body">
-                <div data-room-program-overview="{{ $activeProgram }}" @if($selectedProgram !== $activeProgram) hidden @endif>
+                <div data-room-program-overview="{{ $activeOverviewProgram }}" @if($selectedProgram !== $activeOverviewProgram) hidden @endif>
                 @if(in_array($lessonState, ['studying', 'free', 'incomplete'], true))
                     <span class="lesson-state lesson-state-{{ $lessonState }}">{{ match ($lessonState) { 'studying' => 'Studying now', 'incomplete' => 'Incomplete timetable', default => 'Free period' } }}</span>
                     @if($lessonState === 'incomplete')<p class="text-warning-emphasis small">An academic lesson is missing. This is not a planned student free period.</p>@endif
@@ -74,24 +78,39 @@
                 @else
                     <div class="room-empty-message"><strong>Ready to use</strong><span>No class occupies this room at the selected time.</span></div>
                 @endif
-                @if($lesson?->subject)<p class="small mb-0"><strong>{{ __('Subject') }}:</strong> {{ $lesson->subject->name }}</p>@endif
+                @if($lesson?->subject)<p class="small mb-0"><strong>{{ __('Subject') }}:</strong> {{ $subjectLabel($lesson->subject->name) }}</p>@endif
                 </div>
                 @foreach($programDetails as $previewProgram => $previewDetails)
-                    @if($previewProgram !== $activeProgram)
+                    @if($previewProgram !== $activeOverviewProgram)
                     <div data-room-program-overview="{{ $previewProgram }}" @if($previewProgram !== $selectedProgram) hidden @endif>
                         <span class="lesson-state">Not active at the selected time</span>
                         <div class="booking-context"><small>Program classes</small><strong>{{ collect($previewDetails['classes'])->join(', ') ?: $previewProgram }}</strong><span class="program-badge program-{{ strtolower($previewProgram) }}">{{ $previewProgram }}</span></div>
                         <dl class="room-facts"><div><dt><i class="bi bi-clock" aria-hidden="true"></i> {{ __('Session') }}</dt><dd>{{ collect($previewDetails['session_times'])->join(', ') ?: collect($previewDetails['sessions'])->join(', ') }}</dd></div></dl>
                         @php($previewLesson = $previewDetails['display_lesson'])
-                        <p class="small mb-0"><strong>{{ __('Subject') }}:</strong> {{ $previewLesson?->subject?->name ?: 'No remaining lesson scheduled for this day' }}@if($previewLesson)<br><span>{{ $previewLesson->day }} · {{ substr($previewLesson->starts_at, 0, 5) }}–{{ substr($previewLesson->ends_at, 0, 5) }}</span>@endif</p>
+                        @if($previewLesson?->subject?->name)
+                            <p class="small mb-0"><strong>{{ __('Subject') }}:</strong> {{ $subjectLabel($previewLesson->subject->name) }}<br><span>{{ $previewLesson->day }} · {{ substr($previewLesson->starts_at, 0, 5) }}–{{ substr($previewLesson->ends_at, 0, 5) }}</span></p>
+                        @endif
                     </div>
                     @endif
                 @endforeach
                 @foreach($programDetails as $teacherProgram => $teacherDetails)
-                    @php($showCurrentTeacher = $teacherProgram === $activeProgram && $lessonState === 'studying' && $lesson?->teacher)
-                    <div class="room-current-teacher" data-current-teacher data-room-teacher-panel="{{ $teacherProgram }}" @if($teacherProgram !== $selectedProgram) hidden @endif>
+                    @php($showCurrentTeacher = $teacherProgram === $activeProgram && $teacherDetails['sessions']->contains($activeSession) && $lessonState === 'studying' && $lesson?->teacher)
+                    <div class="room-current-teacher" @if($showCurrentTeacher) data-current-teacher @endif data-room-teacher-panel="{{ $teacherProgram }}" @if($teacherProgram !== $selectedProgram) hidden @endif>
                         <i class="bi bi-person-badge" aria-hidden="true"></i>
-                        <span><small>@if($showCurrentTeacher){{ substr((string) $lesson->starts_at, 0, 5) }}&ndash;{{ substr((string) $lesson->ends_at, 0, 5) }} · {{ __('Teacher') }}@else{{ $teacherProgram }} · {{ __('Teacher') }}@endif</small><strong>{{ $showCurrentTeacher ? $lesson->teacher->name : ($teacherDetails['display_lesson']?->teacher?->name ?: (collect($teacherDetails['teachers'])->join(', ') ?: __('Teacher unassigned'))) }}</strong></span>
+                        <div>
+                            @if($showCurrentTeacher)
+                                <small>{{ substr((string) $lesson->starts_at, 0, 5) }}&ndash;{{ substr((string) $lesson->ends_at, 0, 5) }} · {{ __('Teacher') }}</small><strong>{{ $lesson->teacher->name }}</strong>
+                            @else
+                                <small>{{ $teacherDetails['sessions']->join(', ') }} · Teachers and subjects</small>
+                                <ul class="room-card-teachers" data-teacher-rotation>
+                                    @forelse($teacherDetails['teacher_assignments'] as $assignment)
+                                        <li data-teacher-slide @if(!$loop->first) hidden @endif><small>{{ $assignment['subjects']->map($subjectLabel)->unique()->join(', ') ?: 'Booking supervisor' }}</small><strong>{{ $assignment['name'] }}</strong></li>
+                                    @empty
+                                        <li>{{ __('Teacher unassigned') }}</li>
+                                    @endforelse
+                                </ul>
+                            @endif
+                        </div>
                     </div>
                 @endforeach
             </div>
@@ -102,7 +121,7 @@
                     @empty No programs assigned yet @endforelse
                 </div>
                 @foreach($programDetails as $programName => $details)
-                    <div id="room-{{ $room->id }}-program-{{ $loop->index }}" data-room-program-panel="{{ $programName }}" data-program-session="{{ $programName === $activeProgram ? $activeSession : collect($details['sessions'])->first() }}" data-enrolled-count="{{ $details['students'] }}" @if($programName !== $selectedProgram) hidden @endif>
+                    <div id="room-{{ $room->id }}-program-{{ $loop->index }}" data-room-program-panel="{{ $programName }}" data-program-session="{{ collect($details['sessions'])->first() }}" data-enrolled-count="{{ $details['students'] }}" @if($programName !== $selectedProgram) hidden @endif>
                         <div class="room-enrollment-summary">
                             <div><strong>{{ $details['students'] }}</strong><span>enrolled students</span></div>
                             <span class="room-seat-limit">{{ $room->capacity }} seats</span>

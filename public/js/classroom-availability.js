@@ -111,6 +111,18 @@
     });
     applyLessonFilter();
 
+    window.setInterval(() => {
+        if (document.hidden) return;
+        results.querySelectorAll('[data-teacher-rotation]').forEach(list => {
+            if (!list.getClientRects().length) return;
+            const teachers = [...list.querySelectorAll('[data-teacher-slide]')];
+            if (teachers.length < 2) return;
+            const current = teachers.findIndex(teacher => !teacher.hidden);
+            const next = (current + 1) % teachers.length;
+            teachers.forEach((teacher, index) => { teacher.hidden = index !== next; });
+        });
+    }, 1000);
+
     const localDateParts = () => {
         const parts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
             timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit',

@@ -72,33 +72,35 @@ class ClassroomAvailabilityService
             ->get();
 
         return $rooms
-            ->map(function (Classroom $classroom) use ($minute, $day, $lessons, $weeklyBookings, $programsByRoom, $cohorts, $lessonsByRoom, $visibleStudyClasses, $scopeProgram, $scopeSession) {
+            ->map(function (Classroom $classroom) use ($minute, $day, $lessons, $weeklyBookings, $programsByRoom, $cohorts, $lessonsByRoom, $visibleStudyClasses, $scopeProgram, $scopeSession, $filters) {
                 $programs = ($programsByRoom->get($classroom->id) ?? collect())
                     ->merge(($weeklyBookings->get($classroom->id) ?? collect())->pluck('classGroup.program'))
                     ->filter()->unique()->sort()->values();
-                $programDetails = $programs->mapWithKeys(function ($program) use ($classroom, $weeklyBookings, $lessonsByRoom, $cohorts, $visibleStudyClasses, $scopeProgram, $scopeSession, $day, $minute) {
-                    $programLessons = ($lessonsByRoom->get($classroom->id) ?? collect())->filter(fn ($lesson) => $lesson->schoolClass?->program === $program);
-                    $programBookings = ($weeklyBookings->get($classroom->id) ?? collect())->filter(fn ($booking) => $booking->classGroup?->program === $program);
+                $buildProgramDetails = function ($program, $detailSession = null, $dailyTeachers = false) use ($classroom, $weeklyBookings, $lessonsByRoom, $cohorts, $visibleStudyClasses, $day, $minute) {
+                    $programLessons = ($lessonsByRoom->get($classroom->id) ?? collect())->filter(fn ($lesson) => $lesson->schoolClass?->program === $program && (! $detailSession || $lesson->schoolClass?->session === $detailSession));
+                    $programBookings = ($weeklyBookings->get($classroom->id) ?? collect())->filter(fn ($booking) => $booking->classGroup?->program === $program && (! $detailSession || $booking->classSession?->session === $detailSession));
                     if ($visibleStudyClasses !== null) {
                         $programLessons = $programLessons->filter(fn ($lesson) => $visibleStudyClasses->contains(fn ($class) => $class->timetableOwnerId() === (int) $lesson->school_class_id));
                         $programBookings = $programBookings->filter(fn ($booking) => $visibleStudyClasses->contains(fn ($class) => $class->class_group_id === $booking->class_group_id && $class->session === $booking->classSession?->session));
                         $cohorts = $cohorts->whereIn('id', $visibleStudyClasses->modelKeys());
                     }
                     $ownerIds = $programLessons->pluck('school_class_id');
-                    $classes = $cohorts->filter(fn ($class) => $class->program === $program && ($ownerIds->contains($class->timetableOwnerId()) ||
+                    $classes = $cohorts->filter(fn ($class) => $class->program === $program && (! $detailSession || $class->session === $detailSession) && ($ownerIds->contains($class->timetableOwnerId()) ||
                         $programBookings->contains(fn ($booking) => $booking->class_group_id === $class->class_group_id && $booking->classSession?->session === $class->session)));
                     $todayLessons = $programLessons->where('day', $day)->sortBy('starts_at');
                     $displayLesson = $todayLessons->first(fn ($lesson) => TeacherManagementService::minute($lesson->starts_at) <= $minute && TeacherManagementService::minute($lesson->ends_at) > $minute)
                         ?? $todayLessons->first(fn ($lesson) => TeacherManagementService::minute($lesson->starts_at) > $minute);
-                    $teacherAssignments = $programLessons->pluck('teacher')
-                        ->merge($programBookings->pluck('teacher'))->filter()->unique('id')
+                    $teacherLessons = $dailyTeachers ? $todayLessons : $programLessons;
+                    $teacherBookings = $dailyTeachers ? $programBookings->where('day_of_week', $day) : $programBookings;
+                    $teacherAssignments = $teacherLessons->pluck('teacher')
+                        ->merge($teacherBookings->pluck('teacher'))->filter()->unique('id')
                         ->map(fn ($teacher) => [
                             'name' => $teacher->name,
-                            'subjects' => $programLessons->where('teacher_id', $teacher->id)
+                            'subjects' => $teacherLessons->where('teacher_id', $teacher->id)
                                 ->pluck('subject.name')->filter()->unique()->values(),
-                            'supervisor' => $programBookings->contains('teacher_id', $teacher->id),
+                            'supervisor' => $teacherBookings->contains('teacher_id', $teacher->id),
                         ])->values();
-                    return [$program => [
+                    return [
                         'display_lesson' => $displayLesson,
                         'students' => $classes->sum('enrolled_count'),
                         'classes' => $classes->pluck('label')->unique()->values(),
@@ -108,7 +110,17 @@ class ClassroomAvailabilityService
                         'subjects' => $programLessons->pluck('subject.name')->filter()->unique()->values(),
                         'sessions' => $classes->pluck('session')->merge($programBookings->pluck('classSession.session'))->filter()->unique()->values(),
                         'session_times' => $programBookings->map(fn ($booking) => $booking->classSession?->session.' · '.substr($booking->starts_at, 0, 5).'–'.substr($booking->ends_at, 0, 5))->unique()->values(),
-                    ]];
+                    ];
+                };
+                $programDetails = $programs->mapWithKeys(fn ($program) => [$program => $buildProgramDetails($program)]);
+                $cardProgramDetails = $programs->mapWithKeys(function ($program) use ($programDetails, $buildProgramDetails, $classroom, $lessonsByRoom, $day, $minute, $filters) {
+                    $sessions = $programDetails[$program]['sessions'];
+                    $activeLesson = ($lessonsByRoom->get($classroom->id) ?? collect())->first(fn ($lesson) => $lesson->schoolClass?->program === $program && $lesson->day === $day && TeacherManagementService::minute($lesson->starts_at) <= $minute && TeacherManagementService::minute($lesson->ends_at) > $minute);
+                    $booking = $classroom->bookings->first(fn ($booking) => $booking->classGroup?->program === $program && $booking->starts_minute <= $minute && $booking->ends_minute > $minute);
+                    $session = $sessions->contains($filters['session'] ?? null) ? $filters['session'] : ($activeLesson?->schoolClass?->session ?? $booking?->classSession?->session);
+                    if (! $sessions->contains($session)) $session = collect(['Morning', 'Afternoon', 'Evening'])->first(fn ($value) => $sessions->contains($value));
+
+                    return [$program => $buildProgramDetails($program, $session, true)];
                 });
                 $bookings = $classroom->bookings->filter(fn ($booking) => (! $scopeProgram || $booking->classGroup?->program === $scopeProgram) && (! $scopeSession || $booking->classSession?->session === $scopeSession));
                 $current = $bookings->first(fn (ClassroomBooking $booking) => $booking->starts_minute <= $minute && $booking->ends_minute > $minute
@@ -135,7 +147,7 @@ class ClassroomAvailabilityService
                     if (! $visibleBooking($current)) { $current = null; $activity['activity'] = 'Reserved for another cohort'; }
                     if (! $visibleBooking($next)) $next = null;
                 }
-                return compact('classroom', 'status', 'current', 'next', 'roomLessons', 'programs', 'programDetails') + $activity;
+                return compact('classroom', 'status', 'current', 'next', 'roomLessons', 'programs', 'programDetails', 'cardProgramDetails') + $activity;
             })
             ->filter(fn (array $entry) => $this->matchesFilters($entry, $filters))
             ->values();

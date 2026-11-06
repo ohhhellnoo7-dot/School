@@ -678,6 +678,8 @@ a.class-summary-card:hover {
 .room-current-teacher[hidden] { display: none; }
 .room-current-teacher small { display: block; color: var(--muted); font-size: 10px; }
 .room-current-teacher strong { display: block; margin-top: 3px; font-size: 12px; }
+.room-card-teachers { list-style: none; margin: 7px 0 0; padding: 0; display: grid; gap: 7px; }
+.room-card-teachers li { border-bottom: 1px solid var(--soft); padding-bottom: 5px; }
 .room-program-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px; background: var(--soft); border-radius: 12px; margin-bottom: 12px; }
 .room-program-tabs button { flex: 1; padding: 8px 12px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; }
 .room-program-tabs button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 2px 6px rgb(0 0 0 / 7%); font-weight: 600; }
