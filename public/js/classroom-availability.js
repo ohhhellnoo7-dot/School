@@ -12,11 +12,23 @@
     let requestController = null;
     let lessonFilter = 'all';
     const roomPrograms = new Map();
+    const roomPreviewTimers = new Map();
+    const clearRoomPreview = roomId => {
+        clearTimeout(roomPreviewTimers.get(roomId));
+        roomPreviewTimers.delete(roomId);
+        roomPrograms.delete(roomId);
+    };
     const selectRoomProgram = (card, program) => {
         const panels = [...card.querySelectorAll('[data-room-program-panel]')];
         const selected = panels.find(panel => panel.dataset.roomProgramPanel === program);
         if (!selected) return;
         panels.forEach(panel => { panel.hidden = panel !== selected; });
+        card.querySelectorAll('[data-room-program-overview]').forEach(panel => {
+            panel.hidden = panel.dataset.roomProgramOverview !== program;
+        });
+        card.querySelectorAll('[data-room-teacher-panel]').forEach(panel => {
+            panel.hidden = panel.dataset.roomTeacherPanel !== program;
+        });
         card.querySelectorAll('[data-room-program]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.roomProgram === program)));
         const count = card.querySelector('[data-room-enrolled]');
         if (count) count.textContent = selected.dataset.enrolledCount;
@@ -24,14 +36,29 @@
         if (detailLink) {
             const url = new URL(detailLink.href);
             url.searchParams.set('program', program);
-            url.searchParams.set('session', program === 'Chinese' ? 'Evening' : 'Morning');
+            if (selected.dataset.programSession) url.searchParams.set('session', selected.dataset.programSession);
+            else url.searchParams.delete('session');
             detailLink.href = url.toString();
         }
-        roomPrograms.set(card.dataset.roomCard, program);
     };
     results.addEventListener('click', event => {
         const button = event.target.closest('[data-room-program]');
-        if (button) selectRoomProgram(button.closest('[data-room-card]'), button.dataset.roomProgram);
+        if (!button) return;
+        const card = button.closest('[data-room-card]');
+        const roomId = card.dataset.roomCard;
+        const program = button.dataset.roomProgram;
+        clearRoomPreview(roomId);
+        selectRoomProgram(card, program);
+        if (program === card.dataset.activeProgram) return;
+        const expiresAt = card.dataset.activeProgram ? Date.now() + 2000 : null;
+        roomPrograms.set(roomId, { program, context: card.dataset.roomContext, expiresAt });
+        if (expiresAt) {
+            roomPreviewTimers.set(roomId, setTimeout(() => {
+                const currentCard = [...results.querySelectorAll('[data-room-card]')].find(room => room.dataset.roomCard === roomId);
+                if (currentCard?.dataset.activeProgram) selectRoomProgram(currentCard, currentCard.dataset.activeProgram);
+                clearRoomPreview(roomId);
+            }, 2000));
+        }
     });
 
     const applyLessonFilter = () => {
@@ -132,7 +159,8 @@
             results.innerHTML = payload.html;
             results.querySelectorAll('[data-room-card]').forEach(card => {
                 const selected = roomPrograms.get(card.dataset.roomCard);
-                if (selected) selectRoomProgram(card, selected);
+                if (selected?.context === card.dataset.roomContext && (!selected.expiresAt || selected.expiresAt > Date.now())) selectRoomProgram(card, selected.program);
+                else clearRoomPreview(card.dataset.roomCard);
             });
             applyLessonFilter();
             if (status) status.textContent = `Showing room status for ${payload.label}. Refreshed just now; refreshes every 30 seconds.`;

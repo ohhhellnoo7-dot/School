@@ -671,6 +671,7 @@ a.class-summary-card:hover {
 .room-program-section { padding: 0 18px 16px; min-width: 0; }
 .room-current-teacher { display: flex; align-items: center; gap: 8px; margin-top: 12px; color: var(--ink); overflow-wrap: anywhere; }
 .room-current-teacher > i { color: var(--primary); flex-shrink: 0; }
+.room-current-teacher[hidden] { display: none; }
 .room-current-teacher small { display: block; color: var(--muted); font-size: 10px; }
 .room-current-teacher strong { display: block; margin-top: 3px; font-size: 12px; }
 .room-program-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px; background: var(--soft); border-radius: 12px; margin-bottom: 12px; }

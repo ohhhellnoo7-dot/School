@@ -22,6 +22,45 @@ class ClassroomManagementTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_program_preview_subject_follows_the_selected_weekday_and_lesson_time(): void
+    {
+        $room = $this->classroom('C02', 30);
+        $class = SchoolClass::create(['name'=>'C02','section'=>'A','program'=>'Japan','session'=>'Evening']);
+        $teacher = $this->user('teacher', ['program'=>'Japan']);
+        foreach ([['Monday','Japanese Vocabulary','17:30','18:30'],['Monday','Japanese Grammar','18:30','19:30'],['Tuesday','Japanese Writing','17:30','18:30']] as [$day,$name,$start,$end]) {
+            $subject = \App\Models\Subject::create(['school_class_id'=>$class->id,'name'=>$name,'code'=>'JP-'.str_replace(' ','-',$name)]);
+            \Illuminate\Support\Facades\DB::table('schedules')->insert(['school_class_id'=>$class->id,'subject_id'=>$subject->id,'teacher_id'=>$teacher->id,'classroom_id'=>$room->id,'room'=>$room->room_number,'day'=>$day,'starts_at'=>$start,'ends_at'=>$end,'entry_type'=>'academic','academic_year'=>'2026-2027']);
+        }
+        $service = app(ClassroomAvailabilityService::class);
+        foreach ([['2026-11-02','10:00','Japanese Vocabulary'],['2026-11-02','17:45','Japanese Vocabulary'],['2026-11-02','18:30','Japanese Grammar'],['2026-11-03','10:00','Japanese Writing'],['2026-11-02','19:30',null]] as [$date,$time,$expected]) {
+            $entry = $service->forDateAndTime($date,$time)->first();
+            $this->assertSame($expected,$entry['programDetails']['Japan']['display_lesson']?->subject?->name);
+        }
+    }
+
+    public function test_room_program_selection_follows_the_active_session_in_live_results(): void
+    {
+        $admin = $this->user('administrator');
+        $room = $this->classroom('7D', 40);
+        foreach ([['Chinese','Evening','17:30','18:30'],['Khmer','Morning','07:00','11:00'],['Khmer','Afternoon','13:00','17:00']] as [$program,$session,$start,$end]) {
+            $group = ClassGroup::firstOrCreate(['program'=>$program,'grade'=>7,'section'=>'D'], ['name'=>$program.' Grade 7D','status'=>'active']);
+            $classSession = $this->classSession($group,$session,$start,$end);
+            $teacher = $this->user('teacher');
+            ClassroomBooking::create(collect($this->bookingData($group,$classSession,$room,$teacher,'Monday',$start,$end))->except('session')->all());
+        }
+        $this->actingAs($admin);
+        foreach ([['10:00','Khmer','Morning'],['14:00','Khmer','Afternoon'],['18:00','Chinese','Evening']] as [$time,$program,$session]) {
+            $query = ['date'=>'2026-11-02','time'=>$time];
+            $page = $this->get(route('classrooms.index',$query))->assertOk()->getContent();
+            $live = $this->getJson(route('classrooms.data',$query))->assertOk()->json('html');
+            foreach ([$page,$live] as $html) {
+                $this->assertMatchesRegularExpression('/data-room-program="'.$program.'"[^>]*aria-pressed="true"/', $html);
+                $this->assertStringContainsString('data-room-context="'.$program.'|'.$session.'"',$html);
+                $this->assertStringContainsString('session='.$session,$html);
+            }
+        }
+    }
+
     public function test_room_details_scope_program_session_roster_and_bookings(): void
     {
         $admin = $this->user('administrator');
