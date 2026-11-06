@@ -90,12 +90,21 @@ class ClassroomAvailabilityService
                     $todayLessons = $programLessons->where('day', $day)->sortBy('starts_at');
                     $displayLesson = $todayLessons->first(fn ($lesson) => TeacherManagementService::minute($lesson->starts_at) <= $minute && TeacherManagementService::minute($lesson->ends_at) > $minute)
                         ?? $todayLessons->first(fn ($lesson) => TeacherManagementService::minute($lesson->starts_at) > $minute);
+                    $teacherAssignments = $programLessons->pluck('teacher')
+                        ->merge($programBookings->pluck('teacher'))->filter()->unique('id')
+                        ->map(fn ($teacher) => [
+                            'name' => $teacher->name,
+                            'subjects' => $programLessons->where('teacher_id', $teacher->id)
+                                ->pluck('subject.name')->filter()->unique()->values(),
+                            'supervisor' => $programBookings->contains('teacher_id', $teacher->id),
+                        ])->values();
                     return [$program => [
                         'display_lesson' => $displayLesson,
                         'students' => $classes->sum('enrolled_count'),
                         'classes' => $classes->pluck('label')->unique()->values(),
                         'class_ids' => $classes->pluck('id')->values(),
                         'teachers' => $programLessons->pluck('teacher.name')->merge($programBookings->pluck('teacher.name'))->filter()->unique()->values(),
+                        'teacher_assignments' => $teacherAssignments,
                         'subjects' => $programLessons->pluck('subject.name')->filter()->unique()->values(),
                         'sessions' => $classes->pluck('session')->merge($programBookings->pluck('classSession.session'))->filter()->unique()->values(),
                         'session_times' => $programBookings->map(fn ($booking) => $booking->classSession?->session.' · '.substr($booking->starts_at, 0, 5).'–'.substr($booking->ends_at, 0, 5))->unique()->values(),

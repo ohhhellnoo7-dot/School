@@ -13,6 +13,44 @@ class UnifiedTimetableTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_a_subject_cannot_use_different_teachers_on_different_weekdays(): void
+    {
+        $f = $this->fixture();
+        $service = app(LessonManagementService::class);
+        $service->save($this->data($f));
+        $service->save(array_replace($this->data($f), ['day' => 'Tuesday']));
+        $differentTeacher = array_replace($this->data($f), ['day' => 'Thursday', 'teacher_id' => $f['substitute']->id]);
+        foreach ([false, true] as $modelWrite) {
+            try {
+                if ($modelWrite) {
+                    Schedule::create(collect($differentTeacher)->except(['program', 'session'])->all());
+                } else {
+                    $service->save($differentTeacher);
+                }
+                $this->fail('A second teacher was assigned to the same class subject.');
+            } catch (ValidationException $error) {
+                $this->assertStringContainsString('Each subject must have one teacher', $error->getMessage());
+            }
+        }
+        $this->assertSame(2, Schedule::count());
+        $this->assertSame([$f['primary']->id], Schedule::pluck('teacher_id')->unique()->all());
+        // Another class can assign a different teacher for the same subject name.
+        $service->save(array_replace($this->data($f, 1), ['teacher_id' => $f['substitute']->id]));
+        $this->assertSame(3, Schedule::count());
+    }
+
+    public function test_subject_teacher_consistency_ignores_cancelled_and_previous_year_lessons(): void
+    {
+        $f = $this->fixture();
+        $service = app(LessonManagementService::class);
+        $old = $service->save($this->data($f));
+        DB::table('schedules')->where('id', $old->id)->update(['academic_year' => '2025-2026']);
+        $cancelled = $service->save(array_replace($this->data($f), ['day' => 'Tuesday']));
+        $service->cancel($cancelled);
+        $new = $service->save(array_replace($this->data($f), ['teacher_id' => $f['substitute']->id]));
+        $this->assertSame($f['substitute']->id, $new->teacher_id);
+    }
+
     private function reservePhysicalRoom(SchoolClass $class, string $number): Classroom
     {
         $grade = (int) preg_replace('/\D/', '', $class->name);

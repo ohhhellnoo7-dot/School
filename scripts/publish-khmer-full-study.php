@@ -43,13 +43,15 @@ $report = app(TeacherManagementService::class)->locked(function () use ($proposa
                 $subjectMap[$class->id][$name] = $subject->id;
             }
         }
-        $records=[]; $classSlots=[]; $teacherSlots=[]; $roomSlots=[]; $workloads=[]; $subjectHours=[];
+        $records=[]; $classSlots=[]; $teacherSlots=[]; $roomSlots=[]; $workloads=[]; $subjectHours=[]; $subjectTeachers=[];
         $bookings = ClassroomBooking::with('classSession')->get();
         foreach ($proposal['rows'] as $row) {
             $class = $classes->get($row['school_class_id']);
             $teacher = $teachers->get($row['teacher_id']);
             if (! $class || ! $teacher || ! $rules->qualifications($teacher)->contains($row['subject'])) throw new RuntimeException('Invalid cohort or teacher qualification.');
             $row['subject_id'] = $subjectMap[$class->id][$row['subject']] ?? throw new RuntimeException('Missing approved subject.');
+            if (isset($subjectTeachers[$row['subject_id']]) && $subjectTeachers[$row['subject_id']] !== $teacher->id) throw new RuntimeException('Each class subject must have one teacher for all lessons.');
+            $subjectTeachers[$row['subject_id']] = $teacher->id;
             $subject = Subject::findOrFail($row['subject_id']);
             $duration = $rules::duration($row['starts_at'],$row['ends_at']);
             if ($duration !== \App\Support\KhmerLessonDuration::minutes($subject) || ! $rules->onDuty($teacher,$row['day'],$row['starts_at'],$row['ends_at'])) throw new RuntimeException('Invalid duration or teacher availability.');
@@ -68,6 +70,7 @@ $report = app(TeacherManagementService::class)->locked(function () use ($proposa
         foreach ($teachers as $teacher) if (($workloads[$teacher->id]??0)!==2400 || $workloads[$teacher->id]>$rules->limit($teacher)) throw new RuntimeException('A teacher does not have 40 valid teaching hours.');
         foreach (Subject::whereIn('school_class_id',$classes->modelKeys())->get() as $s) if (($subjectHours[$s->id]??0)!==(int)$s->required_weekly_minutes) throw new RuntimeException('Curriculum coverage mismatch.');
         foreach (array_chunk($records,100) as $chunk) DB::table('schedules')->insert($chunk);
+        foreach ($subjectTeachers as $subjectId=>$teacherId) DB::table('subjects')->where('id',$subjectId)->update(['teacher_id'=>$teacherId,'updated_at'=>now()]);
         SchoolClass::whereIn('id',$classes->modelKeys())->update(['weekly_relaxation_minutes'=>0]);
         $validation=app(KhmerClassTimetableReport::class)->report();
         if ($validation['valid_identities']!==30 || $validation['cohort_count']!==60) {

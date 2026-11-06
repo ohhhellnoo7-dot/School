@@ -84,8 +84,8 @@ for c in data['classes']:
                         by_class_slot[c['id'], slot].append(x)
                         by_teacher_slot[t['id'], slot].append(x)
                         by_room_slot[r['classroom_id'], slot].append(x)
-        # Each central lesson can rotate between qualified teachers; subject catalog remains shared.
-    # No per-subject exclusive teacher constraint is required by lesson validation.
+        # All lessons of a class subject share one teacher, even across weekdays.
+        model.add(sum(subject_vars) <= 1)
         hours = sum(by_subject[c['id'], name])
         if c['grade'] == 'Grade 10' and c['section'] in ('A', 'B') and c['session'] == 'Morning':
             model.add(hours == template_hours.get(name, 0))

@@ -22,6 +22,37 @@ class ClassroomManagementTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_room_teacher_subjects_use_scoped_lessons_and_identify_booking_supervisors(): void
+    {
+        $admin = $this->user('administrator');
+        $room = $this->classroom('10E', 40);
+        $group = ClassGroup::create(['program' => 'Khmer', 'grade' => 10, 'section' => 'E', 'name' => 'Grade 10E', 'status' => 'active']);
+        $session = $this->classSession($group, 'Morning', '07:00', '11:00');
+        $class = SchoolClass::create(['name' => 'Grade 10', 'section' => 'E', 'program' => 'Khmer', 'session' => 'Morning', 'class_group_id' => $group->id]);
+        $afternoon = SchoolClass::create(['name' => 'Grade 10', 'section' => 'E', 'program' => 'Khmer', 'session' => 'Afternoon', 'class_group_id' => $group->id]);
+        $teacher = $this->user('teacher', ['name' => 'Lesson Teacher']);
+        $supervisor = $this->user('teacher', ['name' => 'Room Supervisor']);
+        ClassroomBooking::create(collect($this->bookingData($group, $session, $room, $supervisor, 'Monday', '07:00', '11:00'))->except('session')->all());
+        foreach ([[$class, 'Mathematics', 'Monday', '2026-2027'], [$class, 'Mathematics', 'Tuesday', '2026-2027'], [$class, 'Physics', 'Wednesday', '2026-2027'], [$afternoon, 'Chemistry', 'Thursday', '2026-2027'], [$class, 'History', 'Friday', '2025-2026']] as $index => [$cohort, $name, $day, $year]) {
+            $subject = \App\Models\Subject::create(['school_class_id' => $cohort->id, 'name' => $name, 'code' => 'TEST-'.$index]);
+            \Illuminate\Support\Facades\DB::table('schedules')->insert(['school_class_id' => $cohort->id, 'subject_id' => $subject->id, 'teacher_id' => $teacher->id, 'classroom_id' => $room->id, 'room' => $room->room_number, 'day' => $day, 'starts_at' => '07:00', 'ends_at' => '08:00', 'entry_type' => 'academic', 'academic_year' => $year]);
+        }
+
+        $this->actingAs($admin)->get(route('classrooms.show', ['classroom' => $room, 'program' => 'Khmer', 'session' => 'Morning', 'date' => '2026-11-02', 'time' => '09:00']))
+            ->assertOk()
+            ->assertSeeInOrder(['Teachers and subjects', 'Lesson Teacher', 'Mathematics, Physics', 'Room Supervisor', 'No subject assigned', 'Booking supervisor'])
+            ->assertViewHas('snapshot', function ($snapshot) {
+                $assignments = $snapshot['programDetails']['Khmer']['teacher_assignments'];
+                $this->assertCount(2, $assignments);
+                $this->assertSame(['Mathematics', 'Physics'], $assignments[0]['subjects']->all());
+                $this->assertFalse($assignments[0]['supervisor']);
+                $this->assertSame([], $assignments[1]['subjects']->all());
+                $this->assertTrue($assignments[1]['supervisor']);
+
+                return true;
+            });
+    }
+
     public function test_program_preview_subject_follows_the_selected_weekday_and_lesson_time(): void
     {
         $room = $this->classroom('C02', 30);

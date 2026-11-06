@@ -75,10 +75,18 @@ class LessonManagementService
         if ($assigned->isNotEmpty() && ! $assigned->contains('classroom_id', $room->id) && ! $lesson->getAttribute('room_change_reason')) $this->rules->fail('Room differs from the cohort reservation. Record an explicit room change reason.');
         $busy = Schedule::where('day', $lesson->day)->where('starts_at', '<', $lesson->ends_at)->where('ends_at', '>', $lesson->starts_at)->when($lesson->academic_year,fn ($q)=>$q->where(fn ($year)=>$year->where('academic_year',$lesson->academic_year)->orWhereNull('academic_year')))->when($lesson->id, fn ($q) => $q->where('id', '!=', $lesson->id))->get();
         if ($busy->contains(fn ($s) => $s->school_class_id === $class->id || $s->classroom_id === $room->id || ($lesson->teacher_id && $s->teacher_id === $lesson->teacher_id))) $this->rules->fail('This lesson overlaps a teacher, student cohort or physical classroom commitment.');
-        if ($lesson->isRelaxation() || ! $teacherRules) return;
-        $teacher = User::findOrFail($lesson->teacher_id);
+        if ($lesson->isRelaxation()) return;
         $subject = Subject::findOrFail($lesson->subject_id);
         if ($subject->school_class_id !== $class->id) $this->rules->fail('Subject does not belong to this cohort.');
+        $otherTeachers = Schedule::where('school_class_id', $class->id)
+            ->whereHas('subject', fn ($query) => $query->where('name', $subject->name))
+            ->whereNotNull('teacher_id')->where('teacher_id', '!=', $lesson->teacher_id)
+            ->when($lesson->id, fn ($query) => $query->where('id', '!=', $lesson->id))
+            ->when($lesson->academic_year, fn ($query) => $query->where(fn ($year) => $year
+                ->where('academic_year', $lesson->academic_year)->orWhereNull('academic_year')));
+        if ($otherTeachers->exists()) $this->rules->fail('Each subject must have one teacher in this class and academic year. Use the same teacher for every '.$subject->name.' lesson, or reassign the complete subject timetable.');
+        if (! $teacherRules) return;
+        $teacher = User::findOrFail($lesson->teacher_id);
         if ($teacher->role !== 'teacher' || $teacher->status !== 'active' || ! $this->rules->qualifications($teacher)->contains($subject->name)) $this->rules->fail('Select an active qualified teacher.');
         $this->rules->validateEnglishSession($teacher, $lesson, $class);
         if (! $this->rules->onDuty($teacher, $lesson->day, $lesson->starts_at, $lesson->ends_at)) $this->rules->fail('Teacher is unavailable during this lesson.');

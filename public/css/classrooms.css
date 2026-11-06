@@ -703,6 +703,9 @@ a.class-summary-card:hover {
 .room-detail-group h3 span { margin-left: 4px; font-weight: 400; }
 .room-detail-group ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 5px; }
 .room-detail-group li { background: var(--soft); color: var(--ink); padding: 5px 8px; border-radius: 7px; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; max-width: 100%; }
+.room-detail-group .room-teacher-assignments { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 8px; }
+.room-teacher-assignments li { display: flex; flex-direction: column; gap: 3px; }
+.room-teacher-assignments small { color: var(--muted); }
 .classroom-card .room-empty-message { min-height: 64px; padding: 12px; }
 .classroom-card .room-session-tags { margin: 10px 0 0; }
 

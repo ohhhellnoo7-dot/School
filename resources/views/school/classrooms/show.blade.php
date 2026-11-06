@@ -36,7 +36,22 @@
         <article class="mb-4">
             <h3 class="h6">{{ $programName }}</h3>
             <p class="small text-secondary">{{ $details['students'] }} enrolled students &middot; {{ $classroom->capacity }} seats &middot; {{ $details['sessions']->join(', ') }}</p>
-            @foreach(['Classes' => $details['classes'], 'Teachers' => $details['teachers'], 'Subjects' => $details['subjects']] as $label => $items)
+            <div class="room-detail-group"><h3>Classes <span>{{ $details['classes']->count() }}</span></h3><ul>@forelse($details['classes'] as $item)<li>{{ $item }}</li>@empty<li>Not assigned yet</li>@endforelse</ul></div>
+            <div class="room-detail-group">
+                <h3>Teachers and subjects <span>{{ $details['teacher_assignments']->count() }}</span></h3>
+                <ul class="room-teacher-assignments">
+                    @forelse($details['teacher_assignments'] as $assignment)
+                        <li>
+                            <strong>{{ $assignment['name'] }}</strong>
+                            <span>{{ $assignment['subjects']->join(', ') ?: 'No subject assigned' }}</span>
+                            @if($assignment['supervisor'])<small>Booking supervisor</small>@endif
+                        </li>
+                    @empty
+                        <li>No teachers assigned yet</li>
+                    @endforelse
+                </ul>
+            </div>
+            @foreach(['Subjects' => $details['subjects']] as $label => $items)
                 <div class="room-detail-group"><h3>{{ $label }} <span>{{ $items->count() }}</span></h3><ul>@forelse($items as $item)<li>{{ $item }}</li>@empty<li>Not assigned yet</li>@endforelse</ul></div>
             @endforeach
             @include('school.classrooms._student-roster', ['programStudents' => $roomStudents->filter(fn ($student) => $student->studyClasses->contains('program', $programName))])
