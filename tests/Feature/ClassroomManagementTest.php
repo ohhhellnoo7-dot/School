@@ -50,6 +50,32 @@ class ClassroomManagementTest extends TestCase
         }
     }
 
+    public function test_card_session_buttons_filter_the_room_without_changing_other_rooms(): void
+    {
+        $admin = $this->user('administrator');
+        $rooms = [$this->classroom('S1', 30), $this->classroom('S2', 30)];
+        foreach ($rooms as $room) {
+            $group = $this->classGroup('Khmer', 8, $room->room_number);
+            foreach ([['Morning', '07:00', '11:00'], ['Afternoon', '13:00', '17:00']] as [$session, $start, $end]) {
+                $classSession = $this->classSession($group, $session, $start, $end);
+                $teacher = $this->user('teacher', ['name' => $room->room_number.' '.$session.' Teacher']);
+                ClassroomBooking::create(collect($this->bookingData($group, $classSession, $room, $teacher, 'Monday', $start, $end))->except('session')->all());
+            }
+        }
+        $query = ['date' => '2026-11-02', 'time' => '09:00', 'room_sessions' => [$rooms[0]->id => ['Khmer' => 'Afternoon']]];
+        $html = $this->actingAs($admin)->getJson(route('classrooms.data', $query))->assertOk()->json('html');
+        $this->assertStringContainsString('data-room-session="Morning"', $html);
+        $this->assertStringContainsString('data-room-session="Afternoon"', $html);
+        $this->assertStringNotContainsString('data-room-session="Evening"', $html);
+        $this->assertStringContainsString('S1 Afternoon Teacher', $html);
+        $this->assertStringNotContainsString('S1 Morning Teacher', $html);
+        $this->assertStringContainsString('S2 Morning Teacher', $html);
+        $this->assertStringNotContainsString('S2 Afternoon Teacher', $html);
+        $this->assertStringContainsString('session=Afternoon', $html);
+        $query['room_sessions'][$rooms[0]->id]['Khmer'] = 'Invalid';
+        $this->getJson(route('classrooms.data', $query))->assertUnprocessable();
+    }
+
     public function test_room_teacher_subjects_use_scoped_lessons_and_identify_booking_supervisors(): void
     {
         $admin = $this->user('administrator');

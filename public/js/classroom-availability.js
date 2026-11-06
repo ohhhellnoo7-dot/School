@@ -12,6 +12,7 @@
     let requestController = null;
     let lessonFilter = 'all';
     const roomPrograms = new Map();
+    const roomSessions = new Map();
     const roomPreviewTimers = new Map();
     const clearRoomPreview = roomId => {
         clearTimeout(roomPreviewTimers.get(roomId));
@@ -28,6 +29,9 @@
         });
         card.querySelectorAll('[data-room-teacher-panel]').forEach(panel => {
             panel.hidden = panel.dataset.roomTeacherPanel !== program;
+        });
+        card.querySelectorAll('[data-room-session-panel]').forEach(panel => {
+            panel.hidden = panel.dataset.roomSessionPanel !== program;
         });
         card.querySelectorAll('[data-room-program]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.roomProgram === program)));
         const count = card.querySelector('[data-room-enrolled]');
@@ -146,6 +150,9 @@
             if (String(value).trim() !== '') query.set(key, value);
         });
         if (followNow) query.set('live', '1');
+        roomSessions.forEach((sessions, roomId) => {
+            sessions.forEach((session, program) => query.set(`room_sessions[${roomId}][${program}]`, session));
+        });
         return query;
     };
 
@@ -188,6 +195,19 @@
             results.removeAttribute('aria-busy');
         }
     };
+
+    results.addEventListener('click', event => {
+        const button = event.target.closest('[data-room-session]');
+        if (!button) return;
+        const card = button.closest('[data-room-card]');
+        const roomId = card.dataset.roomCard;
+        const program = button.dataset.sessionProgram;
+        if (!roomSessions.has(roomId)) roomSessions.set(roomId, new Map());
+        roomSessions.get(roomId).set(program, button.dataset.roomSession);
+        clearRoomPreview(roomId);
+        roomPrograms.set(roomId, { program, context: card.dataset.roomContext, expiresAt: null });
+        refresh();
+    });
 
     const programPicker = document.querySelector('.program-picker');
     const programToggle = programPicker?.querySelector('[data-program-toggle]');

@@ -59,6 +59,16 @@
                 <span class="room-status"><i class="bi bi-{{ $icons[$status] ?? 'circle-fill' }}" aria-hidden="true"></i> {{ str_replace('_', ' ', ucfirst($status)) }}</span>
             </div>
             <div class="room-card-body">
+                @foreach($programDetails as $sessionProgram => $sessionDetails)
+                    <div data-room-session-panel="{{ $sessionProgram }}" @if($sessionProgram !== $selectedProgram) hidden @endif>
+                        <span class="small"><i class="bi bi-clock" aria-hidden="true"></i> {{ __('Session') }}</span>
+                        <div class="room-program-tabs room-session-buttons" role="group" aria-label="{{ $sessionProgram }} sessions in room {{ $room->room_number }}">
+                            @foreach(collect(['Morning', 'Afternoon', 'Evening'])->intersect(data_get($entry, 'programDetails.'.$sessionProgram.'.sessions', [])) as $sessionOption)
+                                <button type="button" data-room-session="{{ $sessionOption }}" data-session-program="{{ $sessionProgram }}" aria-pressed="{{ $sessionDetails['sessions']->contains($sessionOption) ? 'true' : 'false' }}">{{ $sessionOption }}</button>
+                            @endforeach
+                        </div>
+                    </div>
+                @endforeach
                 <div data-room-program-overview="{{ $activeOverviewProgram }}" @if($selectedProgram !== $activeOverviewProgram) hidden @endif>
                 @if(in_array($lessonState, ['studying', 'free', 'incomplete'], true))
                     <span class="lesson-state lesson-state-{{ $lessonState }}">{{ match ($lessonState) { 'studying' => 'Studying now', 'incomplete' => 'Incomplete timetable', default => 'Free period' } }}</span>

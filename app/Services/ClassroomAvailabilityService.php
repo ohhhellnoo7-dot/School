@@ -117,7 +117,8 @@ class ClassroomAvailabilityService
                     $sessions = $programDetails[$program]['sessions'];
                     $activeLesson = ($lessonsByRoom->get($classroom->id) ?? collect())->first(fn ($lesson) => $lesson->schoolClass?->program === $program && $lesson->day === $day && TeacherManagementService::minute($lesson->starts_at) <= $minute && TeacherManagementService::minute($lesson->ends_at) > $minute);
                     $booking = $classroom->bookings->first(fn ($booking) => $booking->classGroup?->program === $program && $booking->starts_minute <= $minute && $booking->ends_minute > $minute);
-                    $session = $sessions->contains($filters['session'] ?? null) ? $filters['session'] : ($activeLesson?->schoolClass?->session ?? $booking?->classSession?->session);
+                    $requestedSession = $filters['room_sessions'][$classroom->id][$program] ?? $filters['session'] ?? null;
+                    $session = $sessions->contains($requestedSession) ? $requestedSession : ($activeLesson?->schoolClass?->session ?? $booking?->classSession?->session);
                     if (! $sessions->contains($session)) $session = collect(['Morning', 'Afternoon', 'Evening'])->first(fn ($value) => $sessions->contains($value));
 
                     return [$program => $buildProgramDetails($program, $session, true)];
