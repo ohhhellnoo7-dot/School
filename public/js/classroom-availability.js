@@ -30,9 +30,7 @@
         card.querySelectorAll('[data-room-teacher-panel]').forEach(panel => {
             panel.hidden = panel.dataset.roomTeacherPanel !== program;
         });
-        card.querySelectorAll('[data-room-session-panel]').forEach(panel => {
-            panel.hidden = panel.dataset.roomSessionPanel !== program;
-        });
+        card.querySelectorAll('.room-session-picker[open]').forEach(picker => { picker.open = false; });
         card.querySelectorAll('[data-room-program]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.roomProgram === program)));
         const count = card.querySelector('[data-room-enrolled]');
         if (count) count.textContent = selected.dataset.enrolledCount;
@@ -202,6 +200,7 @@
         const card = button.closest('[data-room-card]');
         const roomId = card.dataset.roomCard;
         const program = button.dataset.sessionProgram;
+        button.closest('details').open = false;
         if (!roomSessions.has(roomId)) roomSessions.set(roomId, new Map());
         roomSessions.get(roomId).set(program, button.dataset.roomSession);
         clearRoomPreview(roomId);

@@ -59,16 +59,6 @@
                 <span class="room-status"><i class="bi bi-{{ $icons[$status] ?? 'circle-fill' }}" aria-hidden="true"></i> {{ str_replace('_', ' ', ucfirst($status)) }}</span>
             </div>
             <div class="room-card-body">
-                @foreach($programDetails as $sessionProgram => $sessionDetails)
-                    <div data-room-session-panel="{{ $sessionProgram }}" @if($sessionProgram !== $selectedProgram) hidden @endif>
-                        <span class="small"><i class="bi bi-clock" aria-hidden="true"></i> {{ __('Session') }}</span>
-                        <div class="room-program-tabs room-session-buttons" role="group" aria-label="{{ $sessionProgram }} sessions in room {{ $room->room_number }}">
-                            @foreach(collect(['Morning', 'Afternoon', 'Evening'])->intersect(data_get($entry, 'programDetails.'.$sessionProgram.'.sessions', [])) as $sessionOption)
-                                <button type="button" data-room-session="{{ $sessionOption }}" data-session-program="{{ $sessionProgram }}" aria-pressed="{{ $sessionDetails['sessions']->contains($sessionOption) ? 'true' : 'false' }}">{{ $sessionOption }}</button>
-                            @endforeach
-                        </div>
-                    </div>
-                @endforeach
                 <div data-room-program-overview="{{ $activeOverviewProgram }}" @if($selectedProgram !== $activeOverviewProgram) hidden @endif>
                 @if(in_array($lessonState, ['studying', 'free', 'incomplete'], true))
                     <span class="lesson-state lesson-state-{{ $lessonState }}">{{ match ($lessonState) { 'studying' => 'Studying now', 'incomplete' => 'Incomplete timetable', default => 'Free period' } }}</span>
@@ -79,10 +69,11 @@
                 @elseif($displayBooking)
                     <div class="booking-context"><small>{{ $current ? 'Current class' : 'Next scheduled class' }}</small><strong>{{ $group?->display_name ?? 'Scheduled class' }}</strong><span class="program-badge program-{{ strtolower($group?->program ?? '') }}">{{ $group?->program ?? 'Program not set' }}</span></div>
                     <dl class="room-facts">
-                        <div><dt><i class="bi bi-clock" aria-hidden="true"></i> {{ __('Session') }}</dt><dd>{{ $session?->session ?? '—' }} · {{ substr((string) $displayBooking->starts_at, 0, 5) }}–{{ substr((string) $displayBooking->ends_at, 0, 5) }}</dd></div>
+                        <div><dt>@include('school.classrooms._session-picker', ['pickerProgram' => $activeOverviewProgram, 'pickerDetails' => $programDetails->get($activeOverviewProgram)])</dt><dd>{{ $session?->session ?? '—' }} · {{ substr((string) $displayBooking->starts_at, 0, 5) }}–{{ substr((string) $displayBooking->ends_at, 0, 5) }}</dd></div>
                     </dl>
                 @elseif(data_get($entry, 'currentLesson'))
                     <div class="booking-context"><small>Lesson currently in progress</small><strong>{{ data_get($entry, 'currentLesson.schoolClass.label') }}</strong></div>
+                    <dl class="room-facts"><div><dt>@include('school.classrooms._session-picker', ['pickerProgram' => $activeOverviewProgram, 'pickerDetails' => $programDetails->get($activeOverviewProgram)])</dt><dd>{{ $activeSession }}</dd></div></dl>
                 @elseif(data_get($entry, 'occupancy') === 'Occupied')
                     <div class="room-empty-message"><strong>Room reserved</strong><span>{{ data_get($entry, 'activity') }}</span></div>
                 @else
@@ -95,7 +86,7 @@
                     <div data-room-program-overview="{{ $previewProgram }}" @if($previewProgram !== $selectedProgram) hidden @endif>
                         <span class="lesson-state">Not active at the selected time</span>
                         <div class="booking-context"><small>Program classes</small><strong>{{ collect($previewDetails['classes'])->join(', ') ?: $previewProgram }}</strong><span class="program-badge program-{{ strtolower($previewProgram) }}">{{ $previewProgram }}</span></div>
-                        <dl class="room-facts"><div><dt><i class="bi bi-clock" aria-hidden="true"></i> {{ __('Session') }}</dt><dd>{{ collect($previewDetails['session_times'])->join(', ') ?: collect($previewDetails['sessions'])->join(', ') }}</dd></div></dl>
+                        <dl class="room-facts"><div><dt>@include('school.classrooms._session-picker', ['pickerProgram' => $previewProgram, 'pickerDetails' => $previewDetails])</dt><dd>{{ collect($previewDetails['session_times'])->join(', ') ?: collect($previewDetails['sessions'])->join(', ') }}</dd></div></dl>
                         @php($previewLesson = $previewDetails['display_lesson'])
                         @if($previewLesson?->subject?->name)
                             <p class="small mb-0"><strong>{{ __('Subject') }}:</strong> {{ $subjectLabel($previewLesson->subject->name) }}<br><span>{{ $previewLesson->day }} · {{ substr($previewLesson->starts_at, 0, 5) }}–{{ substr($previewLesson->ends_at, 0, 5) }}</span></p>
