@@ -18,6 +18,7 @@
 @if(request()->routeIs('modules.index') && in_array(request()->route('module'), ['teachers', 'classes', 'subjects']))<link href="{{ asset('css/teacher-directory.css') }}?v={{ filemtime(public_path('css/teacher-directory.css')) }}" rel="stylesheet">@endif
     <link href="{{ asset('css/workspace-polish.css') }}?v={{ filemtime(public_path('css/workspace-polish.css')) }}" rel="stylesheet">
     @if(request()->routeIs('class-groups.index'))<link href="{{ asset('css/class-groups-directory.css') }}?v={{ filemtime(public_path('css/class-groups-directory.css')) }}" rel="stylesheet">@endif
+    @if(request()->routeIs('finance.*', 'reports') || request()->route('module') === 'fees')<link href="{{ asset('css/finance.css') }}?v={{ filemtime(public_path('css/finance.css')) }}" rel="stylesheet">@endif
 </head>
 <body class="scholar-workspace {{ request()->routeIs('modules.index') && request()->route('module') === 'subjects' ? 'subjects-page' : '' }} {{ request()->routeIs('class-groups.*') ? 'classes-page' : '' }} {{ request()->routeIs('classrooms.*', 'classroom-bookings.*') ? 'classrooms-page' : '' }} {{ request()->routeIs('modules.index') && request()->route('module') === 'teachers' ? 'teachers-page' : '' }} {{ request()->routeIs('modules.index') && request()->route('module') === 'parents' ? 'parents-page' : '' }} {{ request()->routeIs('students.index') ? 'students-page' : '' }}">
 <a href="#main-content" class="skip-link">{{ __('Skip to content') }}</a>
@@ -33,7 +34,7 @@
         <div class="nav-group-caption">{{ __('Academics') }}</div>
         @foreach(\App\Support\SchoolModules::all() as $key => $module)
             @if(\App\Support\SchoolModules::canView(auth()->user(), $key))
-                <a class="{{ ($key === 'classes' ? request()->routeIs('class-groups.*') : request()->route('module') === $key) ? 'active' : '' }}" href="{{ $key === 'classes' ? route('class-groups.index') : route('modules.index', $key) }}"><i class="bi bi-{{ $module['icon'] }}"></i><span class="nav-label">{{ __($module['title']) }}</span></a>
+                <a class="{{ ($key === 'classes' ? request()->routeIs('class-groups.*') : (request()->route('module') === $key || ($key === 'fees' && request()->routeIs('finance.*')))) ? 'active' : '' }}" href="{{ $key === 'classes' ? route('class-groups.index') : route('modules.index', $key) }}"><i class="bi bi-{{ $module['icon'] }}"></i><span class="nav-label">{{ __($module['title']) }}</span></a>
             @endif
         @endforeach
         <div class="nav-group-caption">{{ __('Workspace') }}</div>

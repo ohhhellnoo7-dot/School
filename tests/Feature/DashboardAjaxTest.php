@@ -184,8 +184,11 @@ class DashboardAjaxTest extends TestCase
         $response = $this->getJson('/dashboard/data')->assertOk();
         $this->assertSame((float) Fee::sum('paid'), (float) $response->json('summary.collected'));
         $this->assertSame((float) Fee::sum('amount') - (float) Fee::sum('paid'), (float) $response->json('summary.pending'));
-        $student->delete();
-        $this->getJson('/dashboard/data')->assertJsonPath('summary.studentCount', $before);
+        // Financial history now restricts deleting a student who has fees.
+        $temporary = Student::factory()->create();
+        $temporary->delete();
+        $this->getJson('/dashboard/data')->assertJsonPath('summary.studentCount', $before + 1);
+        $this->assertDatabaseHas('fees', ['id' => $fee->id, 'student_id' => $student->id]);
     }
 
     public function test_ajax_is_authenticated_scoped_and_explains_unlinked_accounts(): void

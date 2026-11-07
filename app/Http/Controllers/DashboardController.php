@@ -86,14 +86,15 @@ class DashboardController extends Controller
         $students = Student::visibleTo($user);
         $ids = (clone $students)->select('id');
         $attendance = Attendance::whereIn('student_id', $ids)->whereDate('date', $reportDate);
-        $fees = Fee::whereIn('student_id', $ids);
+        $fees = Fee::whereIn('student_id', $ids)->where('currency', 'USD');
         $canViewFees = in_array($user->role, ['administrator', 'parent'], true);
+        $finance = $canViewFees ? (app(\App\Services\SchoolFinanceService::class)->summary((clone $fees)->with(['adjustments', 'payments'])->get())['USD'] ?? []) : [];
         $months = collect(range(5, 0))->map(fn ($i) => now()->startOfMonth()->subMonths($i));
         $charts = [
             'labels' => $months->map(fn ($date) => $date->format('M'))->values(),
             'enrollment' => $months->map(fn ($date) => (clone $students)->whereBetween('enrollment_date', [$date->toDateString(), $date->copy()->endOfMonth()->toDateString()])->count())->values(),
-            // Revenue is grouped by the date payment was recorded on each fee record.
-            'revenue' => $canViewFees ? $months->map(fn ($date) => (float) (clone $fees)->whereBetween('paid_at', [$date->toDateString(), $date->copy()->endOfMonth()->toDateString()])->sum('paid'))->values() : [],
+            // Chart conversion only; ledger arithmetic uses integer minor units.
+            'revenue' => $canViewFees ? $months->map(fn ($date) => ($finance['trend'][$date->format('Y-m')] ?? 0) / 100)->values() : [],
             'gender' => collect(['female', 'male', 'other'])->map(fn ($gender) => (clone $students)->where('gender', $gender)->count()),
             'attendance' => collect(['present', 'absent', 'late', 'excused'])->map(fn ($status) => (clone $attendance)->where('status', $status)->count()),
         ];
@@ -143,8 +144,8 @@ class DashboardController extends Controller
             'presentCount' => (clone $attendance)->where('status', 'present')->count(),
             'absentCount' => (clone $attendance)->where('status', 'absent')->count(),
             'lateCount' => (clone $attendance)->where('status', 'late')->count(),
-            'attendanceCount' => (clone $attendance)->count(), 'collected' => $canViewFees ? (clone $fees)->sum('paid') : null,
-            'pending' => $canViewFees ? (float) (clone $fees)->sum('amount') - (float) (clone $fees)->sum('paid') : null,
+            'attendanceCount' => (clone $attendance)->count(), 'collected' => $canViewFees ? \App\Support\Money::decimal($finance['paid'] ?? 0) : null,
+            'pending' => $canViewFees ? \App\Support\Money::decimal($finance['balance'] ?? 0) : null,
             'recent' => (clone $students)->with(['schoolClass', 'user', 'parent'])->latest()->latest('id')->limit(5)->get(),
             'announcements' => Announcement::whereIn('audience', ['all', $user->role])->whereDate('published_at', '<=', today())->latest('published_at')->limit(4)->get(),
             'charts' => $charts,
@@ -157,8 +158,8 @@ class DashboardController extends Controller
         $classes = SchoolClass::withCount('students')->with('teacher')->get();
         $date = $request->validate(['date' => 'nullable|date'])['date'] ?? today()->toDateString();
         $attendance = Attendance::whereDate('date', $date)->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
-        $totals = ['billed' => Fee::sum('amount'), 'paid' => Fee::sum('paid')];
+        $summary = app(\App\Services\SchoolFinanceService::class)->summary(Fee::with(['adjustments', 'payments'])->get());
 
-        return view('school.reports', compact('classes', 'date', 'attendance', 'totals'));
+        return view('school.reports', compact('classes', 'date', 'attendance', 'summary'));
     }
 }

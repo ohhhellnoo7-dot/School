@@ -142,6 +142,24 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
         Route::post('/{teacher}/breaks/preview', [\App\Http\Controllers\TeacherManagementController::class, 'previewBreaks'])->name('breaks.preview');
         Route::put('/{teacher}/breaks/{break}', [\App\Http\Controllers\TeacherManagementController::class, 'editBreak'])->name('breaks.edit');
     });
+    Route::prefix('finance')->name('finance.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\SchoolFinanceController::class, 'index'])->name('index');
+        Route::get('/export', [\App\Http\Controllers\SchoolFinanceController::class, 'export'])->name('export');
+        Route::get('/invoices/{fee}', [\App\Http\Controllers\SchoolFinanceController::class, 'invoice'])->whereNumber('fee')->name('invoice');
+        Route::get('/receipts/{payment}', [\App\Http\Controllers\SchoolFinanceController::class, 'receipt'])->whereNumber('payment')->name('receipt');
+        Route::middleware('role:administrator')->group(function () {
+            Route::get('/settings', [\App\Http\Controllers\SchoolFinanceController::class, 'settings'])->name('settings');
+            Route::post('/settings', [\App\Http\Controllers\SchoolFinanceController::class, 'saveStructure'])->name('settings.save');
+            Route::post('/settings/proposals', [\App\Http\Controllers\SchoolFinanceController::class, 'proposals'])->name('proposals');
+            Route::post('/settings/{structure}/approve', [\App\Http\Controllers\SchoolFinanceController::class, 'approve'])->name('approve');
+            Route::post('/settings/{structure}/deactivate', [\App\Http\Controllers\SchoolFinanceController::class, 'deactivate'])->name('deactivate');
+            Route::get('/billing', [\App\Http\Controllers\SchoolFinanceController::class, 'billing'])->name('billing');
+            Route::post('/billing', [\App\Http\Controllers\SchoolFinanceController::class, 'issue'])->name('issue');
+            Route::post('/invoices/{fee}/payments', [\App\Http\Controllers\SchoolFinanceController::class, 'pay'])->name('pay');
+            Route::post('/invoices/{fee}/reconcile', [\App\Http\Controllers\SchoolFinanceController::class, 'reconcile'])->name('reconcile');
+            Route::post('/invoices/{fee}/adjustments', [\App\Http\Controllers\SchoolFinanceController::class, 'adjust'])->name('adjust');
+        });
+    });
     Route::get('/school/{module}', [SchoolModuleController::class, 'index'])->name('modules.index');
     Route::get('/school/{module}/create', [SchoolModuleController::class, 'create'])->name('modules.create');
     Route::post('/school/{module}', [SchoolModuleController::class, 'store'])->name('modules.store');

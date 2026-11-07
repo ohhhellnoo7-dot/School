@@ -198,9 +198,11 @@ class SchoolTest extends TestCase
 
     public function test_fee_overpayment_and_duplicate_attendance_are_rejected(): void
     {
+        $this->travelTo(now()->setDate(2026, 11, 2));
         $this->actingAs($this->account('administrator'));
         $student = $this->student();
-        $this->post('/school/fees', ['student_id' => $student->id, 'description' => 'Tuition', 'amount' => 100, 'paid' => 101, 'due_date' => today()->toDateString()])->assertSessionHasErrors('paid');
+        $fee = Fee::create(['student_id' => $student->id, 'description' => 'Tuition', 'amount' => '100.00', 'paid' => '0.00', 'due_date' => today()]);
+        $this->post(route('finance.pay', $fee), ['amount' => '101.00', 'request_key' => (string) \Illuminate\Support\Str::uuid(), 'paid_on' => today()->toDateString(), 'method' => 'cash'])->assertSessionHasErrors('finance');
         $data = ['student_id' => $student->id, 'date' => today()->toDateString(), 'status' => 'present'];
         $this->post('/school/attendance', $data)->assertSessionHasNoErrors();
         $this->post('/school/attendance', $data)->assertSessionHasErrors('date');
@@ -240,6 +242,12 @@ class SchoolTest extends TestCase
             'users' => ['name' => 'New Parent', 'email' => 'newparent@example.com', 'password' => 'SecurePass123', 'role' => 'parent'],
         ];
         foreach ($cases as $module => $data) {
+            if ($module === 'fees') {
+                // Finance records now use immutable invoices and audited ledger operations.
+                $this->post('/school/fees', $data)->assertSessionHasErrors('finance');
+                $this->assertDatabaseMissing('fees', ['description' => 'Term fee']);
+                continue;
+            }
             $model = SchoolModules::get($module)['model'];
             $this->post('/school/'.$module, $data)->assertSessionHasNoErrors()->assertRedirect('/school/'.$module);
             $record = $model::latest('id')->firstOrFail();

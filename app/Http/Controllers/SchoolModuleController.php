@@ -27,6 +27,7 @@ class SchoolModuleController extends Controller
 {
     public function index(Request $request, string $module)
     {
+        if ($module === 'fees') return app(SchoolFinanceController::class)->index($request, app(\App\Services\SchoolFinanceService::class));
         if ($module === 'teachers' && $request->user()->role === 'administrator') return app(TeacherManagementController::class)->index($request, app(\App\Services\TeacherManagementService::class));
         $meta = SchoolModules::get($module);
         $query = SchoolModules::query($module, $request->user());
@@ -228,6 +229,7 @@ class SchoolModuleController extends Controller
 
     public function show(Request $request, string $module, int $id)
     {
+        if ($module === 'fees') return app(SchoolFinanceController::class)->invoice($request, $id);
         $meta = SchoolModules::get($module);
         $record = SchoolModules::query($module, $request->user())->findOrFail($id);
         if ($module === 'teachers' && $request->user()->role === 'administrator') return app(TeacherManagementController::class)->show($record, app(\App\Services\TeacherManagementService::class));
@@ -274,6 +276,10 @@ class SchoolModuleController extends Controller
         $meta = SchoolModules::get($module);
         $record = new $meta['model'];
         Gate::authorize('manage', [$record, $module]);
+        if ($module === 'fees') {
+            if ($request->isMethod('get')) return $record->exists ? app(SchoolFinanceController::class)->invoice($request, $record->id) : app(SchoolFinanceController::class)->billing($request);
+            throw ValidationException::withMessages(['finance' => 'Use invoice payments or audited adjustments. Financial history cannot be overwritten or deleted.']);
+        }
         if ($module === 'teachers') return app(TeacherManagementController::class)->form();
         if ($module === 'schedules') return app(UnifiedTimetableController::class)->form($request);
 
@@ -285,6 +291,10 @@ class SchoolModuleController extends Controller
         $meta = SchoolModules::get($module);
         $record = SchoolModules::query($module, $request->user())->findOrFail($id);
         Gate::authorize('manage', [$record, $module]);
+        if ($module === 'fees') {
+            if ($request->isMethod('get')) return $record->exists ? app(SchoolFinanceController::class)->invoice($request, $record->id) : app(SchoolFinanceController::class)->billing($request);
+            throw ValidationException::withMessages(['finance' => 'Use invoice payments or audited adjustments. Financial history cannot be overwritten or deleted.']);
+        }
         if ($module === 'teachers') return app(TeacherManagementController::class)->form($record);
         if ($record instanceof Schedule && $record->schoolClass?->program === 'Khmer' && $record->schoolClass?->class_group_id) return app(UnifiedTimetableController::class)->form($request, $record);
         $this->authorizeTeacherGrade($request, $record);
@@ -297,6 +307,10 @@ class SchoolModuleController extends Controller
         $meta = SchoolModules::get($module);
         $record = new $meta['model'];
         Gate::authorize('manage', [$record, $module]);
+        if ($module === 'fees') {
+            if ($request->isMethod('get')) return $record->exists ? app(SchoolFinanceController::class)->invoice($request, $record->id) : app(SchoolFinanceController::class)->billing($request);
+            throw ValidationException::withMessages(['finance' => 'Use invoice payments or audited adjustments. Financial history cannot be overwritten or deleted.']);
+        }
         if ($record instanceof Schedule && ($class = Subject::find($request->input('subject_id'))?->schoolClass) && $class->program === 'Khmer' && $class->class_group_id) return app(UnifiedTimetableController::class)->store($request, app(\App\Services\LessonManagementService::class));
         $data = $this->validated($request, $module, $record);
         DB::transaction(function () use ($record, $data, $module) {
@@ -327,6 +341,10 @@ class SchoolModuleController extends Controller
     {
         $record = SchoolModules::query($module, $request->user())->findOrFail($id);
         Gate::authorize('manage', [$record, $module]);
+        if ($module === 'fees') {
+            if ($request->isMethod('get')) return $record->exists ? app(SchoolFinanceController::class)->invoice($request, $record->id) : app(SchoolFinanceController::class)->billing($request);
+            throw ValidationException::withMessages(['finance' => 'Use invoice payments or audited adjustments. Financial history cannot be overwritten or deleted.']);
+        }
         $this->authorizeTeacherGrade($request, $record);
         if ($record instanceof Schedule && $record->schoolClass?->program === 'Khmer' && $record->schoolClass?->class_group_id) return app(UnifiedTimetableController::class)->update($request, $record, app(\App\Services\LessonManagementService::class));
         $data = $this->validated($request, $module, $record);
@@ -362,6 +380,10 @@ class SchoolModuleController extends Controller
     {
         $record = SchoolModules::query($module, $request->user())->findOrFail($id);
         Gate::authorize('manage', [$record, $module]);
+        if ($module === 'fees') {
+            if ($request->isMethod('get')) return $record->exists ? app(SchoolFinanceController::class)->invoice($request, $record->id) : app(SchoolFinanceController::class)->billing($request);
+            throw ValidationException::withMessages(['finance' => 'Use invoice payments or audited adjustments. Financial history cannot be overwritten or deleted.']);
+        }
         if ($record instanceof Schedule && $record->schoolClass?->program === 'Khmer' && $record->schoolClass?->class_group_id) return app(UnifiedTimetableController::class)->cancel($request, $record, app(\App\Services\LessonManagementService::class));
         $this->authorizeTeacherGrade($request, $record);
         if ($record instanceof User && $record->id === $request->user()->id) {
