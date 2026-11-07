@@ -148,6 +148,7 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
         Route::get('/invoices/{fee}', [\App\Http\Controllers\SchoolFinanceController::class, 'invoice'])->whereNumber('fee')->name('invoice');
         Route::get('/receipts/{payment}', [\App\Http\Controllers\SchoolFinanceController::class, 'receipt'])->whereNumber('payment')->name('receipt');
         Route::middleware('role:administrator')->group(function () {
+            Route::post('/parents/{parent}/next-payment', [\App\Http\Controllers\SchoolFinanceController::class, 'parentReminder'])->name('parents.next-payment');
             Route::get('/parents', [\App\Http\Controllers\SchoolFinanceController::class, 'parents'])->name('parents');
             Route::get('/settings', [\App\Http\Controllers\SchoolFinanceController::class, 'settings'])->name('settings');
             Route::post('/settings', [\App\Http\Controllers\SchoolFinanceController::class, 'saveStructure'])->name('settings.save');

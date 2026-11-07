@@ -9,9 +9,11 @@ use App\Models\FeeStructure;
 use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\User;
+use App\Services\ParentPaymentSchedule;
 use App\Services\SchoolFinanceService;
 use App\Support\Money;
 use App\Support\SchoolModules;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +21,19 @@ use Illuminate\Validation\Rule;
 
 class SchoolFinanceController extends Controller
 {
+    public function parentReminder(Request $request, User $parent, SchoolFinanceService $service)
+    {
+        abort_unless($request->user()->role === 'administrator' && $parent->role === 'parent', 403);
+        $data = $request->validate(['next_payment_on' => 'nullable|date_format:Y-m-d|after_or_equal:today']);
+        $service->locked(function () use ($data, $parent, $request, $service) {
+            $previous = DB::table('parent_payment_reminders')->where('parent_id', $parent->id)->first();
+            DB::table('parent_payment_reminders')->updateOrInsert(['parent_id' => $parent->id], ['next_payment_on' => $data['next_payment_on'] ?? null, 'recorded_by' => $request->user()->id, 'created_at' => $previous?->created_at ?? now(), 'updated_at' => now()]);
+            $service->audit($request->user(), 'set_next_parent_payment', 'parent', $parent->id, ['previous_date' => $previous?->next_payment_on, 'next_date' => $data['next_payment_on'] ?? null]);
+        });
+
+        return back()->with('success', 'Next payment date saved.');
+    }
+
     public function parents(Request $request, SchoolFinanceService $service)
     {
         abort_unless($request->user()->role === 'administrator', 403);
@@ -47,9 +62,12 @@ class SchoolFinanceController extends Controller
         }
         $page = max(1, $request->integer('page', 1));
         $families = new LengthAwarePaginator($families->forPage($page, 25)->values(), $families->count(), 25, $page, ['path' => $request->url(), 'query' => $request->query()]);
+        $parentsOnPage = new Collection(collect($families->items())->pluck('parent')->all());
+        $parentsOnPage->load('children.studyClasses.classGroup');
+        $paymentSchedules = app(ParentPaymentSchedule::class)->forFamilies($parentsOnPage);
         $unlinked = Student::whereHas('fees')->whereDoesntHave('parent', fn ($q) => $q->where('role', 'parent'))->count();
 
-        return view('school.finance.parents', compact('families', 'counts', 'unlinked'));
+        return view('school.finance.parents', compact('families', 'counts', 'unlinked', 'paymentSchedules'));
     }
 
     private function visible(Request $request)

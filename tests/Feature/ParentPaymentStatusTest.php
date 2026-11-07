@@ -2,7 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\ClassGroup;
 use App\Models\Fee;
+use App\Models\FeeStructure;
+use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\SchoolFinanceService;
@@ -61,7 +64,52 @@ class ParentPaymentStatusTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => 'administrator']))->get(route('finance.parents'))->assertOk()
             ->assertViewHas('families', function ($rows) use ($parent) {
                 $family = collect($rows->items())->first(fn ($row) => $row['parent']->id === $parent->id);
+
                 return $family['status'] === 'partially_paid' && $family['currencies']['USD']['balance'] === -1000 && $family['currencies']['KHR']['balance'] === 100000;
             });
+    }
+
+    public function test_next_payment_shows_full_date_and_only_predicts_from_approved_unbilled_months(): void
+    {
+        $this->travelTo(now()->setDate(2026, 11, 7));
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $parent = User::factory()->create(['role' => 'parent']);
+        $group = ClassGroup::create(['name' => 'Grade 8', 'grade' => 8, 'section' => 'A', 'program' => 'Khmer', 'status' => 'active']);
+        $class = SchoolClass::create(['name' => 'Grade 8', 'section' => 'A', 'program' => 'Khmer', 'session' => 'Morning', 'class_group_id' => $group->id]);
+        $student = Student::factory()->create(['parent_id' => $parent->id, 'school_class_id' => $class->id, 'enrollment_date' => '2026-11-01']);
+        $structure = FeeStructure::create(['program' => 'Khmer', 'grade' => 8, 'academic_year' => '2026-2027', 'currency' => 'USD', 'monthly_tuition' => '25.00', 'discount' => '0.00', 'charges' => [], 'billable_months' => 2, 'semester_months' => 1, 'starts_on' => '2026-11-01', 'effective_from' => '2026-11-01', 'due_day' => 10, 'status' => 'draft']);
+        $service = app(SchoolFinanceService::class);
+        $service->approve($structure, $admin);
+        $fee = $service->issue($student, $class, $structure, 'monthly', 1, 1, $admin)[0];
+        $response = $this->actingAs($admin)->get(route('finance.parents'))->assertOk()->assertSee('10 November 2026')->assertSee('10 December 2026');
+        $this->assertSame('2026-12-10', $response->viewData('paymentSchedules')[$parent->id]['scheduled']);
+        $response->assertSee('bi bi-eye')->assertSee('View payment dates for')->assertSee('Month')->assertSee('Year');
+        $this->assertSame([], $response->viewData('paymentSchedules')[$parent->id]['paid_years']);
+        $service->payment($fee, ['amount' => '25.00', 'request_key' => (string) Str::uuid(), 'paid_on' => today()->toDateString(), 'method' => 'cash'], $admin);
+        $response = $this->get(route('finance.parents'))->assertOk()->assertSee('10 December 2026');
+        $this->assertNull($response->viewData('paymentSchedules')[$parent->id]['due']);
+        $this->assertSame(['2026-2027'], $response->viewData('paymentSchedules')[$parent->id]['paid_years']);
+        $service->issue($student, $class, $structure, 'monthly', 2, 1, $admin);
+        $response = $this->get(route('finance.parents'))->assertOk()->assertSee('10 December 2026');
+        $this->assertNull($response->viewData('paymentSchedules')[$parent->id]['scheduled']);
+        $this->assertSame([], $response->viewData('paymentSchedules')[$parent->id]['paid_years']);
+    }
+
+    public function test_view_shows_historical_paid_date_and_an_authorized_next_payment_reminder(): void
+    {
+        $this->travelTo(now()->setDate(2026, 11, 7));
+        $parent = User::factory()->create(['role' => 'parent']);
+        $fee = $this->invoice($parent, '100.00', '100.00');
+        $fee->update(['paid_at' => '2026-10-15']);
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $this->actingAs($admin)->get(route('finance.parents'))->assertOk()->assertSee('15 October 2026')->assertSee('When they paid');
+        $this->post(route('finance.parents.next-payment', $parent), ['next_payment_on' => '2026-12-15'])->assertSessionHasNoErrors();
+        $response = $this->get(route('finance.parents'))->assertOk()->assertSee('15 December 2026')->assertSee('Next payment date set by the school.');
+        $this->assertSame('2026-12-15', $response->viewData('paymentSchedules')[$parent->id]['scheduled']);
+        $this->assertSame('100.00', $fee->fresh()->paid);
+        $this->assertSame(1, Fee::count());
+        $this->post(route('finance.parents.next-payment', $parent), ['next_payment_on' => '2026-10-01'])->assertSessionHasErrors('next_payment_on');
+        $this->post(route('finance.parents.next-payment', $parent), ['next_payment_on' => ''])->assertSessionHasNoErrors();
+        $this->actingAs($parent)->post(route('finance.parents.next-payment', $parent), ['next_payment_on' => '2026-12-20'])->assertForbidden();
     }
 }
