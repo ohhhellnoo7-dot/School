@@ -12,36 +12,11 @@
 @foreach(['billed','paid','balance'] as $key)<td>@forelse($family['currencies'] as $currency => $totals)<div>{{ \App\Support\Money::display($totals[$key]) }} {{ $currency }}</div>@empty&mdash;@endforelse</td>@endforeach
 <td>@forelse($family['currencies'] as $currency => $totals)<div>{{ \App\Support\Money::display($totals['overdue']) }} {{ $currency }} overdue</div>@empty&mdash;@endforelse</td>
 @php($schedule = $paymentSchedules[$family['parent']->id])
-<td>@if($schedule['due'])<div><strong>{{ \Carbon\Carbon::parse($schedule['due'])->format('d F Y') }}</strong><br><small>Unpaid invoice due{{ $schedule['due'] < today()->toDateString() ? ' (overdue)' : '' }}</small></div>@endif
-@if($schedule['scheduled'])<div class="mt-2"><strong>{{ \Carbon\Carbon::parse($schedule['scheduled'])->format('d F Y') }}</strong><br><small>{{ $schedule['scheduled_source'] === 'school' ? 'School-set next payment' : 'Next scheduled tuition - invoice not issued' }}</small></div>@elseif(!$schedule['due'])<span class="form-text">No next payment date configured</span>@endif</td><td><button type="button" class="btn btn-sm btn-outline-primary" data-payment-detail="payment-detail-{{ $family['parent']->id }}" aria-label="View payment dates for {{ $family['parent']->name }}" title="View payment dates" aria-haspopup="dialog"><i class="bi bi-eye" aria-hidden="true"></i></button></td></tr>
+<td data-parent-schedule="{{ $family['parent']->id }}">@if($schedule['due'])<div><strong>{{ \Carbon\Carbon::parse($schedule['due'])->format('d F Y') }}</strong><br><small>Unpaid invoice due{{ $schedule['due'] < today()->toDateString() ? ' (overdue)' : '' }}</small></div>@endif
+@if($schedule['scheduled'])<div class="mt-2"><strong>{{ \Carbon\Carbon::parse($schedule['scheduled'])->format('d F Y') }}</strong><br><small>{{ $schedule['scheduled_source'] === 'school' ? 'School-set next payment' : 'Next scheduled tuition - invoice not issued' }}</small></div>@elseif(!$schedule['due'])<span class="form-text">No next payment date configured</span>@endif</td><td><button type="button" class="btn btn-sm btn-outline-primary" data-payment-detail="{{ route('finance.parents.details', $family['parent']) }}" aria-controls="parent-payment-drawer" aria-label="View payment dates for {{ $family['parent']->name }}" title="View payment dates" aria-haspopup="dialog"><i class="bi bi-eye" aria-hidden="true"></i></button></td></tr>
 @empty<tr><td colspan="9" class="p-4 text-center">No parents match these filters.</td></tr>@endforelse</tbody></table></div><div class="p-3">{{ $families->links() }}</div></section>
-@foreach($families as $family)
-@php($schedule = $paymentSchedules[$family['parent']->id])
-<dialog id="payment-detail-{{ $family['parent']->id }}" class="family-payment-dialog" aria-labelledby="payment-title-{{ $family['parent']->id }}">
-<div class="d-flex justify-content-between align-items-center gap-3"><h2 class="h5 mb-0" id="payment-title-{{ $family['parent']->id }}">Payment dates</h2><button type="button" class="btn btn-light" data-close-payment-detail aria-label="Close payment dates"><i class="bi bi-x-lg" aria-hidden="true"></i></button></div>
-<p class="mt-3"><strong>{{ $family['parent']->name }}</strong><br><span class="status-badge {{ $family['status'] }}">{{ $labels[$family['status']] }}</span></p>
-<section class="mb-4"><h3 class="h6">When they paid</h3>
-@forelse($schedule['history'] as $entry)<div class="mb-3"><strong>{{ \Carbon\Carbon::parse($entry['date'])->format('d F Y') }}</strong><br><span>{{ $entry['child'] }} &middot; {{ $entry['amount'] }} {{ $entry['currency'] }}</span><br><a href="{{ route('finance.invoice', $entry['fee_id']) }}">View invoice</a>@if($entry['legacy'])<small class="d-block form-text">Last payment date recorded on the historical fee. Amount is its opening paid total, not a separate transaction.</small>@endif</div>@empty<p class="form-text">No recorded payment date available.</p>@endforelse
-</section>
-@foreach(['due' => 'Next unpaid invoice', 'scheduled' => 'When they pay next'] as $key => $label)
-<section class="mb-4"><h3 class="h6">{{ $label }}</h3>@if($schedule[$key])
-@php($paymentDate = \Carbon\Carbon::parse($schedule[$key]))
-<p><strong>{{ $paymentDate->format('l, d F Y') }}</strong></p><dl class="family-payment-date"><div><dt>Day</dt><dd>{{ $paymentDate->format('d') }}</dd></div><div><dt>Month</dt><dd>{{ $paymentDate->format('F') }}</dd></div><div><dt>Year</dt><dd>{{ $paymentDate->format('Y') }}</dd></div></dl>
-<p class="form-text">{{ $key === 'scheduled' ? ($schedule['scheduled_source'] === 'school' ? 'Next payment date set by the school.' : 'Based on the approved tuition schedule. This invoice has not been issued yet.') : ($paymentDate->lt(today()) ? 'This unpaid invoice is overdue.' : 'Payment is due on this date.') }}</p>
-@else<p class="form-text">{{ $key === 'due' ? 'No unpaid invoices.' : 'No next payment date configured.' }}</p>@endif</section>
-@endforeach
-<section class="mb-4"><h3 class="h6">Set next payment date</h3><p class="form-text">For older fees without a billing schedule, enter the agreed next date. This saves a reminder without creating a charge.</p><form method="post" action="{{ route('finance.parents.next-payment', $family['parent']) }}">@csrf<label class="form-label" for="next-payment-{{ $family['parent']->id }}">Next payment (day, month, year)</label><input id="next-payment-{{ $family['parent']->id }}" class="form-control mb-2" type="date" name="next_payment_on" min="{{ today()->toDateString() }}" value="{{ $schedule['manual_date'] }}"><button class="btn btn-primary" type="submit">Save next date</button><small class="form-text d-block">Leave blank and save to clear the school-set reminder.</small></form></section>
-<section><h3 class="h6">Academic years with all issued invoices fully paid</h3>@forelse($schedule['paid_years'] as $year)<span class="status-badge paid me-2">{{ $year }}</span>@empty<p class="form-text">No fully paid academic year recorded. Historical invoices without an academic year cannot confirm year coverage.</p>@endforelse<p class="form-text mt-2">This covers issued invoices only. Future months may still need to be billed.</p></section>
-</dialog>
-@endforeach
+<aside class="offcanvas offcanvas-end pd-drawer" tabindex="-1" id="parent-payment-drawer" aria-labelledby="parent-drawer-title" data-bs-scroll="false"><div id="parent-payment-content" class="pd-mount"><h2 id="parent-drawer-title" class="visually-hidden">Parent Payment Overview</h2></div></aside>
 @endsection
 @push('scripts')
-<script>
-(() => {
-    document.querySelectorAll('[data-payment-detail]').forEach(button => button.addEventListener('click', () => {
-        document.getElementById(button.dataset.paymentDetail).showModal();
-    }));
-    document.querySelectorAll('[data-close-payment-detail]').forEach(button => button.addEventListener('click', () => button.closest('dialog').close()));
-})();
-</script>
+<script src="{{ asset('js/parent-payment-drawer.js') }}?v={{ filemtime(public_path('js/parent-payment-drawer.js')) }}" defer></script>
 @endpush

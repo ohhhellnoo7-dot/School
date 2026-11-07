@@ -83,7 +83,7 @@ class ParentPaymentStatusTest extends TestCase
         $fee = $service->issue($student, $class, $structure, 'monthly', 1, 1, $admin)[0];
         $response = $this->actingAs($admin)->get(route('finance.parents'))->assertOk()->assertSee('10 November 2026')->assertSee('10 December 2026');
         $this->assertSame('2026-12-10', $response->viewData('paymentSchedules')[$parent->id]['scheduled']);
-        $response->assertSee('bi bi-eye')->assertSee('View payment dates for')->assertSee('Month')->assertSee('Year');
+        $response->assertSee('bi bi-eye')->assertSee('View payment dates for')->assertSee('parent-payment-drawer');
         $this->assertSame([], $response->viewData('paymentSchedules')[$parent->id]['paid_years']);
         $service->payment($fee, ['amount' => '25.00', 'request_key' => (string) Str::uuid(), 'paid_on' => today()->toDateString(), 'method' => 'cash'], $admin);
         $response = $this->get(route('finance.parents'))->assertOk()->assertSee('10 December 2026');
@@ -102,9 +102,10 @@ class ParentPaymentStatusTest extends TestCase
         $fee = $this->invoice($parent, '100.00', '100.00');
         $fee->update(['paid_at' => '2026-10-15']);
         $admin = User::factory()->create(['role' => 'administrator']);
-        $this->actingAs($admin)->get(route('finance.parents'))->assertOk()->assertSee('15 October 2026')->assertSee('When they paid');
+        $this->actingAs($admin)->get(route('finance.parents.details', $parent))->assertOk()->assertSee('15 October 2026')->assertSee('Historical Opening Balance');
         $this->post(route('finance.parents.next-payment', $parent), ['next_payment_on' => '2026-12-15'])->assertSessionHasNoErrors();
-        $response = $this->get(route('finance.parents'))->assertOk()->assertSee('15 December 2026')->assertSee('Next payment date set by the school.');
+        $response = $this->get(route('finance.parents'))->assertOk()->assertSee('15 December 2026');
+        $this->get(route('finance.parents.details', $parent))->assertOk()->assertSee('Next payment date set by the school.');
         $this->assertSame('2026-12-15', $response->viewData('paymentSchedules')[$parent->id]['scheduled']);
         $this->assertSame('100.00', $fee->fresh()->paid);
         $this->assertSame(1, Fee::count());

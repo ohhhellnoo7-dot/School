@@ -2,6 +2,811 @@
 
 .finance-audit-details{white-space:pre-wrap;overflow-wrap:anywhere;max-width:500px;color:inherit;font-size:12px}
 
-.family-payment-dialog{width:min(560px,calc(100vw - 32px));max-height:85vh;overflow:auto;padding:24px;border:1px solid var(--border-color);border-radius:24px;background:var(--surface);color:var(--text-primary)}
-.family-payment-dialog::backdrop{background:rgba(0,0,0,.4)}
-.family-payment-date{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.family-payment-date>div{padding:12px;background:var(--app-bg);border-radius:12px}.family-payment-date dt{font-size:12px;color:var(--text-secondary)}.family-payment-date dd{margin:4px 0 0;font-size:18px;font-weight:600}
+
+/* Parent payment overview: shared theme tokens preserve every Scholar palette. */
+.pd-drawer {
+    --bs-offcanvas-width:min(720px,100vw);
+    --pd-accent:var(--primary);
+    --pd-green:var(--success,#218563);
+    --pd-amber:var(--warning,#a97421);
+    --pd-red:var(--danger,#bb4357);
+    --bs-offcanvas-bg:var(--surface);
+    --bs-offcanvas-color:var(--text-primary);
+    border-left:1px solid var(--border-color)!important;
+    box-shadow:-20px 0 80px #0002
+}
+.pd-mount,.pd-content {
+    height:100%;
+    min-height:0;
+    display:flex;
+    flex-direction:column
+}
+.pd-header {
+    padding:28px 28px 20px;
+    background:var(--surface);
+    position:relative;
+    border-bottom:1px solid var(--border-color);
+    flex-shrink:0
+}
+.pd-heading {
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding-right:38px;
+    min-width:0
+}
+.pd-heading h2 {
+    font-size:23px;
+    font-weight:750;
+    letter-spacing:-.5px;
+    line-height:1.25;
+    margin:4px 0 6px;
+    overflow-wrap:anywhere
+}
+.pd-eyebrow {
+    font-size:10px;
+    font-weight:750;
+    letter-spacing:1.5px;
+    color:var(--primary);
+    margin:0
+}
+.pd-avatar {
+    height:52px;
+    width:52px;
+    display:grid;
+    place-items:center;
+    flex-shrink:0;
+    border-radius:17px;
+    background:color-mix(in srgb,var(--primary) 12%,var(--surface));
+    color:var(--primary);
+    font-size:24px;
+    font-weight:700
+}
+.pd-avatar img {
+    height:100%;
+    width:100%;
+    object-fit:cover;
+    border-radius:inherit
+}
+.pd-close {
+    position:absolute;
+    right:20px;
+    top:24px;
+    width:36px;
+    height:36px;
+    border:1px solid var(--border-color);
+    border-radius:12px;
+    background:var(--surface);
+    color:var(--text-secondary);
+    display:grid;
+    place-items:center
+}
+.pd-close:hover {
+    color:var(--primary);
+    background:var(--app-bg)
+}
+.pd-status {
+    display:inline-flex;
+    align-items:center;
+    border-radius:8px;
+    padding:5px 9px;
+    font-size:11px;
+    font-weight:700;
+    background:color-mix(in srgb,var(--text-secondary) 10%,var(--surface));
+    color:var(--text-secondary)
+}
+.pd-header>.pd-status {
+    margin-top:16px
+}
+.pd-status--paid {
+    background:color-mix(in srgb,var(--pd-green) 12%,var(--surface));
+    color:var(--pd-green)
+}
+.pd-status--partially_paid {
+    background:color-mix(in srgb,var(--pd-amber) 12%,var(--surface));
+    color:var(--pd-amber)
+}
+.pd-status--unpaid,.pd-status--overdue {
+    background:color-mix(in srgb,var(--pd-red) 12%,var(--surface));
+    color:var(--pd-red)
+}
+.pd-tabs {
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    padding:0 24px;
+    gap:12px;
+    border-bottom:1px solid var(--border-color);
+    background:var(--surface);
+    flex-shrink:0
+}
+.pd-tabs button {
+    background:none;
+    border:0;
+    border-bottom:2px solid transparent;
+    color:var(--text-secondary);
+    font-size:12px;
+    font-weight:650;
+    padding:17px 0;
+    display:flex;
+    justify-content:center;
+    gap:7px;
+    align-items:center
+}
+.pd-tabs button[aria-selected=true] {
+    color:var(--primary);
+    border-bottom-color:var(--primary)
+}
+.pd-scroll {
+    overflow-y:auto;
+    overflow-x:hidden;
+    flex:1;
+    min-height:0;
+    overscroll-behavior:contain;
+    padding:24px 28px 32px;
+    background:color-mix(in srgb,var(--app-bg) 60%,var(--surface))
+}
+.pd-scroll [hidden],.pd-content [hidden] {
+    display:none!important
+}
+.pd-muted {
+    color:var(--text-secondary);
+    font-size:12px;
+    line-height:1.6;
+    margin:4px 0 0;
+    overflow-wrap:anywhere
+}
+.pd-metrics {
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:12px
+}
+.pd-metric {
+    background:var(--surface);
+    border:1px solid var(--border-color);
+    border-radius:17px;
+    padding:17px 14px;
+    box-shadow:0 3px 12px #00000003;
+    min-width:0
+}
+.pd-metric-icon {
+    width:32px;
+    height:32px;
+    border-radius:10px;
+    display:inline-grid;
+    place-items:center;
+    background:color-mix(in srgb,var(--primary) 9%,var(--surface));
+    color:var(--primary);
+    margin-bottom:15px
+}
+.pd-metric h3 {
+    font-size:11px;
+    color:var(--text-secondary);
+    font-weight:550;
+    margin:0 0 8px
+}
+.pd-metric>strong {
+    display:block;
+    font-size:22px;
+    letter-spacing:-.7px;
+    overflow-wrap:anywhere;
+    line-height:1.4
+}
+.pd-metric strong small {
+    font-size:10px;
+    letter-spacing:0;
+    font-weight:550;
+    color:var(--text-secondary)
+}
+.pd-metric p {
+    font-size:10px;
+    line-height:1.5;
+    color:var(--text-secondary);
+    margin:9px 0 0
+}
+.pd-metric--paid .pd-metric-icon {
+    color:var(--pd-green);
+    background:color-mix(in srgb,var(--pd-green) 10%,var(--surface))
+}
+.pd-metric--paid>strong {
+    color:var(--pd-green)
+}
+.pd-metric--debt .pd-metric-icon {
+    color:var(--pd-amber);
+    background:color-mix(in srgb,var(--pd-amber) 12%,var(--surface))
+}
+.pd-metric .pd-next-date {
+    font-size:19px
+}
+.pd-text-button {
+    border:0;
+    padding:0;
+    background:none;
+    color:var(--primary);
+    font-size:12px;
+    font-weight:600;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    cursor:pointer
+}
+.pd-metric .pd-text-button {
+    margin-top:12px
+}
+.pd-secondary {
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px 22px;
+    font-size:11px;
+    color:var(--text-secondary);
+    padding:16px 2px 22px
+}
+.pd-secondary strong {
+    font-weight:650;
+    color:var(--text-primary);
+    margin-left:5px
+}
+.pd-card {
+    background:var(--surface);
+    border:1px solid var(--border-color);
+    border-radius:18px;
+    padding:20px;
+    margin-bottom:18px;
+    min-width:0
+}
+.pd-card h3,.pd-section-title h3 {
+    font-size:14px;
+    font-weight:700;
+    margin:0;
+    letter-spacing:-.15px
+}
+.pd-section-title {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    margin-bottom:15px
+}
+.pd-section-title>i {
+    color:var(--text-secondary)
+}
+.pd-latest {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    font-size:13px
+}
+.pd-latest>strong {
+    white-space:nowrap;
+    color:var(--pd-green)
+}
+.pd-count {
+    padding:3px 8px;
+    border-radius:7px;
+    background:var(--app-bg);
+    color:var(--text-secondary);
+    font-size:11px
+}
+.pd-children {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:14px
+}
+.pd-children>div {
+    display:flex;
+    gap:9px;
+    align-items:center;
+    font-size:12px;
+    min-width:0
+}
+.pd-child-avatar {
+    width:32px;
+    height:32px;
+    flex-shrink:0;
+    display:grid;
+    place-items:center;
+    border-radius:10px;
+    background:var(--app-bg);
+    color:var(--primary)
+}
+.pd-contact {
+    padding-top:16px;
+    border-top:1px solid var(--border-color);
+    margin-top:16px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px 20px;
+    font-size:11px;
+    color:var(--text-secondary);
+    overflow-wrap:anywhere
+}
+.pd-timeline {
+    list-style:none;
+    margin:0;
+    padding:0
+}
+.pd-event {
+    position:relative;
+    padding:0 0 16px 34px
+}
+.pd-event:before {
+    content:'';
+    position:absolute;
+    width:1px;
+    background:var(--border-color);
+    left:11px;
+    top:25px;
+    bottom:0
+}
+.pd-event:last-child:before {
+    display:none
+}
+.pd-event-dot {
+    position:absolute;
+    left:0;
+    top:15px;
+    display:grid;
+    place-items:center;
+    width:24px;
+    height:24px;
+    font-size:12px;
+    border:1px solid var(--border-color);
+    border-radius:50%;
+    background:var(--surface);
+    color:var(--pd-green)
+}
+.pd-event--opening .pd-event-dot {
+    color:var(--text-secondary)
+}
+.pd-event--refund .pd-event-dot {
+    color:var(--pd-red)
+}
+.pd-event-card {
+    padding:16px 18px;
+    background:var(--surface);
+    border:1px solid var(--border-color);
+    border-radius:16px;
+    transition:box-shadow .15s,border-color .15s
+}
+.pd-event-card:hover {
+    border-color:color-mix(in srgb,var(--primary) 40%,var(--border-color));
+    box-shadow:0 5px 18px #00000008
+}
+.pd-event-top {
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:10px;
+    margin-bottom:10px
+}
+.pd-event-top time {
+    font-size:11px;
+    color:var(--text-secondary)
+}
+.pd-event-amount {
+    font-size:16px;
+    white-space:nowrap
+}
+.pd-event-amount small {
+    font-size:10px;
+    font-weight:500;
+    color:var(--text-secondary)
+}
+.pd-event h4 {
+    font-size:13px;
+    font-weight:650;
+    margin:0
+}
+.pd-event-bottom {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-top:12px
+}
+.pd-event-labels {
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:5px 8px
+}
+.pd-tag {
+    display:inline-flex;
+    font-size:10px;
+    font-weight:650;
+    padding:4px 7px;
+    border-radius:6px;
+    color:var(--text-secondary);
+    background:var(--app-bg)
+}
+.pd-tag--payment {
+    background:color-mix(in srgb,var(--pd-green) 10%,var(--surface));
+    color:var(--pd-green)
+}
+.pd-tag--refund {
+    background:color-mix(in srgb,var(--pd-red) 10%,var(--surface));
+    color:var(--pd-red)
+}
+.pd-info {
+    border:0;
+    padding:1px;
+    background:none;
+    color:var(--text-secondary);
+    font-size:12px;
+    cursor:help
+}
+.pd-invoice-link {
+    font-size:11px;
+    white-space:nowrap;
+    color:var(--primary);
+    text-decoration:none
+}
+.pd-invoice-number {
+    font-size:10px;
+    color:var(--text-secondary);
+    display:block;
+    overflow-wrap:anywhere;
+    margin-top:10px
+}
+.pd-empty {
+    text-align:center;
+    padding:32px 16px;
+    border:1px dashed var(--border-color);
+    border-radius:16px;
+    background:var(--surface);
+    color:var(--text-secondary)
+}
+.pd-empty>i {
+    font-size:28px;
+    display:block;
+    margin-bottom:13px;
+    color:var(--primary)
+}
+.pd-empty h4 {
+    font-size:14px;
+    font-weight:650;
+    color:var(--text-primary);
+    margin:0 0 7px
+}
+.pd-empty p {
+    font-size:12px;
+    margin:0
+}
+.pd-empty--small {
+    border:0;
+    padding:20px 4px 4px
+}
+.pd-history-filters {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:12px;
+    background:var(--surface);
+    border:1px solid var(--border-color);
+    border-radius:17px;
+    padding:17px;
+    margin-bottom:22px
+}
+.pd-filter-search,.pd-filter-actions {
+    grid-column:1/-1
+}
+.pd-history-filters label,.pd-reminder-form label {
+    display:block;
+    font-size:11px;
+    font-weight:600;
+    margin-bottom:6px;
+    color:var(--text-secondary)
+}
+.pd-history-filters .form-control,.pd-history-filters .form-select {
+    font-size:12px;
+    min-width:0;
+    width:100%
+}
+.pd-search {
+    position:relative
+}
+.pd-search>i {
+    position:absolute;
+    left:12px;
+    top:12px;
+    font-size:12px;
+    color:var(--text-secondary)
+}
+.pd-search input {
+    padding-left:32px
+}
+.pd-filter-actions {
+    display:flex;
+    gap:8px
+}
+.pd-pagination {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    color:var(--text-secondary);
+    font-size:11px
+}
+.pd-due-row {
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    padding:18px 0;
+    border-bottom:1px solid var(--border-color);
+    font-size:12px
+}
+.pd-due-row:last-child {
+    border:0;
+    padding-bottom:0
+}
+.pd-due-icon {
+    padding:8px;
+    background:var(--app-bg);
+    border-radius:10px;
+    color:var(--primary)
+}
+.pd-due-row>div:nth-child(2) {
+    flex:1;
+    min-width:0
+}
+.pd-due-row>div:last-child {
+    text-align:right
+}
+.pd-due-row .pd-status {
+    display:block;
+    margin-top:6px
+}
+.pd-due-row a {
+    font-size:11px;
+    color:var(--primary);
+    display:inline-block;
+    margin-top:7px
+}
+.pd-schedule-card {
+    background:linear-gradient(110deg,var(--surface),color-mix(in srgb,var(--primary) 5%,var(--surface)))
+}
+.pd-schedule-date {
+    display:block;
+    font-size:21px;
+    margin:14px 0 5px;
+    letter-spacing:-.4px
+}
+.pd-reminder-form {
+    margin-top:16px
+}
+.pd-clear-reminder {
+    margin-top:12px;
+    color:var(--pd-red)
+}
+.pd-notification {
+    padding:12px 25px;
+    background:color-mix(in srgb,var(--pd-green) 12%,var(--surface));
+    color:var(--text-primary);
+    border-bottom:1px solid var(--border-color);
+    font-size:12px;
+    flex-shrink:0
+}
+.pd-notification--error {
+    background:color-mix(in srgb,var(--pd-red) 12%,var(--surface))
+}
+.pd-loading {
+    padding:28px;
+    position:relative
+}
+.pd-loading h2 {
+    font-size:20px
+}
+.pd-skeleton {
+    height:16px;
+    border-radius:9px;
+    background:linear-gradient(100deg,var(--app-bg) 20%,color-mix(in srgb,var(--text-secondary) 15%,var(--surface)) 45%,var(--app-bg) 70%);
+    background-size:250% 100%;
+    animation:pd-shimmer 1.4s infinite;
+    margin:20px 0
+}
+.pd-skeleton-title {
+    width:60%;
+    height:30px;
+    margin-top:35px
+}
+.pd-skeleton-card {
+    height:145px
+}
+.pd-invoice-preview {
+    background:var(--surface);
+    border:1px solid var(--border-color);
+    border-radius:18px;
+    padding:22px;
+    margin-top:20px;
+    overflow-wrap:anywhere
+}
+.pd-invoice-preview header {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+    margin-bottom:25px
+}
+.pd-invoice-brand {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:13px
+}
+.pd-invoice-brand>span {
+    display:grid;
+    place-items:center;
+    width:36px;
+    height:36px;
+    border-radius:11px;
+    background:var(--primary);
+    color:var(--surface);
+    font-size:21px
+}
+.pd-invoice-brand small {
+    display:block;
+    font-size:10px;
+    color:var(--text-secondary);
+    margin-top:4px
+}
+.pd-invoice-preview>h3 {
+    font-size:23px;
+    font-weight:700
+}
+.pd-invoice-info {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:16px;
+    padding:20px 0;
+    border-block:1px solid var(--border-color)
+}
+.pd-invoice-info dt {
+    font-size:10px;
+    color:var(--text-secondary);
+    font-weight:500
+}
+.pd-invoice-info dd {
+    font-size:12px;
+    margin:4px 0 0
+}
+.pd-invoice-items>div,.pd-preview-totals>div {
+    display:flex;
+    justify-content:space-between;
+    gap:20px;
+    padding:14px 0;
+    border-bottom:1px solid var(--border-color);
+    font-size:12px
+}
+.pd-invoice-items strong {
+    white-space:nowrap
+}
+.pd-preview-totals dt {
+    font-weight:500
+}
+.pd-preview-totals dd {
+    margin:0;
+    font-weight:700
+}
+.pd-preview-totals>div:last-child {
+    font-size:15px;
+    color:var(--primary)
+}
+.pd-drawer :focus-visible {
+    outline:2px solid var(--primary);
+    outline-offset:3px
+}
+.pd-content [role=tabpanel] {
+    animation:pd-appear .18s ease-out
+}
+@keyframes pd-shimmer {
+    to {
+        background-position:-150% 0
+    }
+}
+@keyframes pd-appear {
+    from {
+        opacity:.6;
+        transform:translateY(3px)
+    }
+    to {
+        opacity:1;
+        transform:translateY(0)
+    }
+}
+@media(max-width:600px) {
+    .pd-drawer {
+        --bs-offcanvas-width:100vw
+    }
+    .pd-header {
+        padding:22px 18px 17px
+    }
+    .pd-heading h2 {
+        font-size:21px
+    }
+    .pd-tabs {
+        padding:0 14px;
+        gap:4px
+    }
+    .pd-tabs button {
+        font-size:11px;
+        padding:15px 2px;
+        gap:4px
+    }
+    .pd-scroll {
+        padding:18px 16px 28px
+    }
+    .pd-metrics {
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:10px
+    }
+    .pd-metric:last-child {
+        grid-column:1/-1;
+        display:grid;
+        grid-template-columns:35px 1fr auto;
+        gap:0 10px;
+        align-items:center
+    }
+    .pd-metric:last-child .pd-metric-icon {
+        grid-row:1/3;
+        margin:0
+    }
+    .pd-metric:last-child h3 {
+        margin:0
+    }
+    .pd-metric:last-child strong {
+        grid-column:2;
+        grid-row:2
+    }
+    .pd-metric:last-child .pd-text-button {
+        grid-column:3;
+        grid-row:1/3;
+        margin:0
+    }
+    .pd-children {
+        grid-template-columns:1fr
+    }
+    .pd-event {
+        padding-left:28px
+    }
+    .pd-event-card {
+        padding:14px
+    }
+    .pd-event-top {
+        flex-wrap:wrap;
+        gap:5px
+    }
+    .pd-event-bottom {
+        flex-wrap:wrap
+    }
+    .pd-latest {
+        flex-wrap:wrap
+    }
+    .pd-invoice-preview {
+        padding:16px
+    }
+    .pd-card {
+        padding:17px
+    }
+    .pd-due-row {
+        flex-wrap:wrap
+    }
+    .pd-invoice-preview header {
+        flex-wrap:wrap
+    }
+}
+@media(prefers-reduced-motion:reduce) {
+    .pd-drawer,.pd-event-card,.pd-content [role=tabpanel],.pd-skeleton {
+        animation:none!important;
+        transition:none!important
+    }
+}
+html.pd-drawer-open {
+    overflow:hidden!important
+}
+
+.pd-child-enrollments { display: grid; gap: 7px; margin-top: 10px; }
+.pd-child-enrollment { display: grid; gap: 3px; padding: 8px 10px; border-radius: 9px; background: var(--app-bg); }
+.pd-child-enrollment > span { font-size: 11px; font-weight: 650; color: var(--text-primary); overflow-wrap: anywhere; }
+.pd-child-enrollment > small { font-size: 10px; color: var(--text-secondary); overflow-wrap: anywhere; }
+.pd-child-enrollment i { margin-right: 4px; }
+.pd-children > div { align-items: flex-start; }
+.pd-children > div > div { min-width: 0; flex: 1; }

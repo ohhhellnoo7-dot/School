@@ -1,0 +1,10 @@
+<ol class="pd-timeline">
+@forelse($entries as $entry)
+<li class="pd-event pd-event--{{ $entry['type'] }}"><span class="pd-event-dot"><i class="bi bi-{{ ['payment' => 'check2', 'opening' => 'archive', 'refund' => 'arrow-return-left', 'adjustment' => 'sliders'][$entry['type']] }}" aria-hidden="true"></i></span><article class="pd-event-card">
+<div class="pd-event-top"><time @if($entry['date']) datetime="{{ $entry['date'] }}" @endif>{{ $entry['date'] ? \Carbon\Carbon::parse($entry['date'])->format('d F Y') : 'Date not recorded' }}</time><strong class="pd-event-amount">{{ ($entry['negative'] ?? false) ? '-' : '' }}{{ \App\Support\Money::display(\App\Support\Money::cents($entry['amount'])) }} <small>{{ $entry['currency'] }}</small></strong></div>
+<h4>{{ $entry['child'] }}</h4><p class="pd-muted">{{ $entry['program'] === 'Japan' ? 'Japanese' : ($entry['program'] ?: 'Legacy / unclassified') }} &middot; {{ $entry['academic_year'] ?: 'Year not recorded' }}</p>
+<div class="pd-event-bottom"><div class="pd-event-labels"><span class="pd-tag pd-tag--{{ $entry['type'] }}">{{ $entry['label'] }}</span>@if($entry['legacy'])<button type="button" class="pd-info" data-bs-toggle="tooltip" title="This amount was imported as an opening paid balance. It is not a separate recorded payment." aria-label="About historical opening balances"><i class="bi bi-info-circle" aria-hidden="true"></i></button>@endif @if($entry['method'])<span class="pd-muted">{{ ucwords(str_replace('_', ' ', $entry['method'])) }}</span>@endif<span class="pd-muted">Invoice {{ ucwords(str_replace('_', ' ', $entry['status'])) }}</span></div>
+<a href="{{ route('finance.invoice', $entry['fee_id']) }}" data-invoice-preview class="pd-invoice-link" aria-label="View invoice {{ $entry['invoice'] }}">View invoice <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a></div><small class="pd-invoice-number">{{ $entry['invoice'] }}</small>
+</article></li>
+@empty<li class="pd-empty"><i class="bi bi-wallet2" aria-hidden="true"></i><h4>No payments have been recorded yet.</h4><p>Payment activity will appear here when it is available.</p></li>@endforelse
+</ol>

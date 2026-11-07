@@ -20,15 +20,23 @@ class ParentPaymentSchedule
             $history = [];
             foreach ($parent->children as $child) {
                 foreach ($child->fees as $fee) {
+                    $meta = ['child' => $child->name, 'child_id' => $child->id, 'program' => $fee->program, 'academic_year' => $fee->academic_year, 'invoice' => $fee->display_number, 'fee_id' => $fee->id, 'status' => $fee->payment_status];
                     foreach ($fee->payments as $payment) {
-                        $history[] = ['date' => $payment->paid_on->format('Y-m-d'), 'child' => $child->name, 'amount' => $payment->amount, 'currency' => $payment->currency, 'fee_id' => $fee->id, 'legacy' => false];
+                        $history[] = $meta + ['id' => 'payment-'.$payment->id, 'sequence' => $payment->id, 'sort_at' => $payment->created_at->format('Y-m-d H:i:s.u'), 'date' => $payment->paid_on->format('Y-m-d'), 'amount' => $payment->amount, 'currency' => $payment->currency, 'method' => $payment->method, 'type' => 'payment', 'legacy' => false, 'label' => 'Recorded Payment'];
                     }
-                    if (! $fee->invoice_number && $fee->paid_at && Money::cents($fee->opening_paid ?? $fee->paid) > 0) {
-                        $history[] = ['date' => $fee->paid_at->format('Y-m-d'), 'child' => $child->name, 'amount' => $fee->opening_paid ?: $fee->paid, 'currency' => $fee->currency, 'fee_id' => $fee->id, 'legacy' => true];
+                    $opening = Money::cents($fee->opening_paid ?? '0.00');
+                    if (! $fee->invoice_number && $opening === 0 && $fee->payments->isEmpty()) {
+                        $opening = Money::cents($fee->paid);
+                    }
+                    if ($opening > 0) {
+                        $history[] = $meta + ['id' => 'opening-'.$fee->id, 'sequence' => $fee->id, 'sort_at' => '', 'date' => $fee->paid_at?->format('Y-m-d'), 'amount' => Money::decimal($opening), 'currency' => $fee->currency, 'method' => null, 'type' => 'opening', 'legacy' => true, 'label' => 'Historical Opening Balance'];
+                    }
+                    foreach ($fee->adjustments as $adjustment) {
+                        $history[] = $meta + ['id' => 'adjustment-'.$adjustment->id, 'sequence' => $adjustment->id, 'sort_at' => $adjustment->created_at->format('Y-m-d H:i:s.u'), 'date' => $adjustment->created_at->format('Y-m-d'), 'amount' => $adjustment->amount, 'currency' => $fee->currency, 'method' => null, 'type' => $adjustment->kind === 'refund' ? 'refund' : 'adjustment', 'legacy' => false, 'label' => ucfirst($adjustment->kind), 'negative' => in_array($adjustment->kind, ['refund', 'credit', 'discount', 'waiver'])];
                     }
                 }
             }
-            usort($history, fn ($a, $b) => strcmp($b['date'], $a['date']));
+            usort($history, fn ($a, $b) => strcmp($b['date'] ?? '', $a['date'] ?? '') ?: strcmp($b['sort_at'], $a['sort_at']) ?: ($b['sequence'] <=> $a['sequence']));
             $due = $parent->children->flatMap->fees->filter(fn ($fee) => $fee->balanceCents() > 0)
                 ->map(fn ($fee) => $fee->due_date->format('Y-m-d'))->sort()->first();
             $dates = [];
@@ -76,7 +84,7 @@ class ParentPaymentSchedule
                 $scheduled = $manualDate;
                 $source = 'school';
             }
-            $result[$parent->id] = ['due' => $due, 'scheduled' => $scheduled, 'scheduled_source' => $source, 'manual_date' => $manualDate, 'paid_years' => $paidYears, 'history' => $history];
+            $result[$parent->id] = ['due' => $due, 'scheduled' => $scheduled, 'scheduled_source' => $source, 'manual_date' => $manualDate, 'paid_years' => $paidYears, 'history' => $history, 'tuition_date' => $dates[0] ?? null];
         }
 
         return $result;

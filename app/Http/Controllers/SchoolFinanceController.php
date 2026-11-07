@@ -21,6 +21,70 @@ use Illuminate\Validation\Rule;
 
 class SchoolFinanceController extends Controller
 {
+    private function familyStatus($fees): string
+    {
+        $hasDebt = $fees->contains(fn ($fee) => $fee->balanceCents() > 0);
+        $hasPayments = $fees->contains(fn ($fee) => Money::cents($fee->paid) > 0);
+
+        return $fees->isEmpty() ? 'no_invoices' : ($hasDebt ? ($hasPayments ? 'partially_paid' : 'unpaid') : ($hasPayments ? 'paid' : 'waived'));
+    }
+
+    public function parentDetails(Request $request, User $parent, SchoolFinanceService $service)
+    {
+        abort_unless($request->user()->role === 'administrator', 403);
+        abort_unless($parent->role === 'parent', 404);
+        $filters = $request->validate([
+            'search' => 'nullable|string|max:100', 'child' => 'nullable|integer',
+            'program' => 'nullable|in:Khmer,English,Chinese,Japan,legacy',
+            'academic_year' => ['nullable', 'regex:/^(legacy|[0-9]{4}-[0-9]{4})$/'],
+            'status' => 'nullable|in:paid,partially_paid,unpaid,overdue,waived,refunded',
+            'type' => 'nullable|in:payment,opening,refund,adjustment',
+            'from' => 'nullable|date_format:Y-m-d', 'to' => ['nullable', 'date_format:Y-m-d', Rule::when($request->filled('from'), 'after_or_equal:from')],
+            'page' => 'nullable|integer|min:1|max:100000', 'tab' => 'nullable|in:overview,history,upcoming',
+        ]);
+        $parent->load(['children.fees.adjustments', 'children.fees.items', 'children.fees.payments', 'children.studyClasses.classGroup']);
+        if ($request->filled('child')) {
+            abort_unless($parent->children->contains('id', $request->integer('child')), 404);
+        }
+        $fees = $parent->children->flatMap->fees->unique('id');
+        $status = $this->familyStatus($fees);
+        $summary = $service->summary($fees);
+        $schedule = app(ParentPaymentSchedule::class)->forFamilies(new Collection([$parent]))[$parent->id];
+        $allHistory = collect($schedule['history']);
+        $history = $allHistory->filter(function ($entry) use ($filters) {
+            if (! empty($filters['search']) && ! str_contains(mb_strtolower($entry['child'].' '.$entry['invoice']), mb_strtolower(trim($filters['search'])))) {
+                return false;
+            }
+            foreach (['child' => 'child_id', 'type' => 'type', 'status' => 'status'] as $filter => $field) {
+                if (! empty($filters[$filter]) && (string) $filters[$filter] !== (string) $entry[$field]) {
+                    return false;
+                }
+            }
+            if (! empty($filters['program']) && ($entry['program'] ?: 'legacy') !== $filters['program']) {
+                return false;
+            }
+            if (! empty($filters['academic_year']) && ($entry['academic_year'] ?: 'legacy') !== $filters['academic_year']) {
+                return false;
+            }
+            if (! empty($filters['from']) && (! $entry['date'] || $entry['date'] < $filters['from'])) {
+                return false;
+            }
+            if (! empty($filters['to']) && (! $entry['date'] || $entry['date'] > $filters['to'])) {
+                return false;
+            }
+
+            return true;
+        })->values();
+        $page = $request->integer('page', 1);
+        $events = new LengthAwarePaginator($history->forPage($page, 15)->values(), $history->count(), 15, $page, ['path' => route('finance.parents.details', $parent), 'query' => $request->query()]);
+        $latestPayment = $allHistory->firstWhere('type', 'payment');
+        $recent = $allHistory->take(3);
+        $unpaidInvoices = $fees->filter(fn ($fee) => $fee->balanceCents() > 0)->sortBy('due_date');
+        $years = $fees->pluck('academic_year')->filter()->unique()->sort()->values();
+
+        return response()->view('school.finance._parent-drawer', compact('parent', 'fees', 'summary', 'status', 'schedule', 'events', 'latestPayment', 'recent', 'unpaidInvoices', 'years'))->header('Cache-Control', 'private, no-store');
+    }
+
     public function parentReminder(Request $request, User $parent, SchoolFinanceService $service)
     {
         abort_unless($request->user()->role === 'administrator' && $parent->role === 'parent', 403);
@@ -30,6 +94,10 @@ class SchoolFinanceController extends Controller
             DB::table('parent_payment_reminders')->updateOrInsert(['parent_id' => $parent->id], ['next_payment_on' => $data['next_payment_on'] ?? null, 'recorded_by' => $request->user()->id, 'created_at' => $previous?->created_at ?? now(), 'updated_at' => now()]);
             $service->audit($request->user(), 'set_next_parent_payment', 'parent', $parent->id, ['previous_date' => $previous?->next_payment_on, 'next_date' => $data['next_payment_on'] ?? null]);
         });
+
+        if ($request->expectsJson()) {
+            return response()->json(['message' => empty($data['next_payment_on']) ? 'Payment reminder cleared.' : 'Payment reminder saved.'])->header('Cache-Control', 'private, no-store');
+        }
 
         return back()->with('success', 'Next payment date saved.');
     }
@@ -45,9 +113,7 @@ class SchoolFinanceController extends Controller
             ->orderBy('name')->get()->map(function ($parent) use ($service) {
                 $fees = $parent->children->flatMap->fees;
                 $currencies = $service->summary($fees);
-                $hasDebt = $fees->contains(fn ($fee) => $fee->balanceCents() > 0);
-                $hasPayments = $fees->contains(fn ($fee) => Money::cents($fee->paid) > 0);
-                $status = $fees->isEmpty() ? 'no_invoices' : ($hasDebt ? ($hasPayments ? 'partially_paid' : 'unpaid') : ($hasPayments ? 'paid' : 'waived'));
+                $status = $this->familyStatus($fees);
 
                 return compact('parent', 'currencies', 'status') + ['invoice_count' => $fees->count()];
             });
@@ -114,6 +180,10 @@ class SchoolFinanceController extends Controller
     {
         $fee = $this->visible($request)->findOrFail($fee);
         $structures = $request->user()->role === 'administrator' ? FeeStructure::whereNotNull('approved_at')->orderBy('program')->get() : collect();
+
+        if ($request->boolean('preview')) {
+            return response()->view('school.finance._invoice-preview', compact('fee'))->header('Cache-Control', 'private, no-store');
+        }
 
         return view('school.finance.invoice', compact('fee', 'structures'));
     }
