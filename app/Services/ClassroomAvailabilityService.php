@@ -148,7 +148,10 @@ class ClassroomAvailabilityService
                     if (! $visibleBooking($current)) { $current = null; $activity['activity'] = 'Reserved for another cohort'; }
                     if (! $visibleBooking($next)) $next = null;
                 }
-                return compact('classroom', 'status', 'current', 'next', 'roomLessons', 'programs', 'programDetails', 'cardProgramDetails') + $activity;
+                // Room membership comes from the full weekly timetable, even on non-teaching days.
+                $assignedLessons = $lessonsByRoom->get($classroom->id) ?? collect();
+                $assignedBookings = $weeklyBookings->get($classroom->id) ?? collect();
+                return compact('classroom', 'status', 'current', 'next', 'roomLessons', 'programs', 'programDetails', 'cardProgramDetails', 'assignedLessons', 'assignedBookings') + $activity;
             })
             ->filter(fn (array $entry) => $this->matchesFilters($entry, $filters))
             ->values();
@@ -216,7 +219,7 @@ class ClassroomAvailabilityService
             return true;
         }
 
-        $matchesLesson = $entry['roomLessons']->contains(function (Schedule $lesson) use ($bookingFilters) {
+        $matchesLesson = $entry['assignedLessons']->contains(function (Schedule $lesson) use ($bookingFilters) {
             $class = $lesson->schoolClass;
             if (! $class) return false;
             if (isset($bookingFilters['program']) && $class->program !== $bookingFilters['program']) return false;
@@ -225,7 +228,7 @@ class ClassroomAvailabilityService
             return true;
         });
 
-        return $matchesLesson || $classroom->bookings->contains(function (ClassroomBooking $booking) use ($bookingFilters) {
+        return $matchesLesson || $entry['assignedBookings']->contains(function (ClassroomBooking $booking) use ($bookingFilters) {
             if (isset($bookingFilters['program']) && $booking->classGroup?->program !== $bookingFilters['program']) {
                 return false;
             }

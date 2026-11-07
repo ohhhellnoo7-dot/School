@@ -91,7 +91,13 @@
             <strong>Program sessions</strong>
             @foreach($programSessions as $program => $sessions)
                 <div data-session-preview="{{ $program }}" @if(old('program', $classGroup->program) !== $program) hidden @endif>
-                    @foreach($sessions as $session => [$start, $end])<span><i class="bi bi-clock" aria-hidden="true"></i> {{ $session }} · {{ $start }}–{{ $end }}</span>@endforeach
+                    @foreach($sessions as $session => [$start, $end])
+                        @if($classGroup->exists && $classGroup->program === 'Khmer')
+                        <button type="button" class="session-filter" data-subject-session="{{ $session }}" aria-pressed="false"><i class="bi bi-clock" aria-hidden="true"></i> {{ $session }} &middot; {{ $start }}&ndash;{{ $end }}</button>
+                        @else
+                        <span><i class="bi bi-clock" aria-hidden="true"></i> {{ $session }} &middot; {{ $start }}&ndash;{{ $end }}</span>
+                        @endif
+                    @endforeach
                 </div>
             @endforeach
             <div data-session-empty @if(old('program', $classGroup->program)) hidden @endif>Select a program to see its sessions.</div>

@@ -25,8 +25,9 @@
     const target = document.getElementById('target-subject');
     const dialog = document.getElementById('subject-swap-dialog');
     const open = document.getElementById('open-subject-swap');
-    subjects.forEach(item => subject.add(new Option(item.label, item.id)));
-    subject.value = @json((string) old('source_subject_id', ''));
+    const sessionButtons = [...document.querySelectorAll('[data-session-preview="Khmer"] [data-subject-session]')];
+    const previousSubject = @json((string) old('source_subject_id', ''));
+    let activeSession = subjects.find(item => String(item.id) === previousSubject)?.session || sessionButtons[0]?.dataset.subjectSession || 'Morning';
     const syncTarget = () => {
         document.querySelector('[data-target-teacher]').value = target.selectedOptions[0]?.dataset.teacher || '';
     };
@@ -47,11 +48,25 @@
         document.getElementById('submit-subject-swap').disabled = !selected?.candidates.length;
         syncTarget();
     };
+    const filterSession = (wantedSubject = '') => {
+        const previous = subjects.find(item => String(item.id) === subject.value);
+        const visible = subjects.filter(item => item.session === activeSession);
+        subject.replaceChildren(new Option(visible.length ? 'Choose a subject' : 'No subjects in this session', ''), ...visible.map(item => new Option(item.label, item.id)));
+        const selected = visible.find(item => String(item.id) === wantedSubject)
+            || visible.find(item => item.label.split(' - ')[0] === previous?.label.split(' - ')[0]);
+        subject.value = selected ? String(selected.id) : '';
+        sessionButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.subjectSession === activeSession)));
+        sync();
+    };
+    sessionButtons.forEach(button => button.addEventListener('click', () => {
+        activeSession = button.dataset.subjectSession;
+        filterSession();
+    }));
     subject.addEventListener('change', sync);
     target.addEventListener('change', syncTarget);
     open.addEventListener('click', () => dialog.showModal());
     document.getElementById('close-subject-swap').addEventListener('click', () => dialog.close());
-    sync();
+    filterSession(previousSubject);
     @if($errors->hasAny(['subject_swap', 'source_subject_id', 'target_subject_id']))
     dialog.showModal();
     @endif

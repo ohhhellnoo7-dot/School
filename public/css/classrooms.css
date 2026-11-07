@@ -815,3 +815,22 @@ a.class-summary-card:hover {
     .room-card-visual img { height: 130px; }
 }
 @media print { .room-card-visual, .classroom-availability-page .classroom-heading::before { display: none; } }
+
+.session-preview .session-filter {
+    padding: 5px 8px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: var(--surface);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+.session-preview .session-filter:hover,
+.session-preview .session-filter[aria-pressed="true"] {
+    color: var(--primary, #6c43f3);
+    border-color: currentColor;
+}
+.session-preview .session-filter:focus-visible {
+    outline: 2px solid var(--primary, #6c43f3);
+    outline-offset: 2px;
+}

@@ -37,7 +37,7 @@ class KhmerSubjectSwapService
         $subjects = Subject::with(['schoolClass.classGroup', 'teacher', 'schedules.classroom'])
             ->whereHas('schoolClass', fn ($q) => $q->where('program', 'Khmer')->whereNotNull('class_group_id'))->orderBy('name')->get();
         return $subjects->filter(fn ($s) => $s->schoolClass->class_group_id === $group->id)->map(fn ($source) => [
-            'id' => $source->id, 'teacher_id' => $source->teacher_id,
+            'id' => $source->id, 'teacher_id' => $source->teacher_id, 'session' => $source->schoolClass->session,
             'label' => $source->name.' - '.$source->schoolClass->session,
             'teacher' => $source->teacher?->name ?? 'Unassigned',
             'times' => $source->schedules->map(fn ($s) => $s->day.' '.substr($s->starts_at, 0, 5).'-'.substr($s->ends_at, 0, 5).' ('.$s->academic_year.')')->join(', '),

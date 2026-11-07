@@ -22,6 +22,34 @@ class ClassroomManagementTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_program_filter_keeps_weekday_rooms_visible_on_saturday(): void
+    {
+        $bookedRoom = $this->classroom('WEEKLY-BOOKING', 30);
+        $lessonRoom = $this->classroom('WEEKLY-LESSON', 30);
+        $group = $this->classGroup('Khmer', 8, 'A');
+        $session = $this->classSession($group, 'Morning', '07:00', '11:00');
+        $teacher = $this->user('teacher');
+        ClassroomBooking::create(collect($this->bookingData($group, $session, $bookedRoom, $teacher, 'Monday', '07:00', '11:00'))->except('session')->all());
+        $class = SchoolClass::create(['name' => 'Grade 8', 'section' => 'A', 'program' => 'Khmer', 'session' => 'Morning', 'class_group_id' => $group->id]);
+        $subject = \App\Models\Subject::create(['school_class_id' => $class->id, 'name' => 'History', 'code' => 'WEEKLY-HISTORY']);
+        \Illuminate\Support\Facades\DB::table('schedules')->insert([
+            'school_class_id' => $class->id, 'subject_id' => $subject->id, 'teacher_id' => $teacher->id,
+            'classroom_id' => $lessonRoom->id, 'room' => $lessonRoom->room_number, 'day' => 'Tuesday',
+            'starts_at' => '07:00', 'ends_at' => '08:00', 'entry_type' => 'academic', 'academic_year' => '2026-2027',
+        ]);
+        $service = app(ClassroomAvailabilityService::class);
+        $filters = ['program' => 'Khmer', 'grade' => 8, 'session' => 'Morning'];
+        $rooms = $service->forMoment('2026-11-07 14:14', $filters);
+        $this->assertEqualsCanonicalizing([$bookedRoom->id, $lessonRoom->id], $rooms->pluck('classroom.id')->all());
+        foreach ($rooms as $room) {
+            $this->assertSame('available', $room['status']);
+            $this->assertNull($room['current']);
+            $this->assertNull($room['currentLesson']);
+        }
+        $this->assertCount(0, $service->forMoment('2026-11-07 14:14', ['program' => 'English']));
+        $this->assertCount(0, $service->forMoment('2026-11-07 14:14', ['program' => 'Khmer', 'session' => 'Afternoon']));
+    }
+
     public function test_room_cards_match_the_session_teachers_and_enrollment_in_room_details(): void
     {
         $admin = $this->user('administrator');
