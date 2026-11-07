@@ -8,6 +8,7 @@ use App\Models\FeePayment;
 use App\Models\FeeStructure;
 use App\Models\SchoolClass;
 use App\Models\Student;
+use App\Models\User;
 use App\Services\SchoolFinanceService;
 use App\Support\Money;
 use App\Support\SchoolModules;
@@ -18,6 +19,39 @@ use Illuminate\Validation\Rule;
 
 class SchoolFinanceController extends Controller
 {
+    public function parents(Request $request, SchoolFinanceService $service)
+    {
+        abort_unless($request->user()->role === 'administrator', 403);
+        $filters = $request->validate([
+            'search' => 'nullable|string|max:100',
+            'status' => 'nullable|in:paid,partially_paid,unpaid,waived,no_invoices',
+        ]);
+        $families = User::where('role', 'parent')->with(['children.fees.adjustments', 'children.fees.items', 'children.fees.payments'])
+            ->orderBy('name')->get()->map(function ($parent) use ($service) {
+                $fees = $parent->children->flatMap->fees;
+                $currencies = $service->summary($fees);
+                $hasDebt = $fees->contains(fn ($fee) => $fee->balanceCents() > 0);
+                $hasPayments = $fees->contains(fn ($fee) => Money::cents($fee->paid) > 0);
+                $status = $fees->isEmpty() ? 'no_invoices' : ($hasDebt ? ($hasPayments ? 'partially_paid' : 'unpaid') : ($hasPayments ? 'paid' : 'waived'));
+
+                return compact('parent', 'currencies', 'status') + ['invoice_count' => $fees->count()];
+            });
+        if ($request->filled('search')) {
+            $needle = mb_strtolower(trim($filters['search']));
+            $families = $families->filter(fn ($family) => str_contains(mb_strtolower($family['parent']->name.' '.$family['parent']->email.' '.$family['parent']->phone), $needle)
+                || $family['parent']->children->contains(fn ($child) => str_contains(mb_strtolower($child->name.' '.$child->student_number), $needle)));
+        }
+        $counts = $families->countBy('status');
+        if ($request->filled('status')) {
+            $families = $families->where('status', $filters['status']);
+        }
+        $page = max(1, $request->integer('page', 1));
+        $families = new LengthAwarePaginator($families->forPage($page, 25)->values(), $families->count(), 25, $page, ['path' => $request->url(), 'query' => $request->query()]);
+        $unlinked = Student::whereHas('fees')->whereDoesntHave('parent', fn ($q) => $q->where('role', 'parent'))->count();
+
+        return view('school.finance.parents', compact('families', 'counts', 'unlinked'));
+    }
+
     private function visible(Request $request)
     {
         abort_unless(in_array($request->user()->role, ['administrator', 'parent', 'student']), 403);
