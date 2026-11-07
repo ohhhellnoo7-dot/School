@@ -684,7 +684,8 @@ a.class-summary-card:hover {
 .room-session-picker summary::-webkit-details-marker { display: none; }
 .room-session-picker summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 .room-session-menu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 10; min-width: 140px; padding: 5px; border: 1px solid var(--soft); border-radius: 10px; background: var(--surface); box-shadow: 0 5px 16px rgb(0 0 0 / 12%); }
-.room-session-menu button { display: block; width: 100%; border: 0; border-radius: 6px; background: transparent; color: var(--ink); font: inherit; text-align: left; padding: 8px 12px; cursor: pointer; }
+.room-facts .room-session-menu { display: block; }
+.room-session-menu button { display: block; width: 100%; border: 0; border-radius: 6px; background: transparent; color: var(--ink); font: inherit; text-align: left; padding: 8px 12px; white-space: nowrap; overflow-wrap: normal; cursor: pointer; }
 .room-session-menu button:hover, .room-session-menu button[aria-pressed="true"] { background: var(--soft); }
 .room-card-teachers li { border-bottom: 1px solid var(--soft); padding-bottom: 5px; }
 .room-program-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px; background: var(--soft); border-radius: 12px; margin-bottom: 12px; }

@@ -4,8 +4,10 @@
     const hoverMenus = new WeakMap();
     const openInformation = new Set();
     let keyboardNavigation = false;
-    const hoverTarget = target => target instanceof Element
-        ? target.closest('details:not([data-theme-menu]):not([data-language-menu]), .dropdown') : null;
+    const hoverTarget = target => {
+        if (!(target instanceof Element) || target.closest('[data-click-only]')) return null;
+        return target.closest('details:not([data-theme-menu]):not([data-language-menu]), .dropdown');
+    };
     const closeInformation = menu => {
         if (menu.matches('details')) {
             if (openInformation.has(menu)) menu.open = false;

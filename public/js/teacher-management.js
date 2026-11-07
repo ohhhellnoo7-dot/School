@@ -48,6 +48,7 @@
                 select.closest('.col-md-6').hidden = !khmer;
                 select.disabled = !khmer;
             });
+            first.closest('[data-teacher-subject-options]').hidden = !khmer;
             first.required = khmer;
             const selected = initial ? [...additional.selectedOptions].map(option => option.value).concat(first.value, second.value) : options.subjects;
             additional.replaceChildren(...options.subjects.map(name => new Option(name, name, false, selected.includes(name))));

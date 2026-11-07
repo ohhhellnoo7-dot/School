@@ -194,6 +194,18 @@
         }
     };
 
+    document.addEventListener('click', event => {
+        results.querySelectorAll('.room-session-picker[open]').forEach(picker => {
+            if (!picker.contains(event.target)) picker.open = false;
+        });
+    });
+    results.addEventListener('keydown', event => {
+        const picker = event.target.closest('.room-session-picker');
+        if (event.key === 'Escape' && picker) {
+            picker.open = false;
+            picker.querySelector('summary').focus();
+        }
+    });
     results.addEventListener('click', event => {
         const button = event.target.closest('[data-room-session]');
         if (!button) return;
