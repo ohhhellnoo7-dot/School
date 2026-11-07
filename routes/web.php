@@ -103,6 +103,7 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
         Route::post('/class-groups', [ClassGroupController::class, 'store'])->name('class-groups.store');
         Route::get('/class-groups/{classGroup}/edit', [ClassGroupController::class, 'edit'])->name('class-groups.edit');
         Route::put('/class-groups/{classGroup}', [ClassGroupController::class, 'update'])->name('class-groups.update');
+        Route::post('/class-groups/{classGroup}/swap-subject-teacher', [ClassGroupController::class, 'swapSubjectTeacher'])->name('class-groups.swap-subject-teacher');
         Route::post('/class-groups/{classGroup}/swap-teacher', [ClassGroupController::class, 'swapTeacher'])->name('class-groups.swap-teacher');
         Route::delete('/class-groups/{classGroup}', [ClassGroupController::class, 'destroy'])->name('class-groups.destroy');
 

@@ -43,6 +43,13 @@
             @error('section')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
         <div>
+            @if($classGroup->exists && $classGroup->program === 'Khmer')
+            <label class="form-label" for="khmer-subject">Subject</label>
+            <select id="khmer-subject" class="form-select"><option value="">Choose a subject</option></select>
+            <p class="form-text" id="khmer-subject-teacher" aria-live="polite"></p>
+            <button type="button" class="btn btn-outline-primary" id="open-subject-swap" disabled>Swap subject teacher</button>
+            @endif
+            <div @if($classGroup->exists && $classGroup->program === 'Khmer') hidden @endif>
             <label class="form-label" for="teacher_id">Class teacher</label>
             <select class="form-select @error('teacher_id') is-invalid @enderror" id="teacher_id" name="teacher_id">
                 <option value="">Unassigned</option>
@@ -53,9 +60,10 @@
                 @endforeach
             </select>
             @error('teacher_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-            @if($classGroup->exists && $classGroup->teacher_id)
+            @if($classGroup->exists && $classGroup->teacher_id && $classGroup->program !== 'Khmer')
             <button type="button" class="btn btn-outline-primary mt-3" data-open-teacher-swap aria-haspopup="dialog" aria-controls="teacher-swap-dialog"><i class="bi bi-arrow-left-right me-2" aria-hidden="true"></i>Swap teacher with another classroom</button>
             @endif
+            </div>
         </div>
         <div>
             <label class="form-label" for="capacity">Student capacity <span aria-hidden="true">*</span></label>
@@ -91,7 +99,7 @@
     </div>
     <div class="form-footer"><a class="btn btn-light" href="{{ route('class-groups.index') }}">Cancel</a><button class="btn btn-primary" type="submit">{{ $classGroup->exists ? 'Save changes' : 'Create class group' }}</button></div>
 </form>
-@if($classGroup->exists && $classGroup->teacher_id)
+@if($classGroup->exists && $classGroup->teacher_id && $classGroup->program !== 'Khmer')
 <dialog id="teacher-swap-dialog" aria-labelledby="teacher-swap-heading" style="width:min(640px,calc(100vw - 32px));max-height:85vh;overflow:auto;padding:0;border:1px solid var(--border-color);border-radius:24px;background:var(--surface);color:var(--text-primary)">
 <form class="p-4" method="post" action="{{ route('class-groups.swap-teacher', $classGroup) }}">
     @csrf
@@ -117,6 +125,9 @@
     <div class="d-flex justify-content-end gap-2"><button class="btn btn-light" type="button" data-close-teacher-swap>Cancel</button><button class="btn btn-primary" type="submit"><i class="bi bi-arrow-left-right me-2" aria-hidden="true"></i>Swap teachers</button></div>
 </form>
 </dialog>
+@endif
+@if($classGroup->exists && $classGroup->program === 'Khmer')
+@include('school.class-groups._subject-swap')
 @endif
 @endsection
 

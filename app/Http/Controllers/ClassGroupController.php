@@ -151,6 +151,7 @@ class ClassGroupController extends Controller
 
         return view('school.class-groups.form', [
             'classGroup' => $classGroup,
+            'subjectSwaps' => $classGroup->program === 'Khmer' ? app(\App\Services\KhmerSubjectSwapService::class)->formData($classGroup) : [],
             'swapClasses' => ClassGroup::where('program', $classGroup->program)->whereKeyNot($classGroup->id)
                 ->whereNotNull('teacher_id')->with(['teacher', 'bookings.classroom', 'schoolClasses.schedules.classroom'])
                 ->orderBy('name')->get(),
@@ -195,6 +196,18 @@ class ClassGroupController extends Controller
 
         return redirect()->route('class-groups.edit', $classGroup)
             ->with('success', "Class teachers were swapped between {$classGroup->display_name} and {$target->display_name}.");
+    }
+
+    public function swapSubjectTeacher(Request $request, ClassGroup $classGroup): RedirectResponse
+    {
+        $data = $request->validate([
+            'source_subject_id' => 'required|integer', 'target_subject_id' => 'required|integer',
+            'source_teacher_id' => 'required|integer', 'target_teacher_id' => 'required|integer',
+        ]);
+        app(\App\Services\KhmerSubjectSwapService::class)->swap($classGroup,
+            (int) $data['source_subject_id'], (int) $data['target_subject_id'],
+            (int) $data['source_teacher_id'], (int) $data['target_teacher_id']);
+        return redirect()->route('class-groups.edit', $classGroup)->with('success', 'Subject teachers were swapped.');
     }
 
     public function destroy(ClassGroup $classGroup): RedirectResponse
