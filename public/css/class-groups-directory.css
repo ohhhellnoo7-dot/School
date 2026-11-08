@@ -1,4 +1,10 @@
 /* Class directory: all surfaces and text inherit the selected Scholar palette. */
+.program-flag { display:inline-block; width:36px; height:24px; object-fit:contain; border-radius:4px; box-shadow:0 0 0 1px #00000018; flex-shrink:0; vertical-align:middle; }
+.class-groups-workspace .class-summary-card .summary-flag { display:grid; place-items:center; width:54px; flex-basis:54px; height:48px; background:var(--surface); border:1px solid var(--border-color); box-shadow:0 3px 10px var(--shadow-color); border-radius:14px; }
+.summary-flag .program-flag { width:40px; height:27px; }
+.program-selector .program-flag { width:25px; height:17px; border-radius:3px; }
+.program-flag-fallback { display:inline-grid; place-items:center; color:var(--primary); }
+.class-groups-workspace .program-selector { display:flex; flex-wrap:wrap; max-width:100%; }
 .class-groups-workspace {
     --directory-ink: var(--text-primary);
     color: var(--directory-ink);

@@ -29,7 +29,7 @@
             };
         @endphp
         <a class="class-summary-card {{ $tone }}" href="{{ route('class-groups.index', ['program' => $program]) }}">
-            <span class="summary-icon"><i class="bi bi-{{ $icon }}" aria-hidden="true"></i></span>
+            <span class="summary-icon summary-flag"><x-program-flag :program="$program" /></span>
             <span class="summary-copy"><small>{{ $program }} classes</small><strong>{{ $programCounts[$program] ?? 0 }}</strong></span>
             <svg class="class-summary-wave" viewBox="0 0 240 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 34 Q55 0 115 25 T240 14 V40 H0Z" fill="currentColor"/></svg><i class="bi bi-people summary-corner" aria-hidden="true"></i>
         </a>
@@ -47,7 +47,7 @@
 <nav class="program-selector" aria-label="Filter class groups by academic program">
     <a class="{{ request('program') ? '' : 'active' }}" href="{{ route('class-groups.index') }}"><i class="bi bi-grid" aria-hidden="true"></i>{{ __('All programs') }}</a>
     @foreach(\App\Models\Program::names() as $program)
-        <a class="{{ request('program') === $program ? 'active' : '' }}" href="{{ route('class-groups.index', ['program' => $program]) }}"><i class="bi bi-{{ match ($program) { 'Khmer' => 'book', 'English' => 'alphabet-uppercase', 'Chinese' => 'chat-square-text', 'Japan' => 'globe-asia-australia', default => 'collection' } }}" aria-hidden="true"></i>{{ $program }}</a>
+        <a class="{{ request('program') === $program ? 'active' : '' }}" href="{{ route('class-groups.index', ['program' => $program]) }}" @if(request('program') === $program) aria-current="page" @endif><x-program-flag :program="$program" />{{ $program }}</a>
     @endforeach
 </nav>
 
