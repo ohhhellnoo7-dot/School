@@ -32,18 +32,18 @@
             </div>
         </section>
         <section class="panel teacher-insight-card" aria-labelledby="teacher-recent-title">
-            <header><h2 id="teacher-recent-title"><i class="bi bi-clock-history" aria-hidden="true"></i>Recent attendance</h2><a href="#teacher-attendance-records">View teachers <i class="bi bi-arrow-right" aria-hidden="true"></i></a></header>
+            <header><h2 id="teacher-recent-title"><i class="bi bi-clock-history" aria-hidden="true"></i>Recent attendance</h2><a href="{{ $attendanceActionUrl ?? '#teacher-attendance-records' }}">View teachers <i class="bi bi-arrow-right" aria-hidden="true"></i></a></header>
             <p class="teacher-card-caption">Latest updates for the selected date</p>
             <div class="teacher-recent-list">
                 @forelse($insights['recent'] as $record)
                 <div class="teacher-recent-item">@include('school.partials.avatar', ['person' => $record->teacher])<div><strong>{{ $record->teacher->name }}</strong><small>{{ $record->program === 'Japan' ? 'Japanese' : ($record->program ?: 'Unassigned') }}</small></div><span class="teacher-attendance-badge is-{{ $record->status }}">{{ ucfirst($record->status) }}</span><time datetime="{{ $record->updated_at->toIso8601String() }}">{{ $record->updated_at->timezone(config('classrooms.timezone', 'Asia/Phnom_Penh'))->format('H:i') }}</time></div>
-                @empty<div class="teacher-attendance-empty"><i class="bi bi-calendar2-check" aria-hidden="true"></i><strong>A fresh start for this day</strong><p>Mark a teacher's attendance to see updates here.</p><a href="#teacher-attendance-records">Mark attendance <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>@endforelse
+                @empty<div class="teacher-attendance-empty"><i class="bi bi-calendar2-check" aria-hidden="true"></i><strong>A fresh start for this day</strong><p>Mark a teacher's attendance to see updates here.</p><a href="{{ $attendanceActionUrl ?? '#teacher-attendance-records' }}">Mark attendance <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>@endforelse
             </div>
         </section>
         <section class="panel teacher-insight-card" aria-labelledby="teacher-attendance-actions-title">
             <header><h2 id="teacher-attendance-actions-title"><i class="bi bi-lightning-charge" aria-hidden="true"></i>Quick actions</h2></header>
             <div class="teacher-attendance-actions">
-                <a href="#teacher-attendance-records"><i class="bi bi-calendar2-check" aria-hidden="true"></i><span>Mark<br>attendance</span></a>
+                <a href="{{ $attendanceActionUrl ?? '#teacher-attendance-records' }}"><i class="bi bi-calendar2-check" aria-hidden="true"></i><span>Mark<br>attendance</span></a>
                 <a href="{{ route('teacher-management.create') }}"><i class="bi bi-person-plus" aria-hidden="true"></i><span>Add<br>teacher</span></a>
                 <a href="{{ route('teacher-management.reports') }}"><i class="bi bi-bar-chart-line" aria-hidden="true"></i><span>Teacher<br>reports</span></a>
                 <a href="{{ route('teacher-attendance.index', ['date' => $date]) }}"><i class="bi bi-journal-check" aria-hidden="true"></i><span>Attendance<br>records</span></a>

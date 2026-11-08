@@ -15,12 +15,56 @@ use App\Services\ClassroomBookingService;
 use Database\Seeders\ClassroomManagementSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class ClassroomManagementTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_teacher_absence_is_shown_as_a_free_period_without_releasing_the_room(): void
+    {
+        $admin = $this->user('administrator');
+        $this->actingAs($admin);
+        $room = $this->classroom('ATTENDANCE-ROOM', 30);
+        $teacher = $this->user('teacher', ['program' => 'Khmer', 'name' => 'Attendance Teacher']);
+        $group = $this->classGroup('Khmer', 8, 'A');
+        $session = $this->classSession($group, 'Morning', '07:00', '11:00');
+        ClassroomBooking::create(collect($this->bookingData($group, $session, $room, $teacher, 'Monday', '07:00', '11:00'))->except('session')->all());
+        $class = SchoolClass::create(['name' => 'Grade 8', 'section' => 'A', 'program' => 'Khmer', 'session' => 'Morning', 'class_group_id' => $group->id]);
+        $subject = \App\Models\Subject::create(['school_class_id' => $class->id, 'name' => 'History', 'code' => 'ATTENDANCE-HISTORY']);
+        foreach (['Monday', 'Tuesday'] as $day) {
+            DB::table('schedules')->insert(['school_class_id' => $class->id, 'subject_id' => $subject->id, 'teacher_id' => $teacher->id,
+                'classroom_id' => $room->id, 'room' => $room->room_number, 'day' => $day, 'starts_at' => '07:00', 'ends_at' => '08:00',
+                'entry_type' => 'academic', 'academic_year' => '2026-2027']);
+        }
+        $service = app(ClassroomAvailabilityService::class);
+        $attendance = new \App\Models\TeacherAttendance(['teacher_id' => $teacher->id, 'date' => '2026-11-02', 'program' => 'Khmer', 'recorded_by' => $admin->id]);
+        foreach (['absent', 'excused'] as $status) {
+            $attendance->fill(['status' => $status])->save();
+            $entry = $service->forMoment('2026-11-02 07:30')->firstWhere('classroom.id', $room->id);
+            $this->assertSame('Free Period', $entry['activity']);
+            $this->assertSame('busy', $entry['status']);
+            $this->assertSame('Occupied', $entry['occupancy']);
+            $this->assertSame($status, $entry['currentTeacherAttendance']);
+            $this->assertSame($status, $entry['cardProgramDetails']['Khmer']['teacher_assignments']->first()['attendance_status']);
+            $html = $this->getJson(route('classrooms.data', ['date' => '2026-11-02', 'time' => '07:30']))->assertOk()->json('html');
+            $this->assertStringContainsString('data-lesson-state="free"', $html);
+            $this->assertStringContainsString('room-teacher-attendance is-'.$status, $html);
+            $this->assertStringContainsString($teacher->name, $html);
+            $this->get(route('classrooms.show', ['classroom' => $room->id, 'date' => '2026-11-02', 'time' => '07:30']))->assertOk()->assertSee('FREE PERIOD')->assertSee(ucfirst($status));
+            $tomorrow = $service->forMoment('2026-11-03 07:30')->firstWhere('classroom.id', $room->id);
+            $this->assertNull($tomorrow['currentTeacherAttendance']);
+            $this->assertSame('History', $tomorrow['activity']);
+        }
+        \App\Models\TeacherAttendance::where('teacher_id', $teacher->id)->update(['status' => 'present']);
+        $entry = $service->forMoment('2026-11-02 07:30')->firstWhere('classroom.id', $room->id);
+        $this->assertSame('History', $entry['activity']);
+        $this->assertNull($entry['currentTeacherAttendance']);
+        $this->assertDatabaseCount('schedules', 2);
+        $this->assertDatabaseCount('classroom_bookings', 1);
+    }
 
     public function test_program_filter_keeps_weekday_rooms_visible_on_saturday(): void
     {

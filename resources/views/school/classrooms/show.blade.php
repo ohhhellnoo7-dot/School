@@ -42,7 +42,7 @@
                 <ul class="room-teacher-assignments">
                     @forelse($details['teacher_assignments'] as $assignment)
                         <li>
-                            <strong>{{ $assignment['name'] }}</strong>
+                            <strong>@include('school.classrooms._teacher-attendance-badge', ['teacherAttendanceStatus' => $assignment['attendance_status'] ?? null]) {{ $assignment['name'] }}</strong>
                             <span>{{ $assignment['subjects']->join(', ') ?: 'No subject assigned' }}</span>
                             @if($assignment['supervisor'])<small>Booking supervisor</small>@endif
                         </li>

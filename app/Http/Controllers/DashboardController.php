@@ -23,19 +23,20 @@ class DashboardController extends Controller
             $students = Student::pluck('id')->shuffle()->values();
             $total = $students->count();
             $present = (int) round($total * 0.7);
-            $late = min($total - $present, (int) round($total * 0.2));
+            $late = min($total - $present, (int) round($total * 0.15));
+            $absent = min($total - $present - $late, (int) round($total * 0.1));
             $date = today()->toDateString();
             $timestamp = now();
             $students->map(fn ($id, $index) => [
                 'student_id' => $id, 'date' => $date,
-                'status' => $index < $present ? 'present' : ($index < $present + $late ? 'late' : 'absent'),
+                'status' => $index < $present ? 'present' : ($index < $present + $late ? 'late' : ($index < $present + $late + $absent ? 'absent' : 'excused')),
                 'created_at' => $timestamp, 'updated_at' => $timestamp,
             ])->chunk(100)->each(fn ($rows) => Attendance::upsert($rows->all(), ['student_id', 'date'], ['status', 'updated_at']));
 
-            return ['present' => $present, 'late' => $late, 'absent' => $total - $present - $late];
+            return ['present' => $present, 'late' => $late, 'absent' => $absent, 'excused' => $total - $present - $late - $absent];
         });
 
-        return redirect()->route('dashboard')->with('success', "Random attendance saved for today: {$counts['present']} present, {$counts['late']} late, {$counts['absent']} absent.");
+        return redirect()->route('dashboard')->with('success', "Random attendance saved for today: {$counts['present']} present, {$counts['late']} late, {$counts['absent']} absent, {$counts['excused']} excused.");
     }
 
     public function markAllPresent(Request $request)
@@ -90,10 +91,11 @@ class DashboardController extends Controller
         $canViewFees = in_array($user->role, ['administrator', 'parent'], true);
         $finance = $canViewFees ? (app(\App\Services\SchoolFinanceService::class)->summary((clone $fees)->with(['adjustments', 'payments'])->get())['USD'] ?? []) : [];
         $months = collect(range(5, 0))->map(fn ($i) => now()->startOfMonth()->subMonths($i));
-        $teacherAttendanceCounts = $user->role === 'administrator' ? \App\Models\TeacherAttendance::whereDate('date', $reportDate)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status') : collect();
-        $teacherAttendanceTotal = $user->role === 'administrator' ? User::where('role', 'teacher')
-            ->where(fn ($query) => $query->where('status', 'active')->orWhereNull('status')
-                ->orWhereIn('id', \App\Models\TeacherAttendance::whereDate('date', $reportDate)->select('teacher_id')))->count() : 0;
+        $dashboardAttendance = $user->role === 'administrator'
+            ? app(TeacherAttendanceController::class)->data($request->duplicate(['attendance_date' => $reportDate->toDateString()]), true)
+            : null;
+        $teacherAttendanceCounts = $dashboardAttendance['counts'] ?? collect();
+        $teacherAttendanceTotal = $dashboardAttendance['total'] ?? 0;
         $charts = [
             'labels' => $months->map(fn ($date) => $date->format('M'))->values(),
             'enrollment' => $months->map(fn ($date) => (clone $students)->whereBetween('enrollment_date', [$date->toDateString(), $date->copy()->endOfMonth()->toDateString()])->count())->values(),
@@ -155,6 +157,7 @@ class DashboardController extends Controller
             'announcements' => Announcement::whereIn('audience', ['all', $user->role])->whereDate('published_at', '<=', today())->latest('published_at')->limit(4)->get(),
             'teacherAttendanceCounts' => $teacherAttendanceCounts,
             'teacherAttendanceTotal' => $teacherAttendanceTotal,
+            'dashboardAttendance' => $dashboardAttendance,
             'charts' => $charts,
         ];
     }

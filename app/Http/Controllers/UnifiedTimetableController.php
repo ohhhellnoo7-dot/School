@@ -73,12 +73,17 @@ class UnifiedTimetableController extends Controller
         }
         $lessons = $query->orderBy('starts_at')->get();
         $periods = [['07:00','08:00'], ['08:00','09:00'], ['09:00','10:00'], ['10:00','11:00'], ['13:00','14:00'], ['14:00','15:00'], ['15:00','16:00'], ['16:00','17:00'], ['17:30','18:30'], ['18:30','19:30']];
+        $scheduleProgram = $view === 'teachers'
+            ? ($teachers->firstWhere('id', $selected)?->program ?? $teacherProgram)
+            : $timetableProgram;
+        if ($scheduleProgram) {
+            $configuredSessions = \App\Support\ProgramSessions::for($scheduleProgram);
+            $periods = array_values(array_filter($periods, function ($period) use ($configuredSessions) {
+                $session = $period[0] < '12:00' ? 'Morning' : ($period[0] < '17:00' ? 'Afternoon' : 'Evening');
+                return in_array($session, $configuredSessions, true);
+            }));
+        }
         if ($view === 'teachers') {
-            $periods = match ($teachers->firstWhere('id', $selected)?->program ?? $teacherProgram) {
-                'Khmer' => array_slice($periods, 0, 8),
-                'Chinese' => array_slice($periods, 8),
-                default => $periods,
-            };
             if (($selectedTeacher = $teachers->firstWhere('id', $selected))?->program === 'English') {
                 $workingPeriods = app(TeacherManagementService::class)->periods($selectedTeacher);
                 if ($workingPeriods->isNotEmpty()) {

@@ -10,6 +10,28 @@ class TeacherTimetableProgramFilterTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_schedule_rows_follow_configured_sessions_for_every_program_and_live_refresh(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'administrator']));
+        foreach (['Japan' => ['Evening'], 'Custom' => ['Afternoon'], 'Khmer' => ['Morning', 'Afternoon', 'Evening']] as $program => $sessions) {
+            \App\Models\Program::updateOrCreate(['name' => $program], ['sessions' => $sessions]);
+            $teacher = User::factory()->create(['role' => 'teacher', 'program' => $program]);
+            foreach ([['view' => 'teachers', 'program' => $program], ['view' => 'teachers', 'teacher' => $teacher->id], ['view' => 'classrooms', 'program' => $program]] as $filters) {
+                $page = $this->get(route('timetables.index', $filters))->assertOk();
+                $html = $this->getJson(route('timetables.data', $filters))->assertOk()->json('html');
+                foreach (['Morning', 'Afternoon', 'Evening'] as $session) {
+                    if (in_array($session, $sessions, true)) {
+                        $page->assertSee($session.' schedule');
+                        $this->assertStringContainsString($session.' schedule', $html);
+                    } else {
+                        $page->assertDontSee($session.' schedule');
+                        $this->assertStringNotContainsString($session.' schedule', $html);
+                    }
+                }
+            }
+        }
+    }
+
     public function test_program_menu_filters_teachers_and_preserves_the_program_and_academic_year(): void
     {
         $admin = User::factory()->create(['role'=>'administrator']);

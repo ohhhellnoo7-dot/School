@@ -42,6 +42,7 @@
             $session = $displayBooking?->classSession;
             $lesson = data_get($entry, 'currentLesson');
             $lessonState = $status === 'out_of_service' ? 'unavailable' : ($lesson ? ($lesson->isRelaxation() ? 'relaxation' : 'studying') : ($current && data_get($entry, 'activity') === 'Free Period' ? 'free' : 'none'));
+            if ($status !== 'out_of_service' && data_get($entry, 'activity') === 'Free Period') $lessonState = 'free';
             if ($status !== 'out_of_service' && data_get($entry, 'activity') === 'Incomplete timetable') $lessonState = 'incomplete';
             $icons = ['available' => 'check-circle-fill', 'busy' => 'record-circle-fill', 'upcoming' => 'clock-fill', 'out_of_service' => 'tools'];
             $programDetails = collect(data_get($entry, 'cardProgramDetails', data_get($entry, 'programDetails', [])));
@@ -62,6 +63,7 @@
                 <div data-room-program-overview="{{ $activeOverviewProgram }}" @if($selectedProgram !== $activeOverviewProgram) hidden @endif>
                 @if(in_array($lessonState, ['studying', 'free', 'incomplete'], true))
                     <span class="lesson-state lesson-state-{{ $lessonState }}">{{ match ($lessonState) { 'studying' => 'Studying now', 'incomplete' => 'Incomplete timetable', default => 'Free period' } }}</span>
+                    @if($lessonState === 'free' && data_get($entry, 'currentTeacherAttendance'))<p class="small text-secondary mb-1">Teacher {{ data_get($entry, 'currentTeacherAttendance') }} for the selected date.</p>@endif
                     @if($lessonState === 'incomplete')<p class="text-warning-emphasis small">An academic lesson is missing. This is not a planned student free period.</p>@endif
                 @endif
                 @if($status === 'out_of_service')
@@ -88,6 +90,9 @@
                         <div class="booking-context"><small>Program classes</small><strong>{{ collect($previewDetails['classes'])->join(', ') ?: $previewProgram }}</strong><span class="program-badge program-{{ strtolower($previewProgram) }}">{{ $previewProgram }}</span></div>
                         <dl class="room-facts"><div><dt>@include('school.classrooms._session-picker', ['pickerProgram' => $previewProgram, 'pickerDetails' => $previewDetails])</dt><dd>{{ collect($previewDetails['session_times'])->join(', ') ?: collect($previewDetails['sessions'])->join(', ') }}</dd></div></dl>
                         @php($previewLesson = $previewDetails['display_lesson'])
+                        @if($previewLesson && ($previewDetails['display_teacher_attendance'] ?? null))
+                            <p class="small mb-1"><span class="lesson-state lesson-state-free">Free period</span> &middot; Teacher {{ $previewDetails['display_teacher_attendance'] }}</p>
+                        @endif
                         @if($previewLesson?->subject?->name)
                             <p class="small mb-0"><strong>{{ __('Subject') }}:</strong> {{ $subjectLabel($previewLesson->subject->name) }}<br><span>{{ $previewLesson->day }} · {{ substr($previewLesson->starts_at, 0, 5) }}–{{ substr($previewLesson->ends_at, 0, 5) }}</span></p>
                         @endif
@@ -95,17 +100,17 @@
                     @endif
                 @endforeach
                 @foreach($programDetails as $teacherProgram => $teacherDetails)
-                    @php($showCurrentTeacher = $teacherProgram === $activeProgram && $teacherDetails['sessions']->contains($activeSession) && $lessonState === 'studying' && $lesson?->teacher)
+                    @php($showCurrentTeacher = $teacherProgram === $activeProgram && $teacherDetails['sessions']->contains($activeSession) && in_array($lessonState, ['studying', 'free'], true) && $lesson?->teacher && ! $lesson->isRelaxation())
                     <div class="room-current-teacher" @if($showCurrentTeacher) data-current-teacher @endif data-room-teacher-panel="{{ $teacherProgram }}" @if($teacherProgram !== $selectedProgram) hidden @endif>
                         <i class="bi bi-person-badge" aria-hidden="true"></i>
                         <div>
                             @if($showCurrentTeacher)
-                                <small>{{ substr((string) $lesson->starts_at, 0, 5) }}&ndash;{{ substr((string) $lesson->ends_at, 0, 5) }} · {{ __('Teacher') }}</small><strong>{{ $lesson->teacher->name }}</strong>
+                                <small>{{ substr((string) $lesson->starts_at, 0, 5) }}&ndash;{{ substr((string) $lesson->ends_at, 0, 5) }} · {{ __('Teacher') }}</small><strong>@include('school.classrooms._teacher-attendance-badge', ['teacherAttendanceStatus' => data_get($entry, 'currentTeacherAttendance')]) {{ $lesson->teacher->name }}</strong>
                             @else
                                 <small>{{ $teacherDetails['sessions']->join(', ') }} · Teachers and subjects</small>
                                 <ul class="room-card-teachers" data-teacher-rotation>
                                     @forelse($teacherDetails['teacher_assignments'] as $assignment)
-                                        <li data-teacher-slide @if(!$loop->first) hidden @endif><small>{{ $assignment['subjects']->map($subjectLabel)->unique()->join(', ') ?: 'Booking supervisor' }}</small><strong>{{ $assignment['name'] }}</strong></li>
+                                        <li data-teacher-slide @if(!$loop->first) hidden @endif><small>{{ $assignment['subjects']->map($subjectLabel)->unique()->join(', ') ?: 'Booking supervisor' }}</small><strong>@include('school.classrooms._teacher-attendance-badge', ['teacherAttendanceStatus' => $assignment['attendance_status'] ?? null]) {{ $assignment['name'] }}</strong></li>
                                     @empty
                                         <li>{{ __('Teacher unassigned') }}</li>
                                     @endforelse

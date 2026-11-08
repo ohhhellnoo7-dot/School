@@ -836,3 +836,6 @@ a.class-summary-card:hover {
     outline: 2px solid var(--primary, #6c43f3);
     outline-offset: 2px;
 }
+
+.room-teacher-attendance{display:inline-flex;align-items:center;vertical-align:middle;padding:3px 7px;margin-right:4px;border-radius:7px;font-size:10px;font-weight:700;line-height:1.4;white-space:nowrap;background:var(--danger-soft,#fce9ed);color:var(--danger,#c73050)}
+.room-teacher-attendance.is-excused{background:var(--info-soft,#e6f1ff);color:var(--info,#1765d1)}

@@ -23,14 +23,12 @@
         write('building', building.value === '__new' ? (form.elements.new_building_name.value.trim() || 'New building') : building.selectedOptions[0]?.textContent || 'Choose a building');
         write('capacity', `${form.elements.capacity?.value || '0'} students`);
         write('status', form.elements.status?.value === 'out_of_service' ? 'Out of service' : 'Active');
-        const planning = root.querySelector('[data-plan-enabled]').checked;
-        write('plan', planning ? `${form.elements.program.value} / ${form.elements.session.value}` : 'Room only');
+        write('plan', `${form.elements.program.value} / ${form.elements.session.value}`);
     };
     form.addEventListener('input', updateSummary);
     form.addEventListener('change', updateSummary);
 
     const config = JSON.parse(root.querySelector('[data-planner-config]').textContent);
-    const enabled = root.querySelector('[data-plan-enabled]');
     const fields = root.querySelector('[data-plan-fields]');
     const program = form.elements.program;
     const session = form.elements.session;
@@ -42,8 +40,7 @@
     const syncDays = () => {
         const days = availableDays();
         const wanted = day.value;
-        day.replaceChildren(...days.map(value => new Option(value, value)));
-        if (days.includes(wanted)) day.value = wanted;
+        day.value = days.includes(wanted) ? wanted : days[0];
         root.querySelectorAll('[data-weekday]').forEach(button => { button.hidden = !days.includes(button.dataset.weekday); });
         root.querySelector('[data-autofill-week]').textContent = classDays.value === 'weekend' ? 'Auto-fill Saturday to Sunday' : 'Auto-fill Monday to Friday';
     };
@@ -169,8 +166,8 @@
         root.querySelector('[data-class-teacher-field]').hidden = !japanese;
         classTeacher.disabled = !japanese;
         classTeacher.required = japanese;
-        if (!cls || !enabled.checked) {
-            message.textContent = cohort.options.length === 1 ? 'No student classes exist for this program and session. Create a class and its curriculum first, or save the room without lessons.' : 'Choose a student class to see its hourly study periods.';
+        if (!cls) {
+            message.textContent = cohort.options.length === 1 ? 'No student classes exist for this program and session. Create a class and its curriculum first.' : 'Choose a student class to see its hourly study periods.';
             return;
         }
         message.textContent = cls.subjects.length ? `${cls.label}: ${cls.hours[0]}-${cls.hours[1]} on ${day.value}.` : 'This class has no subjects yet. Add its curriculum before assigning lessons.';
@@ -244,7 +241,6 @@
         session.replaceChildren(...config.sessions[program.value].map(value => option(value, value)));
         if (config.sessions[program.value].includes(wanted)) session.value = wanted;
     };
-    enabled.addEventListener('change', () => { fields.disabled = !enabled.checked; fields.hidden = !enabled.checked; render(); });
     const resetChoices = () => { weeklyChoices = {}; choices = weeklyChoices[displayedDay] = {}; };
     const syncClassTeacher = () => {
         classTeacher.value = String(selectedClass()?.teacher_id || '');
@@ -461,7 +457,7 @@
     let submitting = false;
     let readyToSubmit = false;
     form.addEventListener('submit', async event => {
-        if (!enabled.checked || readyToSubmit) return;
+        if (readyToSubmit) return;
         event.preventDefault();
         if (submitting) return;
         remember();

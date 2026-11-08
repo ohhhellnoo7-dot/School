@@ -19,15 +19,15 @@ class BulkAttendanceTest extends TestCase
         $admin->save();
         $students = Student::factory()->count(20)->create();
         Attendance::create(['student_id' => $students[0]->id, 'date' => today()->subDay(), 'status' => 'excused']);
-        $this->actingAs($admin);
+        $this->actingAs($admin)->get('/dashboard')->assertOk()->assertSee('5% excused')->assertDontSee('attendance-status-item');
         foreach (range(1, 2) as $attempt) {
             $this->post(route('dashboard.attendance.random'))->assertRedirect(route('dashboard'))->assertSessionHas('success');
             $this->assertSame(20, Attendance::whereDate('date', today())->count());
             $this->getJson('/dashboard/data')->assertOk()
                 ->assertJsonPath('summary.presentCount', 14)
-                ->assertJsonPath('summary.lateCount', 4)
+                ->assertJsonPath('summary.lateCount', 3)
                 ->assertJsonPath('summary.absentCount', 2)
-                ->assertJsonPath('charts.attendance', [14, 2, 4, 0]);
+                ->assertJsonPath('charts.attendance', [14, 2, 3, 1]);
         }
         $this->assertSame(1, Attendance::whereDate('date', today()->subDay())->where('status', 'excused')->count());
         $this->actingAs(User::factory()->create(['role' => 'teacher']))

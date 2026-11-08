@@ -1,16 +1,17 @@
 <section class="classroom-setup room-editor-card" data-classroom-setup data-classroom-id="{{ $classroom->id }}" data-endpoint="{{ route('classrooms.setup-options') }}">
     @php($plannerConfig = ['classes' => $plannerClasses, 'sessions' => $programSessions, 'japaneseTeachers' => $japaneseTeachers, 'old' => old()])
     <script type="application/json" data-planner-config>@json($plannerConfig)</script>
-    <div class="room-section-heading"><span class="room-step">02</span><div><h2>Program & lesson setup</h2><p>Plan a session now, or save your room and do this later.</p></div><span class="room-section-tag">Optional</span></div>
+    <div class="room-section-heading"><span class="room-step">02</span><div><h2>Program & lesson setup</h2><p>Choose a program and class, then plan lessons using the day buttons below.</p></div></div>
     <div class="room-fields">
-        <label class="room-plan-toggle"><span class="room-plan-icon"><i class="bi bi-calendar2-week" aria-hidden="true"></i></span><span><strong>Add lessons to this classroom</strong><small>Choose a program, subjects, and available teachers.</small></span><input class="form-check-input" role="switch" type="checkbox" name="plan_enabled" value="1" data-plan-enabled @checked(old('plan_enabled'))></label>
-        <fieldset data-plan-fields @disabled(!old('plan_enabled')) @if(!old('plan_enabled')) hidden @endif>
+        <input type="hidden" name="plan_enabled" value="1">
+        <input type="hidden" name="day" id="setup-day" value="{{ old('day', old('class_days') === 'weekend' ? 'Saturday' : 'Monday') }}">
+        <fieldset data-plan-fields>
             <div class="room-planner-context form-section-grid">
                 <div><label class="form-label" for="setup-program">Program</label><select class="form-select" name="program" id="setup-program" required>@foreach(array_keys($programSessions) as $program)<option value="{{ $program }}" @selected(old('program', 'Khmer') === $program)>{{ $program }}</option>@endforeach</select><button type="button" class="btn btn-link p-0 small" data-open-create-program>+ Create new program</button> <button type="button" class="btn btn-link p-0 small ms-3" data-open-edit-program>Edit program</button></div>
                 <div><label class="form-label" for="setup-session">Session</label><select class="form-select" name="session" id="setup-session" required></select></div>
                 <div><label class="form-label" for="setup-class">Student class</label><select class="form-select" name="school_class_id" id="setup-class" required></select><small class="text-muted">Create the class and curriculum first. Students can enroll later.</small><br><button type="button" class="btn btn-link p-0 small" data-open-create-class>+ Create student class</button></div>
                 <div><label class="form-label" for="setup-class-days">Class days</label><select class="form-select" id="setup-class-days" name="class_days"><option value="weekday" @selected(old('class_days', 'weekday') === 'weekday')>Weekday (Monday to Friday)</option><option value="weekend" @selected(old('class_days') === 'weekend')>Weekend (Saturday to Sunday)</option></select></div>
-                <div><label class="form-label" for="setup-day">Day</label><select class="form-select" name="day" id="setup-day" required>@foreach(['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'] as $day)<option value="{{ $day }}" @selected(old('day', 'Monday') === $day)>{{ $day }}</option>@endforeach</select></div>
+
                 <div><label class="form-label" for="setup-year">Academic year</label><input class="form-control" name="academic_year" id="setup-year" value="{{ old('academic_year', now()->year.'-'.(now()->year + 1)) }}" pattern="[0-9]{4}-[0-9]{4}" required></div>
                 <div><label class="form-label" for="room-change-reason">Room change reason <small class="text-muted">(if needed)</small></label><input class="form-control" id="room-change-reason" name="room_change_reason" maxlength="500" value="{{ old('room_change_reason') }}" placeholder="Reason for using a different reserved room"></div>
             </div>

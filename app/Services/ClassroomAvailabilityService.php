@@ -45,6 +45,8 @@ class ClassroomAvailabilityService
         $selected = $moment instanceof CarbonInterface
             ? CarbonImmutable::instance($moment)->setTimezone($timezone)
             : CarbonImmutable::parse($moment, $timezone);
+        $teacherAttendance = \App\Models\TeacherAttendance::whereDate('date', $selected->toDateString())
+            ->whereIn('status', ['absent', 'excused'])->pluck('status', 'teacher_id');
         $minute = ($selected->hour * 60) + $selected->minute;
         $day = $selected->englishDayOfWeek;
         $academicYear = $filters['academic_year'] ?? $selected->year.'-'.($selected->year+1);
@@ -72,11 +74,11 @@ class ClassroomAvailabilityService
             ->get();
 
         return $rooms
-            ->map(function (Classroom $classroom) use ($minute, $day, $lessons, $weeklyBookings, $programsByRoom, $cohorts, $lessonsByRoom, $visibleStudyClasses, $scopeProgram, $scopeSession, $filters) {
+            ->map(function (Classroom $classroom) use ($minute, $day, $lessons, $weeklyBookings, $programsByRoom, $cohorts, $lessonsByRoom, $visibleStudyClasses, $scopeProgram, $scopeSession, $filters, $teacherAttendance) {
                 $programs = ($programsByRoom->get($classroom->id) ?? collect())
                     ->merge(($weeklyBookings->get($classroom->id) ?? collect())->pluck('classGroup.program'))
                     ->filter()->unique()->sort()->values();
-                $buildProgramDetails = function ($program, $detailSession = null, $dailyTeachers = false) use ($classroom, $weeklyBookings, $lessonsByRoom, $cohorts, $visibleStudyClasses, $day, $minute) {
+                $buildProgramDetails = function ($program, $detailSession = null, $dailyTeachers = false) use ($classroom, $weeklyBookings, $lessonsByRoom, $cohorts, $visibleStudyClasses, $day, $minute, $teacherAttendance) {
                     $programLessons = ($lessonsByRoom->get($classroom->id) ?? collect())->filter(fn ($lesson) => $lesson->schoolClass?->program === $program && (! $detailSession || $lesson->schoolClass?->session === $detailSession));
                     $programBookings = ($weeklyBookings->get($classroom->id) ?? collect())->filter(fn ($booking) => $booking->classGroup?->program === $program && (! $detailSession || $booking->classSession?->session === $detailSession));
                     if ($visibleStudyClasses !== null) {
@@ -96,12 +98,14 @@ class ClassroomAvailabilityService
                         ->merge($teacherBookings->pluck('teacher'))->filter()->unique('id')
                         ->map(fn ($teacher) => [
                             'name' => $teacher->name,
+                            'attendance_status' => $teacherAttendance->get($teacher->id),
                             'subjects' => $teacherLessons->where('teacher_id', $teacher->id)
                                 ->pluck('subject.name')->filter()->unique()->values(),
                             'supervisor' => $teacherBookings->contains('teacher_id', $teacher->id),
                         ])->values();
                     return [
                         'display_lesson' => $displayLesson,
+                        'display_teacher_attendance' => $teacherAttendance->get($displayLesson?->teacher_id),
                         'students' => $classes->sum('enrolled_count'),
                         'classes' => $classes->pluck('label')->unique()->values(),
                         'class_ids' => $classes->pluck('id')->values(),
@@ -147,6 +151,12 @@ class ClassroomAvailabilityService
                     if ($activity['nextLesson'] && ! $visibleLesson($activity['nextLesson'])) $activity['nextLesson'] = null;
                     if (! $visibleBooking($current)) { $current = null; $activity['activity'] = 'Reserved for another cohort'; }
                     if (! $visibleBooking($next)) $next = null;
+                }
+                $activity['currentTeacherAttendance'] = $teacherAttendance->get($activity['currentLesson']?->teacher_id);
+                $activity['nextTeacherAttendance'] = $teacherAttendance->get($activity['nextLesson']?->teacher_id);
+                if ($activity['currentLesson'] && ! $activity['currentLesson']->isRelaxation()
+                    && $activity['currentTeacherAttendance'] && ! $activity['lessonConflict']) {
+                    $activity['activity'] = 'Free Period';
                 }
                 // Room membership comes from the full weekly timetable, even on non-teaching days.
                 $assignedLessons = $lessonsByRoom->get($classroom->id) ?? collect();

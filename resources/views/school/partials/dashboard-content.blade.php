@@ -21,12 +21,7 @@
             <summary class="btn btn-primary"><i class="bi bi-check2-all me-2" aria-hidden="true"></i>Student attendance <i class="bi bi-chevron-down ms-2" aria-hidden="true"></i></summary>
             <div class="attendance-action-menu">
                 <div class="attendance-menu-heading"><strong>{{ __('Today\'s attendance') }}</strong><span>{{ $reportDate->format('M d, Y') }} &middot; {{ $studentCount }} students</span></div>
-                <div class="attendance-status-grid">
-                    @foreach([['Present', $presentCount, 'present', 'check-circle'], ['Absent', $absentCount, 'absent', 'x-circle'], ['Late', $lateCount, 'late', 'clock']] as [$statusLabel, $statusCount, $statusClass, $statusIcon])
-                        <div class="attendance-status-item attendance-status-{{ $statusClass }}"><i class="bi bi-{{ $statusIcon }}" aria-hidden="true"></i><strong>{{ $statusCount }}</strong><span>{{ $statusLabel }}</span></div>
-                    @endforeach
-                </div>
-                <p class="attendance-recorded">{{ $attendanceCount }} recorded &middot; {{ max(0, $studentCount - $attendanceCount) }} unmarked @if($charts['attendance'][3]) &middot; {{ $charts['attendance'][3] }} excused @endif</p>
+                <p class="attendance-recorded">{{ $attendanceCount }} recorded &middot; {{ max(0, $studentCount - $attendanceCount) }} unmarked</p>
                 <form method="post" action="{{ route('dashboard.attendance.all-present') }}">
                     @csrf
                     <button type="submit" class="btn btn-primary w-100"><i class="bi bi-check2-all me-2" aria-hidden="true"></i>Mark all present today</button>
@@ -35,7 +30,7 @@
                 <form method="post" action="{{ route('dashboard.attendance.random') }}" class="attendance-random-form">
                     @csrf
                     <button type="submit" class="btn attendance-random-button w-100"><i class="bi bi-shuffle me-2" aria-hidden="true"></i>Random attendance</button>
-                    <div class="attendance-ratio"><span>70% present</span><span>20% late</span><span>10% absent</span></div>
+                    <div class="attendance-ratio"><span>70% present</span><span>15% late</span><span>10% absent</span><span>5% excused</span></div>
                 </form>
                 <small class="attendance-action-note">Either action replaces today's statuses for all students. Random totals are rounded to whole students.</small>
             </div>
@@ -102,7 +97,9 @@
     </form>
 </section>
 @if(auth()->user()->role === 'administrator')
-@include('school.attendance._teacher-chart', [
+<div class="mb-4">
+@include('school.attendance._workspace', [
+    'insights' => $dashboardAttendance['insights'],
     'counts' => $teacherAttendanceCounts,
     'total' => $teacherAttendanceTotal,
     'date' => $reportDate->toDateString(),
@@ -112,6 +109,7 @@
     'attendanceActionUrl' => route('modules.index', ['module' => 'teachers', 'attendance_date' => $reportDate->toDateString()]).'#teacher-attendance-records',
     'attendanceScope' => 'All programs for the selected report date.',
 ])
+</div>
 @endif
 <div class="row g-3 mb-3">
     <div class="col-lg-8"><section class="panel h-100"><div class="panel-header"><div><h2>Student enrollment</h2><p>A growing community of bright minds</p></div><span class="date-pill py-1">Last 6 months <i class="bi bi-chevron-down ms-2"></i></span></div><div class="chart-wrap"><canvas id="enrollmentChart" role="img" aria-label="Monthly student enrollment chart"></canvas></div></section></div>

@@ -73,3 +73,7 @@
     .attendance-toolbar { padding: 14px; gap: 16px; }
     .attendance-shortcuts a { padding: 10px; }
 }
+
+
+.attendance-action-menu .attendance-ratio { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px 12px; }
+.attendance-action-menu .attendance-ratio span:nth-child(4) { color:var(--info,#3686d9); }
