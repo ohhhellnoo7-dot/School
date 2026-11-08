@@ -1,0 +1,59 @@
+/* Colors resolve from the existing theme engine, including future palettes. */
+:root[data-theme]:root:root:root:root:root:root:root:root:root .scholar-workspace .scholar-hero {
+    --hero-background-image:url('../images/school-hero.png');
+    --hero-overlay-start:var(--surface);
+    --hero-overlay-middle:color-mix(in srgb,var(--hero-veil,var(--surface)) 93%,transparent);
+    --hero-overlay-end:color-mix(in srgb,var(--surface) 8%,transparent);
+    --hero-heading:var(--text-primary);
+    --hero-subtitle:var(--text-secondary);
+    --hero-accent:var(--primary);
+    --hero-border:var(--border-color);
+    --hero-shadow:0 8px 24px var(--shadow-color);
+    --hero-button-bg:var(--action);
+    --hero-button-text:var(--on-action);
+    --hero-badge-bg:var(--surface);
+    --hero-badge-text:var(--text-primary);
+    position:relative; isolation:isolate; display:flex; align-items:center; justify-content:space-between;
+    min-width:0; min-height:220px; padding:clamp(20px,2.5vw,36px); gap:24px; margin-bottom:22px;
+    border-radius:var(--card-radius,24px); border:1px solid var(--hero-border); box-shadow:var(--hero-shadow);
+    background-color:var(--surface);
+    background-image:linear-gradient(90deg,var(--hero-overlay-start),var(--hero-overlay-middle) 43%,var(--hero-overlay-end) 82%),var(--hero-background-image);
+    background-position:right center; background-size:cover; background-repeat:no-repeat;
+    color:var(--hero-heading); overflow:visible;
+    &::before { content:none; }
+    &::after { content:""; position:absolute; inset:auto 24px 0; height:3px; border-radius:3px; background:linear-gradient(90deg,var(--hero-accent),var(--accent),transparent); pointer-events:none; }
+    & > img { display:none; }
+    & > div { min-width:0; }
+    & > div:first-child { max-width:66%; }
+    & :is(h1,h2,h1 span,h2 span) { color:var(--hero-heading); text-shadow:none; }
+    & h1 { font-size:clamp(26px,2.8vw,44px); line-height:1.16; letter-spacing:-1px; margin:10px 0; overflow-wrap:anywhere; }
+    & p { color:var(--hero-subtitle); font-size:clamp(12px,1.1vw,15px); line-height:1.6; }
+    & :is(.eyebrow,.timetable-eyebrow) { background:none; color:var(--hero-accent); padding:0; font-size:10px; font-weight:750; letter-spacing:1.5px; }
+    & :is(.hero-school,.subject-hero-features span) { background:var(--hero-badge-bg); color:var(--hero-badge-text); border:1px solid var(--hero-border); box-shadow:none; }
+    & :is(.subject-hero-features i,.timetable-hero-icon,.room-detail-icon) { color:var(--hero-accent); }
+    & .btn { border-radius:var(--control-radius,12px); white-space:normal; }
+    & :is(.btn-primary,.attendance-actions > summary) { background:var(--hero-button-bg); color:var(--hero-button-text); border-color:var(--hero-button-bg); box-shadow:0 3px 12px var(--shadow-color); }
+    & .btn-primary:is(:hover,:active) { background:color-mix(in srgb,var(--hero-button-bg) 88%,var(--text-primary)); color:var(--hero-button-text); }
+    & :is(.btn-outline-primary,.btn-outline-secondary,.btn-light) { background:var(--hero-badge-bg); color:var(--hero-badge-text); border-color:var(--hero-border); }
+    & :is(.btn-outline-primary,.btn-outline-secondary,.btn-light):hover { background:var(--surface-tint); border-color:var(--hero-accent); }
+    & :is(.btn,summary,select,a):focus-visible { outline:3px solid var(--hero-accent); outline-offset:3px; }
+    & .form-select { background-color:var(--surface); color:var(--text-primary); border-color:var(--hero-border); }
+    & .hero-enroll { position:static; align-self:flex-end; }
+    & .attendance-action-menu { background:var(--surface); color:var(--text-primary); }
+    &.room-detail-hero { flex-wrap:wrap; }
+    &.room-detail-hero dl { background:var(--surface); color:var(--text-primary); border-radius:var(--control-radius); padding:12px; }
+}
+:root[data-theme="luxury"]:root:root:root:root:root:root:root:root:root .scholar-workspace .scholar-hero { --hero-heading:var(--primary); }
+@media(max-width:991px) {
+    :root[data-theme]:root:root:root:root:root:root:root:root:root .scholar-workspace .scholar-hero { flex-wrap:wrap; gap:18px; background-position:65% center; }
+}
+@media(max-width:767px) {
+    :root[data-theme]:root:root:root:root:root:root:root:root:root .scholar-workspace .scholar-hero {
+        min-height:180px; align-items:flex-start;
+        background-image:linear-gradient(90deg,var(--hero-overlay-start),var(--hero-overlay-middle)),var(--hero-background-image);
+        & > div, & > div:first-child { max-width:100%; }
+        & > .btn { align-self:flex-start; }
+        & :is(.subject-hero-features,.class-hero-actions,.timetable-hero-actions,.reports-hero-actions,.hero-school) { max-width:100%; flex-wrap:wrap; }
+    }
+}
+@media(prefers-reduced-motion:reduce) { .scholar-hero,.scholar-hero * { transition:none!important; animation:none!important; } }

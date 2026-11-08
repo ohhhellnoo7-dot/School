@@ -21,6 +21,7 @@
     @if(request()->routeIs('finance.*', 'reports') || request()->route('module') === 'fees')<link href="{{ asset('css/finance.css') }}?v={{ filemtime(public_path('css/finance.css')) }}" rel="stylesheet">@endif
     <link href="{{ asset('css/workspace-refresh.css') }}?v={{ filemtime(public_path('css/workspace-refresh.css')) }}" rel="stylesheet">
     @if(request()->routeIs('modules.index') && request()->route('module') === 'subjects')<link href="{{ asset('css/subject-refresh.css') }}?v={{ filemtime(public_path('css/subject-refresh.css')) }}" rel="stylesheet">@endif
+    <link href="{{ asset('css/scholar-hero.css') }}?v={{ filemtime(public_path('css/scholar-hero.css')) }}" rel="stylesheet">
 </head>
 <body class="scholar-workspace {{ request()->routeIs('modules.index') && request()->route('module') === 'subjects' ? 'subjects-page' : '' }} {{ request()->routeIs('class-groups.*') ? 'classes-page' : '' }} {{ request()->routeIs('classrooms.*', 'classroom-bookings.*') ? 'classrooms-page' : '' }} {{ request()->routeIs('modules.index') && request()->route('module') === 'teachers' ? 'teachers-page' : '' }} {{ request()->routeIs('modules.index') && request()->route('module') === 'parents' ? 'parents-page' : '' }} {{ request()->routeIs('students.index') ? 'students-page' : '' }}">
 <a href="#main-content" class="skip-link">{{ __('Skip to content') }}</a>

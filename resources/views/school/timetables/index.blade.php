@@ -3,13 +3,13 @@
 @section('content')
 <link href="{{ asset('css/unified-timetable.css') }}?v={{ filemtime(public_path('css/unified-timetable.css')) }}" rel="stylesheet">
 <div class="timetable-workspace">
-<section class="unified-timetable-hero">
+<x-scholar-hero tag="section" class="unified-timetable-hero">
     <div class="timetable-hero-copy">
         <div class="timetable-hero-heading"><span class="timetable-hero-icon"><i class="bi bi-calendar-week" aria-hidden="true"></i></span><div><span class="timetable-eyebrow">{{ __('Plan the school week') }}</span><h1>{{ __('School') }} <span>{{ __('Timetables') }}</span></h1></div></div>
         <p>{{ __('One lesson, three connected schedules.') }} <span class="timetable-timezone"><i class="bi bi-geo-alt" aria-hidden="true"></i> Asia/Phnom_Penh</span></p>
         @if(auth()->user()->role === 'administrator')<div class="timetable-hero-actions d-flex gap-2 flex-wrap"><a class="btn btn-primary" href="{{ route('timetables.lessons.create') }}"><i class="bi bi-plus-lg" aria-hidden="true"></i> {{ __('Add lesson') }}</a><a class="btn btn-outline-secondary" href="{{ route('timetables.diagnostics') }}"><i class="bi bi-tools" aria-hidden="true"></i> {{ __('Diagnostics & Khmer replacement') }}</a><a class="btn btn-outline-secondary" href="{{ route('timetables.rooms.review') }}"><i class="bi bi-layers" aria-hidden="true"></i> {{ __('Review physical room assignments') }}</a></div>@endif
     </div>
-</section>
+</x-scholar-hero>
 <nav class="timetable-view-tabs d-flex gap-2 mb-3 flex-wrap" aria-label="{{ __('Schedule views') }}">
     @if(!in_array(auth()->user()->role, ['student','parent']))
     <div class="dropdown" data-teacher-program-menu>

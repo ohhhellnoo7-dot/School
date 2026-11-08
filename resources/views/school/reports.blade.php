@@ -3,7 +3,7 @@
 @section('content')
 <link href="{{ asset('css/reports-redesign.css') }}?v={{ filemtime(public_path('css/reports-redesign.css')) }}" rel="stylesheet">
 <div class="reports-redesign">
-<section class="reports-hero" style="--reports-image:url('{{ asset('images/reports-hero.png') }}')">
+<x-scholar-hero tag="section" class="reports-hero" style="--reports-image:url('{{ asset('images/reports-hero.png') }}')">
 <div class="reports-hero-copy"><div class="eyebrow">TURN INFORMATION INTO INSIGHT</div><h1>School Reports</h1><p>A clear view of your school&#8217;s operations.</p></div>
 <div class="reports-hero-actions"><form method="get"><input type="hidden" name="date" value="{{ $date }}"><label class="visually-hidden" for="report-year">Academic year</label><select id="report-year" class="form-select" name="academic_year" onchange="this.form.submit()"><option value="">All academic years</option>
 @foreach($reportYears as $year)
@@ -11,7 +11,7 @@
 @endforeach
 </select></form><button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> Print Report</button></div>
 <nav class="reports-tabs" aria-label="Report sections"><a class="active" href="#report-finance"><i class="bi bi-stack"></i> School Fees &amp; Payments</a><a href="#report-attendance"><i class="bi bi-calendar-check"></i> Attendance</a><a href="#report-students"><i class="bi bi-people"></i> Students</a><a href="{{ route('teacher-attendance.index') }}"><i class="bi bi-person-check"></i> Teachers</a><a href="#report-classes"><i class="bi bi-mortarboard"></i> Academic</a></nav>
-</section>
+</x-scholar-hero>
 <div id="report-finance">
 @include('school.partials.reports-finance')
 </div>

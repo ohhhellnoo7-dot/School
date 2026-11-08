@@ -3,7 +3,7 @@
 
 @section('content')
 <div class="class-groups-workspace">
-<section class="page-heading class-page-heading class-groups-hero" aria-labelledby="class-groups-heading">
+<x-scholar-hero tag="section" class="page-heading class-page-heading class-groups-hero" aria-labelledby="class-groups-heading">
     <div>
         <div class="eyebrow">Academic structure</div>
         <h1 id="class-groups-heading">Class <span>Groups</span><i class="bi bi-mortarboard-fill" aria-hidden="true"></i></h1>
@@ -15,7 +15,7 @@
             <a class="btn btn-primary" href="{{ route('class-groups.create') }}"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i> Add class group</a>
         @endif
     </div>
-</section>
+</x-scholar-hero>
 
 <section class="class-summary-grid" aria-label="Class group totals">
     @foreach(\App\Models\Program::names() as $program)

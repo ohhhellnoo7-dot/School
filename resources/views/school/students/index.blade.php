@@ -1,7 +1,7 @@
 @extends('school.layout')
 @section('title', auth()->user()->role === 'parent' ? __('My children') : __('Students'))
 @section('content')
-<section class="student-hero school-hero" aria-labelledby="student-page-title">
+<x-scholar-hero tag="section" class="student-hero school-hero" aria-labelledby="student-page-title">
     <img src="{{ asset('images/student-community.png') }}" alt="" width="2048" height="768" fetchpriority="high">
     <div class="student-hero-copy">
         <div class="eyebrow">{{ __('OUR SCHOOL COMMUNITY') }}</div>
@@ -9,7 +9,7 @@
         <p>{{ __('Every student has a story. Help them write a great one.') }}</p>
     </div>
     @can('create', \App\Models\Student::class)<a href="{{ route('students.create') }}" class="btn btn-primary hero-enroll"><i class="bi bi-plus-lg me-2" aria-hidden="true"></i>{{ __('Enroll student') }}</a>@endcan
-</section>
+</x-scholar-hero>
 <div class="student-summary" aria-label="{{ __('Student overview') }}">
     @foreach(['total' => ['Total students', 'people-fill', 'School community'], 'male' => ['Male students', 'gender-male', 'Learning and growing'], 'female' => ['Female students', 'gender-female', 'Bright futures ahead'], 'new' => ['New this month', 'mortarboard-fill', 'Enrolled this month']] as $key => [$label, $icon, $note])
     <article class="directory-stat directory-stat-{{ $key }}">

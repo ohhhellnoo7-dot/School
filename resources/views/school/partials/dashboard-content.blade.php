@@ -14,8 +14,8 @@
 @if($role !== 'administrator' && $studentCount === 0)
 <div class="alert alert-info" role="status">No student records are linked to your account{{ $role === 'teacher' ? ' through a class or teaching assignment' : '' }}. Ask the school administrator to link your {{ $role === 'parent' ? 'children' : ($role === 'teacher' ? 'teaching assignments' : 'student profile') }}. These zero counts do not mean the school database is empty.</div>
 @endif
-<div class="page-heading dashboard-heading school-hero">
-    <div><div class="eyebrow">WELCOME BACK &#128075;</div><h1>Good {{ now()->hour < 12 ? 'morning' : (now()->hour < 18 ? 'afternoon' : 'evening') }}, {{ auth()->user()->name }} <i class="bi bi-brightness-high text-warning" aria-hidden="true" style="font-size:22px"></i></h1><p>Here's what's happening at your school today.</p><span class="hero-school"><i class="bi bi-buildings" aria-hidden="true"></i> Greenfield Academy <span aria-hidden="true">&middot;</span> {{ __(ucfirst($role)) }} workspace</span></div>
+<x-scholar-hero tag="div" class="page-heading dashboard-heading school-hero">
+    <div><div class="eyebrow">WELCOME BACK &#128075;</div><h1>Good {{ now('Asia/Phnom_Penh')->hour < 12 ? 'morning' : (now('Asia/Phnom_Penh')->hour < 18 ? 'afternoon' : 'evening') }}, {{ auth()->user()->name }} <i class="bi bi-brightness-high text-warning" aria-hidden="true" style="font-size:22px"></i></h1><p>Here's what's happening at your school today.</p><span class="hero-school"><i class="bi bi-buildings" aria-hidden="true"></i> Greenfield Academy <span aria-hidden="true">&middot;</span> {{ __(ucfirst($role)) }} workspace</span></div>
     @if($role === 'administrator' && $reportDate->isToday())
         <details class="attendance-actions">
             <summary class="btn btn-primary"><i class="bi bi-check2-all me-2" aria-hidden="true"></i>Student attendance <i class="bi bi-chevron-down ms-2" aria-hidden="true"></i></summary>
@@ -41,7 +41,7 @@
             </div>
         </details>
     @endif
-</div>
+</x-scholar-hero>
 
 <div class="row g-3 dashboard-stat-grid">
     @foreach([[$studentLabel, $studentCount, 'people', 'green', 'Enrolled in your school community'], [$teacherLabel, $teacherCount, 'person-workspace', 'blue', 'Inspiring the next generation'], [$classLabel, $classCount, 'building', 'orange', 'Spaces for growing minds'], [$subjectLabel, $subjectCount, 'book', 'purple', 'A world of learning opportunities']] as [$label, $value, $icon, $color, $note])

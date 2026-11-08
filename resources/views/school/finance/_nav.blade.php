@@ -1,4 +1,4 @@
-<div class="page-heading finance-hero"><div><div class="eyebrow">SCHOOL FINANCE</div><h1>@yield('finance-title', 'School Fees & Payments')</h1><p>Clear balances. Separate programs. Every payment accounted for.</p></div><div class="d-flex gap-2 flex-wrap"><a class="btn btn-outline-primary" href="{{ route('finance.index') }}#invoice-list">Invoices & payments</a>
+<x-scholar-hero tag="div" class="page-heading finance-hero"><div><div class="eyebrow">SCHOOL FINANCE</div><h1>@yield('finance-title', 'School Fees & Payments')</h1><p>Clear balances. Separate programs. Every payment accounted for.</p></div><div class="d-flex gap-2 flex-wrap"><a class="btn btn-outline-primary" href="{{ route('finance.index') }}#invoice-list">Invoices & payments</a>
 @if(auth()->user()->role === 'administrator')
 @php($bulkState = app(\App\Services\BulkTuitionPaymentService::class)->availability())
 <div class="dropdown"><button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bulk-pay
@@ -10,7 +10,7 @@
 @if($bulkState['locked'])<small class="d-block mt-1" data-bulk-next><a href="{{ route('finance.bulk.preview') }}">Next: {{ $bulkState['next_on']->format('d M Y') }}</a></small>
 @endif</div>
 <a class="btn btn-outline-secondary" href="{{ route('finance.archive') }}">Archived fees</a><a class="btn btn-outline-primary" href="{{ route('finance.parents') }}">Parent payment status</a><a class="btn btn-outline-primary" href="{{ route('finance.billing') }}">Issue invoices</a><a class="btn btn-primary" href="{{ route('finance.settings') }}">Fee settings</a>
-@endif</div></div>
+@endif</div></x-scholar-hero>
 
 @once
 @push('scripts')

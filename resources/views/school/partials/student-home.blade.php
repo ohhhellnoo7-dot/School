@@ -1,7 +1,7 @@
-<div class="page-heading school-hero">
+<x-scholar-hero tag="div" class="page-heading school-hero">
     <div><div class="eyebrow">MY SCHOOL DAY</div><h1>Hi, {{ explode(' ', auth()->user()->name)[0] }}!</h1><p>Your classes, schoolwork and updates in one place.</p></div>
     <div class="date-pill">{{ today()->format('l, M j, Y') }}</div>
-</div>
+</x-scholar-hero>
 @if($studentCount === 0)
     <div class="alert alert-info" role="status">No student records are linked to your account. Ask the school office to link your student profile so your classes and schoolwork appear here.</div>
 @endif

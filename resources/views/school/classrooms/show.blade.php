@@ -12,7 +12,7 @@
     <div class="d-flex flex-wrap gap-2"><a class="btn btn-outline-secondary" href="{{ route('classrooms.index') }}">Back to availability</a>@if(auth()->user()->role === 'administrator')<a class="btn btn-outline-secondary" href="{{ route('classrooms.edit', $classroom) }}"><i class="bi bi-pencil me-1" aria-hidden="true"></i> Edit room</a><a class="btn btn-primary" href="{{ route('classroom-bookings.create', ['classroom_id' => $classroom->id]) }}"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i> Add booking</a>@endif</div>
 </div>
 
-<section class="room-detail-hero"><div class="room-detail-icon"><i class="bi bi-door-open" aria-hidden="true"></i></div><div><h2>{{ $classroom->name }}</h2><p>Lesson activity and room occupancy are shown separately below.</p></div><dl><div><dt>Room number</dt><dd>{{ $classroom->room_number }}</dd></div><div><dt>Capacity</dt><dd>{{ $classroom->capacity }} students</dd></div><div><dt>Maintenance</dt><dd>{{ str_replace('_', ' ', ucfirst($classroom->status)) }}</dd></div></dl></section>
+<x-scholar-hero tag="section" class="room-detail-hero"><div class="room-detail-icon"><i class="bi bi-door-open" aria-hidden="true"></i></div><div><h2>{{ $classroom->name }}</h2><p>Lesson activity and room occupancy are shown separately below.</p></div><dl><div><dt>Room number</dt><dd>{{ $classroom->room_number }}</dd></div><div><dt>Capacity</dt><dd>{{ $classroom->capacity }} students</dd></div><div><dt>Maintenance</dt><dd>{{ str_replace('_', ' ', ucfirst($classroom->status)) }}</dd></div></dl></x-scholar-hero>
 
 <section class="panel p-4 my-4" aria-label="Program and session">
     <h2 class="h5">Choose program and session</h2>

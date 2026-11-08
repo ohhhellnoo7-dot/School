@@ -1,10 +1,10 @@
 @extends('school.layout')
 @section('title', 'Teachers')
 @section('content')
-<section class="page-heading school-hero teacher-hero" aria-labelledby="teacher-heading">
+<x-scholar-hero tag="section" class="page-heading school-hero teacher-hero" aria-labelledby="teacher-heading">
     <div><div class="eyebrow">{{ __('School workspace') }}</div><h1 id="teacher-heading">{{ __('Teachers') }}</h1><p>{{ __('Meet the educators shaping tomorrow.') }}</p></div>
     <a href="{{ route('teacher-management.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg me-2" aria-hidden="true"></i>{{ __('Add Teacher') }}</a>
-</section>
+</x-scholar-hero>
 <div class="teacher-summary" aria-label="Teacher overview">
 @foreach([[$total, 'Total Teachers', 'people-fill', 'Your school teaching team'], [$available, 'Available Teachers', 'person-check', 'Active teachers with teaching capacity'], [$full, 'Fully Booked Teachers', 'calendar-check', 'At their weekly teaching limit'], [$demand['needed'], 'Teachers Needed', 'person-plus', 'Estimated Khmer staffing gap; see reports']] as [$value, $label, $icon, $note])
 <article class="teacher-stat"><span class="teacher-stat-icon"><i class="bi bi-{{ $icon }}" aria-hidden="true"></i></span><div><h2>{{ $label }}</h2><strong>{{ $value }}</strong></div><small>{{ $note }}</small></article>

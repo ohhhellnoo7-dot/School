@@ -8,14 +8,14 @@
     if ($module === 'fees') $filters = ['paid', 'pending', 'partially_paid', 'overdue'];
 @endphp
 @if($module === 'teachers')
-<section class="page-heading school-hero teacher-hero" aria-labelledby="teacher-heading">
+<x-scholar-hero tag="section" class="page-heading school-hero teacher-hero" aria-labelledby="teacher-heading">
     <div>
         <div class="eyebrow">{{ __('School workspace') }}</div>
         <h1 id="teacher-heading">{{ $meta['title'] }}</h1>
         <p>{{ __('Meet the educators shaping tomorrow.') }}</p>
     </div>
     @if($canWrite)<a href="{{ route('modules.create', $module) }}" class="btn btn-primary"><i class="bi bi-plus-lg me-2" aria-hidden="true"></i>Add record</a>@endif
-</section>
+</x-scholar-hero>
 <div class="teacher-summary" aria-label="Teacher overview">
 @foreach(['total' => ['Total teachers', 'people-fill', 'School community'], 'male' => ['Male teachers', 'person-fill', 'Teaching team'], 'female' => ['Female teachers', 'person-hearts', 'Teaching team'], 'subjects' => ['Subjects taught', 'book-half', 'Across all programs']] as $key => [$label, $icon, $note])
 <article class="teacher-stat teacher-stat-{{ $key }}">
@@ -27,21 +27,21 @@
 @endforeach
 </div>
 @elseif($module === 'classes')
-<section class="page-heading school-hero class-hero" aria-labelledby="class-heading">
+<x-scholar-hero tag="section" class="page-heading school-hero class-hero" aria-labelledby="class-heading">
     <div><div class="eyebrow">{{ __('School workspace') }}</div><h1 id="class-heading">{{ $meta['title'] }}</h1><p>{{ __('Organize classrooms and learning communities.') }}</p></div>
     @if($canWrite)<a href="{{ route('modules.create', $module) }}" class="btn btn-primary"><i class="bi bi-plus-lg me-2" aria-hidden="true"></i>Add record</a>@endif
-</section>
+</x-scholar-hero>
 <div class="teacher-summary" aria-label="Class overview">
 @foreach(['total' => ['Total classes', 'book-half', 'Unique grades and sections'], 'students' => ['Total students', 'people-fill', 'Enrolled in your classes'], 'teachers' => ['Class teachers', 'mortarboard-fill', 'Assigned classroom teachers'], 'occupied' => ['Classes with students', 'building', 'Program and session entries']] as $key => [$label, $icon, $note])
 <article class="teacher-stat class-stat-{{ $key }}"><span class="teacher-stat-icon"><i class="bi bi-{{ $icon }}" aria-hidden="true"></i></span><div><h2>{{ __($label) }}</h2><strong>{{ number_format($classSummary[$key]) }}</strong></div><small>{{ __($note) }}</small><svg class="teacher-stat-spark" viewBox="0 0 120 45" fill="none" aria-hidden="true"><path d="M2 38 Q16 14 28 26 T52 19 T76 16 T96 22 T118 25" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></article>
 @endforeach
 </div>
 @elseif($module === 'subjects')
-<section class="page-heading school-hero subject-hero" aria-labelledby="subject-heading">
+<x-scholar-hero tag="section" class="page-heading school-hero subject-hero" aria-labelledby="subject-heading">
     <div><div class="eyebrow">{{ __('School workspace') }}</div><h1 id="subject-heading">{{ $meta['title'] }}</h1><p>{{ __('Explore and manage academic subjects.') }}</p>
     <div class="subject-hero-features" aria-label="Subject management"><span><i class="bi bi-book-half" aria-hidden="true"></i>{{ __('Organize subjects') }}</span><span><i class="bi bi-people-fill" aria-hidden="true"></i>{{ __('Assign teachers') }}</span><span><i class="bi bi-calendar3" aria-hidden="true"></i>{{ __('Track classes') }}</span></div></div>
     @if($canWrite)<a href="{{ route('modules.create', $module) }}" class="btn btn-primary"><i class="bi bi-plus-lg me-2" aria-hidden="true"></i>{{ __('Add subject') }}</a>@endif
-</section>
+</x-scholar-hero>
 <div class="teacher-summary" aria-label="Subject overview">
 @foreach(['total' => ['Total subjects', 'book-half', 'Across your school workspace'], 'assigned' => ['With assigned teachers', 'mortarboard-fill', 'Ready for classroom learning'], 'unassigned' => ['Without assigned teachers', 'person-dash', 'Awaiting a teacher assignment'], 'classes' => ['Classes covered', 'building', 'Program and session entries']] as $key => [$label, $icon, $note])
 <article class="teacher-stat subject-stat-{{ $key }}"><span class="teacher-stat-icon"><i class="bi bi-{{ $icon }}" aria-hidden="true"></i></span><div><h2>{{ __($label) }}</h2><strong>{{ number_format($subjectSummary[$key]) }}</strong></div><small>{{ __($note) }}</small><svg class="teacher-stat-spark" viewBox="0 0 120 45" fill="none" aria-hidden="true"><path d="M2 38 Q16 14 28 26 T52 19 T76 16 T96 22 T118 25" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></article>
