@@ -8,19 +8,19 @@
     --lesson-border:color-mix(in srgb,var(--primary) 35%,var(--border-color));
     --free-period-bg:var(--surface-tint); --status-success-bg:var(--success-soft);
     --status-warning-bg:var(--warning-soft); --status-danger-bg:var(--danger-soft);
-    & .theme-options { width:390px; max-width:calc(100vw - 24px); max-height:min(660px,calc(100dvh - 110px)); display:block; padding:16px; overscroll-behavior:contain; scrollbar-width:thin; }
-    & .theme-options-heading { padding:3px 4px 12px; }
-    & .theme-options-heading small { display:block; font-size:11px; line-height:1.5; color:var(--muted); }
-    & .theme-search-label { display:block; font-size:11px; margin:10px 4px 5px; }
-    & .theme-search { width:100%; margin-bottom:12px; }
-    & .theme-group { margin:0 0 12px; }
-    & .theme-group h3 { color:var(--muted); font:700 10px system-ui,sans-serif; letter-spacing:1.5px; text-transform:uppercase; padding:9px 5px; margin:0; }
+    & .theme-options { width:300px; max-width:calc(100vw - 24px); max-height:min(420px,calc(100dvh - 110px)); display:block; padding:10px; border-radius:16px; overscroll-behavior:contain; scrollbar-width:thin; }
+    & .theme-options-heading { padding:3px 4px 8px; }
+    & .theme-options-heading small { display:none; }
+    & .theme-search-label { display:block; font-size:10px; margin:6px 4px 4px; }
+    & .theme-search { width:100%; min-height:32px; padding:6px 10px; font-size:11px; margin-bottom:6px; }
+    & .theme-group { margin:0 0 6px; }
+    & .theme-group h3 { color:var(--muted); font:700 9px system-ui,sans-serif; letter-spacing:1px; text-transform:uppercase; padding:6px 5px; margin:0; }
     & .theme-group-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px; }
-    & .theme-option { padding:10px 8px; min-height:54px; border:1px solid transparent; }
+    & .theme-option { padding:6px; min-height:36px; gap:6px; border:1px solid transparent; border-radius:8px; }
     & .theme-option strong { font-size:11px; white-space:normal; }
-    & .theme-option small { display:block; font-size:9px; margin-top:3px; }
+    & .theme-option small { display:none; }
     & .theme-option[aria-pressed="true"] { border-color:var(--primary); }
-    & .theme-swatch { width:26px; height:30px; }
+    & .theme-swatch { width:20px; height:22px; border-radius:6px; }
     & [data-theme-menu] [hidden] { display:none !important; }
     & .theme-search-empty { padding:20px 8px; color:var(--muted); font-size:12px; }
     & :is(.modal-content,.toast,.dropdown-menu,.hover-select-menu) { background:var(--modal-bg); color:var(--ink); border-color:var(--border); }
@@ -66,7 +66,7 @@
     & .brand-mark { border-color:var(--accent); }
 }
 @media (max-width:575px) {
-    :root[data-theme]:root:root:root:root:root:root .theme-options { position:fixed; inset:78px 12px auto; width:auto; max-width:none; max-height:calc(100dvh - 100px); }
+    :root[data-theme]:root:root:root:root:root:root .theme-options { position:fixed; inset:78px 12px auto auto; width:300px; max-width:calc(100vw - 24px); max-height:min(420px,calc(100dvh - 100px)); }
 }
 @media (prefers-reduced-motion:reduce) {
     :root[data-theme] :is(.theme-option,.theme-options,.shared-lesson) { animation:none; transition:none; }
