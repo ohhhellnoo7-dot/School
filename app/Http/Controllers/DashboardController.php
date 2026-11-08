@@ -90,12 +90,14 @@ class DashboardController extends Controller
         $canViewFees = in_array($user->role, ['administrator', 'parent'], true);
         $finance = $canViewFees ? (app(\App\Services\SchoolFinanceService::class)->summary((clone $fees)->with(['adjustments', 'payments'])->get())['USD'] ?? []) : [];
         $months = collect(range(5, 0))->map(fn ($i) => now()->startOfMonth()->subMonths($i));
+        $teacherAttendanceCounts = $user->role === 'administrator' ? \App\Models\TeacherAttendance::whereDate('date', $reportDate)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status') : collect();
         $charts = [
             'labels' => $months->map(fn ($date) => $date->format('M'))->values(),
             'enrollment' => $months->map(fn ($date) => (clone $students)->whereBetween('enrollment_date', [$date->toDateString(), $date->copy()->endOfMonth()->toDateString()])->count())->values(),
             // Chart conversion only; ledger arithmetic uses integer minor units.
             'revenue' => $canViewFees ? $months->map(fn ($date) => ($finance['trend'][$date->format('Y-m')] ?? 0) / 100)->values() : [],
             'gender' => collect(['female', 'male', 'other'])->map(fn ($gender) => (clone $students)->where('gender', $gender)->count()),
+            'teacherAttendance' => collect(['present', 'absent', 'late', 'excused'])->map(fn ($status) => (int) ($teacherAttendanceCounts[$status] ?? 0))->values(),
             'attendance' => collect(['present', 'absent', 'late', 'excused'])->map(fn ($status) => (clone $attendance)->where('status', $status)->count()),
         ];
 
@@ -148,6 +150,7 @@ class DashboardController extends Controller
             'pending' => $canViewFees ? \App\Support\Money::decimal($finance['balance'] ?? 0) : null,
             'recent' => (clone $students)->with(['schoolClass', 'user', 'parent'])->latest()->latest('id')->limit(5)->get(),
             'announcements' => Announcement::whereIn('audience', ['all', $user->role])->whereDate('published_at', '<=', today())->latest('published_at')->limit(4)->get(),
+            'teacherAttendanceCounts' => $teacherAttendanceCounts,
             'charts' => $charts,
         ];
     }
@@ -158,8 +161,19 @@ class DashboardController extends Controller
         $classes = SchoolClass::withCount('students')->with('teacher')->get();
         $date = $request->validate(['date' => 'nullable|date'])['date'] ?? today()->toDateString();
         $attendance = Attendance::whereDate('date', $date)->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
-        $summary = app(\App\Services\SchoolFinanceService::class)->summary(Fee::with(['adjustments', 'payments'])->get());
+        $reportFilters = $request->validate(['academic_year' => ['nullable', 'regex:/^\d{4}-\d{4}$/']]);
+        $reportYears = Fee::whereNotNull('academic_year')->distinct()->orderByDesc('academic_year')->pluck('academic_year');
+        $reportFees = Fee::with(['adjustments', 'payments', 'items'])->when($reportFilters['academic_year'] ?? null, fn ($q, $year) => $q->where('academic_year', $year))->get();
+        $summary = app(\App\Services\SchoolFinanceService::class)->summary($reportFees);
+        $reportDetails = $reportFees->groupBy('currency')->map(function ($fees) {
+            return [
+                'statuses' => ['paid' => $fees->filter(fn ($fee) => in_array($fee->payment_status, ['paid', 'waived']))->count(), 'partial' => $fees->filter(fn ($fee) => $fee->balanceCents() > 0 && \App\Support\Money::cents($fee->paid) > 0)->count(), 'unpaid' => $fees->filter(fn ($fee) => $fee->balanceCents() > 0 && \App\Support\Money::cents($fee->paid) === 0)->count()],
+                'outstanding' => $fees->groupBy(fn ($fee) => $fee->program ?: 'Legacy / unclassified')->map(fn ($group) => $group->sum(fn ($fee) => max(0, $fee->balanceCents()))),
+            ];
+        });
 
-        return view('school.reports', compact('classes', 'date', 'attendance', 'summary'));
+        $studentsByProgram = collect(['Khmer', 'Chinese', 'English', 'Japan'])->merge(\App\Models\Program::names())->unique()->mapWithKeys(fn ($program) => [$program => Student::where('status', 'active')->whereDate('enrollment_date', '<=', today())->whereHas('studyClasses', fn ($q) => $q->where('program', $program))->count()]);
+
+        return view('school.reports', compact('classes', 'date', 'attendance', 'summary', 'studentsByProgram', 'reportDetails', 'reportYears'));
     }
 }

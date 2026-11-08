@@ -23,7 +23,7 @@ class PaymentSeeder extends Seeder
                 if ($paidDate->gt(today())) {
                     $paidDate = today();
                 }
-                Fee::firstOrCreate(['student_id' => $student->id, 'description' => $category], [
+                Fee::withTrashed()->firstOrCreate(['student_id' => $student->id, 'description' => $category], [
                     'amount' => $amount, 'paid' => $paid,
                     'due_date' => ($kind === 3 ? today()->subDays(14) : today()->addDays(14))->toDateString(),
                     'paid_at' => $paid > 0 ? $paidDate->toDateString() : null,

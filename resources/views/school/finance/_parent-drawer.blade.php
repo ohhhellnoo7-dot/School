@@ -16,8 +16,19 @@ $hasDebt = $unpaidInvoices->isNotEmpty();
 <section class="pd-card"><div class="pd-section-title"><h3>Latest payment</h3><i class="bi bi-check2-circle" aria-hidden="true"></i></div>@if($latestPayment)<div class="pd-latest"><div><strong>{{ $latestPayment['child'] }}</strong><p class="pd-muted">{{ \Carbon\Carbon::parse($latestPayment['date'])->format('d F Y') }} &middot; {{ ucwords(str_replace('_',' ', $latestPayment['method'])) }}</p></div><strong>{{ $latestPayment['amount'] }} {{ $latestPayment['currency'] }}</strong></div>@else<p class="pd-muted">No payments have been recorded yet. Historical opening balances are listed separately in Payment History.</p>@endif</section>
 <section class="pd-card"><div class="pd-section-title"><h3>Linked children</h3><span class="pd-count">{{ $parent->children->count() }}</span></div><div class="pd-children">@forelse($parent->children as $child)<div><span class="pd-child-avatar"><i class="bi bi-person" aria-hidden="true"></i></span><div><strong>{{ $child->name }}</strong><p class="pd-muted">{{ $child->student_number }} &middot; {{ $child->fees->count() }} invoices</p>
 <div class="pd-child-enrollments" aria-label="Enrolled programs and sessions">
-@forelse($child->studyClasses->groupBy(fn ($class) => $class->program ?: 'Program not recorded') as $program => $classes)
-<div class="pd-child-enrollment"><span><i class="bi bi-journal-bookmark" aria-hidden="true"></i> {{ $program === 'Japan' ? 'Japanese' : $program }}</span><small><i class="bi bi-clock" aria-hidden="true"></i> {{ $classes->pluck('session')->filter()->unique()->join(' / ') ?: 'Session not recorded' }}</small></div>
+@forelse($childEnrollments[$child->id] as $enrollment)
+<div class="pd-child-enrollment"><span><i class="bi bi-journal-bookmark" aria-hidden="true"></i> {{ $enrollment['program'] === 'Japan' ? 'Japanese' : $enrollment['program'] }} &middot; {{ $enrollment['grade'] ? 'Grade '.$enrollment['grade'] : 'Grade not recorded' }}</span><small><i class="bi bi-clock" aria-hidden="true"></i> {{ $enrollment['sessions'] ?: 'Session not recorded' }}</small>
+@if($enrollment['tuition'])
+@php($tuition = $enrollment['tuition'])
+@foreach($tuition->ratesForSessions($enrollment['session_names'] ?: ['Morning']) as $price)
+<small class="pd-child-cost">{{ implode(' / ', $price['sessions']) }}: {{ \App\Support\Money::display(\App\Support\Money::cents($price['monthly']) - \App\Support\Money::cents($tuition->discount)) }} {{ $tuition->currency }} / month</small>
+<small>6 months: {{ \App\Support\Money::display(\App\Support\Money::cents($price['six_month']) - \App\Support\Money::cents($tuition->discount) * 6) }} {{ $tuition->currency }}</small>
+<small>{{ \App\Support\Money::display(\App\Support\Money::cents($price['annual']) - \App\Support\Money::cents($tuition->discount) * $tuition->billable_months) }} {{ $tuition->currency }} / year ({{ $tuition->billable_months }} months)</small>
+@endforeach
+@php($extras = collect($tuition->charges)->sum(fn ($amount) => \App\Support\Money::cents($amount)))
+@if($extras > 0)<small>One-time fees: {{ \App\Support\Money::display($extras) }} {{ $tuition->currency }}</small>@endif
+<small>{{ $tuition->academic_year }} approved tuition{{ \App\Support\Money::cents($tuition->discount) > 0 ? ' after discount' : '' }}</small>
+@else<small>Tuition not configured for this grade.</small>@endif</div>
 @empty<p class="pd-muted">No program enrollment recorded.</p>@endforelse
 </div></div></div>@empty<p class="pd-muted">No children linked to this parent.</p>@endforelse</div><div class="pd-contact"><span><i class="bi bi-envelope" aria-hidden="true"></i> {{ $parent->email }}</span>@if($parent->phone)<span><i class="bi bi-telephone" aria-hidden="true"></i> {{ $parent->phone }}</span>@endif</div></section>
 <section><div class="pd-section-title"><h3>Recent activity</h3><button type="button" class="pd-text-button" data-pd-jump="history">View all</button></div>@include('school.finance._parent-timeline', ['entries' => $recent])</section>

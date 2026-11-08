@@ -51,7 +51,7 @@ class ParentPaymentSchedule
                         $grade = (int) $match[1];
                     }
                     foreach ($structures->where('program', $class->program)->where('grade', $grade) as $structure) {
-                        if (Money::cents($structure->monthly_tuition) <= Money::cents($structure->discount)) {
+                        if (Money::cents($structure->monthlyForSession($class->session)) <= Money::cents($structure->discount)) {
                             continue;
                         }
                         $key = $child->id.'|'.$structure->academic_year.'|'.app(SchoolFinanceService::class)->enrollmentKey($class);

@@ -102,7 +102,7 @@ class ExpandedSchoolSeeder extends Seeder
                     foreach (['Term tuition' => 1200, 'Learning materials' => 85, 'School activities' => 45] as $description => $amount) {
                         $paid = $index % 5 === 0 ? 0 : ($index % 3 === 0 ? $amount / 2 : $amount);
                         $paymentDate = today()->startOfMonth()->subMonths($monthsAgo)->addDays($index % 12);
-                        Fee::firstOrCreate(['student_id' => $student->id, 'description' => $description], [
+                        Fee::withTrashed()->firstOrCreate(['student_id' => $student->id, 'description' => $description], [
                             'amount' => $amount, 'paid' => $paid, 'due_date' => today()->addDays(14)->toDateString(),
                             'paid_at' => $paid > 0 ? min($paymentDate->toDateString(), today()->toDateString()) : null,
                         ]);

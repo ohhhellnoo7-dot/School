@@ -37,7 +37,10 @@
                 <a class="{{ ($key === 'classes' ? request()->routeIs('class-groups.*') : (request()->route('module') === $key || ($key === 'fees' && request()->routeIs('finance.*')))) ? 'active' : '' }}" href="{{ $key === 'classes' ? route('class-groups.index') : route('modules.index', $key) }}"><i class="bi bi-{{ $module['icon'] }}"></i><span class="nav-label">{{ __($module['title']) }}</span></a>
             @endif
         @endforeach
-        <div class="nav-group-caption">{{ __('Workspace') }}</div>
+        @if(in_array(auth()->user()->role, ['administrator', 'teacher']))
+<a class="{{ request()->routeIs('teacher-attendance.*') ? 'active' : '' }}" href="{{ route('teacher-attendance.index') }}"><i class="bi bi-person-check"></i><span class="nav-label">Teacher attendance</span></a>
+@endif
+<div class="nav-group-caption">{{ __('Workspace') }}</div>
         <a class="{{ request()->routeIs('classrooms.*', 'classroom-bookings.*') ? 'active' : '' }}" href="{{ route('classrooms.index') }}"><i class="bi bi-door-open"></i><span class="nav-label">{{ __('Classroom availability') }}</span></a>
         @if(auth()->user()->role === 'administrator')<a class="{{ request()->routeIs('reports') ? 'active' : '' }}" href="{{ route('reports') }}"><i class="bi bi-bar-chart-line"></i><span class="nav-label"> {{ __('Reports') }}</span></a>@endif
     </nav>

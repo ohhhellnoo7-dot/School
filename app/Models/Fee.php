@@ -2,10 +2,14 @@
 
 namespace App\Models;
 
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Fee extends Model
 {
+    use SoftDeletes;
+
     protected $guarded = [];
 
     protected function casts(): array
@@ -15,36 +19,64 @@ class Fee extends Model
 
     public function getBalanceAttribute(): string
     {
-        return \App\Support\Money::decimal($this->balanceCents());
+        return Money::decimal($this->balanceCents());
     }
 
-    public function payments() { return $this->hasMany(FeePayment::class); }
-    public function adjustments() { return $this->hasMany(FinancialAdjustment::class); }
-    public function items() { return $this->hasMany(\App\Models\InvoiceItem::class); }
+    public function payments()
+    {
+        return $this->hasMany(FeePayment::class);
+    }
+
+    public function adjustments()
+    {
+        return $this->hasMany(FinancialAdjustment::class);
+    }
+
+    public function items()
+    {
+        return $this->hasMany(InvoiceItem::class);
+    }
+
     public function netCents(): int
     {
-        $net = \App\Support\Money::cents($this->amount);
+        $net = Money::cents($this->amount);
         foreach ($this->adjustments as $a) {
-            if ($a->kind === 'charge') $net += \App\Support\Money::cents($a->amount);
-            elseif (in_array($a->kind, ['discount', 'waiver', 'credit'])) $net -= \App\Support\Money::cents($a->amount);
+            if ($a->kind === 'charge') {
+                $net += Money::cents($a->amount);
+            } elseif (in_array($a->kind, ['discount', 'waiver', 'credit'])) {
+                $net -= Money::cents($a->amount);
+            }
         }
+
         return $net;
     }
-    public function balanceCents(): int { return $this->netCents() - \App\Support\Money::cents($this->paid); }
-    public function getDisplayNumberAttribute(): string { return $this->invoice_number ?: 'LEGACY-'.$this->id; }
+
+    public function balanceCents(): int
+    {
+        return $this->netCents() - Money::cents($this->paid);
+    }
+
+    public function getDisplayNumberAttribute(): string
+    {
+        return $this->invoice_number ?: 'LEGACY-'.$this->id;
+    }
 
     public function getPaymentStatusAttribute(): string
     {
-        if ($this->netCents() === 0 && ($this->adjustments->contains('kind', 'waiver') || $this->items->contains(fn ($item) => \App\Support\Money::cents($item->amount) < 0))) return 'waived';
+        if ($this->netCents() === 0 && ($this->adjustments->contains('kind', 'waiver') || $this->items->contains(fn ($item) => Money::cents($item->amount) < 0))) {
+            return 'waived';
+        }
         if ($this->balanceCents() <= 0) {
             return 'paid';
         }
-        if (\App\Support\Money::cents($this->paid) === 0 && $this->adjustments->contains('kind', 'refund')) return 'refunded';
+        if (Money::cents($this->paid) === 0 && $this->adjustments->contains('kind', 'refund')) {
+            return 'refunded';
+        }
         if ($this->due_date->lt(today())) {
             return 'overdue';
         }
 
-        return \App\Support\Money::cents($this->paid) > 0 ? 'partially_paid' : 'unpaid';
+        return Money::cents($this->paid) > 0 ? 'partially_paid' : 'unpaid';
     }
 
     public function student()

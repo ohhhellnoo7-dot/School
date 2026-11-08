@@ -82,7 +82,33 @@ class SchoolFinanceController extends Controller
         $unpaidInvoices = $fees->filter(fn ($fee) => $fee->balanceCents() > 0)->sortBy('due_date');
         $years = $fees->pluck('academic_year')->filter()->unique()->sort()->values();
 
-        return response()->view('school.finance._parent-drawer', compact('parent', 'fees', 'summary', 'status', 'schedule', 'events', 'latestPayment', 'recent', 'unpaidInvoices', 'years'))->header('Cache-Control', 'private, no-store');
+        $approvedTuition = FeeStructure::where('status', 'active')->whereNotNull('approved_at')
+            ->whereDate('effective_from', '<=', today())->where(fn ($q) => $q->whereNull('effective_until')->orWhereDate('effective_until', '>=', today()))
+            ->orderByDesc('academic_year')->orderByDesc('id')->get();
+        $childEnrollments = $parent->children->mapWithKeys(function ($child) use ($approvedTuition) {
+            $enrollments = $child->studyClasses->groupBy(function ($class) {
+                $grade = $class->classGroup?->grade;
+                if (! $grade && preg_match('/(?:Grade\s*)?(\d+)/i', $class->name, $match)) {
+                    $grade = (int) $match[1];
+                }
+
+                return ($class->program ?: 'Program not recorded').'|'.($grade ?: '');
+            })->map(function ($classes) use ($approvedTuition) {
+                $class = $classes->first();
+                $grade = $class->classGroup?->grade;
+                if (! $grade && preg_match('/(?:Grade\s*)?(\d+)/i', $class->name, $match)) {
+                    $grade = (int) $match[1];
+                }
+
+                return ['program' => $class->program ?: 'Program not recorded', 'grade' => $grade,
+                    'sessions' => $classes->pluck('session')->filter()->unique()->join(' / '), 'session_names' => $classes->pluck('session')->filter()->unique()->values()->all(),
+                    'tuition' => $grade ? $approvedTuition->first(fn ($fee) => $fee->program === $class->program && (int) $fee->grade === (int) $grade) : null];
+            })->values();
+
+            return [$child->id => $enrollments];
+        });
+
+        return response()->view('school.finance._parent-drawer', compact('parent', 'fees', 'summary', 'status', 'schedule', 'events', 'latestPayment', 'recent', 'unpaidInvoices', 'years', 'childEnrollments'))->header('Cache-Control', 'private, no-store');
     }
 
     public function parentReminder(Request $request, User $parent, SchoolFinanceService $service)
@@ -108,14 +134,23 @@ class SchoolFinanceController extends Controller
         $filters = $request->validate([
             'search' => 'nullable|string|max:100',
             'status' => 'nullable|in:paid,partially_paid,unpaid,waived,no_invoices',
+            'year' => 'nullable|integer|between:2000,2100',
+            'duration' => 'nullable|in:1,6,12,not_paid',
         ]);
+        $paymentYear = (int) ($filters['year'] ?? today()->year);
+        $coverageMonths = DB::table('invoice_periods')->selectRaw('fee_id, count(*) as months')->groupBy('fee_id')->pluck('months', 'fee_id');
+        $bulkMonths = DB::table('bulk_payment_allocations')->join('bulk_payment_runs', 'bulk_payment_runs.id', '=', 'bulk_payment_allocations.bulk_payment_run_id')->pluck('bulk_payment_runs.months', 'bulk_payment_allocations.fee_id');
         $families = User::where('role', 'parent')->with(['children.fees.adjustments', 'children.fees.items', 'children.fees.payments'])
-            ->orderBy('name')->get()->map(function ($parent) use ($service) {
+            ->orderBy('name')->get()->map(function ($parent) use ($service, $paymentYear, $coverageMonths, $bulkMonths) {
                 $fees = $parent->children->flatMap->fees;
                 $currencies = $service->summary($fees);
                 $status = $this->familyStatus($fees);
 
-                return compact('parent', 'currencies', 'status') + ['invoice_count' => $fees->count()];
+                $yearPayments = $fees->flatMap->payments->filter(fn ($payment) => $payment->paid_on && $payment->paid_on->year === $paymentYear && \App\Support\Money::cents($payment->amount) > 0);
+                $paidDurations = $fees->filter(fn ($fee) => $fee->netCents() > 0 && $fee->balanceCents() <= 0 && $fee->payments->contains(fn ($payment) => $yearPayments->contains('id', $payment->id)))
+                    ->map(fn ($fee) => (int) ($bulkMonths[$fee->id] ?? $coverageMonths[$fee->id] ?? match ($fee->payment_plan) { 'monthly' => 1, 'package' => 6, default => 0 }))->filter(fn ($months) => in_array($months, [1, 6, 12], true))->unique()->values();
+
+                return compact('parent', 'currencies', 'status', 'paidDurations') + ['invoice_count' => $fees->count(), 'noYearPayments' => $yearPayments->isEmpty()];
             });
         if ($request->filled('search')) {
             $needle = mb_strtolower(trim($filters['search']));
@@ -123,6 +158,14 @@ class SchoolFinanceController extends Controller
                 || $family['parent']->children->contains(fn ($child) => str_contains(mb_strtolower($child->name.' '.$child->student_number), $needle)));
         }
         $counts = $families->countBy('status');
+        $durationCounts = [];
+        foreach ([1, 6, 12] as $months) {
+            $durationCounts[$months] = $families->filter(fn ($family) => $family['paidDurations']->contains($months))->count();
+        }
+        $durationCounts['not_paid'] = $families->where('noYearPayments', true)->count();
+        if ($request->filled('duration')) {
+            $families = $families->filter(fn ($family) => $filters['duration'] === 'not_paid' ? $family['noYearPayments'] : $family['paidDurations']->contains((int) $filters['duration']));
+        }
         if ($request->filled('status')) {
             $families = $families->where('status', $filters['status']);
         }
@@ -133,7 +176,14 @@ class SchoolFinanceController extends Controller
         $paymentSchedules = app(ParentPaymentSchedule::class)->forFamilies($parentsOnPage);
         $unlinked = Student::whereHas('fees')->whereDoesntHave('parent', fn ($q) => $q->where('role', 'parent'))->count();
 
-        return view('school.finance.parents', compact('families', 'counts', 'unlinked', 'paymentSchedules'));
+        $bulkPlan = null;
+        if (($counts['no_invoices'] ?? 0) > 0 && $counts['no_invoices'] === $counts->sum()) {
+            $months = (int) $request->input('pay_months', 1);
+            abort_unless(in_array($months, [1, 6, 12], true), 422);
+            $bulkPlan = app(\App\Services\BulkTuitionPaymentService::class)->preview($months);
+        }
+
+        return view('school.finance.parents', compact('families', 'counts', 'unlinked', 'paymentSchedules', 'bulkPlan', 'paymentYear', 'durationCounts'));
     }
 
     private function visible(Request $request)
@@ -141,6 +191,14 @@ class SchoolFinanceController extends Controller
         abort_unless(in_array($request->user()->role, ['administrator', 'parent', 'student']), 403);
 
         return SchoolModules::query('fees', $request->user())->with(['student', 'items', 'adjustments', 'payments']);
+    }
+
+    public function archive(Request $request, SchoolFinanceService $service)
+    {
+        abort_unless($request->user()->role === 'administrator', 403);
+        $request->attributes->set('finance_archive', true);
+
+        return $this->index($request, $service);
     }
 
     public function index(Request $request, SchoolFinanceService $service)
@@ -157,6 +215,9 @@ class SchoolFinanceController extends Controller
             ->when($filters['program'] ?? null, fn ($q, $v) => $q->where('program', $v))
             ->when($filters['grade'] ?? null, fn ($q, $v) => $q->where('grade', $v))
             ->when($filters['academic_year'] ?? null, fn ($q, $v) => $q->where('academic_year', $v));
+        if ($request->attributes->get('finance_archive')) {
+            $query->onlyTrashed();
+        }
         $all = $query->orderByDesc('id')->get();
         $summary = $service->summary($all);
         $studentSummaries = $request->user()->role === 'administrator' ? collect() : $all->groupBy('student_id')->map(fn ($invoices) => [
@@ -173,12 +234,20 @@ class SchoolFinanceController extends Controller
         }
         $fees = new LengthAwarePaginator($all->forPage($page, $size)->values(), $all->count(), $size, $page, ['path' => $request->url(), 'query' => $request->query()]);
 
-        return view('school.finance.index', compact('fees', 'summary', 'studentSummaries') + ['records' => $fees]);
+        $programRates = FeeStructure::where('status', 'active')->whereNotNull('approved_at')
+            ->whereDate('effective_from', '<=', today())->where(fn ($q) => $q->whereNull('effective_until')->orWhereDate('effective_until', '>=', today()))
+            ->orderBy('program')->orderBy('grade')->get()->groupBy(fn ($rate) => implode('|', [$rate->program, $rate->academic_year, $rate->currency, $rate->monthly_tuition, $rate->billable_months, $rate->quarterly_tuition, $rate->packageMonths(), json_encode($rate->session_prices)]));
+
+        return view('school.finance.index', compact('fees', 'summary', 'studentSummaries', 'programRates') + ['records' => $fees]);
     }
 
     public function invoice(Request $request, int $fee)
     {
-        $fee = $this->visible($request)->findOrFail($fee);
+        $query = $this->visible($request);
+        if ($request->user()->role === 'administrator') {
+            $query->withTrashed();
+        }
+        $fee = $query->findOrFail($fee);
         $structures = $request->user()->role === 'administrator' ? FeeStructure::whereNotNull('approved_at')->orderBy('program')->get() : collect();
 
         if ($request->boolean('preview')) {
@@ -191,7 +260,11 @@ class SchoolFinanceController extends Controller
     public function receipt(Request $request, int $payment)
     {
         $payment = FeePayment::findOrFail($payment);
-        $fee = $this->visible($request)->findOrFail($payment->fee_id);
+        $query = $this->visible($request);
+        if ($request->user()->role === 'administrator') {
+            $query->withTrashed();
+        }
+        $fee = $query->findOrFail($payment->fee_id);
 
         return view('school.finance.receipt', compact('fee', 'payment'));
     }
@@ -212,7 +285,7 @@ class SchoolFinanceController extends Controller
         $data = $request->validate([
             'academic_year' => ['required', 'regex:/^\d{4}-\d{4}$/'], 'program' => ['required', Rule::in(['Khmer', 'English', 'Chinese', 'Japan'])],
             'grade' => 'required|integer|between:1,12', 'currency' => 'required|in:USD,KHR',
-            'monthly_tuition' => $money, 'billable_months' => 'required|integer|between:1,12', 'semester_months' => 'required|integer|between:1,12',
+            'monthly_tuition' => $money, 'package_months' => 'nullable|integer|in:3,6', 'quarterly_tuition' => ['nullable', 'regex:/^\d{1,9}(\.\d{1,2})?$/'], 'billable_months' => 'required|integer|between:1,12', 'semester_months' => 'required|integer|between:1,12',
             'starts_on' => 'required|date_format:Y-m-d', 'effective_from' => 'required|date_format:Y-m-d', 'effective_until' => 'nullable|date_format:Y-m-d|after_or_equal:effective_from',
             'due_day' => 'required|integer|between:1,28', 'discount' => $money, 'discount_reason' => 'nullable|string|max:255',
             'charges' => 'required|array:registration,books,uniform,examination,other', 'charges.*' => $money,
@@ -235,6 +308,28 @@ class SchoolFinanceController extends Controller
         }
         if ($data['semester_months'] > $data['billable_months']) {
             $service->fail('Semester months cannot exceed billable months.');
+        }
+        if (! empty($data['supersedes_id'])) {
+            $previous = FeeStructure::findOrFail($data['supersedes_id']);
+            if (! array_key_exists('quarterly_tuition', $data)) {
+                $data['quarterly_tuition'] = $previous->quarterly_tuition;
+            }
+            $data['session_prices'] = $previous->session_prices;
+            $data['package_months'] = $previous->packageMonths();
+            if ($data['session_prices']) {
+                foreach (['Morning', 'Afternoon'] as $session) {
+                    $data['session_prices'][$session]['monthly'] = $data['monthly_tuition'];
+                    $data['session_prices'][$session]['quarterly'] = $data['quarterly_tuition'];
+                }
+            }
+        }
+        $data['package_months'] ??= 6;
+        $preview = new FeeStructure($data);
+        foreach (['Morning', 'Afternoon', 'Evening'] as $session) {
+            $quarterly = $preview->quarterlyForSession($session);
+            if (Money::cents($preview->monthlyForSession($session)) < Money::cents($preview->discount) || ($quarterly !== null && intdiv(Money::cents($quarterly), $preview->packageMonths()) < Money::cents($preview->discount))) {
+                $service->fail('Discount exceeds the session or package tuition.');
+            }
         }
         $service->locked(function () use ($data, $request, $service) {
             $structure = FeeStructure::create($data + ['status' => 'draft', 'created_by' => $request->user()->id]);
@@ -298,7 +393,7 @@ class SchoolFinanceController extends Controller
 
     public function issue(Request $request, SchoolFinanceService $service)
     {
-        $data = $request->validate(['student_id' => 'required|integer|exists:students,id', 'school_class_id' => 'required|integer|exists:school_classes,id', 'fee_structure_id' => 'required|integer|exists:fee_structures,id', 'plan' => 'required|in:monthly,semester,annual,installments', 'start_month' => 'required|integer|between:1,12', 'count' => 'required|integer|between:1,12']);
+        $data = $request->validate(['student_id' => 'required|integer|exists:students,id', 'school_class_id' => 'required|integer|exists:school_classes,id', 'fee_structure_id' => 'required|integer|exists:fee_structures,id', 'plan' => 'required|in:monthly,quarterly,package,semester,annual,installments', 'start_month' => 'required|integer|between:1,12', 'count' => 'required|integer|between:1,12']);
         $fees = $service->issue(Student::findOrFail($data['student_id']), SchoolClass::findOrFail($data['school_class_id']), FeeStructure::findOrFail($data['fee_structure_id']), $data['plan'], (int) $data['start_month'], (int) $data['count'], $request->user());
 
         return redirect()->route('finance.invoice', $fees[0])->with('success', 'Invoices ready. Previously billed months were excluded.');
@@ -330,6 +425,10 @@ class SchoolFinanceController extends Controller
 
     public function export(Request $request)
     {
+        if ($request->boolean('archived')) {
+            abort_unless($request->user()->role === 'administrator', 403);
+            $request->attributes->set('finance_archive', true);
+        }
         // Export follows the same authorization and filters as the invoice directory.
         $request->attributes->set('finance_export', true);
         $view = $this->index($request, app(SchoolFinanceService::class));

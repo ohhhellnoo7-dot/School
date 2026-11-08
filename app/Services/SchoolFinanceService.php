@@ -16,6 +16,19 @@ use Illuminate\Validation\ValidationException;
 
 class SchoolFinanceService
 {
+    public function archiveLegacyFees(User $actor): int
+    {
+        return $this->locked(function () use ($actor) {
+            $fees = Fee::whereNull('invoice_number')->whereNull('fee_structure_id')->get();
+            foreach ($fees as $fee) {
+                $this->audit($actor, 'archive_legacy_fee', 'fee', $fee->id, $fee->getAttributes());
+                $fee->delete();
+            }
+
+            return $fees->count();
+        });
+    }
+
     public function fail(string $message): never
     {
         throw ValidationException::withMessages(['finance' => $message]);
@@ -81,7 +94,7 @@ class SchoolFinanceService
             if ($structure->status !== 'active' || ! $structure->approved_at || $structure->program !== $class->program || (int) $structure->grade !== (int) $grade) {
                 $this->fail('Choose an approved fee version matching the enrollment program and grade.');
             }
-            if (! in_array($plan, ['monthly', 'semester', 'annual', 'installments'])) {
+            if (! in_array($plan, ['monthly', 'quarterly', 'package', 'semester', 'annual', 'installments', 'bulk'])) {
                 $this->fail('Choose a valid payment plan.');
             }
             if ($structure->effective_from->isFuture() || ($structure->effective_until && $structure->effective_until->lt(today()))) {
@@ -91,7 +104,7 @@ class SchoolFinanceService
             $coverage = DB::table('invoice_periods')->where('student_id', $student->id)->where('academic_year', $structure->academic_year)->where('enrollment_key', $key);
             $billed = (clone $coverage)->pluck('month_index')->all();
             $length = match ($plan) {
-                'monthly' => 1, 'semester' => $structure->semester_months, 'annual' => $structure->billable_months, default => $count
+                'monthly' => 1, 'quarterly' => 3, 'package' => 6, 'semester' => $structure->semester_months, 'annual' => $structure->billable_months, default => $count
             };
             $end = $plan === 'annual' ? $structure->billable_months : $start + $length - 1;
             if ($start < 1 || $end > $structure->billable_months || $end < $start) {
@@ -101,32 +114,21 @@ class SchoolFinanceService
             if (! $months) {
                 return Fee::whereIn('id', (clone $coverage)->whereBetween('month_index', [$start, $end])->pluck('fee_id'))->get()->all();
             }
+            if (in_array($plan, ['quarterly', 'package']) && count($months) !== $length) {
+                $this->fail('A package requires its full number of unbilled consecutive months. Choose a new starting month.');
+            }
             $groups = $plan === 'installments' ? array_map(fn ($month) => [$month], $months) : [$months];
             $result = [];
             $firstInvoice = ! $billed;
             foreach ($groups as $indices) {
-                $items = [];
-                foreach ($indices as $index) {
-                    $month = $structure->starts_on->copy()->addMonthsNoOverflow($index - 1)->format('M Y');
-                    $items[] = ['description' => 'Tuition - '.$month, 'amount' => $structure->monthly_tuition];
-                    if (Money::cents($structure->discount) > 0) {
-                        $items[] = ['description' => 'Scholarship / discount - '.$month.': '.$structure->discount_reason, 'amount' => Money::decimal(-Money::cents($structure->discount))];
-                    }
-                }
-                if ($firstInvoice) {
-                    foreach ($structure->charges as $name => $amount) {
-                        if (Money::cents($amount) > 0) {
-                            $items[] = ['description' => ucfirst($name).' fee (once per enrollment/year)', 'amount' => $amount];
-                        }
-                    }
-                }
+                $items = $this->quoteItems($structure, $class->session, $indices, $firstInvoice, $plan);
                 $firstInvoice = false;
                 $due = $structure->starts_on->copy()->startOfMonth()->addMonthsNoOverflow(min($indices) - 1)->day($structure->due_day);
                 $fee = Fee::create([
                     'student_id' => $student->id, 'description' => $class->program.' Grade '.$grade.' tuition',
                     'amount' => Money::decimal(array_sum(array_map(fn ($item) => Money::cents($item['amount']), $items))), 'paid' => '0.00', 'opening_paid' => '0.00',
                     'due_date' => $due, 'invoice_number' => 'INV-'.Str::upper((string) Str::uuid()), 'fee_structure_id' => $structure->id,
-                    'program' => $class->program, 'grade' => $grade, 'academic_year' => $structure->academic_year, 'currency' => $structure->currency,
+                    'program' => $class->program, 'grade' => $grade, 'session' => $class->session, 'academic_year' => $structure->academic_year, 'currency' => $structure->currency,
                     'enrollment_key' => $key, 'payment_plan' => $plan, 'issued_by' => $actor->id, 'legacy_reviewed' => true,
                 ]);
                 $fee->items()->createMany($items);
@@ -139,6 +141,48 @@ class SchoolFinanceService
 
             return $result;
         });
+    }
+
+    public function quoteItems(FeeStructure $structure, ?string $session, array $indices, bool $firstInvoice, string $plan): array
+    {
+        $items = [];
+        $prices = array_fill_keys($indices, Money::cents($structure->monthlyForSession($session)));
+        $packageMonths = [];
+        $duration = $structure->packageMonths();
+        $quarterly = $structure->quarterlyForSession($session);
+        if (! in_array($plan, ['monthly', 'installments']) && $quarterly !== null) {
+            for ($position = 0; $position + $duration - 1 < count($indices); $position++) {
+                if (array_slice($indices, $position, $duration) !== range($indices[$position], $indices[$position] + $duration - 1)) {
+                    continue;
+                }
+                $total = Money::cents($quarterly);
+                foreach (range(0, $duration - 1) as $offset) {
+                    $index = $indices[$position + $offset];
+                    $prices[$index] = intdiv($total, $duration) + ($offset < $total % $duration ? 1 : 0);
+                    $packageMonths[$index] = true;
+                }
+                $position += $duration - 1;
+            }
+        }
+        foreach ($indices as $index) {
+            $month = $structure->starts_on->copy()->addMonthsNoOverflow($index - 1)->format('M Y');
+            if ($prices[$index] < Money::cents($structure->discount)) {
+                $this->fail('Scholarship exceeds this session or package tuition. Review the fee configuration.');
+            }
+            $items[] = ['description' => 'Tuition - '.$month.(isset($packageMonths[$index]) ? ' ('.$duration.'-month package)' : ''), 'amount' => Money::decimal($prices[$index])];
+            if (Money::cents($structure->discount) > 0) {
+                $items[] = ['description' => 'Scholarship / discount - '.$month.': '.$structure->discount_reason, 'amount' => Money::decimal(-Money::cents($structure->discount))];
+            }
+        }
+        if ($firstInvoice) {
+            foreach ($structure->charges as $name => $amount) {
+                if (Money::cents($amount) > 0) {
+                    $items[] = ['description' => ucfirst($name).' fee (once per enrollment/year)', 'amount' => $amount];
+                }
+            }
+        }
+
+        return $items;
     }
 
     public function reconcile(Fee $fee, array $data, User $actor): void

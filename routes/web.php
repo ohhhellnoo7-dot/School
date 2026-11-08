@@ -69,6 +69,8 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::post('/dashboard/attendance/all-present', [DashboardController::class, 'markAllPresent'])->middleware('role:administrator')->name('dashboard.attendance.all-present');
     Route::post('/dashboard/attendance/random', [DashboardController::class, 'randomAttendance'])->middleware('role:administrator')->name('dashboard.attendance.random');
+    Route::get('/teacher-attendance', [\App\Http\Controllers\TeacherAttendanceController::class, 'index'])->name('teacher-attendance.index');
+    Route::post('/teacher-attendance', [\App\Http\Controllers\TeacherAttendanceController::class, 'store'])->middleware('role:administrator')->name('teacher-attendance.store');
     Route::get('/reports', [DashboardController::class, 'reports'])->middleware('role:administrator')->name('reports');
     Route::get('/users/{user}/photo', [ProfileController::class, 'userPhoto'])->name('users.photo');
     Route::get('/students/{student}/photo', [ProfileController::class, 'studentPhoto'])->name('students.photo');
@@ -150,6 +152,12 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
         Route::middleware('role:administrator')->group(function () {
             Route::post('/parents/{parent}/next-payment', [\App\Http\Controllers\SchoolFinanceController::class, 'parentReminder'])->name('parents.next-payment');
             Route::get('/parents/{parent}/details', [\App\Http\Controllers\SchoolFinanceController::class, 'parentDetails'])->name('parents.details');
+            Route::get('/pay', [\App\Http\Controllers\BulkTuitionPaymentController::class, 'preview'])->name('bulk.preview');
+            Route::post('/pay', [\App\Http\Controllers\BulkTuitionPaymentController::class, 'pay'])->name('bulk.pay');
+            Route::get('/payments/bulk/{run}', [\App\Http\Controllers\BulkTuitionPaymentController::class, 'show'])->name('bulk.show');
+            Route::get('/tuition/edit', [\App\Http\Controllers\TuitionRateController::class, 'edit'])->name('tuition.edit');
+            Route::post('/tuition', [\App\Http\Controllers\TuitionRateController::class, 'save'])->name('tuition.save');
+            Route::get('/archive', [\App\Http\Controllers\SchoolFinanceController::class, 'archive'])->name('archive');
             Route::get('/parents', [\App\Http\Controllers\SchoolFinanceController::class, 'parents'])->name('parents');
             Route::get('/settings', [\App\Http\Controllers\SchoolFinanceController::class, 'settings'])->name('settings');
             Route::post('/settings', [\App\Http\Controllers\SchoolFinanceController::class, 'saveStructure'])->name('settings.save');

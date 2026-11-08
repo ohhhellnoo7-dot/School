@@ -810,3 +810,7 @@ html.pd-drawer-open {
 .pd-child-enrollment i { margin-right: 4px; }
 .pd-children > div { align-items: flex-start; }
 .pd-children > div > div { min-width: 0; flex: 1; }
+
+.tuition-grade-picker{display:flex;flex-wrap:wrap;gap:10px}.tuition-grade-picker label{display:flex;align-items:center;gap:10px;border:1px solid var(--border-color);border-radius:10px;padding:10px 16px;background:var(--surface)}.tuition-price-grid{display:grid;grid-template-columns:repeat(var(--tuition-session-count,3),minmax(0,1fr));gap:18px}.tuition-session-card{border:1px solid var(--border-color);border-radius:16px;padding:20px;background:var(--surface)}.tuition-session-card h3{margin-bottom:20px}.tuition-session-card input[readonly]{background:var(--app-bg)}@media(max-width:767px){.tuition-price-grid{grid-template-columns:1fr}}
+
+.tuition-saved-prices{border-top:1px solid var(--border-color);padding-top:20px}.tuition-saved-badge{display:inline-block;padding:3px 6px;font-size:10px;font-weight:600;border-radius:6px;background:color-mix(in srgb,var(--primary) 10%,var(--surface));color:var(--primary)}

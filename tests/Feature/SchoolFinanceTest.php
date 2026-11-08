@@ -249,4 +249,25 @@ class SchoolFinanceTest extends TestCase
         $this->postJson(route('finance.pay', $fee), ['amount' => 10.25, 'request_key' => (string) Str::uuid(), 'paid_on' => today()->toDateString(), 'method' => 'cash'])->assertRedirect();
         $this->assertSame('14.75', $fee->fresh()->balance);
     }
+
+    public function test_old_fees_can_be_archived_without_deleting_receipts_or_current_program_invoices(): void
+    {
+        $e = $this->setupEnrollment();
+        $current = $e['service']->issue($e['student'], $e['class'], $e['structure'], 'monthly', 1, 1, $e['actor'])[0];
+        $legacy = Fee::create(['student_id' => $e['student']->id, 'description' => 'Term tuition', 'amount' => '1200.00', 'paid' => '0.00', 'opening_paid' => '0.00', 'due_date' => today()]);
+        $payment = $e['service']->payment($legacy, ['amount' => '600.00', 'paid_on' => today()->format('Y-m-d'), 'method' => 'other', 'request_key' => (string) Str::uuid()], $e['actor']);
+        $this->assertSame(1, $e['service']->archiveLegacyFees($e['actor']));
+        $this->assertNull(Fee::find($legacy->id));
+        $this->assertSame('1200.00', Fee::withTrashed()->find($legacy->id)->amount);
+        $this->assertSame('600.00', Fee::withTrashed()->find($legacy->id)->paid);
+        $this->assertNotNull(Fee::find($current->id));
+        $this->assertNotNull($payment->fresh());
+        $this->actingAs($e['actor'])->get(route('finance.archive'))->assertOk()->assertSee('LEGACY-'.$legacy->id);
+        $this->get(route('finance.index'))->assertOk()->assertDontSee('LEGACY-'.$legacy->id);
+        $this->get(route('finance.invoice', $legacy->id))->assertOk()->assertSee('Archived invoice')->assertDontSee('Record payment &amp; receipt');
+        $this->get(route('finance.receipt', $payment))->assertOk();
+        $this->assertSame(0, $e['service']->archiveLegacyFees($e['actor']));
+        $this->actingAs($e['parent'])->get(route('finance.archive'))->assertForbidden();
+        $this->get(route('finance.invoice', $legacy->id))->assertNotFound();
+    }
 }

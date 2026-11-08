@@ -60,7 +60,7 @@ class SchoolSeeder extends Seeder
                     }
                     Attendance::firstOrCreate(['student_id' => $student->id, 'date' => $date->toDateString()], ['status' => ($i + $day) % 11 === 0 ? 'absent' : (($i + $day) % 9 === 0 ? 'late' : 'present')]);
                 }
-                Fee::firstOrCreate(['student_id' => $student->id, 'description' => 'Term tuition'], ['amount' => 1200, 'paid' => $i % 4 === 0 ? 600 : 1200, 'due_date' => today()->addDays(14), 'paid_at' => today()->startOfMonth()->subMonths($i % 6)->addDays(3)]);
+                Fee::withTrashed()->firstOrCreate(['student_id' => $student->id, 'description' => 'Term tuition'], ['amount' => 1200, 'paid' => $i % 4 === 0 ? 600 : 1200, 'due_date' => today()->addDays(14), 'paid_at' => today()->startOfMonth()->subMonths($i % 6)->addDays(3)]);
             }
             foreach ($classes as $i => $class) {
                 foreach (['Mathematics', 'English', 'Science'] as $j => $name) {
