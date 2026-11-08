@@ -11,13 +11,13 @@
 @endforeach
 </div>
 <section class="panel directory-panel">
-<div class="panel-header"><h2>{{ __('Teacher List') }} <span class="badge text-bg-light">{{ $rows->count() }}</span></h2></div>
+<div class="panel-header"><h2>{{ __('Teacher List') }} <span class="badge teacher-count">{{ $rows->count() }}</span></h2><span class="teacher-directory-caption">{{ __('Your people, at a glance') }}</span></div>
 <form method="get" class="teacher-simple-filters p-4 pt-2">
     @if(request()->filled('qualified_subject'))<input type="hidden" name="qualified_subject" value="{{ request('qualified_subject') }}"><p class="small text-secondary">Available teachers qualified in {{ request('qualified_subject') }}. Reset to view everyone.</p>@endif
     <div class="teacher-filter-row"><div><label for="search" class="form-label">Search Teacher</label><input type="search" class="form-control" id="search" name="search" placeholder="Name, teacher ID or email" value="{{ request('search') }}"></div>
     <div><label for="program" class="form-label">{{ __('Program') }}</label><select id="program" name="program" class="form-select"><option value="">All</option>@foreach(\App\Models\Program::names() as $program)<option @selected(request('program') === $program)>{{ $program }}</option>@endforeach</select></div>
     <div><label for="workload" class="form-label">{{ __('Status') }}</label><select id="workload" name="workload" class="form-select"><option value="">All</option>@foreach(['AVAILABLE', 'FULL', 'OVERLOADED', 'UNASSIGNED'] as $status)<option value="{{ $status }}" @selected(request('workload') === $status)>{{ ucfirst(strtolower($status)) }}</option>@endforeach</select></div>
-    <div class="d-flex gap-2 align-items-end"><button class="btn btn-primary">{{ __('Filter') }}</button><a class="btn btn-outline-secondary" href="{{ route('modules.index', 'teachers') }}">{{ __('Reset') }}</a></div></div>
+    <div class="d-flex gap-2 align-items-end"><button class="btn btn-primary"><i class="bi bi-funnel me-2" aria-hidden="true"></i>{{ __('Filter') }}</button><a class="btn btn-outline-secondary" href="{{ route('modules.index', 'teachers') }}"><i class="bi bi-arrow-repeat me-2" aria-hidden="true"></i>{{ __('Reset') }}</a></div></div>
     <details class="mt-3" @if(request()->filled('class') || request()->filled('session') || request()->filled('filter')) open @endif><summary>Advanced filters</summary><div class="teacher-filter-row mt-3">
     <div><label for="teacher-session" class="form-label">{{ __('Session') }}</label><select id="teacher-session" name="session" class="form-select"><option value="">All</option>@foreach(['Morning', 'Afternoon', 'Evening'] as $session)<option @selected(request('session') === $session)>{{ $session }}</option>@endforeach</select></div>
     <div><label for="teacher-class" class="form-label">{{ __('Class') }}</label><select id="teacher-class" name="class" class="form-select"><option value="">All</option>@foreach($classes as $class)<option value="{{ $class->id }}" @selected((int)request('class') === $class->id)>{{ $class->label }}</option>@endforeach</select></div>

@@ -1,0 +1,72 @@
+/* Reference-inspired directory finish. Every color follows the active palette. */
+:root[data-theme="light"] {
+    --app-bg:#edf7ff; --primary:#075de8; --action:#075de8; --on-action:#fff;
+    --accent:#25b9ed; --surface-tint:#e6f2ff; --hero-veil:#edf7ff;
+    --theme-nav-start:#115b9f; --theme-nav-end:#102e59; --theme-nav-active:#0785ec;
+}
+:root[data-theme]:root:root:root:root:root:root:root:root .scholar-workspace {
+    & .topbar { box-shadow:none; background:linear-gradient(110deg,var(--surface),var(--surface-tint)); }
+    & .portal-search { border-radius:999px; }
+    & .school-nav a.active { border-radius:18px; }
+    & .brand { border-bottom:2px solid var(--accent); padding-bottom:24px; }
+    &.teachers-page .teacher-hero {
+        position:relative; isolation:isolate; min-height:220px; padding:32px 36px;
+        background-image:linear-gradient(90deg,var(--surface) 0%,color-mix(in srgb,var(--surface) 92%,transparent) 26%,color-mix(in srgb,var(--surface) 15%,transparent) 68%),url('../images/teacher-workspace.png');
+        background-size:cover; background-position:center; border-radius:26px;
+        border:1px solid var(--border-color); margin-bottom:20px;
+    }
+    &.teachers-page .teacher-hero::after { content:""; position:absolute; z-index:-1; bottom:0; left:0; right:0; height:6px; background:linear-gradient(90deg,var(--primary),var(--accent),transparent); }
+    &.teachers-page .teacher-hero .eyebrow { color:var(--primary); font-size:11px; letter-spacing:2px; font-weight:800; }
+    &.teachers-page .teacher-hero h1 { color:var(--text-primary); font-size:clamp(32px,3.5vw,52px); letter-spacing:-1.5px; line-height:1.12; margin:12px 0; }
+    &.teachers-page .teacher-hero p { color:var(--text-primary); font-size:15px; }
+    &.teachers-page .teacher-hero > .btn { align-self:flex-end; padding:12px 20px; border-radius:16px; }
+    &.teachers-page .teacher-summary { gap:16px; }
+    &.teachers-page .teacher-stat {
+        --tile:var(--primary); display:grid; grid-template-columns:58px minmax(0,1fr); gap:6px 14px;
+        padding:22px; min-height:138px; border-radius:24px; border:1px solid var(--border-color);
+        background:linear-gradient(120deg,var(--surface),color-mix(in srgb,var(--tile) 10%,var(--surface)));
+        box-shadow:0 5px 14px var(--shadow-color); color:var(--text-primary);
+    }
+    &.teachers-page .teacher-stat:nth-child(2) { --tile:var(--success); }
+    &.teachers-page .teacher-stat:nth-child(3) { --tile:var(--warning); }
+    &.teachers-page .teacher-stat:nth-child(4) { --tile:var(--violet); }
+    &.teachers-page .teacher-stat::after { content:""; position:absolute; width:170px; height:60px; right:-25px; bottom:-38px; border-radius:50%; transform:rotate(-14deg); background:color-mix(in srgb,var(--tile) 20%,transparent); pointer-events:none; }
+    &.teachers-page .teacher-stat-icon { width:58px; height:58px; border-radius:50%; background:color-mix(in srgb,var(--tile) 12%,var(--surface)); color:var(--tile); font-size:27px; }
+    &.teachers-page .teacher-stat h2 { color:var(--text-primary); font-size:12px; line-height:1.4; }
+    &.teachers-page .teacher-stat strong { font-size:34px; color:var(--text-primary); }
+    &.teachers-page .teacher-stat small { font-size:10px; line-height:1.4; color:var(--text-secondary); position:relative; z-index:1; }
+    &.teachers-page .directory-panel { border-radius:26px; padding:6px; background:var(--surface); }
+    &.teachers-page .directory-panel .panel-header { padding:16px 20px 8px; display:flex; align-items:center; justify-content:space-between; gap:12px; border:0; }
+    &.teachers-page .panel-header h2 { font-size:19px; letter-spacing:-.5px; color:var(--text-primary); }
+    &.teachers-page .teacher-count { color:var(--primary); background:var(--surface-tint); border:1px solid var(--border-color); border-radius:10px; margin-left:6px; font-size:12px; vertical-align:middle; }
+    &.teachers-page .teacher-directory-caption { font-size:11px; color:var(--text-secondary); }
+    &.teachers-page .teacher-simple-filters { padding:12px 20px 20px!important; }
+    &.teachers-page .form-label { font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:6px; }
+    &.teachers-page .teacher-simple-filters :is(.form-control,.form-select) { min-height:40px; font-size:12px; border-radius:12px; }
+    &.teachers-page .teacher-simple-filters summary { color:var(--primary); font-size:12px; font-weight:600; }
+    &.teachers-page .directory-panel .table-responsive { margin:0 14px; border-radius:14px; }
+    &.teachers-page .teacher-simple-table { table-layout:auto; width:100%; margin-bottom:0; }
+    &.teachers-page .teacher-simple-table th { padding:13px 12px; background:var(--surface-tint); color:var(--text-primary); font-size:10px; letter-spacing:.4px; }
+    &.teachers-page .teacher-simple-table td { padding:14px 12px; color:var(--text-primary); border-color:var(--border-color); font-size:12px; }
+    &.teachers-page .teacher-simple-table td:first-child > a { color:var(--text-primary); font-weight:700; text-decoration:none; }
+    &.teachers-page .teacher-simple-table td small { font-size:10px; margin-top:4px; }
+    &.teachers-page .teacher-simple-table .btn { border-radius:999px; font-size:11px; padding:7px 12px; white-space:nowrap; margin:2px 0; background:var(--surface); border-color:var(--border-color); color:var(--text-primary); }
+    &.teachers-page .teacher-simple-table .btn:hover { background:var(--surface-tint); border-color:var(--primary); color:var(--primary); }
+    &.teachers-page .teacher-status { padding:6px 12px; font-size:10px; }
+    &.teachers-page .teacher-quick-actions .panel-header h2 { font-size:16px; }
+}
+@media(max-width:1199px) {
+    :root[data-theme]:root:root:root:root:root:root:root:root .teachers-page .teacher-summary { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:650px) {
+    :root[data-theme]:root:root:root:root:root:root:root:root .teachers-page {
+        & .teacher-hero { padding:24px; min-height:210px; gap:16px; background-position:60% center; }
+        & .teacher-hero > div { max-width:100%; }
+        & .teacher-stat { padding:16px; grid-template-columns:1fr; gap:10px; }
+        & .teacher-stat-icon { width:42px; height:42px; font-size:22px; }
+        & .teacher-stat strong { font-size:28px; }
+        & .teacher-directory-caption { display:none; }
+        & .directory-panel .table-responsive { margin:0 6px; }
+        & .teacher-simple-table td { padding:12px; }
+    }
+}
