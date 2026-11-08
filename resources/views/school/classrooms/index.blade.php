@@ -3,10 +3,10 @@
 
 @section('content')
 <div class="classroom-availability-page">
-<div class="page-heading classroom-heading">
+<x-scholar-hero class="page-heading classroom-heading" aria-labelledby="classroom-availability-title">
     <div>
         <div class="eyebrow"><span class="live-dot" aria-hidden="true"></span> Live room monitor</div>
-        <h1><i class="bi bi-calendar2-week" aria-hidden="true"></i> Classroom <span>Availability</span></h1>
+        <h1 id="classroom-availability-title"><i class="bi bi-calendar2-week" aria-hidden="true"></i> Classroom <span>Availability</span></h1>
         <p>Monitor classroom usage across all academic programs.</p>
     </div>
     <div class="d-flex flex-wrap gap-2 classroom-heading-actions">
@@ -32,9 +32,9 @@
         <div class="building-picker">
             <button class="btn btn-outline-secondary" type="button" data-building-toggle aria-expanded="false" aria-controls="building-options"><i class="bi bi-buildings me-1" aria-hidden="true"></i> <span data-building-label>{{ filled($filters['building'] ?? null) ? $buildings->firstWhere('code', $filters['building'])?->name : 'Building' }}</span> <i class="bi bi-chevron-down ms-1" aria-hidden="true"></i></button>
             <div class="building-options" id="building-options">
-                <button type="button" data-building="">All buildings</button>
+                <button type="button" data-building=""><i class="bi bi-buildings me-2" aria-hidden="true"></i>All buildings</button>
                 @foreach($buildings as $building)
-                <button type="button" data-building="{{ $building->code }}" data-building-name="{{ $building->name }}"><strong>{{ $building->name }}</strong>@if($building->code === 'A')<small>30 original rooms - Khmer & Chinese</small>@elseif($building->code === 'B')<small>12 original rooms - English</small>@endif</button>
+                <button type="button" data-building="{{ $building->code }}" data-building-name="{{ $building->name }}"><strong><i class="bi bi-building me-2" aria-hidden="true"></i>{{ $building->name }}</strong>@if($building->code === 'A')<small>30 original rooms - Khmer & Chinese</small>@elseif($building->code === 'B')<small>12 original rooms - English</small>@endif</button>
                 @endforeach
             </div>
         </div>
@@ -44,7 +44,7 @@
             <a class="btn btn-primary" href="{{ route('classrooms.create') }}"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i> Add room</a>
         @endif
     </div>
-</div>
+</x-scholar-hero>
 
 <section class="panel availability-filter-panel">
     <form class="availability-filters" method="get" action="{{ route('classrooms.index') }}" data-availability-filters>

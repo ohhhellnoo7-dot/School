@@ -56,4 +56,41 @@
         & :is(.subject-hero-features,.class-hero-actions,.timetable-hero-actions,.reports-hero-actions,.hero-school) { max-width:100%; flex-wrap:wrap; }
     }
 }
+/* Classroom monitor keeps its original campus artwork at full strength. */
+:root[data-theme]:root:root:root:root:root:root:root:root:root .scholar-workspace .scholar-hero.classroom-heading {
+    --hero-background-image:url('../images/classroom-availability-hero.png');
+    --hero-overlay-start:color-mix(in srgb,var(--surface) 96%,transparent);
+    --hero-overlay-middle:color-mix(in srgb,var(--surface) 76%,transparent);
+    --hero-overlay-end:transparent;
+    min-height:270px; display:flex; flex-direction:column; align-items:flex-start; justify-content:space-between;
+    padding:30px 32px; gap:24px; border-radius:28px;
+    background-image:linear-gradient(90deg,var(--hero-overlay-start),var(--hero-overlay-middle) 30%,transparent 72%),var(--hero-background-image);
+    background-position:right 60%;
+    & > div:first-child { max-width:75%; }
+    & h1 { font-size:clamp(28px,3vw,46px); font-weight:800; letter-spacing:-1.2px; margin:12px 0 10px; }
+    & h1 span, & h1 > i { color:var(--hero-accent); }
+    & h1 > i { font-size:.82em; margin-right:8px; }
+    & p { margin:0; }
+    & .classroom-heading-actions { align-self:flex-start; margin:0; padding:8px; border:1px solid var(--hero-border); border-radius:18px; background:color-mix(in srgb,var(--surface) 94%,transparent); box-shadow:0 4px 14px var(--shadow-color); max-width:100%; align-items:center; }
+    & .classroom-heading-actions .btn { min-height:40px; padding:9px 14px; font-size:12px; font-weight:600; }
+    & :is(.program-options,.building-options) { right:auto; left:0; max-width:calc(100vw - 80px); }
+}
+@media(max-width:991px) {
+    :root[data-theme]:root:root:root:root:root:root:root:root:root .scholar-workspace .scholar-hero.classroom-heading {
+        padding:26px; min-height:260px; background-position:65% center;
+        & > div:first-child { max-width:90%; }
+    }
+}
+@media(max-width:575px) {
+    :root[data-theme]:root:root:root:root:root:root:root:root:root .scholar-workspace .scholar-hero.classroom-heading {
+        padding:22px 18px; min-height:260px; gap:20px; border-radius:22px;
+        background-image:linear-gradient(90deg,var(--hero-overlay-start),color-mix(in srgb,var(--surface) 82%,transparent) 65%,color-mix(in srgb,var(--surface) 45%,transparent)),var(--hero-background-image);
+        & > div:first-child { max-width:100%; }
+        & .classroom-heading-actions { display:grid!important; grid-template-columns:repeat(2,minmax(0,1fr)); width:100%; }
+        & .classroom-heading-actions > * { min-width:0; }
+        & .classroom-heading-actions > .btn-primary { grid-column:1/-1; }
+        & .classroom-heading-actions .btn { width:100%; padding:9px; font-size:11px; }
+        & .building-options { left:auto; right:0; }
+    }
+}
 @media(prefers-reduced-motion:reduce) { .scholar-hero,.scholar-hero * { transition:none!important; animation:none!important; } }
