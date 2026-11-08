@@ -1,5 +1,9 @@
 @if($field === 'phone' && $record instanceof \App\Models\User && $record->role === 'parent')
     {{ $record->phone ?: ($record->children->first(fn ($child) => filled($child->guardian_phone))?->guardian_phone ?: 'Not provided') }}
+@elseif($module === 'subjects' && $field === 'name')
+    <span class="subject-name"><span class="subject-symbol" aria-hidden="true"><i class="bi bi-book-half"></i></span><span>{{ $record->name }}</span></span>
+@elseif($module === 'subjects' && $field === 'class_id')
+    <span class="subject-class-label">{{ $options['class'][$record->$field] ?? __('Not assigned') }}</span>
 @elseif($field === 'name' && $record instanceof \App\Models\User)
     {{ $record->name }}
 @elseif(in_array($type, ['teacher', 'student']) && $record->{ $type })

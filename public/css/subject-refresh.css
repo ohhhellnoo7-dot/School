@@ -1,0 +1,65 @@
+/* Subjects directory: semantic colors keep light, dark and cultural palettes aligned. */
+:root[data-theme]:root:root:root:root:root:root:root:root .subjects-page {
+    & .subject-hero {
+        position:relative; isolation:isolate; min-height:238px; padding:28px 32px; margin-bottom:18px;
+        border-radius:26px; overflow:hidden; border:1px solid var(--border-color);
+        background-image:linear-gradient(90deg,var(--surface) 0%,color-mix(in srgb,var(--surface) 92%,transparent) 30%,color-mix(in srgb,var(--surface) 10%,transparent) 75%),url('../images/subject-workspace.png');
+        background-size:cover; background-position:center;
+    }
+    & .subject-hero::after { content:""; position:absolute; bottom:0; left:0; right:0; height:5px; background:linear-gradient(90deg,var(--primary),var(--accent),transparent); }
+    & .subject-hero .eyebrow { display:inline-flex; padding:7px 14px; border-radius:999px; background:var(--action); color:var(--on-action); font-size:10px; font-weight:750; letter-spacing:1px; }
+    & .subject-hero h1 { font-size:clamp(32px,3.5vw,50px); line-height:1.1; letter-spacing:-1.5px; color:var(--text-primary); margin:14px 0 10px; }
+    & .subject-hero p { font-size:15px; color:var(--text-primary); margin-bottom:0; }
+    & .subject-hero > .btn { align-self:flex-end; border-radius:18px; padding:12px 20px; }
+    & .subject-hero-features { gap:10px; margin-top:18px; }
+    & .subject-hero-features span { padding:10px 14px; border-radius:999px; background:var(--surface); border-color:var(--border-color); color:var(--text-primary); font-size:11px; box-shadow:0 3px 10px var(--shadow-color); }
+    & .subject-hero-features i { color:var(--primary); }
+    & .teacher-summary { gap:16px; margin-bottom:20px; }
+    & .teacher-stat { --tile:var(--primary); grid-template-columns:54px minmax(0,1fr); gap:6px 14px; padding:20px; min-height:126px; border-radius:22px; border:1px solid var(--border-color); color:var(--text-primary); background:linear-gradient(120deg,var(--surface),color-mix(in srgb,var(--tile) 10%,var(--surface))); box-shadow:0 5px 16px var(--shadow-color); }
+    & .subject-stat-assigned { --tile:var(--violet); }
+    & .subject-stat-unassigned { --tile:var(--warning); }
+    & .subject-stat-classes { --tile:var(--success); }
+    & .teacher-stat::after { content:""; position:absolute; width:190px; height:65px; right:-30px; bottom:-42px; border-radius:50%; transform:rotate(-12deg); background:color-mix(in srgb,var(--tile) 23%,transparent); }
+    & .teacher-stat-icon { width:54px; height:54px; border-radius:50%; font-size:26px; color:var(--tile); background:color-mix(in srgb,var(--tile) 14%,var(--surface)); }
+    & .teacher-stat h2 { font-size:11px; line-height:1.4; color:var(--text-primary); }
+    & .teacher-stat strong { font-size:30px; color:var(--text-primary); }
+    & .teacher-stat small { font-size:10px; color:var(--text-secondary); z-index:1; }
+    & .teacher-stat-spark { display:none; }
+    & .directory-panel { padding:6px; border-radius:26px; background:var(--surface); }
+    & .directory-panel .panel-header { padding:16px 24px; border:0; }
+    & .panel-header h2 { font-size:21px; letter-spacing:-.6px; color:var(--text-primary); }
+    & .panel-header h2::after { content:""; display:block; width:48px; height:3px; border-radius:5px; margin-top:9px; background:var(--primary); }
+    & .panel-header .badge { background:var(--surface-tint)!important; color:var(--primary)!important; border:1px solid var(--border-color); border-radius:999px; font-size:12px; margin-left:8px; vertical-align:middle; }
+    & .filter-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px 18px!important; padding:0 24px 24px!important; }
+    & .filter-grid .form-label { color:var(--text-secondary); font-size:11px; }
+    & .filter-grid :is(.form-control,.form-select) { min-height:40px; border-radius:14px; background-color:var(--surface); color:var(--text-primary); font-size:12px; }
+    & .filter-grid .btn { min-height:40px; padding:9px 18px; border-radius:14px; background:var(--surface); color:var(--text-primary); border:1px solid var(--border-color); }
+    & .filter-grid button[type], & .filter-grid button { background:var(--action); border-color:var(--action); color:var(--on-action); }
+    & .directory-panel .table-responsive { margin:0 16px; border-radius:14px; }
+    & .table th { padding:12px 14px; color:var(--text-primary); background:var(--surface-tint); font-size:10px; border:0; }
+    & .table td { padding:12px 14px; color:var(--text-primary); font-size:12px; border-color:var(--border-color); }
+    & .table tbody tr:nth-child(even) { background:color-mix(in srgb,var(--surface-tint) 28%,var(--surface)); }
+    & .subject-name { display:inline-flex; align-items:center; gap:10px; font-weight:700; }
+    & .subject-symbol { display:inline-grid; place-items:center; width:34px; height:34px; flex-shrink:0; border-radius:11px; background:var(--surface-tint); color:var(--primary); font-size:19px; }
+    & tr:nth-child(3n+2) .subject-symbol { color:var(--violet); background:color-mix(in srgb,var(--violet) 12%,var(--surface)); }
+    & tr:nth-child(3n) .subject-symbol { color:var(--success); background:var(--success-soft); }
+    & .subject-class-label { display:inline-block; padding:5px 9px; border-radius:9px; color:var(--primary); background:var(--surface-tint); font-size:11px; font-weight:600; }
+    & .table .btn { display:inline-flex; align-items:center; justify-content:center; width:34px; height:32px; padding:6px; border-radius:11px; background:var(--surface); color:var(--primary); border:1px solid var(--border-color); }
+    & .table .btn:hover { background:var(--surface-tint); border-color:var(--primary); }
+    & .status-badge { border-radius:999px; font-size:10px; }
+}
+@media(max-width:1199px) {
+    :root[data-theme]:root:root:root:root:root:root:root:root .subjects-page .teacher-summary { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:767px) {
+    :root[data-theme]:root:root:root:root:root:root:root:root .subjects-page {
+        & .subject-hero { padding:24px; gap:18px; }
+        & .subject-hero > div { max-width:100%; }
+        & .subject-hero-features span { padding:8px 10px; font-size:10px; }
+        & .teacher-stat { padding:16px; grid-template-columns:1fr; }
+        & .teacher-stat-icon { width:42px; height:42px; font-size:22px; }
+        & .filter-grid { grid-template-columns:repeat(2,minmax(0,1fr)); padding:0 16px 20px!important; }
+        & .directory-panel .table-responsive { margin:0 8px; }
+        & .table { min-width:780px; }
+    }
+}
