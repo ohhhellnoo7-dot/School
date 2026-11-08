@@ -102,9 +102,16 @@
     </form>
 </section>
 @if(auth()->user()->role === 'administrator')
-<section class="panel mb-3"><div class="panel-header"><div><h2>Teacher attendance report</h2><p>{{ $reportDate->format('l, d F Y') }} &middot; All programs</p></div><a class="btn btn-outline-primary" href="{{ route('teacher-attendance.index', ['date' => $reportDate->toDateString()]) }}">View / mark teachers</a></div><div class="panel-body pt-0"><h3 class="h6 text-center">Overall teacher attendance</h3>
-@include('school.partials.teacher-attendance-chart', ['chartCounts' => $teacherAttendanceCounts, 'chartId' => 'teacherAttendanceChart'])
-</div></section>
+@include('school.attendance._teacher-chart', [
+    'counts' => $teacherAttendanceCounts,
+    'total' => $teacherAttendanceTotal,
+    'date' => $reportDate->toDateString(),
+    'filters' => [],
+    'attendanceTitle' => 'Teacher attendance report',
+    'attendanceChartId' => 'teacherAttendanceChart',
+    'attendanceActionUrl' => route('modules.index', ['module' => 'teachers', 'attendance_date' => $reportDate->toDateString()]).'#teacher-attendance-records',
+    'attendanceScope' => 'All programs for the selected report date.',
+])
 @endif
 <div class="row g-3 mb-3">
     <div class="col-lg-8"><section class="panel h-100"><div class="panel-header"><div><h2>Student enrollment</h2><p>A growing community of bright minds</p></div><span class="date-pill py-1">Last 6 months <i class="bi bi-chevron-down ms-2"></i></span></div><div class="chart-wrap"><canvas id="enrollmentChart" role="img" aria-label="Monthly student enrollment chart"></canvas></div></section></div>

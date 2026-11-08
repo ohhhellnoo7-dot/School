@@ -35,9 +35,32 @@ class TeacherAttendanceController extends Controller
         $records = $records->only($teachers->pluck('id')->all());
         $counts = $records->countBy('status');
         $total = $teachers->count();
+        $insights = null;
+        if ($embedded && $request->user()->role === 'administrator') {
+            $end = \Illuminate\Support\Carbon::parse($date);
+            $history = TeacherAttendance::whereDate('date', '>=', $end->copy()->subDays(6)->toDateString())->whereDate('date', '<=', $date)
+                ->when($filters['program'] ?? null, fn ($q, $program) => $q->where('program', $program))
+                ->when($filters['search'] ?? null, fn ($q, $search) => $q->whereHas('teacher', fn ($q) => $q->where(fn ($q) => $q->where('name', 'like', '%'.$search.'%')->orWhere('email', 'like', '%'.$search.'%'))))
+                ->get()->groupBy(fn ($record) => $record->date->toDateString());
+            $trend = collect(range(6, 0))->map(function ($offset) use ($end, $history) {
+                $day = $end->copy()->subDays($offset);
+                $daily = $history->get($day->toDateString(), collect());
+                return ['date' => $day->toDateString(), 'label' => $day->format('D'), 'recorded' => $daily->count(),
+                    'rate' => $daily->isEmpty() ? null : (int) round($daily->where('status', 'present')->count() / $daily->count() * 100)];
+            });
+            $programs = $teachers->groupBy(fn ($teacher) => $records->get($teacher->id)?->program ?? $teacher->program ?? 'Unassigned')
+                ->map(function ($members, $program) use ($records) {
+                    $marked = $records->only($members->pluck('id')->all());
+                    return ['name' => $program, 'total' => $members->count(), 'recorded' => $marked->count(),
+                        'rate' => $marked->isEmpty() ? null : (int) round($marked->where('status', 'present')->count() / $marked->count() * 100)];
+                })->values();
+            $recent = $records->sortByDesc('updated_at')->take(3);
+            $recent->each(fn ($record) => $record->loadMissing('teacher'));
+            $insights = compact('trend', 'programs', 'recent');
+        }
         $teachers = new \Illuminate\Pagination\LengthAwarePaginator($teachers->forPage(max(1, $request->integer($prefix.'page', 1)), 50)->values(), $total, 50, max(1, $request->integer($prefix.'page', 1)), ['path' => $request->url(), 'query' => $request->query(), 'pageName' => $prefix.'page', 'fragment' => 'teacher-attendance']);
         $workingHours = DB::table('teacher_working_periods')->whereIn('teacher_id', $teachers->pluck('id'))->where('unavailable', false)->get()->groupBy('teacher_id')->map(fn ($periods) => $periods->map(fn ($p) => substr($p->start_time, 0, 5).'?'.substr($p->end_time, 0, 5))->unique()->join(', '));
-        return compact('teachers', 'records', 'counts', 'total', 'date', 'workingHours', 'filters', 'embedded', 'prefix');
+        return compact('teachers', 'records', 'counts', 'total', 'date', 'workingHours', 'filters', 'embedded', 'prefix', 'insights');
     }
     public function store(Request $request) {
         abort_unless($request->user()->role === 'administrator', 403);

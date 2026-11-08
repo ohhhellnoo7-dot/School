@@ -1,19 +1,6 @@
-<section class="panel p-4 mb-4"><form method="get" action="{{ $embedded ? route('modules.index', 'teachers').'#teacher-attendance' : route('teacher-attendance.index') }}" class="d-flex flex-wrap align-items-end gap-3">
-<div><label class="form-label" for="teacher-date">Date</label><input id="teacher-date" class="form-control" type="date" name="{{ $prefix }}date" value="{{ $date }}" required></div>
-<div><label class="form-label" for="teacher-program">Program</label><select id="teacher-program" class="form-select" name="{{ $prefix }}program"><option value="">All programs</option>
-@foreach(\App\Models\Program::names() as $program)
-<option value="{{ $program }}" @selected(($filters['program'] ?? '') === $program)>{{ $program === 'Japan' ? 'Japanese' : $program }}</option>
-@endforeach
-</select></div><div><label class="form-label" for="teacher-search">Teacher name or email</label><input id="teacher-search" class="form-control" name="{{ $prefix }}search" value="{{ $filters['search'] ?? '' }}"></div><button class="btn btn-primary">View attendance</button><a class="btn btn-outline-secondary" href="{{ $embedded ? route('modules.index', 'teachers').'#teacher-attendance' : route('teacher-attendance.index') }}">Reset</a></form></section>
-<h2 class="h5">{{ \Carbon\Carbon::parse($date)->format('d F Y') }}</h2>
-<div class="row g-3 mb-4">
-@foreach(['present'=>'Present','absent'=>'Absent','late'=>'Late','excused'=>'Excused','unmarked'=>'Unmarked'] as $status=>$label)
-<div class="col"><section class="panel p-3"><div>{{ $label }}</div><strong class="fs-3">{{ $status === 'unmarked' ? max(0, $total - $records->count()) : ($counts[$status] ?? 0) }}</strong></section></div>
-@endforeach
-</div>
-<section class="panel p-4 mb-4"><h2 class="h5 text-center">Overall teacher attendance</h2><p class="text-center text-secondary">Selected date, program and teacher filters &middot; All result pages</p>
-@include('school.partials.teacher-attendance-chart', ['chartCounts' => $counts, 'chartId' => 'teacherOverallChart'])
-</section>
+@if(!($overviewRendered ?? false))
+@include('school.attendance._teacher-overview')
+@endif
 <form method="post" action="{{ route('teacher-attendance.store') }}">
 @csrf
 @if($embedded)<input type="hidden" name="return_to" value="teachers"><input type="hidden" name="attendance_page" value="{{ $teachers->currentPage() }}">@endif

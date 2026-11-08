@@ -91,6 +91,9 @@ class DashboardController extends Controller
         $finance = $canViewFees ? (app(\App\Services\SchoolFinanceService::class)->summary((clone $fees)->with(['adjustments', 'payments'])->get())['USD'] ?? []) : [];
         $months = collect(range(5, 0))->map(fn ($i) => now()->startOfMonth()->subMonths($i));
         $teacherAttendanceCounts = $user->role === 'administrator' ? \App\Models\TeacherAttendance::whereDate('date', $reportDate)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status') : collect();
+        $teacherAttendanceTotal = $user->role === 'administrator' ? User::where('role', 'teacher')
+            ->where(fn ($query) => $query->where('status', 'active')->orWhereNull('status')
+                ->orWhereIn('id', \App\Models\TeacherAttendance::whereDate('date', $reportDate)->select('teacher_id')))->count() : 0;
         $charts = [
             'labels' => $months->map(fn ($date) => $date->format('M'))->values(),
             'enrollment' => $months->map(fn ($date) => (clone $students)->whereBetween('enrollment_date', [$date->toDateString(), $date->copy()->endOfMonth()->toDateString()])->count())->values(),
@@ -151,6 +154,7 @@ class DashboardController extends Controller
             'recent' => (clone $students)->with(['schoolClass', 'user', 'parent'])->latest()->latest('id')->limit(5)->get(),
             'announcements' => Announcement::whereIn('audience', ['all', $user->role])->whereDate('published_at', '<=', today())->latest('published_at')->limit(4)->get(),
             'teacherAttendanceCounts' => $teacherAttendanceCounts,
+            'teacherAttendanceTotal' => $teacherAttendanceTotal,
             'charts' => $charts,
         ];
     }

@@ -6,13 +6,17 @@
     <a href="{{ route('teacher-management.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg me-2" aria-hidden="true"></i>{{ __('Add Teacher') }}</a>
 </x-scholar-hero>
 
+
 <div class="teacher-summary" aria-label="Teacher overview">
 @foreach([[$total, 'Total Teachers', 'people-fill', 'Your school teaching team'], [$available, 'Available Teachers', 'person-check', 'Active teachers with teaching capacity'], [$full, 'Fully Booked Teachers', 'calendar-check', 'At their weekly teaching limit'], [$demand['needed'], 'Teachers Needed', 'person-plus', 'Estimated Khmer staffing gap; see reports']] as [$value, $label, $icon, $note])
 <article class="teacher-stat"><span class="teacher-stat-icon"><i class="bi bi-{{ $icon }}" aria-hidden="true"></i></span><div><h2>{{ $label }}</h2><strong>{{ $value }}</strong></div><small>{{ $note }}</small></article>
 @endforeach
 </div>
-<section class="panel directory-panel">
-<div class="panel-header"><h2>{{ __('Teacher List') }} <span class="badge teacher-count">{{ $rows->count() }}</span></h2><span class="teacher-directory-caption">{{ __('Your people, at a glance') }}</span></div>
+<section id="teacher-attendance" class="mb-4" aria-label="Teacher attendance overview">
+    @include('school.attendance._teacher-overview', $attendance)
+</section>
+<section id="teacher-attendance-records" class="panel directory-panel">
+<div class="panel-header"><h2>{{ __('Teacher List') }} <span class="badge teacher-count">{{ $rows->count() }}</span></h2><span class="teacher-directory-caption">Attendance: {{ \Carbon\Carbon::parse($attendance['date'])->format('d M Y') }}</span></div>
 <form method="get" class="teacher-simple-filters p-4 pt-2">
     @if(request()->filled('qualified_subject'))<input type="hidden" name="qualified_subject" value="{{ request('qualified_subject') }}"><p class="small text-secondary">Available teachers qualified in {{ request('qualified_subject') }}. Reset to view everyone.</p>@endif
     <div class="teacher-filter-row"><div><label for="search" class="form-label">Search Teacher</label><input type="search" class="form-control" id="search" name="search" placeholder="Name, teacher ID or email" value="{{ request('search') }}"></div>
@@ -24,18 +28,38 @@
     <div><label for="teacher-class" class="form-label">{{ __('Class') }}</label><select id="teacher-class" name="class" class="form-select"><option value="">All</option>@foreach($classes as $class)<option value="{{ $class->id }}" @selected((int)request('class') === $class->id)>{{ $class->label }}</option>@endforeach</select></div>
     <div><label for="filter" class="form-label">Teacher account</label><select id="filter" name="filter" class="form-select"><option value="">All</option>@foreach(['active', 'inactive'] as $status)<option @selected(request('filter') === $status)>{{ $status }}</option>@endforeach</select></div></div></details>
 </form>
-<div class="table-responsive"><table class="table teacher-simple-table"><thead><tr><th>{{ __('Teacher') }}</th><th>{{ __('Subjects') }}</th><th>{{ __('Classes') }}</th><th>Weekly Hours</th><th>Break Hours</th><th>{{ __('Status') }}</th><th>{{ __('Actions') }}</th></tr></thead><tbody>
+<div class="table-responsive"><table class="table teacher-simple-table"><thead><tr><th>{{ __('Teacher') }}</th><th>{{ __('Subjects') }}</th><th>{{ __('Classes') }}</th><th>Weekly Hours</th><th>Attendance &amp; notes</th><th>{{ __('Actions') }}</th></tr></thead><tbody>
 @forelse($rows as $row) @php($t = $row['teacher']) @php($w = $row['workload'])
-<tr><td data-label="Teacher">@include('school.partials.avatar', ['person' => $t])<a href="{{ route('teacher-management.show', $t) }}">{{ $t->name }}</a><small class="d-block text-secondary">{{ $t->profile_number ?: '#'.$t->id }} · {{ $t->program ?: 'Khmer' }} · {{ $t->status }}</small>@if($t->requiresTeacherConfirmation())<small class="d-block text-secondary">Unverified record</small>@elseif($t->employee_confirmed_at)<small class="d-block text-success">Employee confirmed</small>@endif</td>
+<tr><td data-label="Teacher"><div class="teacher-row-identity">@include('school.partials.avatar', ['person' => $t])<div class="teacher-row-details"><a href="{{ route('teacher-management.show', $t) }}">{{ $t->name }}</a><small class="d-block text-secondary">{{ $t->profile_number ?: '#'.$t->id }} · {{ $t->program ?: 'Khmer' }} · {{ $t->status }}</small>@if($t->requiresTeacherConfirmation())<small class="d-block text-secondary">Unverified record</small>@elseif($t->employee_confirmed_at)<small class="d-block text-success">Employee confirmed</small>@endif</div></div></td>
 <td data-label="Subjects">{{ $w['subjects']->join(', ') ?: 'Not assigned' }}@if($t->program === 'Khmer' && $w['subjects']->count() > 2)<small class="d-block text-danger">{{ $w['subjects']->count() - 2 }} additional subjects · review</small>@endif</td>
 <td data-label="Classes">{{ $w['classes']->take(3)->map(fn ($c) => $c->name.$c->section)->join(', ') ?: 'Not assigned' }}@if($w['classes']->count() > 3)<small class="d-block text-secondary">+{{ $w['classes']->count() - 3 }} more</small>@endif</td>
-<td data-label="Weekly Hours">{{ $w['weekly'] }} / {{ $w['limit'] }} h</td><td data-label="Break Hours">{{ $w['breaks'] }} / {{ app(\App\Services\TeacherManagementService::class)->requiredBreaks($t) }} h</td><td data-label="Status"><span class="teacher-status status-{{ strtolower($w['status']) }}">{{ $w['status'] }}</span></td><td data-label="Actions"><a class="btn btn-sm btn-outline-secondary" href="{{ route('teacher-management.show', $t) }}">Manage</a> <a class="btn btn-sm btn-outline-secondary" href="{{ route('teachers.schedule', $t) }}">View Schedule</a></td></tr>
-@empty<tr><td colspan="7">No teachers match these filters.</td></tr>@endforelse
+<td data-label="Weekly Hours">{{ $w['weekly'] }} / {{ $w['limit'] }} h</td><td data-label="Attendance &amp; notes" class="teacher-inline-attendance">
+@php($dailyRecord = $rowAttendance->get($t->id))
+@if($attendance['date'] <= today()->toDateString() && (in_array($t->status, [null, 'active'], true) || $dailyRecord))
+<form method="post" action="{{ route('teacher-attendance.store') }}" class="teacher-attendance-row-form">
+    @csrf
+    <input type="hidden" name="date" value="{{ $attendance['date'] }}">
+    <input type="hidden" name="return_to" value="teachers">
+    <input type="hidden" name="records[0][teacher_id]" value="{{ $t->id }}">
+    <label class="visually-hidden" for="attendance-status-{{ $t->id }}">Attendance for {{ $t->name }}</label>
+    <select id="attendance-status-{{ $t->id }}" class="form-select form-select-sm" name="records[0][status]">
+        <option value="">Unmarked</option>
+        @foreach(['present','absent','late','excused'] as $attendanceStatus)
+        <option value="{{ $attendanceStatus }}" @selected($dailyRecord?->status === $attendanceStatus)>{{ ucfirst($attendanceStatus) }}</option>
+        @endforeach
+    </select>
+    <label class="visually-hidden" for="attendance-notes-{{ $t->id }}">Attendance notes for {{ $t->name }}</label>
+    <input id="attendance-notes-{{ $t->id }}" class="form-control form-control-sm" name="records[0][notes]" maxlength="1000" value="{{ $dailyRecord?->notes }}" placeholder="Add a note (optional)">
+    <button class="btn btn-sm btn-outline-primary" type="submit" aria-label="Save teacher attendance for {{ $t->name }}">Save</button>
+</form>
+@else
+<span>{{ ucfirst($dailyRecord?->status ?? 'Unmarked') }}</span>
+@if($dailyRecord?->notes)<small class="d-block text-secondary">{{ $dailyRecord->notes }}</small>@endif
+@endif
+</td><td data-label="Actions"><div class="teacher-row-actions"><a class="btn btn-sm btn-outline-secondary" href="{{ route('teacher-management.show', $t) }}">Manage</a> <a class="btn btn-sm btn-outline-secondary" href="{{ route('teachers.schedule', $t) }}">View Schedule</a></div></td></tr>
+@empty<tr><td colspan="6">No teachers match these filters.</td></tr>@endforelse
 </tbody></table></div><div class="p-3 small text-secondary">{{ $rows->count() }} teachers shown</div></section>
-<section id="teacher-attendance" class="mt-4" aria-labelledby="teacher-attendance-heading">
-    <div class="page-heading"><div><h2 id="teacher-attendance-heading">Teacher attendance</h2><p>View and mark daily attendance here.</p></div></div>
-    @include('school.attendance._teachers', $attendance)
-</section>
+
 <section class="panel mt-4 teacher-quick-actions"><div class="panel-header"><h2>Quick Actions</h2></div><div class="d-flex flex-wrap gap-2 p-4 pt-2">
 <a class="btn btn-primary" href="{{ route('teacher-management.create') }}">Add Teacher</a>
 <form method="post" action="{{ route('teacher-management.breaks.preview-all') }}">@csrf<button class="btn btn-outline-secondary">Generate Weekly Teacher Breaks</button></form>
@@ -44,4 +68,6 @@
 </div></section>
 <details class="panel p-3 mt-3"><summary>Optional sample data</summary><p class="small text-secondary mt-2">Preview clearly fictional Cambodian teacher records. No records are created until you confirm.</p><form method="post" action="{{ route('teacher-management.samples.preview') }}" class="d-flex flex-wrap gap-2">@csrf<label for="sample-count" class="visually-hidden">Number of sample teachers</label><input id="sample-count" name="count" type="number" min="1" max="100" value="{{ min(100, max(1, $demand['target'] - $demand['active'])) }}" class="form-control w-auto" required><button class="btn btn-outline-secondary">Generate Sample Teachers</button></form></details>
 @endsection
-@push('scripts')<script src="{{ asset('js/directory-search.js') }}?v={{ filemtime(public_path('js/directory-search.js')) }}"></script>@endpush
+@push('scripts')<script src="{{ asset('js/directory-search.js') }}?v={{ filemtime(public_path('js/directory-search.js')) }}"></script><script src="{{ asset('vendor/chart/chart.umd.min.js') }}"></script>
+<script src="{{ asset('js/teacher-attendance-chart.js') }}?v={{ filemtime(public_path('js/teacher-attendance-chart.js')) }}" defer></script>
+@endpush

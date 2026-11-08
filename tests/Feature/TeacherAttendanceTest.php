@@ -8,11 +8,30 @@ use Tests\TestCase;
 class TeacherAttendanceTest extends TestCase
 {
     use RefreshDatabase;
+    public function test_attendance_workspace_uses_real_filtered_history_and_marks_empty_days(): void {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = User::factory()->create(['role' => 'teacher', 'program' => 'Khmer', 'status' => 'active']);
+        $other = User::factory()->create(['role' => 'teacher', 'program' => 'English', 'status' => 'active']);
+        $date = today()->toDateString();
+        foreach ([[$teacher, 'Khmer', 'present'], [$other, 'English', 'absent']] as [$person, $program, $status]) {
+            TeacherAttendance::create(['teacher_id' => $person->id, 'date' => $date, 'program' => $program, 'status' => $status, 'recorded_by' => $admin->id]);
+        }
+        $this->actingAs($admin)->get(route('modules.index', ['module' => 'teachers', 'attendance_program' => 'Khmer']))
+            ->assertOk()->assertSee('Attendance trend')->assertSee('Attendance by program')->assertSee('Recent attendance')
+            ->assertViewHas('attendance', function ($data) use ($teacher) {
+                $insights = $data['insights'];
+                return $insights['trend']->count() === 7 && $insights['trend']->last()['rate'] === 100
+                    && $insights['trend']->first()['rate'] === null
+                    && $insights['programs']->count() === 1 && $insights['programs']->first()['recorded'] === 1
+                    && $insights['recent']->first()->teacher_id === $teacher->id;
+            });
+    }
+
     public function test_teacher_directory_includes_attendance_with_independent_filters_and_save_return(): void {
         $admin = User::factory()->create(['role' => 'administrator']);
         $teacher = User::factory()->create(['role' => 'teacher', 'program' => 'Khmer', 'status' => 'active']);
-        $this->actingAs($admin)->get(route('modules.index', ['module' => 'teachers', 'search' => 'No matching directory teacher', 'attendance_program' => 'Khmer']))
-            ->assertOk()->assertSee('No teachers match these filters.')->assertSee($teacher->email)
+        $this->actingAs($admin)->get(route('modules.index', ['module' => 'teachers', 'search' => $teacher->name, 'attendance_program' => 'Khmer']))
+            ->assertOk()->assertSee($teacher->name)->assertSee('Attendance &amp; notes', false)
             ->assertSee('Save teacher attendance')->assertSee('attendance_date')->assertDontSee('Teacher sections');
         $this->post(route('teacher-attendance.store'), [
             'date' => today()->toDateString(), 'program' => 'Khmer', 'return_to' => 'teachers', 'attendance_page' => 1,

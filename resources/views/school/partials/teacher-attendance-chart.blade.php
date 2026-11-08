@@ -8,7 +8,7 @@ $teacherChartTotal = $teacherChartValues->sum();
 </div>
 <div class="d-flex flex-wrap justify-content-center gap-3 mt-3">
 @foreach(['present'=>'#329c7c','absent'=>'#d45669','late'=>'#c68b25','excused'=>'#8d96af'] as $status=>$color)
-<span><span aria-hidden="true" style="color:{{ $color }}">?</span> {{ ucfirst($status) }} <strong>{{ $chartCounts[$status] ?? 0 }}</strong></span>
+<span><span aria-hidden="true" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:{{ $color }}"></span> {{ ucfirst($status) }} <strong>{{ $chartCounts[$status] ?? 0 }}</strong></span>
 @endforeach
 </div>
 <p class="form-text text-center mt-3">{{ $teacherChartTotal }} recorded. Percentages use recorded attendance only; unmarked teachers are excluded.</p>

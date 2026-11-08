@@ -243,7 +243,7 @@ class TeacherManagementTest extends TestCase
     public function test_ui_keeps_hero_four_cards_themes_and_admin_only_management(): void
     {
         [$teacher] = $this->fixture(); $admin = User::factory()->create(['role' => 'administrator']);
-        $page = $this->actingAs($admin)->get('/school/teachers')->assertOk()->assertSeeInOrder(['teacher-hero', 'Teacher overview', 'directory-panel', 'Quick Actions'])->assertSee('Add Teacher')->assertSee('Break Hours');
+        $page = $this->actingAs($admin)->get('/school/teachers')->assertOk()->assertSeeInOrder(['teacher-hero', 'Teacher overview', 'directory-panel', 'Quick Actions'])->assertSee('Add Teacher')->assertDontSee('<th>Break Hours</th>', false)->assertSee('Attendance &amp; notes', false);
         $this->assertSame(4, substr_count($page->getContent(), '<article class="teacher-stat"'));
         foreach (['Light', 'Night', 'Relax', 'Cute'] as $theme) $page->assertSee($theme);
         $this->get(route('teacher-management.show', $teacher))->assertOk()->assertSee('Weekly Timetable')->assertSee('Break Schedule');
