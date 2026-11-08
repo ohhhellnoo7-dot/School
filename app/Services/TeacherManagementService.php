@@ -9,7 +9,8 @@ use Illuminate\Validation\ValidationException;
 
 class TeacherManagementService
 {
-    public const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    public const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    public const ALL_DAYS = [...self::DAYS, 'Saturday', 'Sunday'];
     public const SESSIONS = ['Morning' => ['07:00', '11:00'], 'Afternoon' => ['13:00', '17:00'], 'Evening' => ['16:30', '18:30']];
 
     public function locked(callable $callback): mixed
@@ -103,7 +104,7 @@ class TeacherManagementService
             if (count(array_unique($names)) !== count($names) || count($names) > $this->subjectLimit($teacher)) $this->fail('Choose different subjects; Khmer teachers may have at most two.');
             foreach ($names as $name) if (! Subject::where('name', $name)->exists()) $this->fail('Choose subjects from the existing catalog.');
             foreach ($periods as $p) {
-                if (! in_array($p['weekday'], self::DAYS, true) || self::duration($p['start_time'], $p['end_time']) < 1) $this->fail('Working hours must be valid weekday intervals.');
+                if (! in_array($p['weekday'], self::ALL_DAYS, true) || self::duration($p['start_time'], $p['end_time']) < 1) $this->fail('Working hours must be valid weekday intervals.');
             }
             DB::table('teacher_profiles')->updateOrInsert(['teacher_id' => $teacher->id], ['weekly_minutes' => $limit]);
             DB::table('teacher_qualifications')->where('teacher_id', $teacher->id)->delete();
@@ -151,7 +152,7 @@ class TeacherManagementService
             $roomLessons = app(RoomLessonService::class)->lessons($room->load('bookings.classSession'), Schedule::with('schoolClass')->where('day', $slot->day)->get());
             if ($roomLessons->contains(fn ($s) => $s->id !== $slot->id && self::overlaps($s->starts_at, $s->ends_at, $slot->starts_at, $slot->ends_at))) $this->fail('This physical classroom already has a lesson. Choose Another Time.');
         }
-        if (! in_array($slot->day, self::DAYS, true) || ! TeacherTimetable::withinHours($subject, $slot->starts_at, $slot->ends_at)) $this->fail('Choose a weekday time within the class session.');
+        if (! in_array($slot->day, self::ALL_DAYS, true) || ! TeacherTimetable::withinHours($subject, $slot->starts_at, $slot->ends_at)) $this->fail('Choose a weekday time within the class session.');
         if ($subject->schoolClass?->class_group_id && ! ClassSession::where('class_group_id', $subject->schoolClass->class_group_id)->where('session', $subject->schoolClass->session)->where('starts_at', '<=', $slot->starts_at)->where('ends_at', '>=', $slot->ends_at)->whereHas('classGroup', fn ($q) => $q->where('status', 'active'))->exists()) $this->fail('No active class-session assignment covers this lesson.');
         if (! $this->onDuty($teacher, $slot->day, $slot->starts_at, $slot->ends_at)) $this->fail('The teacher is not on duty or is unavailable during this time.');
         if (! $this->qualifications($teacher)->contains($subject->name)) $this->fail('The teacher is not qualified for this subject.');
@@ -167,7 +168,7 @@ class TeacherManagementService
         $day = $break['weekday']; $start = $break['start_time']; $end = $break['end_time'];
         $sessions = ($teacher->program ?: 'Khmer') === 'Khmer' ? array_slice(self::SESSIONS, 0, 2) : ($teacher->program === 'Chinese' ? [['17:30','18:30'],['18:30','19:30']] : self::SESSIONS);
         $session = collect($sessions)->contains(fn ($hours) => self::minute($start) >= self::minute($hours[0]) && self::minute($end) <= self::minute($hours[1]) && (self::minute($start) - self::minute($hours[0])) % 60 === 0);
-        if (! in_array($day, self::DAYS, true) || self::duration($start, $end) !== 60 || ! $session || ! $this->onDuty($teacher, $day, $start, $end)) $this->fail('Breaks must last one hour within confirmed working sessions, outside unavailable periods.');
+        if (! in_array($day, self::ALL_DAYS, true) || self::duration($start, $end) !== 60 || ! $session || ! $this->onDuty($teacher, $day, $start, $end)) $this->fail('Breaks must last one hour within confirmed working sessions, outside unavailable periods.');
         if ($this->lessons($teacher)->contains(fn ($s) => $s->day === $day && self::overlaps($start, $end, $s->starts_at, $s->ends_at))) $this->fail('This break overlaps a teaching lesson. No lesson has been removed.');
     }
 

@@ -38,11 +38,11 @@
         <div class="nav-group-caption">{{ __('Academics') }}</div>
         @foreach(\App\Support\SchoolModules::all() as $key => $module)
             @if(\App\Support\SchoolModules::canView(auth()->user(), $key))
-                <a class="{{ ($key === 'classes' ? request()->routeIs('class-groups.*') : (request()->route('module') === $key || ($key === 'fees' && request()->routeIs('finance.*')))) ? 'active' : '' }}" href="{{ $key === 'classes' ? route('class-groups.index') : route('modules.index', $key) }}"><i class="bi bi-{{ $module['icon'] }}"></i><span class="nav-label">{{ __($module['title']) }}</span></a>
+                <a class="{{ ($key === 'classes' ? request()->routeIs('class-groups.*') : (request()->route('module') === $key || ($key === 'fees' && request()->routeIs('finance.*')) || ($key === 'teachers' && request()->routeIs('teacher-management.*', 'teachers.schedule*', 'teacher-attendance.*')))) ? 'active' : '' }}" href="{{ $key === 'classes' ? route('class-groups.index') : route('modules.index', $key) }}"><i class="bi bi-{{ $module['icon'] }}"></i><span class="nav-label">{{ __($module['title']) }}</span></a>
             @endif
         @endforeach
-        @if(in_array(auth()->user()->role, ['administrator', 'teacher']))
-<a class="{{ request()->routeIs('teacher-attendance.*') ? 'active' : '' }}" href="{{ route('teacher-attendance.index') }}"><i class="bi bi-person-check"></i><span class="nav-label">Teacher attendance</span></a>
+        @if(auth()->user()->role === 'teacher')
+<a class="{{ request()->routeIs('teacher-attendance.*') ? 'active' : '' }}" href="{{ route('teacher-attendance.index') }}"><i class="bi bi-person-check"></i><span class="nav-label">{{ __('Teachers') }}</span></a>
 @endif
 <div class="nav-group-caption">{{ __('Workspace') }}</div>
         <a class="{{ request()->routeIs('classrooms.*', 'classroom-bookings.*') ? 'active' : '' }}" href="{{ route('classrooms.index') }}"><i class="bi bi-door-open"></i><span class="nav-label">{{ __('Classroom availability') }}</span></a>

@@ -9,12 +9,19 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 class TeacherAttendanceController extends Controller
 {
-    private function filters(Request $request): array {
-        return $request->validate(['date' => 'nullable|date_format:Y-m-d', 'program' => ['nullable', Rule::in(Program::names())], 'search' => 'nullable|string|max:100']);
-    }
     public function index(Request $request) {
         abort_unless(in_array($request->user()->role, ['administrator', 'teacher']), 403);
-        $filters = $this->filters($request);
+        return view('school.attendance.teachers', $this->data($request));
+    }
+
+    public function data(Request $request, bool $embedded = false): array {
+        abort_unless(in_array($request->user()->role, ['administrator', 'teacher']), 403);
+        $prefix = $embedded ? 'attendance_' : '';
+        $filters = \Illuminate\Support\Facades\Validator::make([
+            'date' => $request->input($prefix.'date'),
+            'program' => $request->input($prefix.'program'),
+            'search' => $request->input($prefix.'search'),
+        ], ['date' => 'nullable|date_format:Y-m-d', 'program' => ['nullable', Rule::in(Program::names())], 'search' => 'nullable|string|max:100'])->validate();
         $date = $filters['date'] ?? today()->toDateString();
         $records = TeacherAttendance::whereDate('date', $date)
             ->when($request->user()->role === 'teacher', fn ($q) => $q->where('teacher_id', $request->user()->id))
@@ -28,14 +35,16 @@ class TeacherAttendanceController extends Controller
         $records = $records->only($teachers->pluck('id')->all());
         $counts = $records->countBy('status');
         $total = $teachers->count();
-        $teachers = new \Illuminate\Pagination\LengthAwarePaginator($teachers->forPage(max(1, $request->integer('page', 1)), 50)->values(), $total, 50, max(1, $request->integer('page', 1)), ['path' => $request->url(), 'query' => $request->query()]);
+        $teachers = new \Illuminate\Pagination\LengthAwarePaginator($teachers->forPage(max(1, $request->integer($prefix.'page', 1)), 50)->values(), $total, 50, max(1, $request->integer($prefix.'page', 1)), ['path' => $request->url(), 'query' => $request->query(), 'pageName' => $prefix.'page', 'fragment' => 'teacher-attendance']);
         $workingHours = DB::table('teacher_working_periods')->whereIn('teacher_id', $teachers->pluck('id'))->where('unavailable', false)->get()->groupBy('teacher_id')->map(fn ($periods) => $periods->map(fn ($p) => substr($p->start_time, 0, 5).'?'.substr($p->end_time, 0, 5))->unique()->join(', '));
-        return view('school.attendance.teachers', compact('teachers', 'records', 'counts', 'total', 'date', 'workingHours'));
+        return compact('teachers', 'records', 'counts', 'total', 'date', 'workingHours', 'filters', 'embedded', 'prefix');
     }
     public function store(Request $request) {
         abort_unless($request->user()->role === 'administrator', 403);
         $data = $request->validate([
             'date' => 'required|date_format:Y-m-d|before_or_equal:today',
+            'return_to' => 'nullable|in:teachers',
+            'attendance_page' => 'nullable|integer|min:1',
             'program' => ['nullable', Rule::in(Program::names())],
             'records' => 'required|array|max:50',
             'records.*' => 'required|array:teacher_id,status,notes',
@@ -58,6 +67,9 @@ class TeacherAttendanceController extends Controller
             }
             return $saved;
         });
+        if (($data['return_to'] ?? null) === 'teachers') {
+            return redirect()->to(route('modules.index', array_filter(['module' => 'teachers', 'attendance_date' => $data['date'], 'attendance_program' => $data['program'] ?? null, 'attendance_page' => $data['attendance_page'] ?? null])).'#teacher-attendance')->with('success', $saved.' teacher attendance records saved.');
+        }
         return redirect()->route('teacher-attendance.index', array_filter(['date' => $data['date'], 'program' => $data['program'] ?? null]))->with('success', $saved.' teacher attendance records saved.');
     }
 }

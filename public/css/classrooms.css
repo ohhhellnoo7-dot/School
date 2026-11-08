@@ -572,15 +572,17 @@ a.class-summary-card:hover {
 .teacher-schedule-details ul { margin-top: 6px; }
 .classroom-setup [hidden] { display: none !important; }
 .program-picker { position: relative; }
-.program-option-row { display: flex; align-items: center; }
-.program-option-row > button { flex: 1; min-width: 0; }
+.program-option-row { display: flex; align-items: center; gap: 4px; }
+.program-option-row > button { flex: 1 1 auto; min-width: 0; }
 .program-option-row form { flex: 0 0 36px; margin: 0; }
 .program-option-row .program-delete { padding: 10px; color: #dc3545; text-align: center; }
 .program-options { display: none; position: absolute; top: 100%; right: 0; min-width: 230px; max-height: 340px; overflow-y: auto; padding: 8px; z-index: 1050; background: var(--bs-body-bg, #fff); color: var(--bs-body-color, inherit); border: 1px solid var(--border-color, #8ca0b444); border-radius: 12px; box-shadow: 0 12px 28px #0003; }
 .program-picker:hover .program-options, .program-picker.is-open .program-options { display: block; }
 .program-options button, .program-options a { display: block; width: 100%; text-align: left; padding: 10px 12px; border: 0; border-radius: 8px; background: transparent; color: inherit; text-decoration: none; overflow-wrap: anywhere; }
 .program-options button:hover, .program-options button:focus-visible, .program-options a:hover, .program-options a:focus-visible { background: #609fff26; }
-.program-options a { border-top: 1px solid var(--border-color, #8ca0b444); color: var(--room-blue); margin-top: 6px; }
+.program-options > a { border-top: 1px solid var(--border-color, #8ca0b444); color: var(--room-blue); margin-top: 6px; }
+.program-option-row > button { width: auto; white-space: nowrap; overflow-wrap: normal; }
+.program-option-row > a { flex: 0 0 auto; width: auto; padding: 8px 10px; white-space: nowrap; color: var(--room-blue); }
 
 /* Room editor */
 .room-editor-heading { max-width: 1400px; margin-inline: auto; }

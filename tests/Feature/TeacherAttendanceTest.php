@@ -8,6 +8,19 @@ use Tests\TestCase;
 class TeacherAttendanceTest extends TestCase
 {
     use RefreshDatabase;
+    public function test_teacher_directory_includes_attendance_with_independent_filters_and_save_return(): void {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = User::factory()->create(['role' => 'teacher', 'program' => 'Khmer', 'status' => 'active']);
+        $this->actingAs($admin)->get(route('modules.index', ['module' => 'teachers', 'search' => 'No matching directory teacher', 'attendance_program' => 'Khmer']))
+            ->assertOk()->assertSee('No teachers match these filters.')->assertSee($teacher->email)
+            ->assertSee('Save teacher attendance')->assertSee('attendance_date')->assertDontSee('Teacher sections');
+        $this->post(route('teacher-attendance.store'), [
+            'date' => today()->toDateString(), 'program' => 'Khmer', 'return_to' => 'teachers', 'attendance_page' => 1,
+            'records' => [['teacher_id' => $teacher->id, 'status' => 'present']],
+        ])->assertSessionHasNoErrors()->assertRedirect(route('modules.index', ['module' => 'teachers', 'attendance_date' => today()->toDateString(), 'attendance_program' => 'Khmer', 'attendance_page' => 1]).'#teacher-attendance');
+        $this->assertDatabaseHas('teacher_attendances', ['teacher_id' => $teacher->id, 'status' => 'present']);
+    }
+
     public function test_admin_marks_all_programs_and_updates_without_duplicates_or_student_changes(): void {
         $admin = User::factory()->create(['role'=>'administrator']);
         $teachers = collect(['Khmer','English','Chinese','Japan'])->map(fn ($program) => User::factory()->create(['role'=>'teacher','program'=>$program,'status'=>'active']));

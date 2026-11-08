@@ -5,6 +5,7 @@
     <div><div class="eyebrow">{{ __('School workspace') }}</div><h1 id="teacher-heading">{{ __('Teachers') }}</h1><p>{{ __('Meet the educators shaping tomorrow.') }}</p></div>
     <a href="{{ route('teacher-management.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg me-2" aria-hidden="true"></i>{{ __('Add Teacher') }}</a>
 </x-scholar-hero>
+
 <div class="teacher-summary" aria-label="Teacher overview">
 @foreach([[$total, 'Total Teachers', 'people-fill', 'Your school teaching team'], [$available, 'Available Teachers', 'person-check', 'Active teachers with teaching capacity'], [$full, 'Fully Booked Teachers', 'calendar-check', 'At their weekly teaching limit'], [$demand['needed'], 'Teachers Needed', 'person-plus', 'Estimated Khmer staffing gap; see reports']] as [$value, $label, $icon, $note])
 <article class="teacher-stat"><span class="teacher-stat-icon"><i class="bi bi-{{ $icon }}" aria-hidden="true"></i></span><div><h2>{{ $label }}</h2><strong>{{ $value }}</strong></div><small>{{ $note }}</small></article>
@@ -31,6 +32,10 @@
 <td data-label="Weekly Hours">{{ $w['weekly'] }} / {{ $w['limit'] }} h</td><td data-label="Break Hours">{{ $w['breaks'] }} / {{ app(\App\Services\TeacherManagementService::class)->requiredBreaks($t) }} h</td><td data-label="Status"><span class="teacher-status status-{{ strtolower($w['status']) }}">{{ $w['status'] }}</span></td><td data-label="Actions"><a class="btn btn-sm btn-outline-secondary" href="{{ route('teacher-management.show', $t) }}">Manage</a> <a class="btn btn-sm btn-outline-secondary" href="{{ route('teachers.schedule', $t) }}">View Schedule</a></td></tr>
 @empty<tr><td colspan="7">No teachers match these filters.</td></tr>@endforelse
 </tbody></table></div><div class="p-3 small text-secondary">{{ $rows->count() }} teachers shown</div></section>
+<section id="teacher-attendance" class="mt-4" aria-labelledby="teacher-attendance-heading">
+    <div class="page-heading"><div><h2 id="teacher-attendance-heading">Teacher attendance</h2><p>View and mark daily attendance here.</p></div></div>
+    @include('school.attendance._teachers', $attendance)
+</section>
 <section class="panel mt-4 teacher-quick-actions"><div class="panel-header"><h2>Quick Actions</h2></div><div class="d-flex flex-wrap gap-2 p-4 pt-2">
 <a class="btn btn-primary" href="{{ route('teacher-management.create') }}">Add Teacher</a>
 <form method="post" action="{{ route('teacher-management.breaks.preview-all') }}">@csrf<button class="btn btn-outline-secondary">Generate Weekly Teacher Breaks</button></form>

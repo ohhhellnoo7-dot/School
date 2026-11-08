@@ -62,7 +62,7 @@ class LessonManagementService
         $room = Classroom::findOrFail($lesson->classroom_id);
         $minutes = $this->rules::duration($lesson->starts_at, $lesson->ends_at);
         if (! $lesson->isRelaxation() && $lesson->subject_id && $class->program === 'Khmer' && $minutes !== \App\Support\KhmerLessonDuration::minutes(Subject::findOrFail($lesson->subject_id))) $this->rules->fail('This Khmer subject requires a '.(\App\Support\KhmerLessonDuration::minutes(Subject::findOrFail($lesson->subject_id)) / 60).'-hour consecutive lesson block.');
-        if (! in_array($lesson->day, $this->rules::DAYS, true) || ! in_array($minutes, $lesson->isRelaxation() ? [60] : [60, 120], true)) $this->rules->fail('Choose a valid weekday and a one-hour or two-hour lesson.');
+        if (! in_array($lesson->day, $this->rules::ALL_DAYS, true) || ! in_array($minutes, $lesson->isRelaxation() ? [60] : [60, 120], true)) $this->rules->fail('Choose a valid weekday and a one-hour or two-hour lesson.');
         [$start, $end] = $class->sessionHours();
         if ($this->rules::minute($lesson->starts_at) < $this->rules::minute($start) || $this->rules::minute($lesson->ends_at) > $this->rules::minute($end) || ($this->rules::minute($lesson->starts_at) - $this->rules::minute($start)) % 60 !== 0) $this->rules->fail('Lesson is outside its configured program/session hours.');
         if (! ClassSession::where('class_group_id', $class->class_group_id)->where('session', $class->session)->where('starts_at', '<=', $lesson->starts_at)->where('ends_at', '>=', $lesson->ends_at)->exists()) $this->rules->fail('Confirm the class session first.');
