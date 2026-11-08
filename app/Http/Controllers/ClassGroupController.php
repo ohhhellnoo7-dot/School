@@ -291,11 +291,10 @@ class ClassGroupController extends Controller
 
     private function programSessions(): array
     {
-        $sessions = self::PROGRAM_SESSIONS;
+        $sessions = [];
         foreach (\App\Models\Program::sessionMap() as $program => $names) {
-            if (isset($sessions[$program])) continue;
             foreach ($names as $name) {
-                $hours = config('classrooms.sessions.'.$name);
+                $hours = config('classrooms.program_session_hours.'.$program.'.'.$name, config('classrooms.sessions.'.$name));
                 $sessions[$program][$name] = [$hours['starts_at'], $hours['ends_at']];
             }
         }

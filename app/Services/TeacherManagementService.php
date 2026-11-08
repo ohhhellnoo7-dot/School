@@ -9,7 +9,7 @@ use Illuminate\Validation\ValidationException;
 
 class TeacherManagementService
 {
-    public const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    public const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     public const SESSIONS = ['Morning' => ['07:00', '11:00'], 'Afternoon' => ['13:00', '17:00'], 'Evening' => ['16:30', '18:30']];
 
     public function locked(callable $callback): mixed

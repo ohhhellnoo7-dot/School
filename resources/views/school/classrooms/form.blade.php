@@ -37,7 +37,7 @@
     <div class="room-editor-actions"><span><i class="bi bi-check2-circle" aria-hidden="true"></i> You can update these details anytime.</span><div><a class="btn btn-light" href="{{ route('classrooms.index') }}">Cancel</a><button class="btn btn-primary" type="submit">{{ $classroom->exists ? 'Save changes' : 'Create classroom' }} <i class="bi bi-arrow-right ms-2" aria-hidden="true"></i></button></div></div>
 </form>
 <dialog data-create-program-dialog style="border:1px solid var(--border-color);border-radius:20px;padding:28px;width:min(520px,90vw)">
-    <form data-create-program-form action="{{ route('programs.store') }}" method="post">
+    <form data-create-program-form data-update-url="{{ url('/school/programs') }}" action="{{ route('programs.store') }}" method="post">
         @csrf
         <h2>Create new program</h2>
         <p>Add a program without leaving your classroom setup.</p>

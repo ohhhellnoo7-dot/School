@@ -37,6 +37,23 @@ class ClassroomSetupTest extends TestCase
             'slots' => [['starts_at' => $f['start'], 'subject_id' => $f['subject']->id, 'teacher_id' => $f['teacher']->id]]];
     }
 
+    public function test_weekend_lessons_save_and_weekday_choice_rejects_weekend_slots(): void
+    {
+        $f = $this->fixture();
+        app(TeacherManagementService::class)->saveProfile($f['teacher'], [$f['subject']->name], 1200, [
+            ['weekday' => 'Saturday', 'start_time' => $f['start'], 'end_time' => $f['end'], 'unavailable' => false],
+        ]);
+        $data = $this->data($f);
+        $data['day'] = 'Saturday';
+        $data['slots'][0]['day'] = 'Saturday';
+        $data['class_days'] = 'weekday';
+        $this->post(route('classrooms.store'), $data)->assertSessionHasErrors('slots');
+        $this->assertDatabaseMissing('classrooms', ['room_number' => 'NEW1']);
+        $data['class_days'] = 'weekend';
+        $this->post(route('classrooms.store'), $data)->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertDatabaseHas('schedules', ['school_class_id' => $f['class']->id, 'day' => 'Saturday']);
+    }
+
     public function test_room_card_shows_teacher_only_during_the_current_lesson(): void
     {
         $f = $this->fixture('Chinese', 'Evening');

@@ -38,7 +38,7 @@ class LessonManagementService
         $row = Validator::make($data, [
             'school_class_id' => 'required|integer|exists:school_classes,id', 'subject_id' => 'required|integer|exists:subjects,id',
             'teacher_id' => 'required|integer|exists:users,id', 'classroom_id' => 'required|integer|exists:classrooms,id',
-            'day' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday', 'starts_at' => 'required|date_format:H:i', 'ends_at' => 'required|date_format:H:i',
+            'day' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday', 'starts_at' => 'required|date_format:H:i', 'ends_at' => 'required|date_format:H:i',
             'academic_year' => ['required', 'regex:/^\d{4}-\d{4}$/'],
             'room_change_reason' => 'nullable|string|max:500',
         ])->validate();
@@ -99,7 +99,7 @@ class LessonManagementService
     public function saveRelaxation(array $data): Schedule
     {
         return $this->rules->locked(function () use ($data) {
-            $row = Validator::make($data, ['school_class_id' => 'required|integer|exists:school_classes,id', 'classroom_id' => 'required|integer|exists:classrooms,id', 'day' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday', 'starts_at' => 'required|date_format:H:i', 'ends_at' => 'required|date_format:H:i', 'academic_year'=>['nullable','regex:/^\d{4}-\d{4}$/']])->validate();
+            $row = Validator::make($data, ['school_class_id' => 'required|integer|exists:school_classes,id', 'classroom_id' => 'required|integer|exists:classrooms,id', 'day' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday', 'starts_at' => 'required|date_format:H:i', 'ends_at' => 'required|date_format:H:i', 'academic_year'=>['nullable','regex:/^\d{4}-\d{4}$/']])->validate();
             $lesson = new Schedule($row + ['room' => Classroom::findOrFail($row['classroom_id'])->room_number, 'entry_type' => 'relaxation']);
             $this->validate($lesson);
             $lesson->saveQuietly();

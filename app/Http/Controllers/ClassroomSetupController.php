@@ -14,7 +14,7 @@ class ClassroomSetupController extends Controller
         $data = $request->validate([
             'school_class_id' => 'required|integer|exists:school_classes,id',
             'subject_id' => 'required|integer|exists:subjects,id',
-            'day' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday',
+            'day' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
             'starts_at' => 'required|date_format:H:i', 'ends_at' => 'required|date_format:H:i|after:starts_at',
             'academic_year' => ['required', 'regex:/^\d{4}-\d{4}$/'],
             'class_teacher_id' => 'nullable|integer|exists:users,id',

@@ -18,6 +18,7 @@
                     <div class="program-option-row">
                         <button type="button" data-program="{{ $program }}">{{ $program }}</button>
                         @if(auth()->user()->role === 'administrator')
+                            <a href="{{ route('programs.edit', $program) }}" aria-label="Edit {{ $program }} program">Edit</a>
                             <form method="post" action="{{ route('programs.destroy', ['program' => $program]) }}" data-confirm="Delete the {{ $program }} program and its classes, students, student accounts, attendance, fees, grades, subjects, exams, assignments and timetable bookings? Teachers and shared parent accounts will be kept. This cannot be undone.">
                                 @csrf
                                 @method('DELETE')

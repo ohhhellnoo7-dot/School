@@ -54,6 +54,31 @@ class ProgramController extends Controller
         return view('school.programs.create');
     }
 
+    public function edit(string $program)
+    {
+        return view('school.programs.create', ['program' => Program::where('name', $program)->firstOrFail()]);
+    }
+
+    public function update(Request $request, string $program)
+    {
+        $data = $request->validate([
+            'sessions' => ['required', 'array', 'min:1', 'max:3'],
+            'sessions.*' => ['required', 'distinct', Rule::in(['Morning', 'Afternoon', 'Evening'])],
+        ]);
+        $record = DB::transaction(function () use ($data, $program) {
+            $record = Program::where('name', $program)->lockForUpdate()->firstOrFail();
+            $removed = array_diff($record->sessions, $data['sessions']);
+            if (DB::table('school_classes')->where('program', $program)->whereIn('session', $removed)->exists()
+                || DB::table('class_sessions')->whereIn('class_group_id', DB::table('class_groups')->where('program', $program)->select('id'))->whereIn('session', $removed)->exists()) {
+                throw ValidationException::withMessages(['sessions' => 'These sessions are used by existing classes. Keep them selected.']);
+            }
+            $record->update($data);
+            return $record;
+        });
+        if ($request->expectsJson()) return response()->json(['program' => $record]);
+        return redirect()->route('classrooms.index', ['program' => $program])->with('success', $program.' sessions updated.');
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([

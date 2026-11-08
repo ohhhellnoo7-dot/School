@@ -11,6 +11,26 @@ class ProgramManagementTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_admin_can_enable_evening_for_khmer_and_new_classes_use_it(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'administrator']));
+        $this->get(route('programs.edit', 'Khmer'))->assertOk()->assertSee('Edit Khmer program');
+        $this->putJson(route('programs.update', 'Khmer'), ['sessions' => ['Morning', 'Afternoon', 'Evening']])->assertOk();
+        $this->assertContains('Evening', ProgramSessions::for('Khmer'));
+        $this->post(route('class-groups.store'), ['name' => 'Grade 8', 'grade' => 8, 'section' => 'A', 'program' => 'Khmer', 'capacity' => 30, 'status' => 'active'])->assertSessionHasNoErrors();
+        $group = ClassGroup::where('program', 'Khmer')->firstOrFail();
+        $this->assertContains('Evening', $group->sessions()->pluck('session')->all());
+        $this->assertDatabaseHas('school_classes', ['class_group_id' => $group->id, 'session' => 'Evening']);
+        $this->put(route('programs.update', 'Khmer'), ['sessions' => ['Morning']])->assertSessionHasErrors('sessions');
+    }
+
+    public function test_students_cannot_edit_program_sessions(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'student']));
+        $this->get(route('programs.edit', 'Khmer'))->assertForbidden();
+        $this->putJson(route('programs.update', 'Khmer'), ['sessions' => ['Evening']])->assertForbidden();
+    }
+
     public function test_admin_can_delete_an_unused_program_including_a_default_program(): void
     {
         $this->actingAs(User::factory()->create(['role' => 'administrator']));

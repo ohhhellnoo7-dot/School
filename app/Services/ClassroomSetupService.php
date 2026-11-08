@@ -40,15 +40,16 @@ class ClassroomSetupService
     {
         $plan = $request->validate([
             'plan_enabled' => 'nullable|boolean',
+            'class_days' => 'nullable|in:weekday,weekend',
             'program' => ['required_if:plan_enabled,1', 'nullable', Rule::in(array_keys(\App\Models\Program::sessionMap()))],
             'session' => 'required_if:plan_enabled,1|nullable|in:Morning,Afternoon,Evening',
             'school_class_id' => 'required_if:plan_enabled,1|nullable|integer|exists:school_classes,id',
-            'day' => 'required_if:plan_enabled,1|nullable|in:Monday,Tuesday,Wednesday,Thursday,Friday',
+            'day' => 'required_if:plan_enabled,1|nullable|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
             'academic_year' => ['required_if:plan_enabled,1', 'nullable', 'regex:/^\d{4}-\d{4}$/'],
             'room_change_reason' => 'nullable|string|max:500',
             'class_teacher_id' => 'nullable|integer|exists:users,id',
             'slots' => 'nullable|array|max:20',
-            'slots.*.day' => 'sometimes|required|in:Monday,Tuesday,Wednesday,Thursday,Friday',
+            'slots.*.day' => 'sometimes|required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
             'slots.*.subject_id' => 'nullable|integer|exists:subjects,id',
             'slots.*.teacher_id' => 'nullable|integer|exists:users,id',
             'slots.*.starts_at' => 'required|date_format:H:i',
@@ -70,6 +71,12 @@ class ClassroomSetupService
             $class = SchoolClass::findOrFail($plan['school_class_id']);
             if ($class->program !== $plan['program'] || $class->session !== $plan['session'] || ! in_array($class->session, ProgramSessions::for($class->program), true)) {
                 $this->fail('Choose a class matching the selected program and session.');
+            }
+            $allowedDays = ($plan['class_days'] ?? 'weekday') === 'weekend' ? ['Saturday', 'Sunday'] : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+            foreach ($plan['slots'] ?? [] as $slot) {
+                if ((! empty($slot['subject_id']) || ! empty($slot['teacher_id'])) && ! in_array($slot['day'] ?? $plan['day'], $allowedDays, true)) {
+                    $this->fail('Choose lesson days matching Weekday or Weekend.');
+                }
             }
             $owner = $class->timetableOwner();
             if ($class->program === 'Japan') {

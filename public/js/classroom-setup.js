@@ -37,6 +37,17 @@
     const cohort = form.elements.school_class_id;
     const classTeacher = form.elements.class_teacher_id;
     const day = form.elements.day;
+    const classDays = form.elements.class_days;
+    const availableDays = () => classDays.value === 'weekend' ? ['Saturday', 'Sunday'] : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    const syncDays = () => {
+        const days = availableDays();
+        const wanted = day.value;
+        day.replaceChildren(...days.map(value => new Option(value, value)));
+        if (days.includes(wanted)) day.value = wanted;
+        root.querySelectorAll('[data-weekday]').forEach(button => { button.hidden = !days.includes(button.dataset.weekday); });
+        root.querySelector('[data-autofill-week]').textContent = classDays.value === 'weekend' ? 'Auto-fill Saturday to Sunday' : 'Auto-fill Monday to Friday';
+    };
+    syncDays();
     const year = form.elements.academic_year;
     const periods = root.querySelector('[data-lesson-periods]');
     const message = root.querySelector('[data-planner-message]');
@@ -246,6 +257,14 @@
     program.addEventListener('change', () => { resetChoices(); syncSessions(); syncClasses(); });
     session.addEventListener('change', () => { resetChoices(); syncClasses(); });
     cohort.addEventListener('change', () => { resetChoices(); syncClassTeacher(); render(); });
+    classDays.addEventListener('change', () => {
+        remember();
+        syncDays();
+        weeklyChoices = Object.fromEntries(Object.entries(weeklyChoices).filter(([key]) => availableDays().includes(key)));
+        displayedDay = day.value;
+        choices = weeklyChoices[displayedDay] ||= {};
+        render();
+    });
     day.addEventListener('change', () => {
         remember();
         displayedDay = day.value;
@@ -270,7 +289,7 @@
         const used = new Set(Object.values(weeklyChoices).flatMap(slots => Object.values(slots).map(slot => String(slot.subject_id))));
         const remaining = cls.subjects.filter(subject => !used.has(String(subject.id)));
         let added = 0;
-        ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].forEach(weekday => {
+        availableDays().forEach(weekday => {
             const slots = weeklyChoices[weekday] ||= {};
             const finish = minute(cls.hours[1]);
             for (let start = minute(cls.hours[0]); start + 60 <= finish; start += 60) {
@@ -302,7 +321,23 @@
     const programDialog = document.querySelector('[data-create-program-dialog]');
     const programForm = programDialog.querySelector('form');
     const programError = programDialog.querySelector('[data-create-program-error]');
+    let editingProgram = null;
+    root.querySelector('[data-open-edit-program]').addEventListener('click', () => {
+        editingProgram = program.value;
+        programForm.elements.name.value = editingProgram;
+        programForm.elements.name.readOnly = true;
+        programForm.querySelectorAll('[name="sessions[]"]').forEach(input => { input.checked = config.sessions[editingProgram].includes(input.value); });
+        programDialog.querySelector('h2').textContent = 'Edit program';
+        programForm.querySelector('[type="submit"]').textContent = 'Save changes';
+        programError.textContent = '';
+        programDialog.showModal();
+    });
     root.querySelector('[data-open-create-program]').addEventListener('click', () => {
+        editingProgram = null;
+        programForm.reset();
+        programForm.elements.name.readOnly = false;
+        programDialog.querySelector('h2').textContent = 'Create new program';
+        programForm.querySelector('[type="submit"]').textContent = 'Create program';
         programError.textContent = '';
         programDialog.showModal();
     });
@@ -313,13 +348,23 @@
         submit.disabled = true;
         programError.textContent = '';
         try {
-            const response = await fetch(programForm.action, {method: 'POST', body: new FormData(programForm), headers: {Accept: 'application/json'}});
+            const body = new FormData(programForm);
+            if (editingProgram) body.set('_method', 'PUT');
+            const endpoint = editingProgram ? `${programForm.dataset.updateUrl}/${encodeURIComponent(editingProgram)}` : programForm.action;
+            const response = await fetch(endpoint, {method: 'POST', body, headers: {Accept: 'application/json'}});
             const payload = await response.json();
             if (!response.ok) throw new Error(payload.errors ? Object.values(payload.errors).flat().join(' ') : payload.message || 'Could not create the program. Please try again.');
             config.sessions[payload.program.name] = payload.program.sessions;
-            program.add(option(payload.program.name, payload.program.name));
+            if (!editingProgram) program.add(option(payload.program.name, payload.program.name));
             program.value = payload.program.name;
-            program.dispatchEvent(new Event('change', {bubbles: true}));
+            if (editingProgram) {
+                remember();
+                const currentClass = cohort.value;
+                syncSessions(session.value);
+                syncClasses(currentClass);
+            } else {
+                program.dispatchEvent(new Event('change', {bubbles: true}));
+            }
             programDialog.close();
             programForm.reset();
         } catch (error) {

@@ -101,6 +101,8 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
     Route::middleware('role:administrator')->group(function () {
         Route::get('/school/programs/create', [\App\Http\Controllers\ProgramController::class, 'create'])->name('programs.create');
         Route::post('/school/programs', [\App\Http\Controllers\ProgramController::class, 'store'])->name('programs.store');
+        Route::get('/school/programs/{program}/edit', [\App\Http\Controllers\ProgramController::class, 'edit'])->name('programs.edit');
+        Route::put('/school/programs/{program}', [\App\Http\Controllers\ProgramController::class, 'update'])->name('programs.update');
         Route::delete('/school/programs/{program}', [\App\Http\Controllers\ProgramController::class, 'destroy'])->name('programs.destroy');
         Route::post('/class-groups', [ClassGroupController::class, 'store'])->name('class-groups.store');
         Route::get('/class-groups/{classGroup}/edit', [ClassGroupController::class, 'edit'])->name('class-groups.edit');
