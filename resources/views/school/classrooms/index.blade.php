@@ -6,7 +6,7 @@
 <x-scholar-hero class="page-heading classroom-heading" aria-labelledby="classroom-availability-title">
     <div>
         <div class="eyebrow"><span class="live-dot" aria-hidden="true"></span> Live room monitor</div>
-        <h1 id="classroom-availability-title"><i class="bi bi-calendar2-week" aria-hidden="true"></i> Classroom <span>Availability</span></h1>
+        <div class="classroom-title-row"><span class="classroom-title-icon"><i class="bi bi-calendar2-week" aria-hidden="true"></i></span><h1 id="classroom-availability-title">Classroom <span>Availability</span></h1></div>
         <p>Monitor classroom usage across all academic programs.</p>
     </div>
     <div class="d-flex flex-wrap gap-2 classroom-heading-actions">
