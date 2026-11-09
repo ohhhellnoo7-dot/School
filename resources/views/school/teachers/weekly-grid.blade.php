@@ -4,6 +4,14 @@
 @php($windows = $scheduleSessions ?? $windows)
 @foreach($windows as $session => [$from, $to])
 @if(request()->filled('session') && request('session') !== $session) @continue @endif
+<?php
+    $sessionHasWork = $lessons->contains(fn ($lesson) => \App\Services\TeacherManagementService::overlaps($from, $to, $lesson->starts_at, $lesson->ends_at))
+        || $breaks->contains(fn ($break) => \App\Services\TeacherManagementService::overlaps($from, $to, $break->start_time, $break->end_time))
+        || $periods->contains(fn ($period) => ! $period->unavailable && \App\Services\TeacherManagementService::overlaps($from, $to, $period->start_time, $period->end_time));
+?>
+@if($sessionHasWork)
+<tr class="teacher-session-divider teacher-session-{{ strtolower($session) }}"><th colspan="6" scope="colgroup"><i class="bi bi-{{ ['Morning' => 'sunrise', 'Afternoon' => 'sun', 'Evening' => 'moon-stars'][$session] }} me-2" aria-hidden="true"></i>{{ __($session) }} {{ __('session') }} <span>{{ $from }}&ndash;{{ $to }}</span></th></tr>
+@endif
 @for($minute = \App\Services\TeacherManagementService::minute($from); $minute + 60 <= \App\Services\TeacherManagementService::minute($to); $minute += 60)
 @php($start = sprintf('%02d:%02d', intdiv($minute, 60), $minute % 60)) @php($end = sprintf('%02d:%02d', intdiv($minute+60, 60), ($minute+60)%60))
 <?php
@@ -25,7 +33,7 @@
 ?>
 @if($canSpan && \App\Services\TeacherManagementService::minute($single->starts_at) < $minute) @continue @endif
 <td rowspan="{{ $span }}" class="{{ $conflict ? 'teacher-cell-conflict' : '' }}">@if($conflict)<strong class="text-danger d-block">{{ __('Review conflict') }}</strong>@endif
-@foreach($dailyLessons as $slot)<article class="teacher-lesson-card"><strong>{{ $slot->subject?->name }}</strong><span>{{ $slot->subject?->schoolClass?->label }} · {{ __('Room') }} {{ $slot->room ?: __('Not assigned') }}</span><small>{{ substr($slot->starts_at, 0, 5) }}–{{ substr($slot->ends_at, 0, 5) }}</small></article>@endforeach
+@foreach($dailyLessons as $slot)<article class="teacher-lesson-card"><span class="teacher-lesson-session teacher-session-{{ strtolower($session) }}">{{ __($session) }}</span><strong>{{ $slot->subject?->name }}</strong><span>{{ $slot->subject?->schoolClass?->label }} · {{ __('Room') }} {{ $slot->room ?: __('Not assigned') }}</span><small>{{ substr($slot->starts_at, 0, 5) }}–{{ substr($slot->ends_at, 0, 5) }}</small></article>@endforeach
 @foreach($dailyBreaks as $b)<article class="teacher-break-card"><strong>{{ __('FREE PERIOD') }}</strong><span>{{ __('1 HOUR') }}</span><small>{{ substr($b->start_time, 0, 5) }}–{{ substr($b->end_time, 0, 5) }}</small></article>@endforeach
 @if($dailyLessons->isEmpty() && $dailyBreaks->isEmpty())<span class="small text-secondary">{{ __($service->onDuty($teacher, $day, $start, $end) ? 'Available' : 'Off duty') }}</span>@endif</td>@endforeach</tr>
 @endfor @endforeach

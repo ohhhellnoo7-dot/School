@@ -7,6 +7,14 @@
         <a class="btn btn-outline-secondary" href="{{ route('modules.index', 'teachers') }}">{{ __('Back to teachers') }}</a>
     @endif
 </div>
+<section class="teacher-working-sessions mb-3" aria-label="{{ __('Working sessions') }}">
+    <strong>{{ __('Works in:') }}</strong>
+    @forelse($workingSessions as $workingSession => [$workingStart, $workingEnd])
+        <span class="teacher-session-badge teacher-session-{{ strtolower($workingSession) }}"><i class="bi bi-{{ ['Morning' => 'sunrise', 'Afternoon' => 'sun', 'Evening' => 'moon-stars'][$workingSession] }}" aria-hidden="true"></i> {{ __($workingSession) }} <span>{{ $workingStart }}&ndash;{{ $workingEnd }}</span></span>
+    @empty
+        <span class="text-secondary">{{ __('No working sessions assigned yet.') }}</span>
+    @endforelse
+</section>
 <div class="d-flex flex-wrap gap-2 mb-3 d-print-none">
 @if(auth()->user()->role === 'administrator')
 <form method="post" action="{{ route('teacher-management.schedules.preview', $teacher) }}">@csrf<button class="btn btn-primary">{{ __($breaks->isEmpty() ? 'Generate Schedule' : 'Regenerate Schedule') }}</button></form>

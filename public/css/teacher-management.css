@@ -16,3 +16,16 @@
 @media(max-width:1000px){.teacher-filter-row{grid-template-columns:repeat(2,minmax(0,1fr))}.teacher-simple-table{table-layout:auto}}
 @media(max-width:650px){.teacher-filter-row{grid-template-columns:1fr}.teacher-period-row{display:block}.teacher-period-fields{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:.5rem}.teacher-simple-table,.teacher-simple-table tbody,.teacher-simple-table tr,.teacher-simple-table td{display:block;width:100%}.teacher-simple-table thead{display:none}.teacher-simple-table tr{padding:1rem;border-bottom:1px solid var(--border)}.teacher-simple-table td{border:0!important;padding:.4rem!important;display:grid;grid-template-columns:100px minmax(0,1fr);gap:.5rem}.teacher-simple-table td:before{content:attr(data-label);font-weight:600;color:var(--muted)}}
 @media(prefers-reduced-motion:reduce){.teacher-stat,.tab-pane{transition:none!important;animation:none!important}}
+
+/* Session names remain visible in the weekly timetable and printed schedule. */
+.teacher-working-sessions{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.teacher-session-badge{display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border:1px solid var(--border);border-radius:12px;font-size:13px;font-weight:700}
+.teacher-session-badge>span{font-size:12px;font-weight:500}
+.teacher-session-morning{--session-color:var(--warning,#9b6410);--session-bg:var(--warning-soft,#fff5dc)}
+.teacher-session-afternoon{--session-color:var(--info,#2378a3);--session-bg:var(--info-soft,#e9f4ff)}
+.teacher-session-evening{--session-color:var(--primary,#7659a3);--session-bg:var(--violet-soft,#f1eaff)}
+.teacher-session-badge,.teacher-lesson-session{color:var(--session-color);background:var(--session-bg)}
+.teacher-weekly-grid .teacher-session-divider>th{background:var(--session-bg)!important;color:var(--session-color)!important;padding:15px 12px;font-size:15px;letter-spacing:0;text-transform:none;border-left:4px solid var(--session-color)}
+.teacher-session-divider span{margin-left:12px;font-size:13px;font-weight:500}
+.teacher-lesson-card .teacher-lesson-session{display:inline-flex;align-self:flex-start;width:fit-content;padding:3px 8px;margin-bottom:6px;border-radius:6px;font-size:11px;font-weight:750}
+@media print{.teacher-session-divider>th,.teacher-session-badge,.teacher-lesson-session{print-color-adjust:exact;-webkit-print-color-adjust:exact}.teacher-session-divider{break-after:avoid}}

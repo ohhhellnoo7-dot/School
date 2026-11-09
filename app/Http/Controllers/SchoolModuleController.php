@@ -267,6 +267,10 @@ class SchoolModuleController extends Controller
                         : $start < ($session === 'Afternoon' ? '16:30' : $hours[1]) && $end > $hours[0];
                 });
         });
+        $workingSessions = $scheduleSessions->filter(fn ($hours) =>
+            $lessons->contains(fn ($lesson) => $service::overlaps($hours[0], $hours[1], $lesson->starts_at, $lesson->ends_at))
+            || $periods->contains(fn ($period) => ! $period->unavailable && $service::overlaps($hours[0], $hours[1], $period->start_time, $period->end_time))
+        );
         $programLessons = $lessons->filter(fn ($s) => ! $request->filled('program') || $s->subject?->schoolClass?->program === $request->input('program'));
         $filterSubjects = $programLessons->pluck('subject')->filter()->unique('id');
         $filterClasses = $filterSubjects->pluck('schoolClass')->filter()->unique('id');
@@ -279,7 +283,7 @@ class SchoolModuleController extends Controller
         $scheduleTeachers = $request->user()->role === 'administrator' ? User::where('role', 'teacher')->orderBy('name')->get() : collect([$teacher]);
         $periods = $service->periods($teacher);
         $breaks = $teacherBreaks;
-        return view('school.teachers.timetable', compact('teacher', 'slots', 'teacherBreaks', 'workload', 'service', 'lessons', 'periods', 'breaks', 'filterSubjects', 'filterClasses', 'scheduleTeachers', 'programs', 'scheduleSessions'));
+        return view('school.teachers.timetable', compact('teacher', 'slots', 'teacherBreaks', 'workload', 'service', 'lessons', 'periods', 'breaks', 'filterSubjects', 'filterClasses', 'scheduleTeachers', 'programs', 'scheduleSessions', 'workingSessions'));
     }
 
     public function teacherLessonStatus(Request $request, User $teacher)
