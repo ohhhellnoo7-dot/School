@@ -44,6 +44,7 @@
             $lessonState = $status === 'out_of_service' ? 'unavailable' : ($lesson ? ($lesson->isRelaxation() ? 'relaxation' : 'studying') : ($current && data_get($entry, 'activity') === 'Free Period' ? 'free' : 'none'));
             if ($status !== 'out_of_service' && data_get($entry, 'activity') === 'Free Period') $lessonState = 'free';
             if ($status !== 'out_of_service' && data_get($entry, 'activity') === 'Incomplete timetable') $lessonState = 'incomplete';
+            if (data_get($entry, 'studyWith') && $status !== 'out_of_service') $lessonState = 'studying';
             $icons = ['available' => 'check-circle-fill', 'busy' => 'record-circle-fill', 'upcoming' => 'clock-fill', 'out_of_service' => 'tools'];
             $programDetails = collect(data_get($entry, 'cardProgramDetails', data_get($entry, 'programDetails', [])));
             $activeProgram = $lesson?->schoolClass?->program ?? $current?->classGroup?->program;
@@ -60,6 +61,7 @@
                 <span class="room-status"><i class="bi bi-{{ $icons[$status] ?? 'circle-fill' }}" aria-hidden="true"></i> {{ str_replace('_', ' ', ucfirst($status)) }}</span>
             </div>
             <div class="room-card-body">
+                @include('school.classrooms._study-arrangement', ['entry' => $entry])
                 <div data-room-program-overview="{{ $activeOverviewProgram }}" @if($selectedProgram !== $activeOverviewProgram) hidden @endif>
                 @if(in_array($lessonState, ['studying', 'free', 'incomplete'], true))
                     <span class="lesson-state lesson-state-{{ $lessonState }}">{{ match ($lessonState) { 'studying' => 'Studying now', 'incomplete' => 'Incomplete timetable', default => 'Free period' } }}</span>
@@ -106,6 +108,10 @@
                         <div>
                             @if($showCurrentTeacher)
                                 <small>{{ substr((string) $lesson->starts_at, 0, 5) }}&ndash;{{ substr((string) $lesson->ends_at, 0, 5) }} · {{ __('Teacher') }}</small><strong>@include('school.classrooms._teacher-attendance-badge', ['teacherAttendanceStatus' => data_get($entry, 'currentTeacherAttendance')]) {{ $lesson->teacher->name }}</strong>
+                                @if(in_array(auth()->user()->role, ['administrator', 'teacher'], true) && in_array(data_get($entry, 'currentTeacherAttendance'), ['absent', 'excused'], true) && !data_get($entry, 'lessonConflict') && !data_get($entry, 'studyWith'))
+                                <a class="btn btn-outline-secondary btn-sm mt-2" href="{{ route('classrooms.matching-class', ['classroom' => $room, 'date' => $moment->format('Y-m-d'), 'time' => $moment->format('H:i'), 'academic_year' => request('academic_year'), 'live' => (request()->boolean('live') || (!request()->filled('date') && !request()->filled('time'))) ? 1 : 0]) }}"><i class="bi bi-search me-1" aria-hidden="true"></i>Find matching class</a>
+                                @endif
+
                             @else
                                 <small>{{ $teacherDetails['sessions']->join(', ') }} · Teachers and subjects</small>
                                 <ul class="room-card-teachers" data-teacher-rotation>

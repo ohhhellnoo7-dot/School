@@ -47,6 +47,8 @@ class ClassroomAvailabilityService
             : CarbonImmutable::parse($moment, $timezone);
         $teacherAttendance = \App\Models\TeacherAttendance::whereDate('date', $selected->toDateString())
             ->whereIn('status', ['absent', 'excused'])->pluck('status', 'teacher_id');
+        $activeStudies = \App\Models\TemporaryClassStudy::whereDate('date', $selected->toDateString())
+            ->where('starts_at', '<=', $selected->format('H:i:s'))->where('ends_at', '>', $selected->format('H:i:s'))->get();
         $minute = ($selected->hour * 60) + $selected->minute;
         $day = $selected->englishDayOfWeek;
         $academicYear = $filters['academic_year'] ?? $selected->year.'-'.($selected->year+1);
@@ -74,7 +76,7 @@ class ClassroomAvailabilityService
             ->get();
 
         return $rooms
-            ->map(function (Classroom $classroom) use ($minute, $day, $lessons, $weeklyBookings, $programsByRoom, $cohorts, $lessonsByRoom, $visibleStudyClasses, $scopeProgram, $scopeSession, $filters, $teacherAttendance) {
+            ->map(function (Classroom $classroom) use ($minute, $day, $lessons, $weeklyBookings, $programsByRoom, $cohorts, $lessonsByRoom, $visibleStudyClasses, $scopeProgram, $scopeSession, $filters, $teacherAttendance, $activeStudies) {
                 $programs = ($programsByRoom->get($classroom->id) ?? collect())
                     ->merge(($weeklyBookings->get($classroom->id) ?? collect())->pluck('classGroup.program'))
                     ->filter()->unique()->sort()->values();
@@ -158,6 +160,11 @@ class ClassroomAvailabilityService
                     && $activity['currentTeacherAttendance'] && ! $activity['lessonConflict']) {
                     $activity['activity'] = 'Free Period';
                 }
+                $activity['studyWith'] = $activeStudies->first(fn ($study) => $study->source_classroom_id === $classroom->id
+                    && $study->source_schedule_id === $activity['currentLesson']?->id);
+                $activity['combinedStudies'] = $activeStudies->filter(fn ($study) => $study->target_classroom_id === $classroom->id
+                    && $study->target_schedule_id === $activity['currentLesson']?->id)->values();
+                if ($activity['studyWith']) $activity['activity'] = 'Studying with another class';
                 // Room membership comes from the full weekly timetable, even on non-teaching days.
                 $assignedLessons = $lessonsByRoom->get($classroom->id) ?? collect();
                 $assignedBookings = $weeklyBookings->get($classroom->id) ?? collect();

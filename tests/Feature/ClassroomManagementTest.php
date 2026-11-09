@@ -23,6 +23,99 @@ class ClassroomManagementTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_all_matching_classes_are_listed_and_the_second_option_can_be_selected(): void
+    {
+        $admin = $this->user('administrator');
+        $this->actingAs($admin);
+        $rooms = [];
+        $lessons = [];
+        foreach (['C', 'D', 'E'] as $section) {
+            $rooms[$section] = $this->classroom('12'.$section, 40);
+            $teacher = $this->user('teacher', ['name' => 'Khmer Teacher '.$section, 'status' => 'active']);
+            $group = $this->classGroup('Khmer', 12, $section);
+            $class = SchoolClass::create(['name' => 'Grade 12', 'section' => $section, 'program' => 'Khmer', 'session' => 'Afternoon', 'class_group_id' => $group->id]);
+            $subject = \App\Models\Subject::create(['name' => 'Khmer', 'code' => 'ALL-MATCH-'.$section, 'school_class_id' => $class->id]);
+            $id = DB::table('schedules')->insertGetId(['school_class_id' => $class->id, 'subject_id' => $subject->id, 'teacher_id' => $teacher->id,
+                'classroom_id' => $rooms[$section]->id, 'room' => '12'.$section, 'day' => 'Monday', 'starts_at' => '15:00', 'ends_at' => '17:00', 'entry_type' => 'academic', 'academic_year' => '2026-2027']);
+            $lessons[$section] = $id;
+            if ($section === 'C') \App\Models\TeacherAttendance::create(['teacher_id' => $teacher->id, 'date' => '2026-11-09', 'status' => 'excused', 'recorded_by' => $admin->id]);
+        }
+        $this->get(route('classrooms.matching-class', ['classroom' => $rooms['C'], 'date' => '2026-11-09', 'time' => '15:30']))
+            ->assertOk()->assertSee('2 matching classes')->assertSee('Khmer Teacher D')->assertSee('Khmer Teacher E')
+            ->assertSee('Study with Class 12 D')->assertSee('Study with Class 12 E')
+            ->assertViewHas('matches', fn ($matches) => $matches->pluck('classroom.id')->all() === [$rooms['D']->id, $rooms['E']->id]);
+        $this->post(route('classrooms.study-with', $rooms['C']), ['date' => '2026-11-09', 'time' => '15:30',
+            'source_schedule_id' => $lessons['C'], 'target_schedule_id' => $lessons['E'], 'target_classroom_id' => $rooms['E']->id])
+            ->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertDatabaseHas('temporary_class_studies', ['source_class' => '12 C', 'target_class' => '12 E', 'teacher_name' => 'Khmer Teacher E']);
+    }
+
+    public function test_matching_class_finds_same_grade_subject_and_period_with_another_teacher(): void
+    {
+        $admin = $this->user('administrator');
+        $this->actingAs($admin);
+        $absent = $this->user('teacher', ['name' => 'Absent Biology Teacher', 'status' => 'active']);
+        $receiving = $this->user('teacher', ['name' => 'Receiving Biology Teacher', 'status' => 'active']);
+        $rooms = [];
+        foreach (['E', 'A', 'B', 'C', 'D', 'F'] as $section) {
+            $room = $this->classroom('10'.$section, 40);
+            $rooms[$section] = $room;
+            $group = $this->classGroup('Khmer', $section === 'B' ? 11 : 10, $section);
+            $class = SchoolClass::create(['name' => 'Grade '.($section === 'B' ? 11 : 10), 'section' => $section, 'program' => 'Khmer', 'session' => 'Morning', 'class_group_id' => $group->id]);
+            $subject = \App\Models\Subject::create(['school_class_id' => $class->id, 'name' => $section === 'C' ? 'History' : 'Biology', 'code' => 'MATCH-'.$section]);
+            DB::table('schedules')->insert(['school_class_id' => $class->id, 'subject_id' => $subject->id,
+                'teacher_id' => $section === 'E' ? $absent->id : ($section === 'A' ? $receiving->id : $this->user('teacher', ['status' => 'active'])->id),
+                'classroom_id' => $room->id, 'room' => $room->room_number, 'day' => 'Monday',
+                'starts_at' => '07:00', 'ends_at' => $section === 'F' ? '08:00' : '09:00', 'entry_type' => 'academic', 'academic_year' => '2026-2027']);
+        }
+        $unavailable = \App\Models\Schedule::where('classroom_id', $rooms['D']->id)->first()->teacher_id;
+        foreach ([$absent->id, $unavailable] as $id) {
+            \App\Models\TeacherAttendance::create(['teacher_id' => $id, 'date' => '2026-11-02', 'status' => 'absent', 'recorded_by' => $admin->id]);
+        }
+        $params = ['classroom' => $rooms['E'], 'date' => '2026-11-02', 'time' => '07:30'];
+        $response = $this->get(route('classrooms.matching-class', $params))->assertOk()
+            ->assertSee('10 E')->assertSee('10 A')->assertSee('Receiving Biology Teacher')->assertSee('Suggested note:');
+        $this->assertSame([$rooms['A']->id], $response->viewData('matches')->pluck('classroom.id')->all());
+        $html = $this->getJson(route('classrooms.data', ['date' => '2026-11-02', 'time' => '07:30']))->assertOk()->json('html');
+        $this->assertStringContainsString('Find matching class', $html);
+        $sourceSchedule = \App\Models\Schedule::where('classroom_id', $rooms['E']->id)->first();
+        $targetSchedule = \App\Models\Schedule::where('classroom_id', $rooms['A']->id)->first();
+        $studyData = ['date' => '2026-11-02', 'time' => '07:30', 'source_schedule_id' => $sourceSchedule->id,
+            'target_classroom_id' => $rooms['A']->id, 'target_schedule_id' => $targetSchedule->id];
+        $wrongSchedule = \App\Models\Schedule::where('classroom_id', $rooms['B']->id)->first();
+        $this->post(route('classrooms.study-with', $rooms['E']), array_replace($studyData, [
+            'target_classroom_id' => $rooms['B']->id, 'target_schedule_id' => $wrongSchedule->id,
+        ]))->assertSessionHasErrors('match');
+        $this->assertDatabaseCount('temporary_class_studies', 0);
+        $receivingAbsence = \App\Models\TeacherAttendance::create(['teacher_id' => $receiving->id, 'date' => '2026-11-02', 'status' => 'excused', 'recorded_by' => $admin->id]);
+        $this->get(route('classrooms.matching-class', $params))->assertOk()->assertSee('No matching class found');
+        $this->post(route('classrooms.study-with', $rooms['E']), $studyData)->assertSessionHasErrors('match');
+        $receivingAbsence->delete();
+        foreach (range(1, 2) as $attempt) {
+            $this->post(route('classrooms.study-with', $rooms['E']), $studyData)->assertSessionHasNoErrors()
+                ->assertRedirect(route('classrooms.index', ['date' => '2026-11-02', 'time' => '07:30']));
+        }
+        $this->assertDatabaseCount('temporary_class_studies', 1);
+        $this->assertDatabaseHas('temporary_class_studies', ['source_class' => '10 E', 'target_class' => '10 A',
+            'subject' => 'Biology', 'teacher_name' => 'Receiving Biology Teacher', 'starts_at' => '07:30:00', 'ends_at' => $sourceSchedule->ends_at]);
+        $activeHtml = $this->getJson(route('classrooms.data', ['date' => '2026-11-02', 'time' => '08:15']))->assertOk()->json('html');
+        $this->assertStringContainsString('Studying with Class 10 A', $activeHtml);
+        $this->assertStringContainsString('Combined class with 10 E', $activeHtml);
+        $this->assertStringContainsString('Return to Room 10E at 09:00', $activeHtml);
+        $this->get(route('classrooms.show', ['classroom' => $rooms['E'], 'date' => '2026-11-02', 'time' => '08:15']))
+            ->assertOk()->assertSee('Studying with Class 10 A');
+        foreach (['07:15', '09:00'] as $time) {
+            $inactiveHtml = $this->getJson(route('classrooms.data', ['date' => '2026-11-02', 'time' => $time]))->assertOk()->json('html');
+            $this->assertStringNotContainsString('Studying with Class 10 A', $inactiveHtml);
+            $this->assertStringNotContainsString('Combined class with 10 E', $inactiveHtml);
+        }
+        \App\Models\TeacherAttendance::create(['teacher_id' => $receiving->id, 'date' => '2026-11-02', 'status' => 'excused', 'recorded_by' => $admin->id]);
+        $this->get(route('classrooms.matching-class', $params))->assertOk()->assertSee('Studying with Class 10 A');
+        $this->actingAs($this->user('parent'))->get(route('classrooms.matching-class', $params))->assertForbidden();
+        $this->post(route('classrooms.study-with', $rooms['E']), $studyData)->assertForbidden();
+        $this->assertDatabaseCount('schedules', 6);
+    }
+
     public function test_teacher_absence_is_shown_as_a_free_period_without_releasing_the_room(): void
     {
         $admin = $this->user('administrator');

@@ -839,3 +839,7 @@ a.class-summary-card:hover {
 
 .room-teacher-attendance{display:inline-flex;align-items:center;vertical-align:middle;padding:3px 7px;margin-right:4px;border-radius:7px;font-size:10px;font-weight:700;line-height:1.4;white-space:nowrap;background:var(--danger-soft,#fce9ed);color:var(--danger,#c73050)}
 .room-teacher-attendance.is-excused{background:var(--info-soft,#e6f1ff);color:var(--info,#1765d1)}
+
+.room-study-arrangement{display:grid;gap:6px;padding:13px;margin:0 0 14px;border:1px solid var(--border);border-left:4px solid var(--info,#247ca2);border-radius:12px;background:var(--info-soft,var(--soft));color:var(--ink);font-size:12px;line-height:1.5}
+.room-study-arrangement strong{font-size:13px}.room-study-arrangement small{color:var(--muted)}
+.room-study-arrangement.is-combined{border-left-color:var(--success,#329c7c);background:var(--success-soft,var(--soft))}

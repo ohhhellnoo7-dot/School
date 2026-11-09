@@ -123,6 +123,85 @@ class ClassroomController extends Controller
         ]);
     }
 
+    public function matchingClass(Request $request, Classroom $classroom, ClassroomAvailabilityService $availabilityService): View
+    {
+        abort_unless(in_array($request->user()->role, ['administrator', 'teacher'], true), 403);
+        abort_unless($this->visibleClassrooms($request->user())->whereKey($classroom)->exists(), 403);
+        $filters = $request->validate([
+            'date' => ['required', 'date_format:Y-m-d'],
+            'time' => ['required', 'date_format:H:i'],
+            'academic_year' => ['nullable', 'regex:/^\d{4}-\d{4}$/'],
+        ]);
+        $moment = $request->boolean('live') ? CarbonImmutable::now(config('app.timezone')) : $this->moment($filters);
+        $entries = $availabilityService->forMoment($moment, array_filter(['academic_year' => $filters['academic_year'] ?? null]));
+        $source = $entries->first(fn ($entry) => $entry['classroom']->id === $classroom->id);
+        abort_unless($source, 404);
+        $matches = app(\App\Services\MatchingClassService::class)->find($source, $entries);
+        return view('school.classrooms.matching-class', compact('classroom', 'moment', 'source', 'matches'));
+    }
+
+    public function studyWith(Request $request, Classroom $classroom, ClassroomAvailabilityService $availabilityService): RedirectResponse
+    {
+        abort_unless(in_array($request->user()->role, ['administrator', 'teacher'], true), 403);
+        abort_unless($this->visibleClassrooms($request->user())->whereKey($classroom)->exists(), 403);
+        $filters = $request->validate([
+            'date' => ['required', 'date_format:Y-m-d'], 'time' => ['required', 'date_format:H:i'],
+            'academic_year' => ['nullable', 'regex:/^\d{4}-\d{4}$/'],
+            'source_schedule_id' => ['required', 'integer'],
+            'target_classroom_id' => ['required', 'integer', 'different:classroom'],
+            'target_schedule_id' => ['required', 'integer'],
+        ]);
+        $moment = $request->boolean('live') ? CarbonImmutable::now(config('app.timezone')) : $this->moment($filters);
+        $filters['date'] = $moment->toDateString();
+        $filters['time'] = $moment->format('H:i');
+        $study = \Illuminate\Support\Facades\DB::transaction(function () use ($classroom, $filters, $moment, $request, $availabilityService) {
+            // Serialize choices involving either room, including simultaneous reciprocal requests.
+            Classroom::whereIn('id', [$classroom->id, $filters['target_classroom_id']])->orderBy('id')->lockForUpdate()->get();
+            \App\Models\Schedule::whereIn('id', [$filters['source_schedule_id'], $filters['target_schedule_id']])->orderBy('id')->lockForUpdate()->get();
+            $entries = $availabilityService->forMoment($moment, array_filter(['academic_year' => $filters['academic_year'] ?? null]));
+            $source = $entries->first(fn ($entry) => $entry['classroom']->id === $classroom->id);
+            $lesson = $source['currentLesson'] ?? null;
+            if (! $lesson || $lesson->id !== (int) $filters['source_schedule_id']) {
+                throw ValidationException::withMessages(['match' => 'The source lesson has changed. Find matching classes again.']);
+            }
+            $existing = \App\Models\TemporaryClassStudy::where('source_schedule_id', $lesson->id)->whereDate('date', $filters['date'])->first();
+            if ($existing) {
+                if ($existing->target_schedule_id === (int) $filters['target_schedule_id']) return $existing;
+                throw ValidationException::withMessages(['match' => 'This class already has a study arrangement for this lesson.']);
+            }
+            $match = app(\App\Services\MatchingClassService::class)->find($source, $entries)
+                ->first(fn ($entry) => $entry['classroom']->id === (int) $filters['target_classroom_id']
+                    && $entry['currentLesson']->id === (int) $filters['target_schedule_id']);
+            if (! $match) {
+                throw ValidationException::withMessages(['match' => 'This class is no longer a matching option. Find matching classes again.']);
+            }
+            $receiving = $match['currentLesson'];
+            $overlap = \App\Models\TemporaryClassStudy::whereDate('date', $filters['date'])
+                ->where('starts_at', '<', substr($lesson->ends_at, 0, 8))
+                ->where('ends_at', '>', $moment->format('H:i:s'))
+                ->where(fn ($q) => $q->whereIn('source_classroom_id', [$classroom->id, $match['classroom']->id])
+                    ->orWhere('target_classroom_id', $classroom->id))->exists();
+            if ($overlap) {
+                throw ValidationException::withMessages(['match' => 'A class already has an overlapping study arrangement. Refresh the matching list.']);
+            }
+            $label = fn ($class) => trim(preg_replace('/^Grade\s*/i', '', $class->name).' '.$class->section);
+            return \App\Models\TemporaryClassStudy::create([
+                'source_schedule_id' => $lesson->id, 'target_schedule_id' => $receiving->id,
+                'source_classroom_id' => $classroom->id, 'target_classroom_id' => $match['classroom']->id,
+                'created_by' => $request->user()->id, 'date' => $filters['date'],
+                'starts_at' => $moment->format('H:i:s'), 'ends_at' => $lesson->ends_at,
+                'source_class' => $label($lesson->schoolClass), 'target_class' => $label($receiving->schoolClass),
+                'subject' => $lesson->subject->name, 'teacher_name' => $receiving->teacher->name,
+                'source_room' => $classroom->room_number, 'target_room' => $match['classroom']->room_number,
+            ]);
+        });
+        return redirect()->route('classrooms.index', array_filter([
+            'date' => $request->boolean('live') ? null : $filters['date'],
+            'time' => $request->boolean('live') ? null : $filters['time'],
+            'live' => $request->boolean('live') ? 1 : null, 'academic_year' => $filters['academic_year'] ?? null,
+        ]))->with('success', $study->source_class.' is studying with '.$study->target_class.' for '.$study->subject.'. Return to Room '.$study->source_room.' at '.substr($study->ends_at, 0, 5).'.');
+    }
+
     public function lessonStatus(Request $request, Classroom $classroom, ClassroomAvailabilityService $availabilityService): JsonResponse
     {
         abort_unless($this->visibleClassrooms($request->user())->whereKey($classroom)->exists(), 403);
