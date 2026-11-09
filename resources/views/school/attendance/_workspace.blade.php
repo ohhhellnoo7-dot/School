@@ -46,7 +46,7 @@
                 <a href="{{ $attendanceActionUrl ?? '#teacher-attendance-records' }}"><i class="bi bi-calendar2-check" aria-hidden="true"></i><span>Mark<br>attendance</span></a>
                 <a href="{{ route('teacher-management.create') }}"><i class="bi bi-person-plus" aria-hidden="true"></i><span>Add<br>teacher</span></a>
                 <a href="{{ route('teacher-management.reports') }}"><i class="bi bi-bar-chart-line" aria-hidden="true"></i><span>Teacher<br>reports</span></a>
-                <a href="{{ route('teacher-attendance.index', ['date' => $date]) }}"><i class="bi bi-journal-check" aria-hidden="true"></i><span>Attendance<br>records</span></a>
+                <a href="{{ route('teacher-attendance.index', ['date' => $date, 'session' => $filters['session'] ?? null]) }}"><i class="bi bi-journal-check" aria-hidden="true"></i><span>Attendance<br>records</span></a>
             </div>
         </section>
     </div>

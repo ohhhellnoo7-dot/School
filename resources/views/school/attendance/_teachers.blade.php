@@ -4,7 +4,7 @@
 <form method="post" action="{{ route('teacher-attendance.store') }}">
 @csrf
 @if($embedded)<input type="hidden" name="return_to" value="teachers"><input type="hidden" name="attendance_page" value="{{ $teachers->currentPage() }}">@endif
-<input type="hidden" name="date" value="{{ $date }}"><input type="hidden" name="program" value="{{ $filters['program'] ?? '' }}">
+<input type="hidden" name="session" value="{{ $filters['session'] ?? '' }}"><input type="hidden" name="date" value="{{ $date }}"><input type="hidden" name="program" value="{{ $filters['program'] ?? '' }}">
 <section class="panel"><div class="panel-header"><h2>Teachers ({{ $total }})</h2>
 @if(auth()->user()->role === 'administrator' && $date <= today()->toDateString() && $teachers->count())
 <button type="button" class="btn btn-outline-primary" id="teachers-present">Mark unmarked on this page present</button>

@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\Program;
+use App\Support\AttendanceSession;
 use App\Models\TeacherAttendance;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -12,8 +13,9 @@ class TeacherAttendanceController extends Controller
     public function bulk(Request $request, string $action) {
         abort_unless($request->user()->role === 'administrator', 403);
         abort_unless(in_array($action, ['all-present', 'random'], true), 404);
-        $count = DB::transaction(function () use ($request, $action) {
-            $teachers = User::where('role', 'teacher')
+        $session = AttendanceSession::selected($request);
+        $count = DB::transaction(function () use ($request, $action, $session) {
+            $teachers = AttendanceSession::teachers(User::where('role', 'teacher'), $session)
                 ->where(fn ($q) => $q->where('status', 'active')->orWhereNull('status'))
                 ->lockForUpdate()->get()->shuffle()->values();
             $total = $teachers->count();
@@ -32,7 +34,7 @@ class TeacherAttendanceController extends Controller
             }
             return $total;
         });
-        return redirect()->route('dashboard')->with('success', $count.' teacher attendance records saved for today.');
+        return redirect()->route('dashboard', array_filter(['session' => $session]))->with('success', $count.' teacher attendance records saved for today.');
     }
 
     public function index(Request $request) {
@@ -43,16 +45,20 @@ class TeacherAttendanceController extends Controller
     public function data(Request $request, bool $embedded = false): array {
         abort_unless(in_array($request->user()->role, ['administrator', 'teacher']), 403);
         $prefix = $embedded ? 'attendance_' : '';
+        $session = AttendanceSession::selected($request, $prefix.'session');
         $filters = \Illuminate\Support\Facades\Validator::make([
             'date' => $request->input($prefix.'date'),
             'program' => $request->input($prefix.'program'),
             'search' => $request->input($prefix.'search'),
         ], ['date' => 'nullable|date_format:Y-m-d', 'program' => ['nullable', Rule::in(Program::names())], 'search' => 'nullable|string|max:100'])->validate();
+        $filters['session'] = $session;
         $date = $filters['date'] ?? today()->toDateString();
+        $sessionTeacherIds = AttendanceSession::teachers(User::where('role', 'teacher'), $session)->select('users.id');
         $records = TeacherAttendance::whereDate('date', $date)
+            ->when($session, fn ($q) => $q->whereIn('teacher_id', clone $sessionTeacherIds))
             ->when($request->user()->role === 'teacher', fn ($q) => $q->where('teacher_id', $request->user()->id))
             ->when($filters['program'] ?? null, fn ($q, $program) => $q->where('program', $program))->get()->toBase()->keyBy('teacher_id');
-        $teachers = User::where('role', 'teacher')
+        $teachers = AttendanceSession::teachers(User::where('role', 'teacher'), $session)
             ->where(fn ($q) => $q->where('status', 'active')->orWhereNull('status')->orWhereIn('id', $records->keys()))
             ->when($request->user()->role === 'teacher', fn ($q) => $q->whereKey($request->user()->id))
             ->when($filters['program'] ?? null, fn ($q, $program) => $q->where(fn ($scope) => $scope->where('program', $program)->orWhereIn('id', $records->keys())))
@@ -64,7 +70,7 @@ class TeacherAttendanceController extends Controller
         $insights = null;
         if ($embedded && $request->user()->role === 'administrator') {
             $end = \Illuminate\Support\Carbon::parse($date);
-            $history = TeacherAttendance::whereDate('date', '>=', $end->copy()->subDays(6)->toDateString())->whereDate('date', '<=', $date)
+            $history = TeacherAttendance::when($session, fn ($q) => $q->whereIn('teacher_id', clone $sessionTeacherIds))->whereDate('date', '>=', $end->copy()->subDays(6)->toDateString())->whereDate('date', '<=', $date)
                 ->when($filters['program'] ?? null, fn ($q, $program) => $q->where('program', $program))
                 ->when($filters['search'] ?? null, fn ($q, $search) => $q->whereHas('teacher', fn ($q) => $q->where(fn ($q) => $q->where('name', 'like', '%'.$search.'%')->orWhere('email', 'like', '%'.$search.'%'))))
                 ->get()->groupBy(fn ($record) => $record->date->toDateString());
@@ -93,6 +99,7 @@ class TeacherAttendanceController extends Controller
         $data = $request->validate([
             'date' => 'required|date_format:Y-m-d|before_or_equal:today',
             'return_to' => 'nullable|in:teachers',
+            'session' => ['nullable', Rule::in(AttendanceSession::OPTIONS)],
             'attendance_page' => 'nullable|integer|min:1',
             'program' => ['nullable', Rule::in(Program::names())],
             'records' => 'required|array|max:50',
@@ -102,7 +109,7 @@ class TeacherAttendanceController extends Controller
             'records.*.notes' => 'nullable|string|max:1000',
         ]);
         $saved = DB::transaction(function () use ($data, $request) {
-            $teachers = User::where('role', 'teacher')->whereIn('id', array_column($data['records'], 'teacher_id'))->lockForUpdate()->get()->keyBy('id');
+            $teachers = AttendanceSession::teachers(User::where('role', 'teacher'), $data['session'] ?? null)->whereIn('id', array_column($data['records'], 'teacher_id'))->lockForUpdate()->get()->keyBy('id');
             $saved = 0;
             foreach ($data['records'] as $row) {
                 $teacher = $teachers->get($row['teacher_id']);
@@ -117,8 +124,8 @@ class TeacherAttendanceController extends Controller
             return $saved;
         });
         if (($data['return_to'] ?? null) === 'teachers') {
-            return redirect()->to(route('modules.index', array_filter(['module' => 'teachers', 'attendance_date' => $data['date'], 'attendance_program' => $data['program'] ?? null, 'attendance_page' => $data['attendance_page'] ?? null])).'#teacher-attendance')->with('success', $saved.' teacher attendance records saved.');
+            return redirect()->to(route('modules.index', array_filter(['module' => 'teachers', 'attendance_date' => $data['date'], 'attendance_session' => $data['session'] ?? null, 'attendance_program' => $data['program'] ?? null, 'attendance_page' => $data['attendance_page'] ?? null])).'#teacher-attendance')->with('success', $saved.' teacher attendance records saved.');
         }
-        return redirect()->route('teacher-attendance.index', array_filter(['date' => $data['date'], 'program' => $data['program'] ?? null]))->with('success', $saved.' teacher attendance records saved.');
+        return redirect()->route('teacher-attendance.index', array_filter(['date' => $data['date'], 'session' => $data['session'] ?? null, 'program' => $data['program'] ?? null]))->with('success', $saved.' teacher attendance records saved.');
     }
 }

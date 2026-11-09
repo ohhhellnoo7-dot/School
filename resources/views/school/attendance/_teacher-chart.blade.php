@@ -7,7 +7,7 @@
 @endphp
 <section class="panel attendance-insight mb-4" aria-labelledby="attendance-insight-title">
     <header class="attendance-insight-header">
-        <div><span class="attendance-eyebrow"><i class="bi bi-activity" aria-hidden="true"></i> Daily overview</span><h2 id="attendance-insight-title">{{ $attendanceTitle ?? 'Overall teacher attendance' }}</h2><p>{{ \Carbon\Carbon::parse($date)->format('l, d F Y') }} &middot; {{ ($filters['program'] ?? null) ?: 'All programs' }}</p></div>
+        <div><span class="attendance-eyebrow"><i class="bi bi-activity" aria-hidden="true"></i> Daily overview</span><h2 id="attendance-insight-title">{{ $attendanceTitle ?? 'Overall teacher attendance' }}</h2><p>{{ \Carbon\Carbon::parse($date)->format('l, d F Y') }} &middot; {{ ($filters['program'] ?? null) ?: 'All programs' }} &middot; {{ ($filters['session'] ?? null) ?: 'All sessions' }}</p></div>
         <span class="attendance-date-badge"><i class="bi bi-calendar-check" aria-hidden="true"></i> {{ $recorded }} / {{ $total }} recorded</span>
     </header>
     <div class="attendance-insight-grid">

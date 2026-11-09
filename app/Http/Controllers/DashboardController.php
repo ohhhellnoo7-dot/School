@@ -10,6 +10,7 @@ use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\User;
 use App\Support\SchoolModules;
+use App\Support\AttendanceSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -19,8 +20,9 @@ class DashboardController extends Controller
     public function randomAttendance(Request $request)
     {
         abort_unless($request->user()->role === 'administrator', 403);
-        $counts = DB::transaction(function () {
-            $students = Student::pluck('id')->shuffle()->values();
+        $session = AttendanceSession::selected($request);
+        $counts = DB::transaction(function () use ($session) {
+            $students = AttendanceSession::students(Student::query(), $session)->pluck('id')->shuffle()->values();
             $total = $students->count();
             $present = (int) round($total * 0.7);
             $late = min($total - $present, (int) round($total * 0.15));
@@ -36,17 +38,19 @@ class DashboardController extends Controller
             return ['present' => $present, 'late' => $late, 'absent' => $absent, 'excused' => $total - $present - $late - $absent];
         });
 
-        return redirect()->route('dashboard')->with('success', "Random attendance saved for today: {$counts['present']} present, {$counts['late']} late, {$counts['absent']} absent, {$counts['excused']} excused.");
+        return redirect()->route('dashboard', array_filter(['session' => $session]))->with('success', "Random attendance saved for today: {$counts['present']} present, {$counts['late']} late, {$counts['absent']} absent, {$counts['excused']} excused.");
     }
 
     public function markAllPresent(Request $request)
     {
         abort_unless($request->user()->role === 'administrator', 403);
-        $count = DB::transaction(function () {
+        $session = AttendanceSession::selected($request);
+        $count = DB::transaction(function () use ($session) {
             $date = today()->toDateString();
-            $count = Student::count();
-            Attendance::whereDate('date', $date)->update(['status' => 'present', 'updated_at' => now()]);
-            Student::whereDoesntHave('attendances', fn ($query) => $query->whereDate('date', $date))
+            $students = AttendanceSession::students(Student::query(), $session);
+            $count = (clone $students)->count();
+            Attendance::whereIn('student_id', (clone $students)->select('id'))->whereDate('date', $date)->update(['status' => 'present', 'updated_at' => now()]);
+            (clone $students)->whereDoesntHave('attendances', fn ($query) => $query->whereDate('date', $date))
                 ->select('id')->chunkById(500, function ($students) use ($date) {
                     $now = now();
                     $rows = $students->map(fn ($student) => [
@@ -59,7 +63,7 @@ class DashboardController extends Controller
             return $count;
         });
 
-        return redirect()->route('dashboard')->with('success', "All {$count} students marked present for today.");
+        return redirect()->route('dashboard', array_filter(['session' => $session]))->with('success', "All {$count} students marked present for today.");
     }
 
     public function __invoke(Request $request)
@@ -85,14 +89,16 @@ class DashboardController extends Controller
         $validated = $request->validate(['date' => 'nullable|date_format:Y-m-d']);
         $reportDate = Carbon::parse($validated['date'] ?? today()->toDateString())->startOfDay();
         $students = Student::visibleTo($user);
-        $ids = (clone $students)->select('id');
+        $attendanceSession = AttendanceSession::selected($request);
+        $attendanceStudents = AttendanceSession::students(clone $students, $attendanceSession);
+        $ids = (clone $attendanceStudents)->select('id');
         $attendance = Attendance::whereIn('student_id', $ids)->whereDate('date', $reportDate);
-        $fees = Fee::whereIn('student_id', $ids)->where('currency', 'USD');
+        $fees = Fee::whereIn('student_id', (clone $students)->select('id'))->where('currency', 'USD');
         $canViewFees = in_array($user->role, ['administrator', 'parent'], true);
         $finance = $canViewFees ? (app(\App\Services\SchoolFinanceService::class)->summary((clone $fees)->with(['adjustments', 'payments'])->get())['USD'] ?? []) : [];
         $months = collect(range(5, 0))->map(fn ($i) => now()->startOfMonth()->subMonths($i));
         $dashboardAttendance = $user->role === 'administrator'
-            ? app(TeacherAttendanceController::class)->data($request->duplicate(['attendance_date' => $reportDate->toDateString()]), true)
+            ? app(TeacherAttendanceController::class)->data($request->duplicate(['attendance_date' => $reportDate->toDateString(), 'attendance_session' => $attendanceSession]), true)
             : null;
         $teacherAttendanceCounts = $dashboardAttendance['counts'] ?? collect();
         $teacherAttendanceTotal = $dashboardAttendance['total'] ?? 0;
@@ -129,10 +135,12 @@ class DashboardController extends Controller
         }
 
         $activeTeacherIds = $user->role === 'administrator' && $reportDate->isToday()
-            ? User::where('role', 'teacher')->where(fn ($q) => $q->where('status', 'active')->orWhereNull('status'))->pluck('id')
+            ? AttendanceSession::teachers(User::where('role', 'teacher'), $attendanceSession)->where(fn ($q) => $q->where('status', 'active')->orWhereNull('status'))->pluck('id')
             : collect();
 
         return [
+            'attendanceSession' => $attendanceSession,
+            'attendanceStudentCount' => (clone $attendanceStudents)->count(),
             'activeTeacherCount' => $activeTeacherIds->count(),
             'teacherRecordedCount' => $activeTeacherIds->isEmpty() ? 0 : \App\Models\TeacherAttendance::whereDate('date', $reportDate)->whereIn('teacher_id', $activeTeacherIds)->count(),
             'parentChildNames' => $user->role === 'parent' ? (clone $students)->limit(2)->pluck('name') : collect(),

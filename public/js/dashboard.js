@@ -47,6 +47,8 @@
             const url = new URL(content.dataset.url, window.location.origin);
             const selectedDate = new URLSearchParams(window.location.search).get('date');
             if (selectedDate) url.searchParams.set('date', selectedDate);
+            const selectedSession = new URLSearchParams(window.location.search).get('session');
+            if (selectedSession) url.searchParams.set('session', selectedSession);
             const response = await fetch(url, {
                 headers: {'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
                 credentials: 'same-origin', cache: 'no-store', signal: controller.signal
@@ -103,7 +105,7 @@
         }
     });
     content.addEventListener('change', event => {
-        if (event.target.id === 'attendance-report-date' && event.target.value) {
+        if ((event.target.id === 'attendance-report-date' && event.target.value) || event.target.id === 'attendance-report-session') {
             event.target.form.requestSubmit();
         }
     });

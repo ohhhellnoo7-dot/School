@@ -25,33 +25,37 @@
                 <p class="attendance-recorded">{{ $teacherRecordedCount }} recorded &middot; {{ max(0, $activeTeacherCount - $teacherRecordedCount) }} unmarked</p>
                 <form method="post" action="{{ route('dashboard.teacher-attendance.bulk', 'all-present') }}">
                     @csrf
+                    <input type="hidden" name="session" value="{{ $attendanceSession }}">
                     <button type="submit" class="btn btn-primary w-100"><i class="bi bi-check2-all me-2" aria-hidden="true"></i>Mark all present today</button>
                 </form>
-                <small class="attendance-action-note">All active teachers, across every program.</small>
+                <small class="attendance-action-note">{{ $attendanceSession ? $attendanceSession.' active teachers only.' : 'All active teachers, across every program.' }}</small>
                 <form method="post" action="{{ route('dashboard.teacher-attendance.bulk', 'random') }}" class="attendance-random-form">
                     @csrf
+                    <input type="hidden" name="session" value="{{ $attendanceSession }}">
                     <button type="submit" class="btn attendance-random-button w-100"><i class="bi bi-shuffle me-2" aria-hidden="true"></i>Random attendance</button>
                     <div class="attendance-ratio"><span>70% present</span><span>15% late</span><span>10% absent</span><span>5% excused</span></div>
                 </form>
-                <small class="attendance-action-note">Either action replaces today's statuses for all active teachers. Random totals are rounded to whole teachers.</small>
+                <small class="attendance-action-note">Either action replaces today's statuses for {{ $attendanceSession ? $attendanceSession.' active teachers' : 'all active teachers' }}. Random totals are rounded to whole teachers.</small>
             </div>
         </details>
         <details class="attendance-actions">
             <summary class="btn btn-primary"><i class="bi bi-check2-all me-2" aria-hidden="true"></i>Student attendance <i class="bi bi-chevron-down ms-2" aria-hidden="true"></i></summary>
             <div class="attendance-action-menu">
-                <div class="attendance-menu-heading"><strong>{{ __('Today\'s attendance') }}</strong><span>{{ $reportDate->format('M d, Y') }} &middot; {{ $studentCount }} students</span></div>
-                <p class="attendance-recorded">{{ $attendanceCount }} recorded &middot; {{ max(0, $studentCount - $attendanceCount) }} unmarked</p>
+                <div class="attendance-menu-heading"><strong>{{ __('Today\'s attendance') }}</strong><span>{{ $reportDate->format('M d, Y') }} &middot; {{ $attendanceStudentCount }} students</span></div>
+                <p class="attendance-recorded">{{ $attendanceCount }} recorded &middot; {{ max(0, $attendanceStudentCount - $attendanceCount) }} unmarked</p>
                 <form method="post" action="{{ route('dashboard.attendance.all-present') }}">
                     @csrf
+                    <input type="hidden" name="session" value="{{ $attendanceSession }}">
                     <button type="submit" class="btn btn-primary w-100"><i class="bi bi-check2-all me-2" aria-hidden="true"></i>Mark all present today</button>
                 </form>
-                <small class="attendance-action-note">All students, across every class.</small>
+                <small class="attendance-action-note">{{ $attendanceSession ? $attendanceSession.' students only.' : 'All students, across every class.' }}</small>
                 <form method="post" action="{{ route('dashboard.attendance.random') }}" class="attendance-random-form">
                     @csrf
+                    <input type="hidden" name="session" value="{{ $attendanceSession }}">
                     <button type="submit" class="btn attendance-random-button w-100"><i class="bi bi-shuffle me-2" aria-hidden="true"></i>Random attendance</button>
                     <div class="attendance-ratio"><span>70% present</span><span>15% late</span><span>10% absent</span><span>5% excused</span></div>
                 </form>
-                <small class="attendance-action-note">Either action replaces today's statuses for all students. Random totals are rounded to whole students.</small>
+                <small class="attendance-action-note">Either action replaces today's statuses for {{ $attendanceSession ? $attendanceSession.' students' : 'all students' }}. Random totals are rounded to whole students.</small>
             </div>
         </details>
         </div>
@@ -106,8 +110,17 @@
     </div>
     <form method="get" action="{{ route('dashboard') }}" class="attendance-filters">
         <div class="attendance-shortcuts" aria-label="Quick report dates">
-            <a class="{{ $reportDate->isYesterday() ? 'is-selected' : '' }}" href="{{ route('dashboard', ['date' => today()->subDay()->toDateString()]) }}" @if($reportDate->isYesterday()) aria-current="date" @endif>Yesterday</a>
-            <a class="{{ $reportDate->isToday() ? 'is-selected' : '' }}" href="{{ route('dashboard') }}" @if($reportDate->isToday()) aria-current="date" @endif>Today</a>
+            <a class="{{ $reportDate->isYesterday() ? 'is-selected' : '' }}" href="{{ route('dashboard', ['date' => today()->subDay()->toDateString(), 'session' => $attendanceSession]) }}" @if($reportDate->isYesterday()) aria-current="date" @endif>Yesterday</a>
+            <a class="{{ $reportDate->isToday() ? 'is-selected' : '' }}" href="{{ route('dashboard', array_filter(['session' => $attendanceSession])) }}" @if($reportDate->isToday()) aria-current="date" @endif>Today</a>
+        </div>
+        <div class="attendance-session-field">
+            <label for="attendance-report-session">Session</label>
+            <select id="attendance-report-session" name="session" class="form-select">
+                <option value="">All sessions</option>
+                @foreach(\App\Support\AttendanceSession::OPTIONS as $sessionOption)
+                <option value="{{ $sessionOption }}" @selected($attendanceSession === $sessionOption)>{{ $sessionOption }}</option>
+                @endforeach
+            </select>
         </div>
         <div class="attendance-date-field">
             <label for="attendance-report-date">Choose a date</label>
@@ -123,17 +136,17 @@
     'counts' => $teacherAttendanceCounts,
     'total' => $teacherAttendanceTotal,
     'date' => $reportDate->toDateString(),
-    'filters' => [],
+    'filters' => ['session' => $attendanceSession],
     'attendanceTitle' => 'Teacher attendance report',
     'attendanceChartId' => 'teacherAttendanceChart',
-    'attendanceActionUrl' => route('modules.index', ['module' => 'teachers', 'attendance_date' => $reportDate->toDateString()]).'#teacher-attendance-records',
-    'attendanceScope' => 'All programs for the selected report date.',
+    'attendanceActionUrl' => route('modules.index', ['module' => 'teachers', 'attendance_date' => $reportDate->toDateString(), 'attendance_session' => $attendanceSession]).'#teacher-attendance-records',
+    'attendanceScope' => ($attendanceSession ?: 'All sessions').' across all programs for the selected report date.',
 ])
 </div>
 @endif
 <div class="row g-3 mb-3">
     <div class="col-lg-8"><section class="panel h-100"><div class="panel-header"><div><h2>Student enrollment</h2><p>A growing community of bright minds</p></div><span class="date-pill py-1">Last 6 months <i class="bi bi-chevron-down ms-2"></i></span></div><div class="chart-wrap"><canvas id="enrollmentChart" role="img" aria-label="Monthly student enrollment chart"></canvas></div></section></div>
-    <div class="col-lg-4"><section class="panel h-100"><div class="panel-header"><div><h2>Student attendance report</h2><p>{{ $reportDate->format('l, M d, Y') }}</p></div><span class="stat-icon tint-green"><i class="bi bi-check2-circle"></i></span></div><div class="chart-wrap small attendance-donut"><div class="donut-label"><strong>{{ $attendanceCount ? round($presentCount / $attendanceCount * 100) : 0 }}%</strong><span>Present</span></div><canvas id="attendanceChart" role="img" aria-label="Attendance by status for {{ $reportDate->format('M d, Y') }}"></canvas></div><div class="chart-legend"><span><b>{{ $charts['attendance'][0] }}</b> Present</span><span><b>{{ $charts['attendance'][1] }}</b> Absent</span><span><b>{{ $lateCount }}</b> Late</span><span><b>{{ $charts['attendance'][3] }}</b> Excused</span></div>@if($attendanceCount === 0)<p class="text-secondary text-center small mt-2">No attendance recorded for this date.</p>@endif</section></div>
+    <div class="col-lg-4"><section class="panel h-100"><div class="panel-header"><div><h2>Student attendance report</h2><p>{{ $reportDate->format('l, M d, Y') }} &middot; {{ $attendanceSession ?: 'All sessions' }}</p></div><span class="stat-icon tint-green"><i class="bi bi-check2-circle"></i></span></div><div class="chart-wrap small attendance-donut"><div class="donut-label"><strong>{{ $attendanceCount ? round($presentCount / $attendanceCount * 100) : 0 }}%</strong><span>Present</span></div><canvas id="attendanceChart" role="img" aria-label="Attendance by status for {{ $reportDate->format('M d, Y') }}"></canvas></div><div class="chart-legend"><span><b>{{ $charts['attendance'][0] }}</b> Present</span><span><b>{{ $charts['attendance'][1] }}</b> Absent</span><span><b>{{ $lateCount }}</b> Late</span><span><b>{{ $charts['attendance'][3] }}</b> Excused</span></div>@if($attendanceCount === 0)<p class="text-secondary text-center small mt-2">No attendance recorded for this date.</p>@endif</section></div>
 </div>
 <div class="row g-3 mb-3">
     <div class="col-lg-8"><section class="panel h-100"><div class="panel-header"><div><h2>{{ in_array(auth()->user()->role, ['administrator', 'parent']) ? 'Monthly revenue' : 'Enrollment trend' }}</h2><p>{{ in_array(auth()->user()->role, ['administrator', 'parent']) ? 'Recorded fee payments · USD' : 'New students joining your classes' }}</p></div><div class="chart-key"><span>{{ in_array(auth()->user()->role, ['administrator', 'parent']) ? 'Collected fees' : 'New students' }}</span></div></div><div class="chart-wrap"><canvas id="revenueChart" role="img" aria-label="Monthly trend chart"></canvas></div></section></div>
