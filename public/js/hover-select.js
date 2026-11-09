@@ -73,6 +73,7 @@
         if (selected) panel.scrollTop = Math.max(0, selected.offsetTop - panel.clientHeight / 2);
     }
 
+    document.addEventListener('hover-menus-change', close);
     document.addEventListener('pointerover', event => {
         if (event.pointerType !== 'mouse' || !matchMedia('(hover: hover)').matches) return;
         if (panel.contains(event.target)) return clearTimeout(closeTimer);

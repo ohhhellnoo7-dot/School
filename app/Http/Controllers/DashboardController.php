@@ -176,6 +176,27 @@ class DashboardController extends Controller
         ];
     }
 
+    public function attendancePeople(Request $request, string $kind, string $status)
+    {
+        $date = $request->validate(['date' => 'nullable|date_format:Y-m-d'])['date'] ?? today()->toDateString();
+        $session = AttendanceSession::selected($request);
+        $user = $request->user();
+        if ($kind === 'teachers') {
+            abort_unless(in_array($user->role, ['administrator', 'teacher'], true), 403);
+            $teachers = AttendanceSession::teachers(User::where('role', 'teacher'), $session)
+                ->when($user->role === 'teacher', fn ($q) => $q->whereKey($user->id));
+            $filters = $request->validate(['program' => ['nullable', \Illuminate\Validation\Rule::in(\App\Models\Program::names())], 'search' => 'nullable|string|max:100']);
+            $records = \App\Models\TeacherAttendance::with('teacher')->whereIn('teacher_id', $teachers->select('users.id'))
+                ->when($filters['program'] ?? null, fn ($q, $program) => $q->where('program', $program))
+                ->when($filters['search'] ?? null, fn ($q, $search) => $q->whereHas('teacher', fn ($teacher) => $teacher->where(fn ($match) => $match->where('name', 'like', '%'.$search.'%')->orWhere('email', 'like', '%'.$search.'%'))));
+        } else {
+            $students = AttendanceSession::students(Student::visibleTo($user), $session);
+            $records = Attendance::with('student.schoolClass')->whereIn('student_id', $students->select('id'));
+        }
+        $records = $records->whereDate('date', $date)->where('status', $status)->orderBy('id')->paginate(50)->withQueryString();
+        return view('school.attendance.people', compact('records', 'kind', 'status', 'date', 'session'));
+    }
+
     public function reports(Request $request)
     {
         abort_unless($request->user()->role === 'administrator', 403);

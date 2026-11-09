@@ -20,7 +20,7 @@
         </div>
         <div class="attendance-status-grid">
             @foreach(['present' => ['Present', 'check-circle'], 'absent' => ['Absent', 'x-circle'], 'late' => ['Late', 'clock'], 'excused' => ['Excused', 'shield-check']] as $status => [$label, $icon])
-            <article class="attendance-status-tile attendance-status-{{ $status }}"><span class="attendance-status-icon"><i class="bi bi-{{ $icon }}" aria-hidden="true"></i></span><div><span>{{ $label }}</span><strong>{{ $counts[$status] ?? 0 }}</strong></div><small>{{ $recorded ? round(($counts[$status] ?? 0) / $recorded * 100) : 0 }}%</small></article>
+            <a href="{{ route('attendance.people', array_filter(['kind' => 'teachers', 'status' => $status, 'date' => $date, 'session' => $filters['session'] ?? null, 'program' => $filters['program'] ?? null, 'search' => $filters['search'] ?? null])) }}" aria-label="View {{ strtolower($label) }} teachers" class="attendance-status-tile attendance-status-{{ $status }}"><span class="attendance-status-icon"><i class="bi bi-{{ $icon }}" aria-hidden="true"></i></span><div><span>{{ $label }}</span><strong>{{ $counts[$status] ?? 0 }}</strong></div><small>{{ $recorded ? round(($counts[$status] ?? 0) / $recorded * 100) : 0 }}%</small></a>
             @endforeach
         </div>
         <aside class="attendance-progress-card">

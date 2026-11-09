@@ -65,6 +65,7 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::get('/profile/photo', [ProfileController::class, 'photo'])->name('profile.photo');
+    Route::get('/attendance/people/{kind}/{status}', [DashboardController::class, 'attendancePeople'])->where('kind', 'students|teachers')->where('status', 'present|absent|late|excused')->name('attendance.people');
     Route::get('/dashboard/data', [DashboardController::class, 'data'])->name('dashboard.data');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::post('/dashboard/attendance/all-present', [DashboardController::class, 'markAllPresent'])->middleware('role:administrator')->name('dashboard.attendance.all-present');
