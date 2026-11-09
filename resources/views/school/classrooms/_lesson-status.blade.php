@@ -19,3 +19,7 @@
 @if(in_array(auth()->user()->role, ['administrator', 'teacher'], true) && in_array(data_get($snapshot, 'currentTeacherAttendance'), ['absent', 'excused'], true) && !data_get($snapshot, 'lessonConflict') && !data_get($snapshot, 'studyWith'))
 <a class="btn btn-outline-secondary mt-2" href="{{ route('classrooms.matching-class', ['classroom' => data_get($snapshot, 'classroom.id'), 'date' => request('date', now()->toDateString()), 'time' => request('time', now()->format('H:i')), 'academic_year' => request('academic_year'), 'live' => (request()->boolean('live') || (!request()->filled('date') && !request()->filled('time'))) ? 1 : 0]) }}"><i class="bi bi-search me-1" aria-hidden="true"></i>Find matching class</a>
 @endif
+
+@if(in_array(auth()->user()->role, ['administrator', 'teacher'], true) && $nextLesson && ! $nextLesson->isRelaxation() && in_array(data_get($snapshot, 'nextTeacherAttendance'), ['absent', 'excused'], true))
+<a class="btn btn-outline-secondary mt-2" href="{{ route('classrooms.matching-class', ['classroom' => data_get($snapshot, 'classroom.id'), 'date' => request('date', now()->toDateString()), 'time' => substr($nextLesson->starts_at, 0, 5), 'academic_year' => request('academic_year'), 'live' => 0]) }}"><i class="bi bi-search me-1" aria-hidden="true"></i>Find matching class for {{ substr($nextLesson->starts_at, 0, 5) }} lesson</a>
+@endif

@@ -121,6 +121,10 @@
                                         <li>{{ __('Teacher unassigned') }}</li>
                                     @endforelse
                                 </ul>
+                                @if(in_array(auth()->user()->role, ['administrator', 'teacher'], true) && data_get($teacherDetails, 'display_lesson') && ! $teacherDetails['display_lesson']->isRelaxation() && in_array($teacherDetails['display_teacher_attendance'] ?? null, ['absent', 'excused'], true))
+                                <a class="btn btn-outline-secondary btn-sm mt-2" href="{{ route('classrooms.matching-class', ['classroom' => $room, 'date' => $moment->format('Y-m-d'), 'time' => max($moment->format('H:i'), substr($teacherDetails['display_lesson']->starts_at, 0, 5)), 'academic_year' => request('academic_year'), 'live' => 0]) }}"><i class="bi bi-search me-1" aria-hidden="true"></i>Find matching class</a>
+                                <small class="d-block mt-1">For {{ substr($teacherDetails['display_lesson']->starts_at, 0, 5) }}&ndash;{{ substr($teacherDetails['display_lesson']->ends_at, 0, 5) }} lesson</small>
+                                @endif
                             @endif
                         </div>
                     </div>

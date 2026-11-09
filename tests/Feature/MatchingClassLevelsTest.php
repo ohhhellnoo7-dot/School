@@ -54,9 +54,14 @@ class MatchingClassLevelsTest extends TestCase
         $this->assertEqualsCanonicalizing(array_map(fn ($number) => $options[$number]['room']->id, $expected), $response->viewData('matches')->pluck('classroom.id')->all());
         if ($program !== 'Khmer' && $level > 1) $response->assertSee('1 level lower')->assertSee('1 level higher');
         if ($program === 'Khmer') $response->assertSee('Khmer matches must have the same grade')->assertDontSee('1 level lower');
+        $upcomingUrl = route('classrooms.matching-class', ['classroom' => $source['room'], 'date' => '2026-11-09', 'time' => '16:30', 'live' => 0]);
+        $upcomingHtml = $this->getJson(route('classrooms.data', ['date' => '2026-11-09', 'time' => '16:20']))->assertOk()->json('html');
+        $this->assertStringContainsString('Find matching class', $upcomingHtml);
+        $this->assertStringContainsString(e($upcomingUrl), $upcomingHtml);
+        $this->get($upcomingUrl)->assertOk()->assertViewHas('matches', fn ($matches) => $matches->count() === count($expected));
         $choice = $options[$program === 'Khmer' ? $level : $level + 1];
-        $this->post(route('classrooms.study-with', $source['room']), ['date' => '2026-11-09', 'time' => '16:40', 'source_schedule_id' => $source['schedule'],
+        $this->post(route('classrooms.study-with', $source['room']), ['date' => '2026-11-09', 'time' => '16:30', 'source_schedule_id' => $source['schedule'],
             'target_schedule_id' => $choice['schedule'], 'target_classroom_id' => $choice['room']->id])->assertSessionHasNoErrors()->assertRedirect();
-        $this->assertDatabaseHas('temporary_class_studies', ['source_schedule_id' => $source['schedule'], 'target_schedule_id' => $choice['schedule']]);
+        $this->assertDatabaseHas('temporary_class_studies', ['source_schedule_id' => $source['schedule'], 'target_schedule_id' => $choice['schedule'], 'starts_at' => '16:30:00']);
     }
 }
