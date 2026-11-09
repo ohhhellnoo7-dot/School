@@ -48,8 +48,8 @@ class MatchingClassLevelsTest extends TestCase
         TeacherAttendance::create(['teacher_id' => $source['teacher']->id, 'date' => '2026-11-09', 'status' => 'absent', 'recorded_by' => $admin->id]);
         $options = [];
         foreach (range(1, 6) as $candidateLevel) $options[$candidateLevel] = $make($candidateLevel, 'A', $program);
-        $make($level, 'OTHER', 'Other program');
-        $make($level, 'WRONG-SUBJECT', $program, 'Writing');
+        $otherProgram = $make($level, 'OTHER', 'Other program');
+        $wrongSubject = $make($level, 'WRONG-SUBJECT', $program, 'Writing');
         $response = $this->get(route('classrooms.matching-class', ['classroom' => $source['room'], 'date' => '2026-11-09', 'time' => '16:40']))->assertOk();
         $this->assertEqualsCanonicalizing(array_map(fn ($number) => $options[$number]['room']->id, $expected), $response->viewData('matches')->pluck('classroom.id')->all());
         if ($program !== 'Khmer' && $level > 1) $response->assertSee('1 level lower')->assertSee('1 level higher');
@@ -63,5 +63,37 @@ class MatchingClassLevelsTest extends TestCase
         $this->post(route('classrooms.study-with', $source['room']), ['date' => '2026-11-09', 'time' => '16:30', 'source_schedule_id' => $source['schedule'],
             'target_schedule_id' => $choice['schedule'], 'target_classroom_id' => $choice['room']->id])->assertSessionHasNoErrors()->assertRedirect();
         $this->assertDatabaseHas('temporary_class_studies', ['source_schedule_id' => $source['schedule'], 'target_schedule_id' => $choice['schedule'], 'starts_at' => '16:30:00']);
+
+        // When the usual teachers cannot host, broaden to any level with recorded presence.
+        $fallbackSource = $make($level, 'FALLBACK', $program);
+        $unmarked = $make(7, 'UNMARKED', $program);
+        TeacherAttendance::create(['teacher_id' => $fallbackSource['teacher']->id, 'date' => '2026-11-09', 'status' => 'absent', 'recorded_by' => $admin->id]);
+        foreach ($options as $number => $option) {
+            TeacherAttendance::create(['teacher_id' => $option['teacher']->id, 'date' => '2026-11-09',
+                'status' => $number === 6 ? 'present' : ($number === 1 ? 'late' : 'absent'), 'recorded_by' => $admin->id]);
+        }
+        foreach ([$otherProgram, $wrongSubject] as $unrelated) {
+            TeacherAttendance::create(['teacher_id' => $unrelated['teacher']->id, 'date' => '2026-11-09', 'status' => 'present', 'recorded_by' => $admin->id]);
+        }
+        $urlParams = ['classroom' => $fallbackSource['room'], 'date' => '2026-11-09', 'time' => '16:40'];
+        $this->get(route('classrooms.matching-class', $urlParams))->assertOk()->assertSee('Find any level with a present teacher')
+            ->assertViewHas('matches', fn ($matches) => ! $matches->contains('classroom.id', $options[6]['room']->id));
+        $this->get(route('classrooms.matching-class', $urlParams + ['match_mode' => 'any-level']))->assertOk()
+            ->assertSee('Searching all levels')->assertSee('Any level / teacher present')
+            ->assertViewHas('matches', fn ($matches) => $matches->pluck('classroom.id')->all() === [$options[6]['room']->id]);
+        $fallbackData = ['date' => '2026-11-09', 'time' => '16:40', 'source_schedule_id' => $fallbackSource['schedule'],
+            'target_schedule_id' => $options[6]['schedule'], 'target_classroom_id' => $options[6]['room']->id];
+        $this->post(route('classrooms.study-with', $fallbackSource['room']), $fallbackData)->assertSessionHasErrors('match');
+        $this->post(route('classrooms.study-with', $fallbackSource['room']), array_replace($fallbackData, [
+            'target_schedule_id' => $unmarked['schedule'], 'target_classroom_id' => $unmarked['room']->id, 'match_mode' => 'any-level',
+        ]))->assertSessionHasErrors('match');
+        $presence = TeacherAttendance::where('teacher_id', $options[6]['teacher']->id)->firstOrFail();
+        $presence->update(['status' => 'excused']);
+        $this->post(route('classrooms.study-with', $fallbackSource['room']), $fallbackData + ['match_mode' => 'any-level'])->assertSessionHasErrors('match');
+        $presence->update(['status' => 'present']);
+        $this->post(route('classrooms.study-with', $fallbackSource['room']), $fallbackData + ['match_mode' => 'any-level'])
+            ->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertDatabaseHas('temporary_class_studies', ['source_schedule_id' => $fallbackSource['schedule'], 'target_schedule_id' => $options[6]['schedule']]);
+
     }
 }

@@ -45,8 +45,8 @@ class ClassroomAvailabilityService
         $selected = $moment instanceof CarbonInterface
             ? CarbonImmutable::instance($moment)->setTimezone($timezone)
             : CarbonImmutable::parse($moment, $timezone);
-        $teacherAttendance = \App\Models\TeacherAttendance::whereDate('date', $selected->toDateString())
-            ->whereIn('status', ['absent', 'excused'])->pluck('status', 'teacher_id');
+        $dailyTeacherStatuses = \App\Models\TeacherAttendance::whereDate('date', $selected->toDateString())->pluck('status', 'teacher_id');
+        $teacherAttendance = $dailyTeacherStatuses->filter(fn ($status) => in_array($status, ['absent', 'excused'], true));
         $activeStudies = \App\Models\TemporaryClassStudy::whereDate('date', $selected->toDateString())
             ->where('starts_at', '<=', $selected->format('H:i:s'))->where('ends_at', '>', $selected->format('H:i:s'))->get();
         $minute = ($selected->hour * 60) + $selected->minute;
@@ -76,7 +76,7 @@ class ClassroomAvailabilityService
             ->get();
 
         return $rooms
-            ->map(function (Classroom $classroom) use ($minute, $day, $lessons, $weeklyBookings, $programsByRoom, $cohorts, $lessonsByRoom, $visibleStudyClasses, $scopeProgram, $scopeSession, $filters, $teacherAttendance, $activeStudies) {
+            ->map(function (Classroom $classroom) use ($minute, $day, $lessons, $weeklyBookings, $programsByRoom, $cohorts, $lessonsByRoom, $visibleStudyClasses, $scopeProgram, $scopeSession, $filters, $teacherAttendance, $activeStudies, $dailyTeacherStatuses) {
                 $programs = ($programsByRoom->get($classroom->id) ?? collect())
                     ->merge(($weeklyBookings->get($classroom->id) ?? collect())->pluck('classGroup.program'))
                     ->filter()->unique()->sort()->values();
@@ -154,6 +154,7 @@ class ClassroomAvailabilityService
                     if (! $visibleBooking($current)) { $current = null; $activity['activity'] = 'Reserved for another cohort'; }
                     if (! $visibleBooking($next)) $next = null;
                 }
+                $activity['currentTeacherStatus'] = $dailyTeacherStatuses->get($activity['currentLesson']?->teacher_id);
                 $activity['currentTeacherAttendance'] = $teacherAttendance->get($activity['currentLesson']?->teacher_id);
                 $activity['nextTeacherAttendance'] = $teacherAttendance->get($activity['nextLesson']?->teacher_id);
                 if ($activity['currentLesson'] && ! $activity['currentLesson']->isRelaxation()

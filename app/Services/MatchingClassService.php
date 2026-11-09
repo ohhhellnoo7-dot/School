@@ -7,7 +7,7 @@ use Illuminate\Support\Collection;
 
 class MatchingClassService
 {
-    public function find(array $source, Collection $entries): Collection
+    public function find(array $source, Collection $entries, bool $anyLevel = false): Collection
     {
         $lesson = $source['currentLesson'] ?? null;
         if (! $lesson || $lesson->isRelaxation() || ! $lesson->subject || ! $lesson->schoolClass
@@ -15,7 +15,7 @@ class MatchingClassService
             || ($source['lessonConflict'] ?? false) || ($source['studyWith'] ?? null)
             || (isset($source['combinedStudies']) && $source['combinedStudies']->isNotEmpty())) return collect();
 
-        return $entries->filter(function ($entry) use ($source, $lesson, $entries) {
+        return $entries->filter(function ($entry) use ($source, $lesson, $entries, $anyLevel) {
             $candidate = $entry['currentLesson'] ?? null;
             if (! $candidate || $candidate->isRelaxation() || ! $candidate->subject || ! $candidate->schoolClass
                 || ! $candidate->teacher || ! in_array($candidate->teacher->status, [null, 'active'], true)
@@ -23,10 +23,11 @@ class MatchingClassService
                 || $entry['classroom']->status !== 'active'
                 || ($entry['studyWith'] ?? null) || ($entry['lessonConflict'] ?? false) || ($entry['roomMismatch'] ?? false)
                 || in_array($entry['currentTeacherAttendance'] ?? null, ['absent', 'excused'], true)
+                || ($anyLevel && ($entry['currentTeacherStatus'] ?? null) !== 'present')
                 || $candidate->teacher_id === $lesson->teacher_id
                 || $candidate->school_class_id === $lesson->school_class_id) return false;
 
-            return $this->levelsMatch($lesson, $candidate)
+            return ($anyLevel || $this->levelsMatch($lesson, $candidate))
                 && $candidate->schoolClass->program === $lesson->schoolClass->program
                 && $candidate->schoolClass->session === $lesson->schoolClass->session
                 && mb_strtolower(trim($candidate->subject->name)) === mb_strtolower(trim($lesson->subject->name))

@@ -131,13 +131,15 @@ class ClassroomController extends Controller
             'date' => ['required', 'date_format:Y-m-d'],
             'time' => ['required', 'date_format:H:i'],
             'academic_year' => ['nullable', 'regex:/^\d{4}-\d{4}$/'],
+            'match_mode' => ['nullable', 'in:standard,any-level'],
         ]);
         $moment = $request->boolean('live') ? CarbonImmutable::now(config('app.timezone')) : $this->moment($filters);
         $entries = $availabilityService->forMoment($moment, array_filter(['academic_year' => $filters['academic_year'] ?? null]));
         $source = $entries->first(fn ($entry) => $entry['classroom']->id === $classroom->id);
         abort_unless($source, 404);
-        $matches = app(\App\Services\MatchingClassService::class)->find($source, $entries);
-        return view('school.classrooms.matching-class', compact('classroom', 'moment', 'source', 'matches'));
+        $anyLevel = ($filters['match_mode'] ?? 'standard') === 'any-level';
+        $matches = app(\App\Services\MatchingClassService::class)->find($source, $entries, $anyLevel);
+        return view('school.classrooms.matching-class', compact('classroom', 'moment', 'source', 'matches', 'anyLevel'));
     }
 
     public function studyWith(Request $request, Classroom $classroom, ClassroomAvailabilityService $availabilityService): RedirectResponse
@@ -147,6 +149,7 @@ class ClassroomController extends Controller
         $filters = $request->validate([
             'date' => ['required', 'date_format:Y-m-d'], 'time' => ['required', 'date_format:H:i'],
             'academic_year' => ['nullable', 'regex:/^\d{4}-\d{4}$/'],
+            'match_mode' => ['nullable', 'in:standard,any-level'],
             'source_schedule_id' => ['required', 'integer'],
             'target_classroom_id' => ['required', 'integer', 'different:classroom'],
             'target_schedule_id' => ['required', 'integer'],
@@ -169,7 +172,7 @@ class ClassroomController extends Controller
                 if ($existing->target_schedule_id === (int) $filters['target_schedule_id']) return $existing;
                 throw ValidationException::withMessages(['match' => 'This class already has a study arrangement for this lesson.']);
             }
-            $match = app(\App\Services\MatchingClassService::class)->find($source, $entries)
+            $match = app(\App\Services\MatchingClassService::class)->find($source, $entries, ($filters['match_mode'] ?? 'standard') === 'any-level')
                 ->first(fn ($entry) => $entry['classroom']->id === (int) $filters['target_classroom_id']
                     && $entry['currentLesson']->id === (int) $filters['target_schedule_id']);
             if (! $match) {
