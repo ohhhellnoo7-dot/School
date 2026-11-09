@@ -26,7 +26,7 @@ class MatchingClassService
                 || $candidate->teacher_id === $lesson->teacher_id
                 || $candidate->school_class_id === $lesson->school_class_id) return false;
 
-            return $this->grade($candidate) === $this->grade($lesson)
+            return $this->levelsMatch($lesson, $candidate)
                 && $candidate->schoolClass->program === $lesson->schoolClass->program
                 && $candidate->schoolClass->session === $lesson->schoolClass->session
                 && mb_strtolower(trim($candidate->subject->name)) === mb_strtolower(trim($lesson->subject->name))
@@ -37,9 +37,36 @@ class MatchingClassService
         })->values();
     }
 
-    private function grade(Schedule $lesson): string
+    public function allowsAdjacentLevels(?string $program): bool
     {
-        return (string) ($lesson->schoolClass->classGroup?->grade
-            ?? preg_replace('/^grade\s*/i', '', trim($lesson->schoolClass->name)));
+        // Every newly added non-Khmer program automatically uses this policy.
+        return mb_strtolower(trim((string) $program)) !== 'khmer';
+    }
+
+    public function levelDifference(Schedule $source, Schedule $candidate): ?int
+    {
+        $from = $this->level($source);
+        $to = $this->level($candidate);
+        return $from === null || $to === null ? null : $to - $from;
+    }
+
+    private function levelsMatch(Schedule $source, Schedule $candidate): bool
+    {
+        $difference = $this->levelDifference($source, $candidate);
+        if ($difference !== null) {
+            return abs($difference) <= ($this->allowsAdjacentLevels($source->schoolClass->program) ? 1 : 0);
+        }
+        // Without a numbered level, only an exact class-level name can match.
+        return mb_strtolower(trim($source->schoolClass->name)) === mb_strtolower(trim($candidate->schoolClass->name));
+    }
+
+    private function level(Schedule $lesson): ?int
+    {
+        $grade = $lesson->schoolClass->classGroup?->grade;
+        if ($grade !== null) return (int) $grade;
+        if (preg_match('/^(?:(?:grade|level)\s*)?(\d+)$/i', trim($lesson->schoolClass->name), $match)) {
+            return (int) $match[1];
+        }
+        return null;
     }
 }

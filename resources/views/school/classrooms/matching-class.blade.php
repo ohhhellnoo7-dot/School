@@ -2,17 +2,19 @@
 @section('title', 'Find matching class')
 @section('content')
 @php($sourceLesson = $source['currentLesson'])
+@php($matchingRules = app(\App\Services\MatchingClassService::class))
+@php($adjacentLevels = $matchingRules->allowsAdjacentLevels($sourceLesson?->schoolClass?->program))
 <div class="page-heading"><div><div class="eyebrow">Temporary subject lesson</div><h1>Find matching class</h1><p>{{ $moment->format('l, M j, Y H:i') }} &middot; Room {{ $classroom->room_number }}</p></div><a class="btn btn-outline-secondary" href="{{ route('classrooms.index', ['date' => $moment->toDateString(), 'time' => $moment->format('H:i'), 'academic_year' => request('academic_year')]) }}">Back to classrooms</a></div>
 @include('school.classrooms._study-arrangement', ['entry' => $source])
 @if($sourceLesson)
 <section class="panel p-4 mb-3"><h2 class="h5">{{ $sourceLesson->schoolClass?->label }}</h2><p>{{ $sourceLesson->subject?->name }} &middot; {{ substr($sourceLesson->starts_at, 0, 5) }}&ndash;{{ substr($sourceLesson->ends_at, 0, 5) }}</p><p class="mb-0">Teacher: <strong>{{ $sourceLesson->teacher?->name ?: 'Unassigned' }}</strong> &middot; {{ ucfirst($source['currentTeacherAttendance'] ?? 'Not marked absent') }}</p></section>
 @endif
-<p>Join the matching class for this subject only, then return to the original classroom when this lesson ends. Matches have the same grade, subject, program and session. Review the room capacity before combining classes.</p>
+<p>Join the matching class for this subject only, then return to the original classroom when this lesson ends. @if($adjacentLevels) Matches are in the same program, subject and session, at the same level or one level below or above. @else Khmer matches must have the same grade, subject, program and session. @endif Review the room capacity before combining classes.</p>
 @if($matches->isNotEmpty())
 <section class="panel p-3 mb-3" aria-labelledby="matching-classes-title">
 <div class="mb-3"><h2 id="matching-classes-title" class="h5">{{ $matches->count() }} matching {{ Str::plural('class', $matches->count()) }}</h2><p class="small text-secondary mb-0">All matches for {{ $sourceLesson->subject->name }}, {{ $sourceLesson->schoolClass->name }} &middot; {{ substr($sourceLesson->starts_at, 0, 5) }}&ndash;{{ substr($sourceLesson->ends_at, 0, 5) }}. Choose the class to study with.</p></div>
 <div class="table-responsive"><table class="table align-middle matching-classes-table">
-<thead><tr><th>Class</th><th>Receiving teacher</th><th>Subject / time</th><th>Room</th><th>Choose a class</th></tr></thead>
+<thead><tr><th>Class</th>@if($adjacentLevels)<th>Level match</th>@endif<th>Receiving teacher</th><th>Subject / time</th><th>Room</th><th>Choose a class</th></tr></thead>
 <tbody>
 @foreach($matches as $match)
 @php($receiving = $match['currentLesson'])
@@ -20,6 +22,10 @@
 @php($targetLabel = trim(preg_replace('/^Grade\s*/i', '', $receiving->schoolClass->name).' '.$receiving->schoolClass->section))
 <tr>
 <td><strong class="text-nowrap">{{ $sourceLabel }} &rarr; {{ $targetLabel }}</strong><small class="d-block text-secondary">{{ $receiving->schoolClass->session }}</small></td>
+@if($adjacentLevels)
+@php($levelDifference = $matchingRules->levelDifference($sourceLesson, $receiving))
+<td><span class="badge bg-light text-body border">{{ $levelDifference === null || $levelDifference === 0 ? 'Same level' : ($levelDifference < 0 ? '1 level lower' : '1 level higher') }}</span></td>
+@endif
 <td><strong>{{ $receiving->teacher->name }}</strong></td>
 <td>{{ $receiving->subject->name }}<small class="d-block text-nowrap">{{ substr($sourceLesson->starts_at, 0, 5) }}&ndash;{{ substr($sourceLesson->ends_at, 0, 5) }}</small></td>
 <td><a href="{{ route('classrooms.show', ['classroom' => $match['classroom'], 'date' => $moment->toDateString(), 'time' => $moment->format('H:i'), 'program' => $receiving->schoolClass->program, 'session' => $receiving->schoolClass->session, 'academic_year' => request('academic_year')]) }}">{{ $match['classroom']->room_number }}</a><small class="d-block text-secondary">{{ $match['classroom']->capacity }} seats</small></td>
