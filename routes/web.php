@@ -69,6 +69,7 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::post('/dashboard/attendance/all-present', [DashboardController::class, 'markAllPresent'])->middleware('role:administrator')->name('dashboard.attendance.all-present');
     Route::post('/dashboard/attendance/random', [DashboardController::class, 'randomAttendance'])->middleware('role:administrator')->name('dashboard.attendance.random');
+    Route::post('/dashboard/teacher-attendance/{action}', [\App\Http\Controllers\TeacherAttendanceController::class, 'bulk'])->where('action', 'all-present|random')->middleware('role:administrator')->name('dashboard.teacher-attendance.bulk');
     Route::get('/teacher-attendance', [\App\Http\Controllers\TeacherAttendanceController::class, 'index'])->name('teacher-attendance.index');
     Route::post('/teacher-attendance', [\App\Http\Controllers\TeacherAttendanceController::class, 'store'])->middleware('role:administrator')->name('teacher-attendance.store');
     Route::get('/reports', [DashboardController::class, 'reports'])->middleware('role:administrator')->name('reports');

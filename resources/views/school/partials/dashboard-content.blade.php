@@ -17,6 +17,25 @@
 <x-scholar-hero tag="div" class="page-heading dashboard-heading school-hero">
     <div><div class="eyebrow">WELCOME BACK &#128075;</div><h1>Good {{ now('Asia/Phnom_Penh')->hour < 12 ? 'morning' : (now('Asia/Phnom_Penh')->hour < 18 ? 'afternoon' : 'evening') }}, {{ auth()->user()->name }} <i class="bi bi-brightness-high text-warning" aria-hidden="true" style="font-size:22px"></i></h1><p>Here's what's happening at your school today.</p><span class="hero-school"><i class="bi bi-buildings" aria-hidden="true"></i> Greenfield Academy <span aria-hidden="true">&middot;</span> {{ __(ucfirst($role)) }} workspace</span></div>
     @if($role === 'administrator' && $reportDate->isToday())
+        <div class="dashboard-attendance-actions d-flex flex-wrap gap-2">
+        <details class="attendance-actions">
+            <summary class="btn btn-primary"><i class="bi bi-check2-all me-2" aria-hidden="true"></i>Teacher attendance <i class="bi bi-chevron-down ms-2" aria-hidden="true"></i></summary>
+            <div class="attendance-action-menu">
+                <div class="attendance-menu-heading"><strong>{{ __('Today\'s attendance') }}</strong><span>{{ $reportDate->format('M d, Y') }} &middot; {{ $activeTeacherCount }} active teachers</span></div>
+                <p class="attendance-recorded">{{ $teacherRecordedCount }} recorded &middot; {{ max(0, $activeTeacherCount - $teacherRecordedCount) }} unmarked</p>
+                <form method="post" action="{{ route('dashboard.teacher-attendance.bulk', 'all-present') }}">
+                    @csrf
+                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-check2-all me-2" aria-hidden="true"></i>Mark all present today</button>
+                </form>
+                <small class="attendance-action-note">All active teachers, across every program.</small>
+                <form method="post" action="{{ route('dashboard.teacher-attendance.bulk', 'random') }}" class="attendance-random-form">
+                    @csrf
+                    <button type="submit" class="btn attendance-random-button w-100"><i class="bi bi-shuffle me-2" aria-hidden="true"></i>Random attendance</button>
+                    <div class="attendance-ratio"><span>70% present</span><span>15% late</span><span>10% absent</span><span>5% excused</span></div>
+                </form>
+                <small class="attendance-action-note">Either action replaces today's statuses for all active teachers. Random totals are rounded to whole teachers.</small>
+            </div>
+        </details>
         <details class="attendance-actions">
             <summary class="btn btn-primary"><i class="bi bi-check2-all me-2" aria-hidden="true"></i>Student attendance <i class="bi bi-chevron-down ms-2" aria-hidden="true"></i></summary>
             <div class="attendance-action-menu">
@@ -35,6 +54,7 @@
                 <small class="attendance-action-note">Either action replaces today's statuses for all students. Random totals are rounded to whole students.</small>
             </div>
         </details>
+        </div>
     @endif
 </x-scholar-hero>
 

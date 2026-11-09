@@ -250,14 +250,36 @@ class SchoolModuleController extends Controller
         $teacherBreaks = $service->breaks($teacher);
         $workload = $service->workload($teacher);
         $lessons = $slots->flatten();
-        $request->validate(['grade' => 'nullable|string|max:255', 'class' => 'nullable|integer', 'subject' => 'nullable|integer', 'session' => 'nullable|in:Morning,Afternoon,Evening']);
-        $filterSubjects = $lessons->pluck('subject')->filter()->unique('id');
+        $request->validate(['program' => ['nullable', \Illuminate\Validation\Rule::in(\App\Models\Program::names())], 'grade' => 'nullable|string|max:255', 'class' => 'nullable|integer', 'subject' => 'nullable|integer', 'session' => 'nullable|in:Morning,Afternoon,Evening']);
+        $programs = \App\Models\Program::names();
+        $periods = $service->periods($teacher);
+        $allowedSessions = \App\Support\ProgramSessions::for($teacher->program ?: 'Khmer');
+        $scheduleSessions = collect(SchoolClass::SESSION_HOURS)->filter(function ($hours, $session) use ($periods, $lessons, $allowedSessions) {
+            if (! in_array($session, $allowedSessions, true)) return false;
+            if ($periods->isEmpty() && ! $lessons->contains(fn ($lesson) => $lesson->subject?->schoolClass?->session)) return true;
+            return $lessons->contains(fn ($lesson) => $lesson->subject?->schoolClass?->session === $session)
+                || $periods->contains(function ($period) use ($hours, $session) {
+                    if ($period->unavailable) return false;
+                    $start = substr($period->start_time, 0, 5);
+                    $end = substr($period->end_time, 0, 5);
+                    return $session === 'Evening'
+                        ? $end > '17:00' && $start < $hours[1]
+                        : $start < ($session === 'Afternoon' ? '16:30' : $hours[1]) && $end > $hours[0];
+                });
+        });
+        $programLessons = $lessons->filter(fn ($s) => ! $request->filled('program') || $s->subject?->schoolClass?->program === $request->input('program'));
+        $filterSubjects = $programLessons->pluck('subject')->filter()->unique('id');
         $filterClasses = $filterSubjects->pluck('schoolClass')->filter()->unique('id');
-        $lessons = $lessons->filter(fn ($s) => (! $request->filled('grade') || $s->subject?->schoolClass?->name === $request->input('grade')) && (! $request->filled('class') || $s->subject?->school_class_id === $request->integer('class')) && (! $request->filled('subject') || $s->subject_id === $request->integer('subject')) && (! $request->filled('session') || $s->subject?->schoolClass?->session === $request->input('session')));
+        $lessons = $programLessons->filter(fn ($s) => (! $request->filled('grade') || $s->subject?->schoolClass?->name === $request->input('grade')) && (! $request->filled('class') || $s->subject?->school_class_id === $request->integer('class')) && (! $request->filled('subject') || $s->subject_id === $request->integer('subject')) && (! $request->filled('session') || $s->subject?->schoolClass?->session === $request->input('session')));
+        $slots = $lessons->groupBy('day');
+        if ($request->filled('program')) {
+            $workload['subjects'] = $programLessons->pluck('subject.name')->filter()->unique()->values();
+            $workload['classes'] = $filterClasses->values();
+        }
         $scheduleTeachers = $request->user()->role === 'administrator' ? User::where('role', 'teacher')->orderBy('name')->get() : collect([$teacher]);
         $periods = $service->periods($teacher);
         $breaks = $teacherBreaks;
-        return view('school.teachers.timetable', compact('teacher', 'slots', 'teacherBreaks', 'workload', 'service', 'lessons', 'periods', 'breaks', 'filterSubjects', 'filterClasses', 'scheduleTeachers'));
+        return view('school.teachers.timetable', compact('teacher', 'slots', 'teacherBreaks', 'workload', 'service', 'lessons', 'periods', 'breaks', 'filterSubjects', 'filterClasses', 'scheduleTeachers', 'programs', 'scheduleSessions'));
     }
 
     public function teacherLessonStatus(Request $request, User $teacher)

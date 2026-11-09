@@ -1,10 +1,17 @@
 <section class="panel p-3"><div class="d-flex flex-wrap gap-3 mb-3"><span class="teacher-legend lesson">{{ __('Teaching') }}</span>@if(app(\App\Services\TeacherManagementService::class)->requiredBreaks($teacher))<span class="teacher-legend break">{{ __('Free Period') }}</span>@endif<span class="teacher-legend">{{ __('Available / Off duty') }}</span><span class="teacher-legend conflict">{{ __('Conflict') }}</span></div>
 <div class="table-responsive"><table class="table teacher-weekly-grid"><thead><tr><th>{{ __('Time') }}</th>@foreach(\App\Services\TeacherManagementService::DAYS as $day)<th>{{ __($day) }}</th>@endforeach</tr></thead><tbody>
 @php($windows = collect(\App\Services\TeacherManagementService::SESSIONS)->filter(fn ($hours, $session) => $session !== 'Evening' || $periods->contains(fn ($p) => substr($p->end_time, 0, 5) > '17:00') || $lessons->contains(fn ($s) => substr($s->ends_at, 0, 5) > '17:00')))
+@php($windows = $scheduleSessions ?? $windows)
 @foreach($windows as $session => [$from, $to])
 @if(request()->filled('session') && request('session') !== $session) @continue @endif
 @for($minute = \App\Services\TeacherManagementService::minute($from); $minute + 60 <= \App\Services\TeacherManagementService::minute($to); $minute += 60)
 @php($start = sprintf('%02d:%02d', intdiv($minute, 60), $minute % 60)) @php($end = sprintf('%02d:%02d', intdiv($minute+60, 60), ($minute+60)%60))
+<?php
+    $hasWork = $lessons->contains(fn ($lesson) => \App\Services\TeacherManagementService::overlaps($start, $end, $lesson->starts_at, $lesson->ends_at))
+        || $breaks->contains(fn ($break) => \App\Services\TeacherManagementService::overlaps($start, $end, $break->start_time, $break->end_time))
+        || collect(\App\Services\TeacherManagementService::DAYS)->contains(fn ($day) => $service->onDuty($teacher, $day, $start, $end));
+?>
+@if(! $hasWork) @continue @endif
 <tr><th scope="row">{{ $start }}–{{ $end }}</th>@foreach(\App\Services\TeacherManagementService::DAYS as $day)
 @php($dailyLessons = $lessons->filter(fn ($s) => $s->day === $day && \App\Services\TeacherManagementService::overlaps($start, $end, $s->starts_at, $s->ends_at)))
 @php($dailyBreaks = $breaks->filter(fn ($b) => $b->weekday === $day && \App\Services\TeacherManagementService::overlaps($start, $end, $b->start_time, $b->end_time)))

@@ -17,10 +17,11 @@
 <section class="panel p-3 mb-4 d-print-none">
 <label for="schedule-teacher" class="form-label">{{ __('Teacher') }}</label><select id="schedule-teacher" class="form-select mb-3" onchange="window.location.assign(this.value)">@foreach($scheduleTeachers as $t)<option value="{{ route('teachers.schedule', $t) }}" @selected($t->id === $teacher->id)>{{ $t->name }}</option>@endforeach</select>
 <form method="get" class="row g-3">
+<div class="col-md-3"><label for="schedule-program" class="form-label">{{ __('Program') }}</label><select id="schedule-program" name="program" class="form-select" onchange="this.form.submit()"><option value="">{{ __('All programs') }}</option>@foreach($programs as $program)<option value="{{ $program }}" @selected(request('program') === $program)>{{ __($program) }}</option>@endforeach</select></div>
 <div class="col-md-3"><label for="schedule-grade" class="form-label">{{ __('Grade') }}</label><select id="schedule-grade" name="grade" class="form-select"><option value="">{{ __('All grades') }}</option>@foreach($filterClasses->pluck('name')->unique() as $grade)<option @selected(request('grade') === $grade)>{{ $grade }}</option>@endforeach</select></div>
 <div class="col-md-3"><label for="schedule-class" class="form-label">{{ __('Class') }}</label><select id="schedule-class" name="class" class="form-select"><option value="">{{ __('All classes') }}</option>@foreach($filterClasses as $c)<option value="{{ $c->id }}" @selected((int)request('class') === $c->id)>{{ $c->label }}</option>@endforeach</select></div>
 <div class="col-md-3"><label for="schedule-subject" class="form-label">{{ __('Subject') }}</label><select id="schedule-subject" name="subject" class="form-select"><option value="">{{ __('All subjects') }}</option>@foreach($filterSubjects as $s)<option value="{{ $s->id }}" @selected((int)request('subject') === $s->id)>{{ $s->name }} · {{ $s->schoolClass?->label }}</option>@endforeach</select></div>
-<div class="col-md-3"><label for="schedule-session" class="form-label">{{ __('Session') }}</label><select id="schedule-session" name="session" class="form-select"><option value="">{{ __('All sessions') }}</option>@foreach(['Morning', 'Afternoon', 'Evening'] as $session)<option @selected(request('session') === $session)>{{ __($session) }}</option>@endforeach</select></div>
+<div class="col-md-3"><label for="schedule-session" class="form-label">{{ __('Session') }}</label><select id="schedule-session" name="session" class="form-select"><option value="">{{ __('All sessions') }}</option>@foreach($scheduleSessions->keys() as $session)<option @selected(request('session') === $session)>{{ __($session) }}</option>@endforeach</select></div>
 <div><button class="btn btn-primary">{{ __('Filter') }}</button> <a href="{{ route('teachers.schedule', $teacher) }}" class="btn btn-outline-secondary">{{ __('Reset') }}</a></div>
 </form></section>
 <section class="panel p-3 mb-3" aria-label="{{ __('Teacher workload') }}">
@@ -34,12 +35,7 @@
 <details class="mt-4"><summary>{{ __('Session lesson details') }}</summary>
 @php
     // Teacher breaks are independent of the class relaxation entries.
-    $sessions = collect(\App\Models\SchoolClass::SESSION_HOURS)
-        ->filter(fn ($hours, $session) => match ($teacher->program ?: 'Khmer') {
-            'Chinese' => $session === 'Evening',
-            'Khmer' => $session !== 'Evening',
-            default => true,
-        });
+    $sessions = $scheduleSessions->filter(fn ($hours, $session) => ! request()->filled('session') || request('session') === $session);
     $sessionStyles = [
         'Morning' => ['warning', 'sunrise'],
         'Afternoon' => ['info', 'sun'],

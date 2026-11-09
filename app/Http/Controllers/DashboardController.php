@@ -128,7 +128,13 @@ class DashboardController extends Controller
             }
         }
 
+        $activeTeacherIds = $user->role === 'administrator' && $reportDate->isToday()
+            ? User::where('role', 'teacher')->where(fn ($q) => $q->where('status', 'active')->orWhereNull('status'))->pluck('id')
+            : collect();
+
         return [
+            'activeTeacherCount' => $activeTeacherIds->count(),
+            'teacherRecordedCount' => $activeTeacherIds->isEmpty() ? 0 : \App\Models\TeacherAttendance::whereDate('date', $reportDate)->whereIn('teacher_id', $activeTeacherIds)->count(),
             'parentChildNames' => $user->role === 'parent' ? (clone $students)->limit(2)->pluck('name') : collect(),
             'reportDate' => $reportDate,
             'programBreakdowns' => $programBreakdowns,

@@ -42,6 +42,20 @@ class TeacherScheduleTest extends TestCase
         $this->actingAs($other)->get(route('teachers.schedule', $teacher))->assertForbidden();
     }
 
+    public function test_program_filter_applies_to_both_schedule_views_and_only_working_sessions_are_offered(): void
+    {
+        $teacher = User::factory()->create(['program' => 'English']);
+        $teacher->forceFill(['role' => 'teacher'])->save();
+        foreach (['English', 'Khmer'] as $program) {
+            $class = SchoolClass::create(['name' => 'Grade 7', 'section' => 'A', 'program' => $program, 'session' => 'Morning']);
+            $subject = Subject::create(['name' => $program.' lesson', 'code' => $program, 'school_class_id' => $class->id, 'teacher_id' => $teacher->id]);
+            Schedule::create(['subject_id' => $subject->id, 'day' => 'Monday', 'starts_at' => '07:00', 'ends_at' => '08:00', 'room' => 'A']);
+        }
+        $this->actingAs($teacher)->get(route('teachers.schedule', [$teacher, 'program' => 'English']))
+            ->assertOk()->assertSee('schedule-program')->assertSee('English lesson')->assertDontSee('Khmer lesson')
+            ->assertSee('schedule-morning')->assertDontSee('schedule-afternoon')->assertDontSee('schedule-evening');
+    }
+
     public function test_evening_only_and_break_times_are_rejected(): void
     {
         $teacher = User::factory()->create(['program' => 'Chinese']);

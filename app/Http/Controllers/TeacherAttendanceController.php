@@ -9,6 +9,32 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 class TeacherAttendanceController extends Controller
 {
+    public function bulk(Request $request, string $action) {
+        abort_unless($request->user()->role === 'administrator', 403);
+        abort_unless(in_array($action, ['all-present', 'random'], true), 404);
+        $count = DB::transaction(function () use ($request, $action) {
+            $teachers = User::where('role', 'teacher')
+                ->where(fn ($q) => $q->where('status', 'active')->orWhereNull('status'))
+                ->lockForUpdate()->get()->shuffle()->values();
+            $total = $teachers->count();
+            $present = (int) round($total * .7);
+            $late = min($total - $present, (int) round($total * .15));
+            $absent = min($total - $present - $late, (int) round($total * .1));
+            foreach ($teachers as $index => $teacher) {
+                $existing = TeacherAttendance::where('teacher_id', $teacher->id)->whereDate('date', today())->first();
+                $status = $action === 'all-present' || $index < $present ? 'present'
+                    : ($index < $present + $late ? 'late' : ($index < $present + $late + $absent ? 'absent' : 'excused'));
+                $record = $existing ?? new TeacherAttendance(['teacher_id' => $teacher->id, 'date' => today()->toDateString()]);
+                $record->fill([
+                    'program' => $existing?->program ?? $teacher->program,
+                    'status' => $status, 'recorded_by' => $request->user()->id,
+                ])->save();
+            }
+            return $total;
+        });
+        return redirect()->route('dashboard')->with('success', $count.' teacher attendance records saved for today.');
+    }
+
     public function index(Request $request) {
         abort_unless(in_array($request->user()->role, ['administrator', 'teacher']), 403);
         return view('school.attendance.teachers', $this->data($request));
