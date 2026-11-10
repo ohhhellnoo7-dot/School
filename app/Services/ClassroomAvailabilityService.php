@@ -65,11 +65,12 @@ class ClassroomAvailabilityService
         $lessons = $weeklyLessons->where('day', $day);
         $weeklyBookings = ClassroomBooking::with('classGroup', 'classSession', 'teacher')->get()->filter(fn ($booking) => (! $scopeProgram || $booking->classGroup?->program === $scopeProgram) && (! $scopeSession || $booking->classSession?->session === $scopeSession) && ChineseEveningPeriod::matches($booking, $period))->groupBy('classroom_id');
         $programsByRoom = $weeklyLessons->groupBy('classroom_id')->map(fn ($entries) => $entries->pluck('schoolClass.program')->filter());
-        $cohorts = \App\Models\SchoolClass::withCount(['students as enrolled_count' => fn ($query) => $query->where('status', 'active')])->get();
+        $cohorts = \App\Models\SchoolClass::with('classGroup')->withCount(['students as enrolled_count' => fn ($query) => $query->where('status', 'active')])->get();
         $lessonsByRoom = $weeklyLessons->groupBy('classroom_id');
         $visibleStudyClasses = auth()->check() && in_array(auth()->user()->role, ['student', 'parent'], true)
             ? \App\Models\SchoolClass::enrolledFor(auth()->user())->get() : null;
 
+        $programSessionMap = \App\Models\Program::sessionMap();
         $rooms = Classroom::query()
             ->with(['buildingRecord', 'bookings' => fn ($query) => $query
                 ->where('day_of_week', $day)
@@ -79,7 +80,7 @@ class ClassroomAvailabilityService
             ->get();
 
         return $rooms
-            ->map(function (Classroom $classroom) use ($minute, $day, $lessons, $weeklyBookings, $programsByRoom, $cohorts, $lessonsByRoom, $visibleStudyClasses, $scopeProgram, $scopeSession, $filters, $teacherAttendance, $activeStudies, $dailyTeacherStatuses, $period, $scheduledOwnerIds) {
+            ->map(function (Classroom $classroom) use ($minute, $day, $lessons, $weeklyBookings, $programsByRoom, $cohorts, $lessonsByRoom, $visibleStudyClasses, $scopeProgram, $scopeSession, $filters, $teacherAttendance, $activeStudies, $dailyTeacherStatuses, $period, $scheduledOwnerIds, $programSessionMap) {
                 $programs = ($programsByRoom->get($classroom->id) ?? collect())
                     ->merge(($weeklyBookings->get($classroom->id) ?? collect())->pluck('classGroup.program'))
                     ->filter()->unique()->sort()->values();
@@ -115,6 +116,7 @@ class ClassroomAvailabilityService
                         'students' => $classes->sum('enrolled_count'),
                         'classes' => $classes->pluck('label')->unique()->values(),
                         'class_ids' => $classes->pluck('id')->values(),
+                        'streams' => $classes->pluck('classGroup.stream')->merge($programBookings->pluck('classGroup.stream'))->filter()->unique()->mapWithKeys(fn ($stream) => isset(\App\Models\ClassGroup::STREAMS[$stream]) ? [$stream => \App\Models\ClassGroup::STREAMS[$stream]] : [])->all(),
                         'teachers' => $programLessons->pluck('teacher.name')->merge($programBookings->pluck('teacher.name'))->filter()->unique()->values(),
                         'teacher_assignments' => $teacherAssignments,
                         'subjects' => $programLessons->pluck('subject.name')->filter()->unique()->values(),
@@ -123,15 +125,22 @@ class ClassroomAvailabilityService
                     ];
                 };
                 $programDetails = $programs->mapWithKeys(fn ($program) => [$program => $buildProgramDetails($program)]);
-                $cardProgramDetails = $programs->mapWithKeys(function ($program) use ($programDetails, $buildProgramDetails, $classroom, $lessonsByRoom, $day, $minute, $filters) {
-                    $sessions = $programDetails[$program]['sessions'];
+                $cardProgramDetails = $programs->mapWithKeys(function ($program) use ($programDetails, $buildProgramDetails, $classroom, $lessonsByRoom, $day, $minute, $filters, $programSessionMap) {
+                    $sessions = collect(['Morning', 'Afternoon', 'Evening'])->intersect($programSessionMap[$program] ?? $programDetails[$program]['sessions'])->values();
                     $activeLesson = ($lessonsByRoom->get($classroom->id) ?? collect())->first(fn ($lesson) => $lesson->schoolClass?->program === $program && $lesson->day === $day && TeacherManagementService::minute($lesson->starts_at) <= $minute && TeacherManagementService::minute($lesson->ends_at) > $minute);
                     $booking = $classroom->bookings->first(fn ($booking) => $booking->classGroup?->program === $program && $booking->starts_minute <= $minute && $booking->ends_minute > $minute);
                     $requestedSession = $filters['room_sessions'][$classroom->id][$program] ?? $filters['session'] ?? null;
                     $session = $sessions->contains($requestedSession) ? $requestedSession : ($activeLesson?->schoolClass?->session ?? $booking?->classSession?->session);
-                    if (! $sessions->contains($session)) $session = collect(['Morning', 'Afternoon', 'Evening'])->first(fn ($value) => $sessions->contains($value));
-
-                    return [$program => $buildProgramDetails($program, $session, true)];
+                    if (! $sessions->contains($session)) {
+                        $session = $sessions->filter(function ($value) use ($program, $minute) {
+                            $start = config('classrooms.program_session_hours.'.$program.'.'.$value.'.starts_at', config('classrooms.sessions.'.$value.'.starts_at'));
+                            return $start && TeacherManagementService::minute($start) <= $minute;
+                        })->last() ?? $sessions->first();
+                    }
+                    $details = $buildProgramDetails($program, $session, true);
+                    $details['available_sessions'] = $sessions;
+                    $details['sessions'] = collect($session ? [$session] : []);
+                    return [$program => $details];
                 });
                 $bookings = $classroom->bookings->filter(fn ($booking) => (! $scopeProgram || $booking->classGroup?->program === $scopeProgram) && (! $scopeSession || $booking->classSession?->session === $scopeSession) && ChineseEveningPeriod::matches($booking, $period));
                 $current = $bookings->first(fn (ClassroomBooking $booking) => $booking->starts_minute <= $minute && $booking->ends_minute > $minute

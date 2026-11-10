@@ -41,6 +41,7 @@
 </section>
 
 @include('school.classrooms._class-levels')
+@include('school.classrooms._khmer-curriculum')
 @include('school.classrooms._attendance')
 <section class="panel p-4 my-4" aria-label="Room program details">
     <h2 class="h5">Programs and classes</h2>

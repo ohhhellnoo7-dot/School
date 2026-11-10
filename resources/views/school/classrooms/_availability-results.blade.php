@@ -57,7 +57,13 @@
             <div class="room-card-visual" aria-hidden="true"><img src="{{ asset('images/classroom-card.png') }}" alt="" loading="lazy" width="1672" height="941"><span class="room-visual-label"><i class="bi bi-{{ $icons[$status] ?? 'circle-fill' }}"></i> {{ str_replace('_', ' ', ucfirst($status)) }}</span></div>
             <div class="room-card-head">
                 <span class="room-icon"><i class="bi bi-door-open" aria-hidden="true"></i></span>
-                <span class="room-heading"><small>{{ $room->buildingRecord ? $room->buildingRecord->name.' / ' : '' }}{{ __('Room') }}</small><strong>{{ $room->room_number }}</strong>@if($room->name && $room->name !== $room->room_number)<span>{{ $room->name }}</span>@endif</span>
+                <span class="room-heading"><small>{{ $room->buildingRecord ? $room->buildingRecord->name.' / ' : '' }}{{ __('Room') }}</small><strong>{{ $room->room_number }}</strong>@if($room->name && $room->name !== $room->room_number)<span>{{ $room->name }}</span>@endif
+                    @foreach($programDetails as $streamProgram => $streamDetails)
+                        @foreach($streamDetails['streams'] ?? [] as $stream => $streamLabel)
+                            <span class="room-stream-badge room-stream-{{ $stream }}" data-room-stream-program="{{ $streamProgram }}" @if($streamProgram !== $selectedProgram) hidden @endif>{{ $streamLabel }}</span>
+                        @endforeach
+                    @endforeach
+                </span>
                 <span class="room-status"><i class="bi bi-{{ $icons[$status] ?? 'circle-fill' }}" aria-hidden="true"></i> {{ str_replace('_', ' ', ucfirst($status)) }}</span>
             </div>
             <div class="room-card-body">
@@ -142,7 +148,7 @@
                             <div><strong>{{ $details['students'] }}</strong><span>enrolled students</span></div>
                             <span class="room-seat-limit">{{ $room->capacity }} seats</span>
                         </div>
-                        <div class="room-session-tags">@foreach($details['sessions'] as $sessionName)<span><i class="bi bi-clock" aria-hidden="true"></i> {{ $sessionName }}</span>@endforeach</div>
+                        <div class="room-session-tags" role="group" aria-label="{{ $programName }} study sessions">@foreach($details['available_sessions'] ?? $details['sessions'] as $sessionName)<button type="button" title="Preview {{ $sessionName }} for 2 seconds, then return to the current session" data-room-session="{{ $sessionName }}" data-session-program="{{ $programName }}" aria-pressed="{{ $details['sessions']->contains($sessionName) ? 'true' : 'false' }}"><i class="bi bi-clock" aria-hidden="true"></i> {{ $sessionName }}</button>@endforeach</div>
                     </div>
                 @endforeach
             </div>

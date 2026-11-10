@@ -1,0 +1,11 @@
+@extends('school.layout')
+@section('title','Khmer timetable preview')
+@section('content')
+<div class="page-heading"><div><h1>Complete Khmer timetable preview</h1><p>{{ count($plan['rows']) }} lessons / {{ count($classes) }} class sessions / {{ $plan['academic_year'] }}.</p></div><a class="btn btn-outline-secondary" href="{{ route('khmer-curriculum.index') }}">Back to curriculum</a></div>
+<div class="alert alert-warning"><strong>Provisional Scholar curriculum</strong><p class="mb-0">This timetable satisfies configured school hours, not verified national curriculum requirements. {{ count($plan['planned_staff_ids'] ?? []) }} planned teacher positions require real staff verification.</p></div>
+<p>Each class has 20 weekly hours with no free periods. Literature and Mathematics use consecutive two-hour blocks. Teacher, room, cohort, qualification, availability and workload checks run again before publication.</p>
+@foreach(collect($plan['rows'])->groupBy('school_class_id') as $classId=>$rows)
+<section class="panel p-4 mb-3"><h2 class="h5">{{ $classes[$classId]->label }}</h2><div class="table-responsive"><table class="table"><thead><tr><th>Day</th><th>Time</th><th>Subject</th><th>Teacher</th><th>Room</th></tr></thead><tbody>@foreach($rows->sortBy(fn($row)=>array_search($row['day'],['Monday','Tuesday','Wednesday','Thursday','Friday'])*1440+\App\Services\TeacherManagementService::minute($row['starts_at'])) as $row)<tr><td>{{ $row['day'] }}</td><td>{{ $row['starts_at'] }} - {{ $row['ends_at'] }}</td><td>{{ $subjects[$row['subject_id']]->name }}</td><td>{{ $teachers[$row['teacher_id']]->name }}@if($teachers[$row['teacher_id']]->requiresTeacherConfirmation()) (planned, unverified)@endif</td><td>{{ $row['room'] }}</td></tr>@endforeach</tbody></table></div></section>
+@endforeach
+<form class="panel p-4" action="{{ route('khmer-curriculum.publish') }}" method="post">@csrf<input type="hidden" name="token" value="{{ $token }}"><label class="d-block mb-3"><input type="checkbox" name="confirm" value="1" required> Publish this complete timetable and retain the previous lessons as history. Curriculum approval remains pending.</label><button class="btn btn-primary">Publish school timetable</button></form>
+@endsection

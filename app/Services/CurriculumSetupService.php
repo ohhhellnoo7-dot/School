@@ -12,6 +12,7 @@ class CurriculumSetupService
     public function configure(SchoolClass $class): array
     {
         $class = $class->timetableOwner();
+        if ($class->program === 'Khmer' && app(KhmerCurriculumService::class)->profileFor($class)) return app(KhmerCurriculumService::class)->configure($class);
         return app(TeacherManagementService::class)->locked(function () use ($class) {
             $class->refresh()->load('subjects');
             $created = [];

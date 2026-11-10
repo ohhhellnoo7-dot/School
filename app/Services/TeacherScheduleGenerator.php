@@ -14,7 +14,7 @@ class TeacherScheduleGenerator
     public function fingerprint(): string
     {
         $state = [];
-        foreach (['users', 'subjects', 'schedules', 'school_classes', 'class_groups', 'class_sessions', 'teacher_profiles', 'teacher_qualifications', 'teacher_working_periods', 'teacher_break_plans', 'teacher_breaks', 'teacher_management_settings', 'classrooms', 'classroom_bookings'] as $table) {
+        foreach (['curriculum_profiles', 'curriculum_requirements', 'users', 'subjects', 'schedules', 'school_classes', 'class_groups', 'class_sessions', 'teacher_profiles', 'teacher_qualifications', 'teacher_working_periods', 'teacher_break_plans', 'teacher_breaks', 'teacher_management_settings', 'classrooms', 'classroom_bookings'] as $table) {
             $state[$table] = DB::table($table)->orderBy($table === 'teacher_profiles' ? 'teacher_id' : 'id')->get();
         }
         return hash('sha256', json_encode($state, JSON_THROW_ON_ERROR));

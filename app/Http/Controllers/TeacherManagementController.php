@@ -118,7 +118,8 @@ class TeacherManagementController extends Controller
             $service->saveProfile($t, $names, isset($data['weekly_hours']) ? (int) round($data['weekly_hours'] * 60) : null, $periods);
             return $t;
         });
-        return redirect()->route('teacher-management.show', $teacher)->with('success', 'Teacher information, qualifications, and working hours saved. Existing lessons were preserved.');
+        $assignments=app(\App\Services\KhmerTeacherEnrollmentAssignment::class)->assign($teacher);
+        return redirect()->route('teacher-management.show', $teacher)->with('success', 'Teacher information, qualifications, and working hours saved. Automatically assigned '.count($assignments).' matching curriculum subjects. Existing lesson times were preserved.');
     }
 
     public function show(User $teacher, TeacherManagementService $service)
@@ -250,6 +251,7 @@ class TeacherManagementController extends Controller
 
     public function curriculum(Request $request, Subject $subject, TeacherManagementService $service)
     {
+        if ($subject->curriculum_requirement_id) return redirect()->route('khmer-curriculum.index')->withErrors(['curriculum'=>'Edit the grade/stream profile here so both sessions stay synchronized.']);
         $data = $request->validate(['weekly_hours' => 'required|numeric|min:0|max:40']);
         $service->locked(fn () => $subject->fill(['required_weekly_minutes' => (int) round($data['weekly_hours'] * 60)])->save());
         return back()->with('success', 'Approved curriculum hours saved. No lessons were changed.');

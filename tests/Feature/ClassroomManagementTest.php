@@ -23,6 +23,61 @@ class ClassroomManagementTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_cards_offer_program_sessions_and_restore_time_based_defaults(): void
+    {
+        $this->actingAs($this->user('administrator'));
+        \App\Models\Program::where('name', 'English')->update(['sessions' => ['Morning', 'Afternoon', 'Evening']]);
+        $room = $this->classroom('SESSIONS', 40);
+        $group = $this->classGroup('English', 1, 'A');
+        foreach (['Morning' => ['07:00', '11:00'], 'Afternoon' => ['13:00', '17:00'], 'Evening' => ['17:30', '18:30']] as $name => [$start, $end]) {
+            $session = $this->classSession($group, $name, $start, $end);
+            ClassroomBooking::create(collect($this->bookingData($group, $session, $room, null, 'Monday', $start, $end))->except('session')->all());
+            SchoolClass::create(['name' => $name.' class', 'section' => 'A', 'program' => 'English', 'session' => $name, 'class_group_id' => $group->id]);
+        }
+        $service = app(ClassroomAvailabilityService::class);
+        foreach (['08:00' => 'Morning', '14:00' => 'Afternoon', '18:00' => 'Evening'] as $time => $expected) {
+            $entry = $service->forMoment('2026-11-02 '.$time)->first(fn ($e) => $e['classroom']->id === $room->id);
+            $this->assertSame(['Morning', 'Afternoon', 'Evening'], $entry['cardProgramDetails']['English']['available_sessions']->all());
+            $this->assertSame([$expected], $entry['cardProgramDetails']['English']['sessions']->all());
+        }
+        $preview = $service->forMoment('2026-11-02 08:00', ['room_sessions' => [$room->id => ['English' => 'Afternoon']]])->first(fn ($e) => $e['classroom']->id === $room->id);
+        $this->assertSame(['Afternoon'], $preview['cardProgramDetails']['English']['sessions']->all());
+        $html = $this->getJson(route('classrooms.data', ['date' => '2026-11-02', 'time' => '08:00']))->assertOk()->json('html');
+        foreach (['Morning', 'Afternoon', 'Evening'] as $name) $this->assertStringContainsString('data-room-session="'.$name.'" data-session-program="English"', $html);
+    }
+
+    public function test_english_session_repair_combines_rosters_without_moving_sessions_or_losing_attendance(): void
+    {
+        $this->actingAs($this->user('administrator'));
+        $room = $this->classroom('MERGE', 40);
+        $group = $this->classGroup('English', 6, '');
+        $students = [];
+        $owners = [];
+        foreach (['Morning' => ['07:00', '11:00'], 'Afternoon' => ['13:00', '17:00'], 'Evening' => ['17:30', '19:30']] as $name => [$start, $end]) {
+            $session = $this->classSession($group, $name, $start, $end);
+            ClassroomBooking::create(collect($this->bookingData($group, $session, $room, null, 'Monday', $start, $end))->except('session')->all());
+            $owner = SchoolClass::create(['name' => 'Grade 6', 'section' => 'A', 'program' => 'English', 'session' => $name, 'class_group_id' => $group->id]);
+            $alias = SchoolClass::create(['name' => 'Grade 6', 'section' => 'B', 'program' => 'English', 'session' => $name, 'class_group_id' => $group->id, 'shared_timetable_class_id' => $owner->id]);
+            $a = Student::factory()->create(['school_class_id' => $owner->id, 'status' => 'active']);
+            $b = Student::factory()->create(['school_class_id' => $alias->id, 'status' => 'active']);
+            \App\Models\ClassAttendance::create(['school_class_id' => $alias->id, 'student_id' => $b->id, 'date' => '2026-11-02', 'status' => 'late', 'recorded_by' => auth()->id()]);
+            $students[$name] = [$a->id, $b->id]; $owners[$name] = $owner->id;
+        }
+        $result = app(\App\Services\EnglishSessionCohortRepair::class)->run();
+        $this->assertCount(3, $result);
+        $this->assertSame([], app(\App\Services\EnglishSessionCohortRepair::class)->run());
+        $this->assertSame(3, SchoolClass::where('program', 'English')->count());
+        $this->assertSame(6, SchoolClass::withoutGlobalScope('unmerged')->where('program', 'English')->count());
+        foreach ($owners as $session => $ownerId) {
+            $this->assertEqualsCanonicalizing($students[$session], SchoolClass::findOrFail($ownerId)->students()->pluck('students.id')->all());
+            $this->assertDatabaseHas('students', ['id' => $students[$session][1], 'school_class_id' => $ownerId]);
+            $this->assertDatabaseHas('class_attendances', ['school_class_id' => $ownerId, 'student_id' => $students[$session][1], 'status' => 'late']);
+            $entry = app(ClassroomAvailabilityService::class)->forMoment('2026-11-02 08:00', ['detail_program' => 'English', 'detail_session' => $session])->first(fn ($e) => $e['classroom']->id === $room->id);
+            $this->assertSame([$ownerId], $entry['programDetails']['English']['class_ids']->all());
+            $this->assertSame(2, $entry['programDetails']['English']['students']);
+        }
+    }
+
     public function test_all_matching_classes_are_listed_and_the_second_option_can_be_selected(): void
     {
         $admin = $this->user('administrator');
@@ -202,7 +257,7 @@ class ClassroomManagementTest extends TestCase
             \Illuminate\Support\Facades\DB::table('schedules')->insert(['school_class_id' => $class->id, 'subject_id' => $subject->id, 'teacher_id' => $teacher->id, 'classroom_id' => $room->id, 'room' => $room->room_number, 'day' => 'Monday', 'starts_at' => $start, 'ends_at' => $end, 'entry_type' => 'academic', 'academic_year' => '2026-2027']);
         }
         $this->actingAs($admin);
-        foreach ([['18:00', null, 'Morning', 2], ['14:00', null, 'Afternoon', 3], ['14:00', 'Morning', 'Morning', 2], ['18:00', 'Afternoon', 'Afternoon', 3]] as [$time, $filter, $expected, $count]) {
+        foreach ([['18:00', null, 'Afternoon', 3], ['14:00', null, 'Afternoon', 3], ['14:00', 'Morning', 'Morning', 2], ['18:00', 'Afternoon', 'Afternoon', 3]] as [$time, $filter, $expected, $count]) {
             $query = array_filter(['date' => '2026-11-02', 'time' => $time, 'session' => $filter]);
             $html = $this->getJson(route('classrooms.data', $query))->assertOk()->json('html');
             $other = $expected === 'Morning' ? 'Afternoon' : 'Morning';

@@ -1,6 +1,8 @@
 @extends('school.layout')
 @section('title', 'School Timetables')
 @section('content')
+@if(auth()->user()->role === 'administrator')<a class="btn btn-outline-primary mb-3" href="{{ route('khmer-curriculum.index') }}">Khmer subjects and study streams</a>@endif
+
 <link href="{{ asset('css/unified-timetable.css') }}?v={{ filemtime(public_path('css/unified-timetable.css')) }}" rel="stylesheet">
 <div class="timetable-workspace">
 <x-scholar-hero tag="section" class="unified-timetable-hero">

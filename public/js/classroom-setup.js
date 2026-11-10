@@ -454,6 +454,22 @@
         }
         classDialog.close();
     });
+    const syncStreamPicker = () => {
+        const senior = ['11', '12'].includes(classForm.elements.grade.value);
+        const section = classForm.elements.section.value;
+        const assigned = senior && classForm.elements.program.value === 'Khmer' ? ({A: 'social_science', B: 'social_science', C: 'social_science', D: 'science', E: 'science'}[section] || '') : '';
+        const picker = classForm.querySelector('[data-stream-picker]');
+        picker.hidden = !senior;
+        picker.disabled = !senior;
+        picker.querySelectorAll('input').forEach(input => {
+            input.required = senior;
+            input.disabled = false;
+            if (assigned) input.checked = input.value === assigned;
+            if (!senior) input.checked = false;
+        });
+    };
+    classForm.querySelectorAll('[name="grade"]').forEach(input => input.addEventListener('change', syncStreamPicker));
+    classForm.querySelectorAll('[name="section"]').forEach(input => input.addEventListener('change', syncStreamPicker));
     const classError = classDialog.querySelector('[data-create-class-error]');
     const classTeacherOptions = [...classForm.elements.teacher_id.options].filter(item => item.value).map(item => ({id: item.value, name: item.textContent, program: item.dataset.program}));
     root.querySelector('[data-open-create-class]').addEventListener('click', () => {
@@ -472,7 +488,11 @@
             input.disabled = khmer && input.value === '';
             input.checked = !khmer && input.value === '';
         });
-        [...classForm.elements.grade.options].forEach(item => { item.disabled = khmer && Number(item.value) < 7; });
+        classForm.querySelectorAll('[name="grade"]').forEach(item => {
+            item.disabled = khmer && Number(item.value) < 7;
+            item.closest('label').hidden = item.disabled;
+        });
+        syncStreamPicker();
         classForm.elements.teacher_id.replaceChildren(option('', 'Unassigned'), ...classTeacherOptions.filter(item => item.program === program.value).map(item => {
             const assignments = config.classes.filter(cls => String(cls.teacher_id) === String(item.id));
             const label = assignments.length ? `Busy — ${[...new Set(assignments.map(cls => cls.label))].join(', ')}` : 'No classroom yet';

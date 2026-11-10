@@ -1,6 +1,7 @@
 @extends('school.layout')
 @section('title', $meta['title'])
 @section('content')
+@if($module === 'subjects' && auth()->user()->role === 'administrator')<a class="btn btn-outline-primary mb-3" href="{{ route('khmer-curriculum.index') }}">Khmer curriculum by grade and stream</a>@endif
 @php
     $canWrite = \App\Support\SchoolModules::canWrite(auth()->user(), $module);
     $columns = array_filter($meta['fields'], fn ($type) => $type !== 'password');

@@ -126,6 +126,7 @@ class ClassroomController extends Controller
             'attendanceMonth' => $attendanceMonth,
             'attendanceDate' => $attendanceDate,
             'attendanceClasses' => $attendanceClasses,
+            'curriculumProfiles' => $attendanceClasses->where('program','Khmer')->map(fn ($class) => app(\App\Services\KhmerCurriculumService::class)->profileFor($class))->filter()->unique('id')->values(),
             'classAttendance' => $classAttendance,
             'classroom' => $classroom,
             'snapshot' => $snapshot,

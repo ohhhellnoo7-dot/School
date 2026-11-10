@@ -8,6 +8,11 @@ class Subject extends Model
 {
     protected $guarded = [];
 
+    public function scopeForTeaching($query)
+    {
+        return $query->where(fn ($q) => $q->whereNull('required_weekly_minutes')->orWhere('required_weekly_minutes', '>', 0));
+    }
+
     public function save(array $options = [])
     {
         $service = app(\App\Services\TeacherManagementService::class);
@@ -22,9 +27,14 @@ class Subject extends Model
         });
     }
 
+    public function curriculumRequirement()
+    {
+        return $this->belongsTo(CurriculumRequirement::class);
+    }
+
     public function schoolClass()
     {
-        return $this->belongsTo(SchoolClass::class);
+        return $this->belongsTo(SchoolClass::class)->withoutGlobalScope('unmerged');
     }
 
     public function teacher()

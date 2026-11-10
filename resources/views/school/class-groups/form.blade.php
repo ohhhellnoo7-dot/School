@@ -33,6 +33,16 @@
             </select>
             @error('grade')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
+        <div data-group-stream-field @if((int) old('grade', $classGroup->grade) < 11) hidden @endif>
+            <label class="form-label" for="group-stream">Study stream</label>
+            <select class="form-select" name="stream" id="group-stream">
+                <option value="">Choose a stream</option>
+                @foreach(\App\Models\ClassGroup::STREAMS as $value => $label)
+                    <option value="{{ $value }}" @selected(old('stream', $classGroup->stream) === $value)>{{ $label }}</option>
+                @endforeach
+            </select>
+            @error('stream')<div class="text-danger">{{ $message }}</div>@enderror
+        </div>
         <div>
             <label class="form-label" for="section">Section</label>
             <select class="form-select @error('section') is-invalid @enderror" id="section" name="section">
@@ -139,6 +149,23 @@
 
 @push('scripts')
 <script>
+const streamGrade = document.getElementById('grade');
+const streamSelect = document.getElementById('group-stream');
+const syncGroupStream = () => {
+    const senior = Number(streamGrade.value) >= 11;
+    document.querySelector('[data-group-stream-field]').hidden = !senior;
+    const mapped = senior && document.querySelector('[data-program-select]').value === 'Khmer' ? ({A: 'social_science', B: 'social_science', C: 'social_science', D: 'science', E: 'science'}[document.getElementById('section').value] || '') : '';
+    if (mapped && !streamSelect.value) streamSelect.value = mapped;
+    [...streamSelect.options].forEach(option => option.disabled = false);
+    streamSelect.disabled = !senior;
+    streamSelect.required = senior;
+    if (!senior) streamSelect.value = '';
+};
+streamGrade.addEventListener('change', syncGroupStream);
+document.getElementById('section').addEventListener('change', syncGroupStream);
+document.querySelector('[data-program-select]').addEventListener('change', syncGroupStream);
+syncGroupStream();
+
 const swapClass = document.querySelector('#swap-class');
 const swapDialog = document.querySelector('#teacher-swap-dialog');
 document.querySelector('[data-open-teacher-swap]')?.addEventListener('click', () => swapDialog.showModal());

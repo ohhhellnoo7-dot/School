@@ -881,3 +881,20 @@ a.class-summary-card:hover {
 .section-choice input:focus-visible + span { outline: 3px solid #bd3b88; outline-offset: 3px; }
 .section-choice input:disabled + span, .section-picker:disabled .section-choice span { opacity: .5; cursor: not-allowed; }
 @media (max-width: 400px) { .section-picker-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+
+.room-session-tags button { font: inherit; font-size: 10px; color: var(--muted); background: var(--soft); border: 1px solid transparent; border-radius: 6px; padding: 5px 8px; cursor: pointer; }
+.room-session-tags button[aria-pressed="true"] { background: #bd3b88; color: #fff; }
+.room-session-tags button:hover { border-color: #bd3b88; }
+.room-session-tags button:focus-visible { outline: 2px solid #bd3b88; outline-offset: 2px; }
+
+.grade-picker-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grade-picker-grid .section-choice span { min-height: 46px; font-size: 13px; }
+.stream-picker { padding: 14px; border: 1px solid var(--border, #edcfe2); border-radius: 14px; background: var(--soft, #fff5fa); }
+.stream-picker legend { font-size: 13px; margin-bottom: 10px; }
+.stream-picker-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.stream-picker-grid .section-choice span { min-height: 52px; padding: 8px; text-align: center; font-size: 13px; }
+
+.room-heading .room-stream-badge { display: inline-flex; align-self: flex-start; margin-top: 7px; padding: 6px 10px; border-radius: 8px; font-size: 12px; line-height: 1.4; font-weight: 700; white-space: normal; overflow: visible; text-overflow: clip; }
+.room-heading .room-stream-social_science { color: #6d28a0; background: #f2e8ff; border: 1px solid #dfc7fa; }
+.room-heading .room-stream-science { color: #076954; background: #dcf7ec; border: 1px solid #a8e5ce; }
+.room-heading .room-stream-badge[hidden] { display: none; }

@@ -56,7 +56,7 @@ class Schedule extends Model
 
     public function schoolClass()
     {
-        return $this->belongsTo(SchoolClass::class);
+        return $this->belongsTo(SchoolClass::class)->withoutGlobalScope('unmerged');
     }
 
     public function teacher()

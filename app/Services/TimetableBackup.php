@@ -10,7 +10,7 @@ class TimetableBackup
     public function create(): string
     {
         $tables = [];
-        foreach (['users', 'students', 'class_groups', 'class_sessions', 'school_classes', 'classrooms', 'classroom_bookings', 'subjects', 'schedules', 'teacher_profiles', 'teacher_qualifications', 'teacher_working_periods', 'teacher_break_plans', 'teacher_breaks'] as $table) {
+        foreach (['curriculum_profiles', 'curriculum_requirements', 'student_class_enrollments', 'class_attendances', 'users', 'students', 'class_groups', 'class_sessions', 'school_classes', 'classrooms', 'classroom_bookings', 'subjects', 'schedules', 'teacher_profiles', 'teacher_qualifications', 'teacher_working_periods', 'teacher_break_plans', 'teacher_breaks'] as $table) {
             $tables[$table] = DB::table($table)->get()->all();
         }
         $path = 'timetable-backups/'.now()->format('Ymd-His').'-'.Str::uuid().'.json';

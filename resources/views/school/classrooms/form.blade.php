@@ -78,7 +78,21 @@
         <p>Program: <strong data-inline-class-program></strong>. Students can enroll later. Room details are kept in the classroom form; save them with Create classroom or Save changes after setting up the class.</p>
         <input type="hidden" name="program"><input type="hidden" name="status" value="active">
         <label class="form-label" for="inline-class-name">Class name</label><input class="form-control mb-3" id="inline-class-name" name="name" maxlength="100" required>
-        <label class="form-label" for="inline-class-grade">Grade / Level</label><select class="form-select mb-3" id="inline-class-grade" name="grade" required><option value="">Choose a grade / level</option>@foreach(range(1,12) as $grade)<option value="{{ $grade }}">{{ $grade }}</option>@endforeach</select>
+        <fieldset class="section-picker mb-3" data-grade-picker>
+            <legend class="form-label">Grade / Level <small class="text-muted">Required</small></legend>
+            <div class="section-picker-grid grade-picker-grid">
+                @foreach(range(1,12) as $grade)
+                    <label class="section-choice"><input type="radio" name="grade" value="{{ $grade }}" required><span>Grade {{ $grade }}</span></label>
+                @endforeach
+            </div>
+        </fieldset>
+        <fieldset class="section-picker stream-picker mb-3" data-stream-picker hidden disabled>
+            <legend class="form-label">Study stream <small class="text-muted">Required for Grade 11 and 12</small></legend>
+            <div class="section-picker-grid stream-picker-grid">
+                <label class="section-choice"><input type="radio" name="stream" value="science"><span>Science Stream</span></label>
+                <label class="section-choice"><input type="radio" name="stream" value="social_science"><span>Social Science Stream</span></label>
+            </div>
+        </fieldset>
         <fieldset class="section-picker mb-3" data-section-picker>
             <legend class="form-label">Section <small class="text-muted" data-section-requirement>Optional</small></legend>
             <div class="section-picker-grid">

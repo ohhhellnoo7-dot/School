@@ -104,6 +104,10 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
     Route::get('/school/classrooms/{classroom}/lesson-status', [ClassroomController::class, 'lessonStatus'])->name('classrooms.lesson-status');
 
     Route::middleware('role:administrator')->group(function () {
+        Route::post('/school/khmer-curriculum/publish', [\App\Http\Controllers\KhmerCurriculumController::class, 'publish'])->name('khmer-curriculum.publish');
+        Route::get('/school/khmer-curriculum', [\App\Http\Controllers\KhmerCurriculumController::class, 'index'])->name('khmer-curriculum.index');
+        Route::put('/school/khmer-curriculum/{profile}', [\App\Http\Controllers\KhmerCurriculumController::class, 'update'])->name('khmer-curriculum.update');
+        Route::post('/school/khmer-curriculum/generate', [\App\Http\Controllers\KhmerCurriculumController::class, 'generate'])->name('khmer-curriculum.generate');
         Route::get('/school/programs/create', [\App\Http\Controllers\ProgramController::class, 'create'])->name('programs.create');
         Route::post('/school/evening-study-periods', [\App\Http\Controllers\EveningStudyPeriodController::class, 'store'])->name('evening-study-periods.store');
         Route::post('/school/programs', [\App\Http\Controllers\ProgramController::class, 'store'])->name('programs.store');

@@ -10,6 +10,8 @@ class SchoolClass extends Model
 
     protected static function booted(): void
     {
+        // Merged records remain available for history, but cannot be selected or enrolled again.
+        static::addGlobalScope('unmerged', fn ($query) => $query->whereNull('school_classes.merged_into_class_id'));
         static::saved(function (SchoolClass $class) {
             if ($class->wasChanged('class_group_id') && \Illuminate\Support\Facades\Schema::hasTable('student_class_enrollments')) {
                 StudentClassEnrollment::where('school_class_id', $class->id)->update(['class_group_id' => $class->class_group_id]);
@@ -45,7 +47,7 @@ class SchoolClass extends Model
 
     public function getLabelAttribute(): string
     {
-        return collect([$this->name, $this->section, $this->program, $this->session])->filter()->join(' · ');
+        return collect([$this->name, $this->section, $this->program, $this->session, ClassGroup::STREAMS[$this->classGroup?->stream] ?? null])->filter()->join(' · ');
     }
 
     public function teacher()

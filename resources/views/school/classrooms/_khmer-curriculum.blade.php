@@ -1,0 +1,5 @@
+@foreach($curriculumProfiles ?? [] as $profile)
+<section class="panel p-4 my-4"><div class="d-flex justify-content-between flex-wrap gap-2"><h2 class="h5">{{ $profile->label }} - Khmer subjects</h2><strong>{{ $profile->requirements->count() }} subjects</strong></div><p class="small text-secondary">Provisional Scholar curriculum / {{ $profile->requirements->sum('weekly_minutes')/60 }} hours per week. Official national curriculum approval is pending verification.</p>
+<div class="table-responsive"><table class="table"><thead><tr><th>Subject</th><th>Weekly hours</th><th>Hours per lesson</th></tr></thead><tbody>@foreach($profile->requirements as $requirement)<tr><td>{{ $requirement->name }}</td><td>{{ $requirement->weekly_minutes/60 }}</td><td>{{ $requirement->lesson_minutes/60 }}</td></tr>@endforeach</tbody></table></div>
+@if(auth()->user()->role==='administrator')<a class="btn btn-outline-primary" href="{{ route('khmer-curriculum.index') }}#profile-{{ $profile->id }}">Edit grade / stream subjects and hours</a>@endif</section>
+@endforeach

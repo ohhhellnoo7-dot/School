@@ -239,7 +239,7 @@ class UnifiedTimetableController extends Controller
         if ($preview['plan']['replace']) $request->validate(['replace' => 'required|accepted']);
         $backup = $generator->confirm($preview['plan']);
         $request->session()->forget('unified_timetable_preview');
-        return redirect()->route('timetables.index')->with('success', 'Approved Khmer timetable published. Backup: '.$backup);
+        return redirect()->route('timetables.index')->with('success', 'Khmer timetable published. Curriculum approval remains separate. Backup: '.$backup);
     }
 
     public function conflicts(Schedule $lesson)

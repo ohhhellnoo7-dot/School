@@ -13,6 +13,7 @@
     let lessonFilter = 'all';
     const roomPrograms = new Map();
     const roomSessions = new Map();
+    const sessionPreviewTimers = new Map();
     const roomPreviewTimers = new Map();
     const clearRoomPreview = roomId => {
         clearTimeout(roomPreviewTimers.get(roomId));
@@ -27,6 +28,7 @@
         card.querySelectorAll('[data-room-program-overview]').forEach(panel => {
             panel.hidden = panel.dataset.roomProgramOverview !== program;
         });
+        card.querySelectorAll('[data-room-stream-program]').forEach(badge => { badge.hidden = badge.dataset.roomStreamProgram !== program; });
         card.querySelectorAll('[data-room-teacher-panel]').forEach(panel => {
             panel.hidden = panel.dataset.roomTeacherPanel !== program;
         });
@@ -212,12 +214,22 @@
         const card = button.closest('[data-room-card]');
         const roomId = card.dataset.roomCard;
         const program = button.dataset.sessionProgram;
-        button.closest('details').open = false;
+        const picker = button.closest('details');
+        if (picker) picker.open = false;
         if (!roomSessions.has(roomId)) roomSessions.set(roomId, new Map());
         roomSessions.get(roomId).set(program, button.dataset.roomSession);
         clearRoomPreview(roomId);
         roomPrograms.set(roomId, { program, context: card.dataset.roomContext, expiresAt: null });
         refresh();
+        const previewKey = `${roomId}:${program}`;
+        clearTimeout(sessionPreviewTimers.get(previewKey));
+        sessionPreviewTimers.set(previewKey, setTimeout(() => {
+            roomSessions.get(roomId)?.delete(program);
+            if (!roomSessions.get(roomId)?.size) roomSessions.delete(roomId);
+            sessionPreviewTimers.delete(previewKey);
+            // Restore the time-based session while keeping this program visible.
+            refresh();
+        }, 2000));
     });
 
     const programPicker = document.querySelector('.program-picker');

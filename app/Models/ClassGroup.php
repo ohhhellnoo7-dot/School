@@ -12,7 +12,19 @@ class ClassGroup extends Model
 {
     public const PROGRAMS = ['Khmer', 'English', 'Chinese'];
 
+    public const STREAMS = ['science' => 'Science Stream', 'social_science' => 'Social Science Stream'];
+
     public const STATUSES = ['active', 'inactive'];
+
+    public static function assignedStream(?string $program, int $grade, ?string $section): ?string
+    {
+        if ($program !== 'Khmer' || ! in_array($grade, [11, 12], true)) return null;
+        return match (strtoupper(trim($section ?? ''))) {
+            'A', 'B', 'C' => 'social_science',
+            'D', 'E' => 'science',
+            default => null,
+        };
+    }
 
     protected $guarded = [];
 
@@ -24,6 +36,8 @@ class ClassGroup extends Model
             $group->section = filled($group->section)
                 ? strtoupper(trim((string) $group->section))
                 : null;
+            $assigned = self::assignedStream($group->program, (int) $group->grade, $group->section);
+            if ($assigned && blank($group->stream)) $group->stream = $assigned;
         });
     }
 
@@ -106,6 +120,6 @@ class ClassGroup extends Model
             $label = trim($this->program.' '.$label);
         }
 
-        return $label;
+        return $label.(isset(self::STREAMS[$this->stream]) ? ' - '.self::STREAMS[$this->stream] : '');
     }
 }

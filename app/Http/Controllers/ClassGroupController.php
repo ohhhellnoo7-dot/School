@@ -133,6 +133,7 @@ class ClassGroupController extends Controller
                 foreach ($names as $name) {
                     $class->subjects()->create(['name' => $name, 'code' => (string) \Illuminate\Support\Str::uuid()]);
                 }
+                if ($class->program === 'Khmer' && app(\App\Services\KhmerCurriculumService::class)->profileFor($class)) app(\App\Services\KhmerCurriculumService::class)->configure($class);
             }
             return $classGroup;
         });
@@ -177,6 +178,9 @@ class ClassGroupController extends Controller
             }
             $classGroup->update($attributes);
             $this->syncSessions($classGroup);
+            if ($classGroup->program === 'Khmer') foreach ($classGroup->schoolClasses()->get() as $cohort) {
+                if (app(\App\Services\KhmerCurriculumService::class)->profileFor($cohort)) app(\App\Services\KhmerCurriculumService::class)->configure($cohort);
+            }
         });
 
         return redirect()->route('class-groups.show', $classGroup)
@@ -230,6 +234,7 @@ class ClassGroupController extends Controller
         $attributes = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'grade' => ['required', 'integer', 'between:1,12'],
+            'stream' => ['nullable', Rule::in(['science', 'social_science'])],
             'section' => ['nullable', 'string', 'max:5'],
             'program' => ['required', Rule::in(array_keys($this->programSessions()))],
             'teacher_id' => [
@@ -240,6 +245,10 @@ class ClassGroupController extends Controller
             'status' => ['required', Rule::in(['active', 'inactive'])],
         ]);
 
+        $attributes['stream'] = $attributes['grade'] >= 11 ? ($attributes['stream'] ?? $classGroup?->stream ?? ClassGroup::assignedStream($attributes['program'], (int) $attributes['grade'], $attributes['section'] ?? null)) : null;
+        if ($attributes['grade'] >= 11 && ! $classGroup && ! $attributes['stream']) {
+            throw ValidationException::withMessages(['stream' => 'Choose Science Stream or Social Science Stream for Grade 11 or 12.']);
+        }
         $attributes['name'] = trim($attributes['name']);
         $attributes['section'] = filled($attributes['section'] ?? null)
             ? strtoupper(trim($attributes['section']))

@@ -83,6 +83,39 @@ class ClassroomSetupTest extends TestCase
             ->assertSee('type="radio" name="section" value="Z"', false);
     }
 
+    public function test_senior_grades_save_the_selected_stream_and_display_it_in_planner(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'administrator']));
+        foreach ([11 => 'science', 12 => 'social_science'] as $grade => $stream) {
+            $data = ['name' => 'Senior '.$grade, 'program' => 'Khmer', 'grade' => $grade, 'section' => 'Z', 'capacity' => 30, 'status' => 'active', 'curriculum' => 'History'];
+            $this->postJson(route('class-groups.store'), $data)->assertUnprocessable()->assertJsonValidationErrors('stream');
+            $this->postJson(route('class-groups.store'), $data + ['stream' => $stream])->assertCreated();
+            $group = ClassGroup::where('name', 'Senior '.$grade)->sole();
+            $this->assertSame($stream, $group->stream);
+            $this->assertStringContainsString(ClassGroup::STREAMS[$stream], $group->display_name);
+            $this->get(route('classrooms.create'))->assertOk()->assertSee(ClassGroup::STREAMS[$stream]);
+        }
+        $this->postJson(route('class-groups.store'), ['name' => 'Junior', 'program' => 'Khmer', 'grade' => 10, 'section' => 'Z', 'capacity' => 30, 'status' => 'active', 'stream' => 'science'])->assertCreated();
+        $this->assertNull(ClassGroup::where('name', 'Junior')->sole()->stream);
+    }
+
+    public function test_khmer_senior_sections_assign_the_correct_stream(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'administrator']));
+        foreach ([11, 12] as $grade) {
+            foreach (['A', 'B', 'C', 'D', 'E'] as $section) {
+                $expected = in_array($section, ['A', 'B', 'C'], true) ? 'social_science' : 'science';
+                $this->postJson(route('class-groups.store'), [
+                    'name' => 'Grade '.$grade.' '.$section, 'program' => 'Khmer', 'grade' => $grade, 'section' => $section,
+                    'capacity' => 30, 'status' => 'active',
+                ])->assertCreated();
+                $group = ClassGroup::where('program', 'Khmer')->where('grade', $grade)->where('section', $section)->sole();
+                $this->assertSame($expected, $group->stream);
+                $this->assertStringContainsString(ClassGroup::STREAMS[$expected], $group->schoolClasses()->firstOrFail()->label);
+            }
+        }
+    }
+
     private function fixture(string $program = 'Khmer', string $session = 'Morning'): array
     {
         $admin = User::factory()->create(['role' => 'administrator']);

@@ -16,7 +16,7 @@ class ClassroomSetupService
         $classes = SchoolClass::with('subjects', 'classGroup')->orderBy('name')->orderBy('section')->get();
         $plannerClasses = $classes->map(function ($class) {
             return ['id' => $class->id, 'class_group_id' => $class->class_group_id, 'label' => $class->label, 'program' => $class->program, 'session' => $class->session, 'teacher_id' => $class->teacher_id,
-                'hours' => $class->sessionHours(), 'subjects' => $class->timetableOwner()->subjects->map(fn ($subject) => [
+                'hours' => $class->sessionHours(), 'subjects' => $class->timetableOwner()->subjects->filter(fn ($subject) => $class->program !== 'Khmer' || ! $class->subjects->contains(fn ($s) => $s->curriculum_requirement_id) || $subject->curriculum_requirement_id !== null)->map(fn ($subject) => [
                     'id' => $subject->id, 'name' => $subject->name,
                     'minutes' => $class->program === 'Khmer' ? KhmerLessonDuration::minutes($subject) : 60,
                 ])->values()];
