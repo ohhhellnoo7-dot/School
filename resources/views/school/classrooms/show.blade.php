@@ -30,6 +30,7 @@
 </section>
 
 @include('school.classrooms._class-levels')
+@include('school.classrooms._attendance')
 <section class="panel p-4 my-4" aria-label="Room program details">
     <h2 class="h5">Programs and classes</h2>
     @forelse(collect(data_get($snapshot, 'programDetails', [])) as $programName => $details)
@@ -42,7 +43,7 @@
                 <ul class="room-teacher-assignments">
                     @forelse($details['teacher_assignments'] as $assignment)
                         <li>
-                            <strong>@include('school.classrooms._teacher-attendance-badge', ['teacherAttendanceStatus' => $assignment['attendance_status'] ?? null]) {{ $assignment['name'] }}</strong>
+                            @include('school.classrooms._teacher-students')
                             <span>{{ $assignment['subjects']->join(', ') ?: 'No subject assigned' }}</span>
                             @if($assignment['supervisor'])<small>Booking supervisor</small>@endif
                         </li>

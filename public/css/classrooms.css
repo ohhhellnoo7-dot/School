@@ -718,6 +718,8 @@ a.class-summary-card:hover {
 .room-detail-group .room-teacher-assignments { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 8px; }
 .room-teacher-assignments li { display: flex; flex-direction: column; gap: 3px; }
 .room-teacher-assignments small { color: var(--muted); }
+.room-teacher-assignments li:has(details[open]) { grid-column: 1 / -1; }
+.room-teacher-assignments details > summary { white-space: normal; }
 .classroom-card .room-empty-message { min-height: 64px; padding: 12px; }
 .classroom-card .room-session-tags { margin: 10px 0 0; }
 

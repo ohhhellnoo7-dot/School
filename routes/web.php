@@ -100,6 +100,7 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
     Route::get('/school/classrooms/create', [ClassroomController::class, 'create'])->middleware('role:administrator')->name('classrooms.create');
     Route::get('/school/classrooms/setup-options', [\App\Http\Controllers\ClassroomSetupController::class, 'options'])->middleware('role:administrator')->name('classrooms.setup-options');
     Route::get('/school/classrooms/{classroom}', [ClassroomController::class, 'show'])->name('classrooms.show');
+    Route::post('/school/classrooms/{classroom}/attendance', [ClassroomController::class, 'saveAttendance'])->middleware('role:administrator,teacher')->name('classrooms.attendance.store');
     Route::get('/school/classrooms/{classroom}/lesson-status', [ClassroomController::class, 'lessonStatus'])->name('classrooms.lesson-status');
 
     Route::middleware('role:administrator')->group(function () {

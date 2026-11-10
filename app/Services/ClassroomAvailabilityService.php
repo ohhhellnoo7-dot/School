@@ -99,6 +99,7 @@ class ClassroomAvailabilityService
                     $teacherAssignments = $teacherLessons->pluck('teacher')
                         ->merge($teacherBookings->pluck('teacher'))->filter()->unique('id')
                         ->map(fn ($teacher) => [
+                            'id' => $teacher->id,
                             'name' => $teacher->name,
                             'attendance_status' => $teacherAttendance->get($teacher->id),
                             'subjects' => $teacherLessons->where('teacher_id', $teacher->id)

@@ -59,6 +59,8 @@ class ClassroomController extends Controller
             'academic_year'=>['nullable','regex:/^\d{4}-\d{4}$/'],
             'program' => ['nullable', Rule::in(\App\Models\Program::names())],
             'session' => ['nullable', Rule::in(self::SESSIONS)],
+            'attendance_month' => ['nullable', 'date_format:Y-m'],
+            'attendance_date' => ['nullable', 'date_format:Y-m-d'],
         ]);
         $moment = $this->moment($filters);
         if ($request->boolean('live')) $moment = CarbonImmutable::now(config('app.timezone'));
@@ -106,7 +108,19 @@ class ClassroomController extends Controller
             ->enrolledIn($roomClassIds)->with(['user', 'parent',
                 'studyClasses' => fn ($q) => $q->whereIn('school_classes.id', $roomClassIds),
             ])->orderBy('name')->orderBy('id')->get();
+        $attendanceMonth = CarbonImmutable::createFromFormat('!Y-m', $filters['attendance_month'] ?? substr($filters['attendance_date'] ?? $moment->toDateString(), 0, 7));
+        $attendanceDate = $filters['attendance_date'] ?? $attendanceMonth->setDay(min($moment->day, $attendanceMonth->daysInMonth))->toDateString();
+        $attendanceClasses = \App\Models\SchoolClass::whereIn('id', $roomClassIds)->with('teacher')->get();
+        $classAttendance = \App\Models\ClassAttendance::whereIn('school_class_id', $roomClassIds)
+            ->whereIn('student_id', $roomStudents->modelKeys())
+            ->whereBetween('date', [$attendanceMonth->toDateString(), $attendanceMonth->endOfMonth()->toDateString()])
+            ->get()->keyBy(fn ($record) => $record->school_class_id.':'.$record->student_id.':'.$record->date->format('Y-m-d'));
+
         return view('school.classrooms.show', [
+            'attendanceMonth' => $attendanceMonth,
+            'attendanceDate' => $attendanceDate,
+            'attendanceClasses' => $attendanceClasses,
+            'classAttendance' => $classAttendance,
             'classroom' => $classroom,
             'snapshot' => $snapshot,
             'roomStudents' => $roomStudents,
@@ -121,6 +135,51 @@ class ClassroomController extends Controller
             'lessons' => $lessons,
             'assignedClassGroups' => $this->assignedClassGroups($classroom)->where('program', $selectedProgram),
         ]);
+    }
+
+    public function saveAttendance(Request $request, Classroom $classroom, ClassroomAvailabilityService $availabilityService): RedirectResponse
+    {
+        abort_unless(in_array($request->user()->role, ['administrator', 'teacher'], true), 403);
+        abort_unless($this->visibleClassrooms($request->user())->whereKey($classroom)->exists(), 403);
+        $data = $request->validate([
+            'school_class_id' => ['required', 'integer', 'exists:school_classes,id'],
+            'attendance_date' => ['required', 'date_format:Y-m-d'],
+            'academic_year' => ['nullable', 'regex:/^\d{4}-\d{4}$/'],
+            'statuses' => ['required', 'array', 'max:500'],
+            'statuses.*' => ['nullable', Rule::in(['present', 'absent', 'late', 'excused'])],
+        ]);
+        $class = \App\Models\SchoolClass::findOrFail($data['school_class_id']);
+        $teacherId = $request->user()->id;
+        abort_unless($request->user()->role === 'administrator' || $class->teacher_id === $teacherId
+            || \App\Models\Subject::where('school_class_id', $class->timetableOwnerId())->where('teacher_id', $teacherId)->exists()
+            || \App\Models\Schedule::where('school_class_id', $class->timetableOwnerId())->where('teacher_id', $teacherId)->exists(), 403);
+        $snapshot = $availabilityService->forMoment($data['attendance_date'], [
+            'academic_year' => $data['academic_year'] ?? substr($data['attendance_date'], 0, 4).'-'.((int) substr($data['attendance_date'], 0, 4) + 1),
+            'detail_program' => $class->program, 'detail_session' => $class->session,
+        ])->first(fn ($entry) => $entry['classroom']->id === $classroom->id);
+        abort_unless(collect(data_get($snapshot, 'programDetails.'.$class->program.'.class_ids', []))->contains($class->id), 403);
+        $studentIds = \App\Models\Student::visibleTo($request->user())->where('status', 'active')->enrolledIn([$class->id])->pluck('id');
+        foreach (array_keys($data['statuses']) as $id) {
+            if (! ctype_digit((string) $id) || ! $studentIds->contains((int) $id)) {
+                throw ValidationException::withMessages(['statuses' => 'Only enrolled students visible to your account can be marked.']);
+            }
+        }
+        \Illuminate\Support\Facades\DB::transaction(function () use ($data, $class, $teacherId) {
+            foreach ($data['statuses'] as $studentId => $status) {
+                $key = ['school_class_id' => $class->id, 'student_id' => $studentId, 'date' => $data['attendance_date']];
+                if ($status === null || $status === '') {
+                    \App\Models\ClassAttendance::where($key)->delete();
+                } else {
+                    \App\Models\ClassAttendance::updateOrCreate($key, ['status' => $status, 'recorded_by' => $teacherId]);
+                }
+            }
+        });
+
+        return redirect()->route('classrooms.show', [
+            'classroom' => $classroom, 'program' => $class->program, 'session' => $class->session,
+            'academic_year' => $data['academic_year'] ?? null,
+            'attendance_month' => substr($data['attendance_date'], 0, 7), 'attendance_date' => $data['attendance_date'],
+        ])->with('success', 'Class attendance saved.');
     }
 
     public function matchingClass(Request $request, Classroom $classroom, ClassroomAvailabilityService $availabilityService): View
