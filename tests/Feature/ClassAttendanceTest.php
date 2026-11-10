@@ -78,4 +78,27 @@ class ClassAttendanceTest extends TestCase
         $this->actingAs($teacher)->post(route('classrooms.attendance.store', $room), $payload)->assertSessionHasNoErrors()->assertRedirect();
         $this->assertDatabaseCount('class_attendances', 1);
     }
+
+    public function test_dashboard_attendance_automatically_populates_sheets_and_class_marks_take_priority(): void
+    {
+        [$admin, $teacher, $room, $classes, $student] = $this->fixture();
+        $daily = \App\Models\Attendance::create(['student_id' => $student->id, 'date' => '2026-11-30', 'status' => 'present']);
+        \App\Models\Attendance::create(['student_id' => $student->id, 'date' => '2026-10-31', 'status' => 'excused']);
+        $url = route('classrooms.show', ['classroom' => $room, 'date' => '2026-11-30', 'program' => 'Khmer', 'session' => 'Morning']);
+        $this->actingAs($admin)->get($url)->assertOk()->assertSee('attendance-cell-present')
+            ->assertViewHas('classAttendance', fn ($rows) => $rows->count() === 1 && $rows->first()->status === 'present' && $rows->first()->source === 'daily');
+        // Bulk dashboard writes bypass model events; the sheet must still reflect them.
+        DB::table('attendances')->where('id', $daily->id)->update(['status' => 'late']);
+        $this->get($url)->assertOk()->assertSee('attendance-cell-late')
+            ->assertViewHas('classAttendance', fn ($rows) => $rows->first()->status === 'late');
+        $payload = ['school_class_id' => $classes['Morning']->id, 'attendance_date' => '2026-11-30', 'statuses' => [$student->id => 'absent']];
+        $this->post(route('classrooms.attendance.store', $room), $payload)->assertSessionHasNoErrors();
+        $this->get($url)->assertOk()->assertSee('attendance-cell-absent')
+            ->assertViewHas('classAttendance', fn ($rows) => $rows->count() === 1 && $rows->first()->status === 'absent');
+        $this->get(route('classrooms.show', ['classroom' => $room, 'date' => '2026-11-30', 'program' => 'Khmer', 'session' => 'Afternoon']))
+            ->assertOk()->assertViewHas('classAttendance', fn ($rows) => $rows->first()->status === 'late');
+        $this->post(route('classrooms.attendance.store', $room), array_replace($payload, ['statuses' => [$student->id => '']]))->assertSessionHasNoErrors();
+        $this->get($url)->assertOk()->assertViewHas('classAttendance', fn ($rows) => $rows->first()->status === 'late' && $rows->first()->source === 'daily');
+        $this->assertDatabaseCount('class_attendances', 0);
+    }
 }

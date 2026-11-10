@@ -111,10 +111,8 @@ class ClassroomController extends Controller
         $attendanceMonth = CarbonImmutable::createFromFormat('!Y-m', $filters['attendance_month'] ?? substr($filters['attendance_date'] ?? $moment->toDateString(), 0, 7));
         $attendanceDate = $filters['attendance_date'] ?? $attendanceMonth->setDay(min($moment->day, $attendanceMonth->daysInMonth))->toDateString();
         $attendanceClasses = \App\Models\SchoolClass::whereIn('id', $roomClassIds)->with('teacher')->get();
-        $classAttendance = \App\Models\ClassAttendance::whereIn('school_class_id', $roomClassIds)
-            ->whereIn('student_id', $roomStudents->modelKeys())
-            ->whereBetween('date', [$attendanceMonth->toDateString(), $attendanceMonth->endOfMonth()->toDateString()])
-            ->get()->keyBy(fn ($record) => $record->school_class_id.':'.$record->student_id.':'.$record->date->format('Y-m-d'));
+        $classAttendance = app(\App\Services\ClassAttendanceReportService::class)
+            ->forMonth($attendanceClasses, $roomStudents, $attendanceMonth);
 
         return view('school.classrooms.show', [
             'attendanceMonth' => $attendanceMonth,

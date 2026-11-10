@@ -9,7 +9,8 @@
         <label>Month<input class="form-control" type="month" name="attendance_month" value="{{ $attendanceMonth->format('Y-m') }}" required></label>
         <button class="btn btn-outline-primary">Show attendance</button>
     </form>
-    <p class="small text-secondary">✓ = Present (green) · ✗ = Absent (red) · L = Late (yellow) · E = Excused · — = Not recorded. Red dates are Saturdays and Sundays. Attendance is saved separately for each class and session.</p>
+    <p class="small text-secondary">✓ = Present (green) · ✗ = Absent (red) · L = Late (yellow) · E = Excused · — = Not recorded. Red dates are Saturdays and Sundays.</p>
+    <p class="small text-secondary">Saved daily attendance from the dashboard appears automatically in each student's enrolled classes. Marks saved for a specific class and session take priority.</p>
     @forelse($attendanceClasses as $attendanceClass)
         @php
             $classStudents = $roomStudents->filter(fn ($student) => $student->studyClasses->contains('id', $attendanceClass->id));
@@ -59,11 +60,13 @@
                 <input type="hidden" name="academic_year" value="{{ request('academic_year', $moment->year.'-'.($moment->year+1)) }}">
                 <input type="hidden" name="attendance_date" value="{{ $attendanceDate }}">
                 <p>Recording attendance for <strong>{{ $attendanceDate }}</strong></p>
+                <p class="small text-secondary">Choose “Use daily attendance” to remove a class mark and use the saved dashboard status.</p>
                 @foreach($classStudents as $student)
                     <label class="d-flex align-items-center justify-content-between gap-3 mb-2">{{ $student->name }}
                         <select class="form-select w-auto" name="statuses[{{ $student->id }}]">
-                            @foreach(['' => 'Not recorded', 'present' => 'Present', 'absent' => 'Absent', 'late' => 'Late', 'excused' => 'Excused'] as $value => $label)
-                                <option value="{{ $value }}" @selected(old('statuses.'.$student->id, $classAttendance->get($attendanceClass->id.':'.$student->id.':'.$attendanceDate)?->status ?? '') === $value)>{{ $label }}</option>
+                            @php($currentMark = $classAttendance->get($attendanceClass->id.':'.$student->id.':'.$attendanceDate))
+                            @foreach(['' => 'Use daily attendance'.($currentMark?->source === 'daily' ? ' ('.ucfirst($currentMark->status).')' : ''), 'present' => 'Present', 'absent' => 'Absent', 'late' => 'Late', 'excused' => 'Excused'] as $value => $label)
+                                <option value="{{ $value }}" @selected(old('statuses.'.$student->id, $currentMark?->source === 'daily' ? '' : ($currentMark?->status ?? '')) === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
                     </label>
