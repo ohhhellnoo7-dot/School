@@ -9,7 +9,7 @@
         <label>Month<input class="form-control" type="month" name="attendance_month" value="{{ $attendanceMonth->format('Y-m') }}" required></label>
         <button class="btn btn-outline-primary">Show attendance</button>
     </form>
-    <p class="small text-secondary">P = Present · A = Absent · L = Late · E = Excused · — = Not recorded. Attendance is saved separately for each class and session.</p>
+    <p class="small text-secondary">✓ = Present (green) · ✗ = Absent (red) · L = Late (yellow) · E = Excused · — = Not recorded. Red dates are Saturdays and Sundays. Attendance is saved separately for each class and session.</p>
     @forelse($attendanceClasses as $attendanceClass)
         @php
             $classStudents = $roomStudents->filter(fn ($student) => $student->studyClasses->contains('id', $attendanceClass->id));
@@ -24,7 +24,10 @@
         <div class="table-responsive mb-3" tabindex="0" aria-label="{{ $attendanceClass->label }} attendance sheet">
             <table class="table table-bordered table-sm align-middle text-center">
                 <thead><tr><th scope="col">No.</th><th scope="col" class="text-start text-nowrap">Student's name</th><th scope="col">Sex</th>
-                    @foreach(range(1, $attendanceMonth->daysInMonth) as $day)<th scope="col">{{ $day }}</th>@endforeach
+                    @foreach(range(1, $attendanceMonth->daysInMonth) as $day)
+                        @php($calendarDate = $attendanceMonth->setDay($day))
+                        <th scope="col" @class(['text-danger' => $calendarDate->isWeekend()]) title="{{ $calendarDate->format('l, F j, Y') }}">{{ $day }}</th>
+                    @endforeach
                     <th scope="col">Present</th><th scope="col">Absent</th>
                 </tr></thead>
                 <tbody>
@@ -32,7 +35,7 @@
                     @php($records = collect(range(1, $attendanceMonth->daysInMonth))->map(fn ($day) => $classAttendance->get($attendanceClass->id.':'.$student->id.':'.$attendanceMonth->setDay($day)->toDateString())))
                     <tr><td>{{ $loop->iteration }}</td><th scope="row" class="text-start text-nowrap">{{ $student->name }}</th><td>{{ ucfirst($student->gender) }}</td>
                         @foreach($records as $record)
-                            <td class="{{ $record?->status === 'absent' ? 'text-danger' : ($record?->status === 'present' ? 'text-success' : '') }}" title="{{ ucfirst($record?->status ?? 'Not recorded') }}">{{ ['present' => 'P', 'absent' => 'A', 'late' => 'L', 'excused' => 'E'][$record?->status] ?? '—' }}</td>
+                            <td @class(['attendance-cell', 'attendance-cell-present' => $record?->status === 'present', 'attendance-cell-late' => $record?->status === 'late', 'attendance-cell-absent' => $record?->status === 'absent']) aria-label="{{ ucfirst($record?->status ?? 'Not recorded') }}" title="{{ ucfirst($record?->status ?? 'Not recorded') }}"><span @class(['fs-5 fw-bold' => in_array($record?->status, ['present', 'absent', 'late'], true)])>{{ ['present' => '✓', 'absent' => '✗', 'late' => 'L', 'excused' => 'E'][$record?->status] ?? '—' }}</span></td>
                         @endforeach
                         <td>{{ $records->where('status', 'present')->count() }}</td><td>{{ $records->where('status', 'absent')->count() }}</td>
                     </tr>

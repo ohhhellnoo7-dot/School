@@ -845,3 +845,25 @@ a.class-summary-card:hover {
 .room-study-arrangement{display:grid;gap:6px;padding:13px;margin:0 0 14px;border:1px solid var(--border);border-left:4px solid var(--info,#247ca2);border-radius:12px;background:var(--info-soft,var(--soft));color:var(--ink);font-size:12px;line-height:1.5}
 .room-study-arrangement strong{font-size:13px}.room-study-arrangement small{color:var(--muted)}
 .room-study-arrangement.is-combined{border-left-color:var(--success,#329c7c);background:var(--success-soft,var(--soft))}
+
+#class-attendance .table td.attendance-cell-present {
+    --bs-table-bg: #bbf7d0;
+    --bs-table-color: #14532d;
+    background-color: #bbf7d0 !important;
+    color: #14532d !important;
+    box-shadow: none;
+}
+#class-attendance .table td.attendance-cell-late {
+    --bs-table-bg: #fef08a;
+    --bs-table-color: #713f12;
+    background-color: #fef08a !important;
+    color: #713f12 !important;
+    box-shadow: none;
+}
+#class-attendance .table td.attendance-cell-absent {
+    --bs-table-bg: #fecaca;
+    --bs-table-color: #7f1d1d;
+    background-color: #fecaca !important;
+    color: #7f1d1d !important;
+    box-shadow: none;
+}
