@@ -6,13 +6,14 @@
     $status = data_get($snapshot, 'status', $classroom->status === 'out_of_service' ? 'out_of_service' : 'available');
     $current = data_get($snapshot, 'current');
     $next = data_get($snapshot, 'next');
+    $buildingName = $classroom->buildingRecord?->name ?? (filled($classroom->building) ? 'Building '.$classroom->building : 'Building not assigned');
 @endphp
 <div class="page-heading">
-    <div><div class="eyebrow">Physical classroom</div><h1>Room {{ $classroom->room_number }}</h1><p>{{ $classroom->name }} · Live status for {{ $moment->format('D, M j, Y · H:i') }}</p></div>
+    <div><div class="eyebrow">Physical classroom</div><h1>Room {{ $classroom->room_number }} <span class="fs-5 fw-normal text-secondary">&middot; {{ $buildingName }}</span></h1><p>{{ $classroom->name }} · Live status for {{ $moment->format('D, M j, Y · H:i') }}</p></div>
     <div class="d-flex flex-wrap gap-2"><a class="btn btn-outline-secondary" href="{{ route('classrooms.index') }}">Back to availability</a>@if(auth()->user()->role === 'administrator')<a class="btn btn-outline-secondary" href="{{ route('classrooms.edit', $classroom) }}"><i class="bi bi-pencil me-1" aria-hidden="true"></i> Edit room</a><a class="btn btn-primary" href="{{ route('classroom-bookings.create', ['classroom_id' => $classroom->id]) }}"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i> Add booking</a>@endif</div>
 </div>
 
-<x-scholar-hero tag="section" class="room-detail-hero"><div class="room-detail-icon"><i class="bi bi-door-open" aria-hidden="true"></i></div><div><h2>{{ $classroom->name }}</h2><p>Lesson activity and room occupancy are shown separately below.</p></div><dl><div><dt>Room number</dt><dd>{{ $classroom->room_number }}</dd></div><div><dt>Capacity</dt><dd>{{ $classroom->capacity }} students</dd></div><div><dt>Maintenance</dt><dd>{{ str_replace('_', ' ', ucfirst($classroom->status)) }}</dd></div></dl></x-scholar-hero>
+<x-scholar-hero tag="section" class="room-detail-hero"><div class="room-detail-icon"><i class="bi bi-door-open" aria-hidden="true"></i></div><div><h2>{{ $classroom->name }}</h2><p>Lesson activity and room occupancy are shown separately below.</p></div><dl><div><dt>Building</dt><dd>{{ $buildingName }}</dd></div><div><dt>Room number</dt><dd>{{ $classroom->room_number }}</dd></div><div><dt>Capacity</dt><dd>{{ $classroom->capacity }} students</dd></div><div><dt>Maintenance</dt><dd>{{ str_replace('_', ' ', ucfirst($classroom->status)) }}</dd></div></dl></x-scholar-hero>
 
 <section class="panel p-4 my-4" aria-label="Program and session">
     <h2 class="h5">Choose program and session</h2>
