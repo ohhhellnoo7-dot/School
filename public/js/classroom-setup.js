@@ -465,8 +465,13 @@
         classForm.elements.program.value = program.value;
         classDialog.querySelector('[data-inline-class-program]').textContent = program.value;
         const khmer = program.value === 'Khmer';
-        classForm.elements.section.disabled = !khmer;
-        classForm.elements.section.required = khmer;
+        classForm.querySelector('[data-section-picker]').disabled = !khmer;
+        classForm.querySelector('[data-section-requirement]').textContent = khmer ? 'Required' : 'Not used for this program';
+        classForm.querySelectorAll('[name="section"]').forEach(input => {
+            input.required = khmer;
+            input.disabled = khmer && input.value === '';
+            input.checked = !khmer && input.value === '';
+        });
         [...classForm.elements.grade.options].forEach(item => { item.disabled = khmer && Number(item.value) < 7; });
         classForm.elements.teacher_id.replaceChildren(option('', 'Unassigned'), ...classTeacherOptions.filter(item => item.program === program.value).map(item => {
             const assignments = config.classes.filter(cls => String(cls.teacher_id) === String(item.id));

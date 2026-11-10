@@ -246,9 +246,9 @@ class ClassGroupController extends Controller
             : null;
 
         if ($attributes['program'] === 'Khmer') {
-            if ($attributes['grade'] < 7 || ! in_array($attributes['section'], ['A', 'B', 'C', 'D', 'E'], true)) {
+            if ($attributes['grade'] < 7 || ! in_array($attributes['section'], range('A', 'Z'), true)) {
                 throw ValidationException::withMessages([
-                    'section' => 'Khmer class groups must use Grades 7–12 and a section from A to E.',
+                    'section' => 'Khmer class groups must use Grades 7–12 and a section from A to Z.',
                 ]);
             }
         } elseif ($attributes['section'] !== null) {

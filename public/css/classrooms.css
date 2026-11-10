@@ -867,3 +867,17 @@ a.class-summary-card:hover {
     color: #7f1d1d !important;
     box-shadow: none;
 }
+
+.section-picker { min-width: 0; border: 0; padding: 0; }
+.section-picker legend { float: none; width: 100%; display: flex; justify-content: space-between; align-items: center; }
+.section-picker-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.section-choice { position: relative; cursor: pointer; }
+.section-choice input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.section-choice span { display: flex; align-items: center; justify-content: center; min-height: 42px; border: 1px solid var(--border, #edcfe2); border-radius: 10px; color: var(--ink, #68416f); background: var(--panel, #fff); font-weight: 600; transition: background .15s, border-color .15s; }
+.section-choice-none { grid-column: 1 / -1; }
+.section-choice-none span { justify-content: flex-start; padding-inline: 14px; font-weight: 400; }
+.section-choice:hover span { border-color: #bd3b88; }
+.section-choice input:checked + span { background: #bd3b88; border-color: #bd3b88; color: #fff; }
+.section-choice input:focus-visible + span { outline: 3px solid #bd3b88; outline-offset: 3px; }
+.section-choice input:disabled + span, .section-picker:disabled .section-choice span { opacity: .5; cursor: not-allowed; }
+@media (max-width: 400px) { .section-picker-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }

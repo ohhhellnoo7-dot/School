@@ -79,7 +79,15 @@
         <input type="hidden" name="program"><input type="hidden" name="status" value="active">
         <label class="form-label" for="inline-class-name">Class name</label><input class="form-control mb-3" id="inline-class-name" name="name" maxlength="100" required>
         <label class="form-label" for="inline-class-grade">Grade / Level</label><select class="form-select mb-3" id="inline-class-grade" name="grade" required><option value="">Choose a grade / level</option>@foreach(range(1,12) as $grade)<option value="{{ $grade }}">{{ $grade }}</option>@endforeach</select>
-        <label class="form-label" for="inline-class-section">Section</label><select class="form-select mb-3" id="inline-class-section" name="section"><option value="">No section</option>@foreach(range('A','Z') as $section)<option>{{ $section }}</option>@endforeach</select>
+        <fieldset class="section-picker mb-3" data-section-picker>
+            <legend class="form-label">Section <small class="text-muted" data-section-requirement>Optional</small></legend>
+            <div class="section-picker-grid">
+                <label class="section-choice section-choice-none"><input type="radio" name="section" value="" checked><span>No section</span></label>
+                @foreach(range('A','Z') as $section)
+                    <label class="section-choice"><input type="radio" name="section" value="{{ $section }}"><span>{{ $section }}</span></label>
+                @endforeach
+            </div>
+        </fieldset>
         <label class="form-label" for="inline-class-teacher">Class teacher</label><select class="form-select mb-3" id="inline-class-teacher" name="teacher_id"><option value="">Unassigned</option>@foreach($classTeachers as $teacher)<option value="{{ $teacher->id }}" data-program="{{ $teacher->program }}">{{ $teacher->name }}</option>@endforeach</select>
         <label class="form-label" for="inline-class-capacity">Student capacity</label><input class="form-control mb-3" id="inline-class-capacity" type="number" name="capacity" value="30" min="1" max="500" required>
         <label class="form-label" for="inline-class-curriculum">Subjects to study</label><textarea class="form-control mb-3" id="inline-class-curriculum" name="curriculum" rows="5" maxlength="5000"></textarea>

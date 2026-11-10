@@ -71,6 +71,18 @@ class ClassroomSetupTest extends TestCase
         app(TeacherManagementService::class)->validateEnglishSession($f['teacher'], $lesson, $other);
     }
 
+    public function test_inline_section_picker_supports_section_z(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'administrator']));
+        $this->postJson(route('class-groups.store'), [
+            'name' => 'Grade 7 Z', 'program' => 'Khmer', 'grade' => 7, 'section' => 'Z',
+            'capacity' => 30, 'status' => 'active', 'curriculum' => 'History',
+        ])->assertCreated();
+        $this->assertDatabaseHas('class_groups', ['program' => 'Khmer', 'grade' => 7, 'section' => 'Z']);
+        $this->get(route('classrooms.create'))->assertOk()->assertSee('data-section-picker', false)
+            ->assertSee('type="radio" name="section" value="Z"', false);
+    }
+
     private function fixture(string $program = 'Khmer', string $session = 'Morning'): array
     {
         $admin = User::factory()->create(['role' => 'administrator']);
