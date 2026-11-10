@@ -49,7 +49,7 @@
         </div>
         @if($canMark && $classStudents->isNotEmpty())
         <details class="mb-4" @if(request()->filled('attendance_date')) open @endif>
-            <summary class="btn btn-outline-primary">Record daily attendance · {{ $attendanceClass->name }} {{ $attendanceClass->section }}@if($selectedProgram === 'Chinese') &middot; {{ $eveningPeriods[$selectedEveningPeriod]['label'] }} ({{ $eveningPeriods[$selectedEveningPeriod]['starts_at'] }}&ndash;{{ $eveningPeriods[$selectedEveningPeriod]['ends_at'] }})@endif</summary>
+            <summary class="btn btn-outline-primary">Record daily attendance · {{ $attendanceClass->name }} {{ $attendanceClass->section }}@if(isset($eveningPeriods[$selectedEveningPeriod])) &middot; {{ $eveningPeriods[$selectedEveningPeriod]['label'] }} ({{ $eveningPeriods[$selectedEveningPeriod]['starts_at'] }}&ndash;{{ $eveningPeriods[$selectedEveningPeriod]['ends_at'] }})@endif</summary>
             <form method="get" class="d-flex flex-wrap align-items-end gap-2 mt-3 mb-3">
                 @foreach(['evening_period' => $selectedEveningPeriod, 'program' => $selectedProgram, 'session' => $selectedSession, 'academic_year' => request('academic_year', $moment->year.'-'.($moment->year+1))] as $key => $value)
                     <input type="hidden" name="{{ $key }}" value="{{ $value }}">

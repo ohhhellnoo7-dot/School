@@ -179,7 +179,9 @@ class TeacherManagementService
             ->where('entry_type', 'academic')->where('day', $lesson->day)
             ->whereHas('schoolClass', fn ($q) => $q->where('session', $class->session))
             ->when($lesson->id, fn ($q) => $q->where('id', '!=', $lesson->id))->get();
+        $eveningPeriod = $class->session === 'Evening' ? \App\Models\EveningStudyPeriod::where('program', $class->program)->where('starts_at', '<=', $lesson->starts_at)->where('ends_at', '>=', $lesson->ends_at)->first() : null;
         foreach ($others as $other) {
+            if ($eveningPeriod && ! self::overlaps($other->starts_at, $other->ends_at, $eveningPeriod->starts_at, $eveningPeriod->ends_at)) continue;
             if (! \App\Support\AcademicYear::overlaps($other->academic_year, $lesson->academic_year)) continue;
             $sameRoom = $lesson->classroom_id && $other->classroom_id
                 ? (int) $lesson->classroom_id === (int) $other->classroom_id

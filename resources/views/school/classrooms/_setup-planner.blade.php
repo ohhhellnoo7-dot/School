@@ -1,5 +1,5 @@
 <section class="classroom-setup room-editor-card" data-classroom-setup data-classroom-id="{{ $classroom->id }}" data-endpoint="{{ route('classrooms.setup-options') }}">
-    @php($plannerConfig = ['classes' => $plannerClasses, 'sessions' => $programSessions, 'japaneseTeachers' => $japaneseTeachers, 'old' => old()])
+    @php($plannerConfig = ['classes' => $plannerClasses, 'sessions' => $programSessions, 'eveningPeriods' => $eveningStudyPeriods, 'japaneseTeachers' => $japaneseTeachers, 'old' => old()])
     <script type="application/json" data-planner-config>@json($plannerConfig)</script>
     <div class="room-section-heading"><span class="room-step">02</span><div><h2>Program & lesson setup</h2><p>Choose a program and class, then plan lessons using the day buttons below.</p></div></div>
     <div class="room-fields">
@@ -9,6 +9,12 @@
             <div class="room-planner-context form-section-grid">
                 <div><label class="form-label" for="setup-program">Program</label><select class="form-select" name="program" id="setup-program" required>@foreach(array_keys($programSessions) as $program)<option value="{{ $program }}" @selected(old('program', 'Khmer') === $program)>{{ $program }}</option>@endforeach</select><button type="button" class="btn btn-link p-0 small" data-open-create-program>+ Create new program</button> <button type="button" class="btn btn-link p-0 small ms-3" data-open-edit-program>Edit program</button></div>
                 <div><label class="form-label" for="setup-session">Session</label><select class="form-select" name="session" id="setup-session" required></select></div>
+                <div data-evening-period-field hidden>
+                    <label class="form-label" for="setup-evening-period">Evening study time</label>
+                    <select class="form-select" name="evening_period" id="setup-evening-period" disabled></select>
+                    <button type="button" class="btn btn-link p-0 small" data-add-evening-period>+ Add evening study time</button>
+                    <small class="d-block text-muted">Choose a time for this class. Add more times whenever needed.</small>
+                </div>
                 <div><label class="form-label" for="setup-class">Student class</label><select class="form-select" name="school_class_id" id="setup-class" required></select><small class="text-muted">Create the class and curriculum first. Students can enroll later.</small><br><button type="button" class="btn btn-link p-0 small" data-open-create-class>+ Create student class</button></div>
                 <div><label class="form-label" for="setup-class-days">Class days</label><select class="form-select" id="setup-class-days" name="class_days"><option value="weekday" @selected(old('class_days', 'weekday') === 'weekday')>Weekday (Monday to Friday)</option><option value="weekend" @selected(old('class_days') === 'weekend')>Weekend (Saturday to Sunday)</option></select></div>
 

@@ -64,8 +64,11 @@ class LessonManagementService
         if (! $lesson->isRelaxation() && $lesson->subject_id && $class->program === 'Khmer' && $minutes !== \App\Support\KhmerLessonDuration::minutes(Subject::findOrFail($lesson->subject_id))) $this->rules->fail('This Khmer subject requires a '.(\App\Support\KhmerLessonDuration::minutes(Subject::findOrFail($lesson->subject_id)) / 60).'-hour consecutive lesson block.');
         if (! in_array($lesson->day, $this->rules::ALL_DAYS, true) || ! in_array($minutes, $lesson->isRelaxation() ? [60] : [60, 120], true)) $this->rules->fail('Choose a valid weekday and a one-hour or two-hour lesson.');
         [$start, $end] = $class->sessionHours();
+        $studyPeriod = $class->session === 'Evening' ? \App\Models\EveningStudyPeriod::where('program', $class->program)->where('starts_at', '<=', $lesson->starts_at)->where('ends_at', '>=', $lesson->ends_at)->first() : null;
+        if ($studyPeriod) [$start, $end] = [$studyPeriod->starts_at, $studyPeriod->ends_at];
         if ($this->rules::minute($lesson->starts_at) < $this->rules::minute($start) || $this->rules::minute($lesson->ends_at) > $this->rules::minute($end) || ($this->rules::minute($lesson->starts_at) - $this->rules::minute($start)) % 60 !== 0) $this->rules->fail('Lesson is outside its configured program/session hours.');
-        if (! ClassSession::where('class_group_id', $class->class_group_id)->where('session', $class->session)->where('starts_at', '<=', $lesson->starts_at)->where('ends_at', '>=', $lesson->ends_at)->exists()) $this->rules->fail('Confirm the class session first.');
+        if (! ClassSession::where('class_group_id', $class->class_group_id)->where('session', $class->session)->exists()) $this->rules->fail('Confirm the class session first.');
+        if (! $studyPeriod && ! ClassSession::where('class_group_id', $class->class_group_id)->where('session', $class->session)->where('starts_at', '<=', $lesson->starts_at)->where('ends_at', '>=', $lesson->ends_at)->exists()) $this->rules->fail('Confirm the class session first.');
         $cohortIds = SchoolClass::whereKey($class->id)->orWhere('shared_timetable_class_id', $class->id)->pluck('id');
         $studentCount = \App\Models\Student::enrolledIn($cohortIds)->where('status', 'active')->count();
         if ($room->status !== 'active' || $room->capacity < $studentCount) $this->rules->fail('The physical classroom is inactive or too small.');

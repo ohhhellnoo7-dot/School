@@ -36,6 +36,23 @@
     </div>
     <div class="room-editor-actions"><span><i class="bi bi-check2-circle" aria-hidden="true"></i> You can update these details anytime.</span><div><a class="btn btn-light" href="{{ route('classrooms.index') }}">Cancel</a><button class="btn btn-primary" type="submit">{{ $classroom->exists ? 'Save changes' : 'Create classroom' }} <i class="bi bi-arrow-right ms-2" aria-hidden="true"></i></button></div></div>
 </form>
+<dialog data-evening-period-dialog style="border:1px solid var(--border-color);border-radius:20px;padding:28px;width:min(520px,90vw)">
+    <form data-evening-period-form action="{{ route('evening-study-periods.store') }}" method="post">
+        @csrf
+        <h2>Add evening study time</h2>
+        <p>Save a reusable time for <strong data-evening-program-name></strong>. Existing classes and lessons keep their current times.</p>
+        <label class="form-label" for="evening-period-label">Name</label>
+        <input class="form-control mb-3" id="evening-period-label" name="label" maxlength="80" placeholder="e.g. Evening 3" required>
+        <label class="form-label" for="evening-period-start">Start time</label>
+        <input class="form-control mb-3" id="evening-period-start" name="starts_at" type="time" required>
+        <label class="form-label" for="evening-period-end">End time</label>
+        <input class="form-control mb-3" id="evening-period-end" name="ends_at" type="time" required>
+        <p class="small text-muted">Use one or more complete hours. Times must not overlap another period for this program.</p>
+        <p data-evening-period-error class="text-danger" role="alert"></p>
+        <button type="button" class="btn btn-light" data-close-evening-period>Cancel</button>
+        <button type="submit" class="btn btn-primary">Save study time</button>
+    </form>
+</dialog>
 <dialog data-create-program-dialog style="border:1px solid var(--border-color);border-radius:20px;padding:28px;width:min(520px,90vw)">
     <form data-create-program-form data-update-url="{{ url('/school/programs') }}" action="{{ route('programs.store') }}" method="post">
         @csrf

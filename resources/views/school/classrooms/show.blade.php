@@ -27,17 +27,17 @@
             <a class="btn {{ $option === $selectedSession ? 'btn-primary' : 'btn-outline-primary' }}" aria-current="{{ $option === $selectedSession ? 'true' : 'false' }}" href="{{ route('classrooms.show', ['classroom' => $classroom] + array_merge(request()->only('date', 'time', 'live', 'academic_year'), ['program' => $selectedProgram, 'session' => $option])) }}">{{ $option }}</a>
         @endforeach
     </div>
-    @if($selectedProgram === 'Chinese')
-        <div class="mt-3" role="group" aria-label="Chinese evening study period">
+    @if(isset($eveningPeriods[$selectedEveningPeriod]))
+        <div class="mt-3" role="group" aria-label="Evening study period">
             <p class="small mb-2">Choose evening study period</p>
             <div class="d-flex flex-wrap gap-2">
                 @foreach($eveningPeriods as $number => $period)
-                    <a class="btn {{ $selectedEveningPeriod === $number ? 'btn-primary' : 'btn-outline-primary' }}" aria-current="{{ $selectedEveningPeriod === $number ? 'true' : 'false' }}" href="{{ route('classrooms.show', ['classroom' => $classroom] + array_merge(request()->only('date', 'time', 'live', 'academic_year', 'attendance_month', 'attendance_date'), ['program' => 'Chinese', 'session' => 'Evening', 'evening_period' => $number])) }}">{{ $period['label'] }} <span class="small">({{ $period['starts_at'] }}&ndash;{{ $period['ends_at'] }})</span></a>
+                    <a class="btn {{ $selectedEveningPeriod === $number ? 'btn-primary' : 'btn-outline-primary' }}" aria-current="{{ $selectedEveningPeriod === $number ? 'true' : 'false' }}" href="{{ route('classrooms.show', ['classroom' => $classroom] + array_merge(request()->only('date', 'time', 'live', 'academic_year', 'attendance_month', 'attendance_date'), ['program' => $selectedProgram, 'session' => 'Evening', 'evening_period' => $number])) }}">{{ $period['label'] }} <span class="small">({{ $period['starts_at'] }}&ndash;{{ $period['ends_at'] }})</span></a>
                 @endforeach
             </div>
         </div>
     @endif
-    <p class="small text-secondary mt-3 mb-0">Showing {{ $selectedProgram }} &middot; {{ $selectedSession }} schedules, students and teachers.@if($selectedProgram === 'Chinese') Showing {{ $eveningPeriods[$selectedEveningPeriod]['label'] }} ({{ $eveningPeriods[$selectedEveningPeriod]['starts_at'] }}?{{ $eveningPeriods[$selectedEveningPeriod]['ends_at'] }}).@endif</p>
+    <p class="small text-secondary mt-3 mb-0">Showing {{ $selectedProgram }} &middot; {{ $selectedSession }} schedules, students and teachers.@if(isset($eveningPeriods[$selectedEveningPeriod])) Showing {{ $eveningPeriods[$selectedEveningPeriod]['label'] }} ({{ $eveningPeriods[$selectedEveningPeriod]['starts_at'] }}&ndash;{{ $eveningPeriods[$selectedEveningPeriod]['ends_at'] }}).@endif</p>
 </section>
 
 @include('school.classrooms._class-levels')

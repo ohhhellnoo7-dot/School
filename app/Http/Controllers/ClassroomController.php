@@ -59,7 +59,7 @@ class ClassroomController extends Controller
             'academic_year'=>['nullable','regex:/^\d{4}-\d{4}$/'],
             'program' => ['nullable', Rule::in(\App\Models\Program::names())],
             'session' => ['nullable', Rule::in(self::SESSIONS)],
-            'evening_period' => ['nullable', Rule::in([1, 2])],
+            'evening_period' => ['nullable', 'integer', 'exists:evening_study_periods,id'],
             'attendance_month' => ['nullable', 'date_format:Y-m'],
             'attendance_date' => ['nullable', 'date_format:Y-m-d'],
         ]);
@@ -79,8 +79,9 @@ class ClassroomController extends Controller
         };
         $selectedSession = in_array($filters['session'] ?? null, $sessionOptions, true)
             ? $filters['session'] : $sessionOptions[0];
-        $eveningPeriods = config('classrooms.chinese_evening_periods');
-        $selectedEveningPeriod = $selectedProgram === 'Chinese' ? (int) ($filters['evening_period'] ?? 1) : null;
+        $eveningPeriods = $selectedSession === 'Evening' ? \App\Models\EveningStudyPeriod::options($selectedProgram) : [];
+        if (isset($filters['evening_period']) && ! isset($eveningPeriods[$filters['evening_period']])) throw ValidationException::withMessages(['evening_period' => 'Choose an evening period for this program.']);
+        $selectedEveningPeriod = $eveningPeriods ? (int) ($filters['evening_period'] ?? array_key_first($eveningPeriods)) : null;
         $eveningPeriod = $eveningPeriods[$selectedEveningPeriod] ?? null;
         $snapshot = $availabilityService->forMoment($moment, [
             'search' => $classroom->room_number, 'academic_year' => $academicYear,
@@ -152,7 +153,7 @@ class ClassroomController extends Controller
             'school_class_id' => ['required', 'integer', 'exists:school_classes,id'],
             'attendance_date' => ['required', 'date_format:Y-m-d'],
             'academic_year' => ['nullable', 'regex:/^\d{4}-\d{4}$/'],
-            'evening_period' => ['nullable', Rule::in([1, 2])],
+            'evening_period' => ['nullable', 'integer', 'exists:evening_study_periods,id'],
             'statuses' => ['required', 'array', 'max:500'],
             'statuses.*' => ['nullable', Rule::in(['present', 'absent', 'late', 'excused'])],
         ]);
@@ -276,7 +277,7 @@ class ClassroomController extends Controller
     public function lessonStatus(Request $request, Classroom $classroom, ClassroomAvailabilityService $availabilityService): JsonResponse
     {
         abort_unless($this->visibleClassrooms($request->user())->whereKey($classroom)->exists(), 403);
-        $filters = $request->validate(['date' => 'nullable|date_format:Y-m-d', 'time' => 'nullable|date_format:H:i', 'academic_year' => ['nullable', 'regex:/^\d{4}-\d{4}$/'], 'program' => ['nullable', Rule::in(\App\Models\Program::names())], 'session' => ['nullable', Rule::in(self::SESSIONS)], 'evening_period' => ['nullable', Rule::in([1, 2])]]);
+        $filters = $request->validate(['date' => 'nullable|date_format:Y-m-d', 'time' => 'nullable|date_format:H:i', 'academic_year' => ['nullable', 'regex:/^\d{4}-\d{4}$/'], 'program' => ['nullable', Rule::in(\App\Models\Program::names())], 'session' => ['nullable', Rule::in(self::SESSIONS)], 'evening_period' => ['nullable', 'integer', 'exists:evening_study_periods,id']]);
         $moment = $request->boolean('live') ? CarbonImmutable::now(config('app.timezone')) : $this->moment($filters);
         $snapshot = $availabilityService->forMoment($moment, ['academic_year' => $filters['academic_year'] ?? $moment->year.'-'.($moment->year+1), 'detail_evening_period' => $filters['evening_period'] ?? null, 'detail_program' => $filters['program'] ?? null, 'detail_session' => ($filters['program'] ?? null) === 'Chinese' ? 'Evening' : ($filters['session'] ?? null)])->first(fn ($row) => $row['classroom']->id === $classroom->id);
         return response()->json(['html' => view('school.classrooms._lesson-status', compact('snapshot'))->render(), 'label' => $moment->format('D, M j, Y H:i')])->header('Cache-Control', 'no-store');

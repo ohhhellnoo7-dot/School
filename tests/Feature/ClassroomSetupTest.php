@@ -11,6 +11,66 @@ class ClassroomSetupTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_admin_can_add_a_third_evening_time_and_schedule_a_class_in_it(): void
+    {
+        $f = $this->fixture('Chinese', 'Evening');
+        $response = $this->postJson(route('evening-study-periods.store'), ['program' => 'Chinese', 'label' => 'Evening 3', 'starts_at' => '19:30', 'ends_at' => '20:30'])->assertCreated();
+        $id = $response->json('id');
+        $this->assertDatabaseHas('evening_study_periods', ['id' => $id, 'program' => 'Chinese', 'label' => 'Evening 3']);
+        app(TeacherManagementService::class)->saveProfile($f['teacher'], [$f['subject']->name], 1200, [
+            ['weekday' => 'Monday', 'start_time' => '19:30', 'end_time' => '20:30', 'unavailable' => false],
+        ]);
+        $data = $this->data($f);
+        $data['evening_period'] = $id;
+        $data['slots'][0]['starts_at'] = '19:30';
+        $this->post(route('classrooms.store'), $data)->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertDatabaseHas('schedules', ['school_class_id' => $f['class']->id, 'starts_at' => '19:30', 'ends_at' => '20:30']);
+        $room = Classroom::where('room_number', 'NEW1')->sole();
+        $this->get(route('classrooms.show', ['classroom' => $room, 'program' => 'Chinese', 'session' => 'Evening', 'evening_period' => $id, 'date' => '2026-11-02']))
+            ->assertOk()->assertSee('Evening 3')->assertSee('7:30 PM')->assertViewHas('attendanceClasses', fn ($classes) => $classes->modelKeys() === [$f['class']->id]);
+    }
+
+    public function test_evening_times_reject_overlap_invalid_duration_and_unauthorized_users(): void
+    {
+        $this->fixture('Chinese', 'Evening');
+        $data = ['program' => 'Chinese', 'label' => 'Extra', 'starts_at' => '18:00', 'ends_at' => '19:00'];
+        $this->postJson(route('evening-study-periods.store'), $data)->assertUnprocessable()->assertJsonValidationErrors('starts_at');
+        $data['starts_at'] = '20:00'; $data['ends_at'] = '19:00';
+        $this->postJson(route('evening-study-periods.store'), $data)->assertUnprocessable()->assertJsonValidationErrors('ends_at');
+        $data['ends_at'] = '20:30';
+        $this->postJson(route('evening-study-periods.store'), $data)->assertUnprocessable()->assertJsonValidationErrors('ends_at');
+        $this->actingAs(User::factory()->create(['role' => 'teacher']))->postJson(route('evening-study-periods.store'), $data)->assertForbidden();
+    }
+
+    public function test_evening_times_are_scoped_to_their_program(): void
+    {
+        $f = $this->fixture('Chinese', 'Evening');
+        \App\Models\Program::firstOrCreate(['name' => 'English'], ['sessions' => ['Evening']]);
+        $id = $this->postJson(route('evening-study-periods.store'), ['program' => 'English', 'label' => 'English late class', 'starts_at' => '19:00', 'ends_at' => '20:00'])->assertCreated()->json('id');
+        $data = $this->data($f); $data['evening_period'] = $id;
+        $this->post(route('classrooms.store'), $data)->assertSessionHasErrors('slots');
+        $this->assertDatabaseMissing('classrooms', ['room_number' => 'NEW1']);
+        $this->assertArrayNotHasKey($id, \App\Models\EveningStudyPeriod::options('Chinese'));
+        $this->assertArrayHasKey($id, \App\Models\EveningStudyPeriod::options('English'));
+    }
+
+    public function test_english_teacher_can_teach_different_evening_periods(): void
+    {
+        $f = $this->fixture('English', 'Evening');
+        foreach ([['17:30', '18:30'], ['18:30', '19:30']] as $index => [$start, $end]) {
+            \App\Models\EveningStudyPeriod::create(['program' => 'English', 'label' => 'Time '.$index, 'starts_at' => $start, 'ends_at' => $end]);
+        }
+        $room = Classroom::create(['room_number' => 'ENG1', 'name' => 'English room', 'building' => 'A', 'capacity' => 40, 'status' => 'active']);
+        $existing = new Schedule(['school_class_id' => $f['class']->id, 'subject_id' => $f['subject']->id, 'teacher_id' => $f['teacher']->id, 'classroom_id' => $room->id, 'room' => 'ENG1', 'day' => 'Monday', 'starts_at' => '17:30', 'ends_at' => '18:30', 'entry_type' => 'academic', 'academic_year' => '2026-2027']);
+        $existing->saveQuietly();
+        $other = SchoolClass::create(['name' => 'Other English class', 'section' => 'B', 'program' => 'English', 'session' => 'Evening', 'class_group_id' => $f['class']->class_group_id]);
+        $lesson = new Schedule(['teacher_id' => $f['teacher']->id, 'classroom_id' => $room->id, 'day' => 'Monday', 'starts_at' => '18:30', 'ends_at' => '19:30', 'academic_year' => '2026-2027']);
+        app(TeacherManagementService::class)->validateEnglishSession($f['teacher'], $lesson, $other);
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $lesson->starts_at = '17:30'; $lesson->ends_at = '18:30';
+        app(TeacherManagementService::class)->validateEnglishSession($f['teacher'], $lesson, $other);
+    }
+
     private function fixture(string $program = 'Khmer', string $session = 'Morning'): array
     {
         $admin = User::factory()->create(['role' => 'administrator']);

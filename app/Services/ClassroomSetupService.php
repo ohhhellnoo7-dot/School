@@ -33,6 +33,7 @@ class ClassroomSetupService
         return ['buildings' => Building::orderBy('name')->get(), 'plannerClasses' => $plannerClasses,
             'japaneseTeachers' => $teachers,
             'classTeachers' => \App\Models\User::where('role', 'teacher')->where('status', 'active')->orderBy('name')->get(['id', 'name', 'program']),
+            'eveningStudyPeriods' => \App\Models\EveningStudyPeriod::orderBy('starts_at')->get()->groupBy('program')->map(fn ($items) => $items->mapWithKeys(fn ($p) => [$p->id => ['label' => $p->label, 'starts_at' => substr($p->starts_at, 0, 5), 'ends_at' => substr($p->ends_at, 0, 5)]])),
             'programSessions' => \App\Models\Program::sessionMap()];
     }
 
@@ -40,6 +41,7 @@ class ClassroomSetupService
     {
         $plan = $request->validate([
             'plan_enabled' => 'nullable|boolean',
+            'evening_period' => 'nullable|integer|exists:evening_study_periods,id',
             'class_days' => 'nullable|in:weekday,weekend',
             'program' => ['required_if:plan_enabled,1', 'nullable', Rule::in(array_keys(\App\Models\Program::sessionMap()))],
             'session' => 'required_if:plan_enabled,1|nullable|in:Morning,Afternoon,Evening',
@@ -78,6 +80,8 @@ class ClassroomSetupService
                     $this->fail('Choose lesson days matching Weekday or Weekend.');
                 }
             }
+            $studyPeriod = empty($plan['evening_period']) ? null : \App\Models\EveningStudyPeriod::findOrFail($plan['evening_period']);
+            if ($studyPeriod && ($class->session !== 'Evening' || $studyPeriod->program !== $class->program)) $this->fail('Choose an evening period for this program.');
             $owner = $class->timetableOwner();
             if ($class->program === 'Japan') {
                 $teacherId = $plan['class_teacher_id'] ?? $owner->teacher_id;
@@ -102,6 +106,7 @@ class ClassroomSetupService
                 if (! $subject) $this->fail('Choose a subject from this class curriculum.');
                 $minutes = $class->program === 'Khmer' ? KhmerLessonDuration::minutes($subject) : 60;
                 $endMinute = TeacherManagementService::minute($slot['starts_at']) + $minutes;
+                if ($studyPeriod && ($slot['starts_at'] < substr($studyPeriod->starts_at, 0, 5) || $endMinute > TeacherManagementService::minute($studyPeriod->ends_at))) $this->fail('Lesson must fit within the selected evening period.');
                 $end = sprintf('%02d:%02d', intdiv($endMinute, 60), $endMinute % 60);
                 try {
                     $existing = $editing ? \App\Models\Schedule::where('classroom_id', $classroom->id)->where('school_class_id', $owner->id)

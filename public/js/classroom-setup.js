@@ -32,6 +32,12 @@
     const fields = root.querySelector('[data-plan-fields]');
     const program = form.elements.program;
     const session = form.elements.session;
+    const eveningPeriod = form.elements.evening_period;
+    let periodProgram = '';
+    const studyHours = cls => {
+        const period = session.value === 'Evening' ? config.eveningPeriods?.[program.value]?.[eveningPeriod.value] : null;
+        return period ? [period.starts_at, period.ends_at] : cls.hours;
+    };
     const cohort = form.elements.school_class_id;
     const classTeacher = form.elements.class_teacher_id;
     const day = form.elements.day;
@@ -170,10 +176,10 @@
             message.textContent = cohort.options.length === 1 ? 'No student classes exist for this program and session. Create a class and its curriculum first.' : 'Choose a student class to see its hourly study periods.';
             return;
         }
-        message.textContent = cls.subjects.length ? `${cls.label}: ${cls.hours[0]}-${cls.hours[1]} on ${day.value}.` : 'This class has no subjects yet. Add its curriculum before assigning lessons.';
-        const finish = minute(cls.hours[1]);
+        message.textContent = cls.subjects.length ? `${cls.label}: ${studyHours(cls)[0]}-${studyHours(cls)[1]} on ${day.value}.` : 'This class has no subjects yet. Add its curriculum before assigning lessons.';
+        const finish = minute(studyHours(cls)[1]);
         let coveredUntil = -1;
-        for (let start = minute(cls.hours[0]), index = 0; start + 60 <= finish; start += 60, index++) {
+        for (let start = minute(studyHours(cls)[0]), index = 0; start + 60 <= finish; start += 60, index++) {
             const startTime = time(start);
             const row = node('article', '', 'lesson-period');
             row.dataset.period = '';
@@ -231,7 +237,19 @@
             }
         }
     };
+    const syncEveningPeriods = (wanted = '') => {
+        const enabled = session.value === 'Evening';
+        root.querySelector('[data-evening-period-field]').hidden = !enabled;
+        eveningPeriod.disabled = !enabled;
+        const previous = periodProgram === program.value ? eveningPeriod.value : '';
+        periodProgram = program.value;
+        const options = Object.entries(config.eveningPeriods?.[program.value] || {}).sort((a, b) => a[1].starts_at.localeCompare(b[1].starts_at));
+        eveningPeriod.replaceChildren(...options.map(([id, p]) => option(id, `${p.label} (${p.starts_at} - ${p.ends_at})`)));
+        if (!options.length) eveningPeriod.append(option('', 'Add an evening study time'));
+        if (options.some(([id]) => id === String(wanted || previous))) eveningPeriod.value = String(wanted || previous);
+    };
     const syncClasses = (wanted = '') => {
+        syncEveningPeriods();
         cohort.replaceChildren(option('', 'Select student class'));
         config.classes.filter(c => c.program === program.value && c.session === session.value).forEach(c => cohort.append(option(c.id, c.label)));
         cohort.value = wanted;
@@ -287,8 +305,8 @@
         let added = 0;
         availableDays().forEach(weekday => {
             const slots = weeklyChoices[weekday] ||= {};
-            const finish = minute(cls.hours[1]);
-            for (let start = minute(cls.hours[0]); start + 60 <= finish; start += 60) {
+            const finish = minute(studyHours(cls)[1]);
+            for (let start = minute(studyHours(cls)[0]); start + 60 <= finish; start += 60) {
                 const startTime = time(start);
                 const existing = slots[startTime];
                 if (existing?.subject_id) {
@@ -308,8 +326,40 @@
         render();
         message.textContent = added ? `Filled ${added} periods with different subjects. Your existing choices were kept. You can edit any day.` : 'No empty periods or unused subjects remain. You can edit the existing choices.';
     });
+    eveningPeriod.addEventListener('change', () => { resetChoices(); render(); });
+    const periodDialog = document.querySelector('[data-evening-period-dialog]');
+    const periodForm = periodDialog.querySelector('form');
+    root.querySelector('[data-add-evening-period]').addEventListener('click', () => {
+        periodForm.reset();
+        periodDialog.querySelector('[data-evening-program-name]').textContent = program.value;
+        periodDialog.querySelector('[data-evening-period-error]').textContent = '';
+        periodDialog.showModal();
+    });
+    periodDialog.querySelector('[data-close-evening-period]').addEventListener('click', () => periodDialog.close());
+    periodForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        const button = periodForm.querySelector('[type="submit"]');
+        button.disabled = true;
+        const selectedProgram = program.value;
+        try {
+            const data = new FormData(periodForm);
+            data.set('program', selectedProgram);
+            const response = await fetch(periodForm.action, {method: 'POST', body: data, headers: {Accept: 'application/json'}});
+            const payload = await response.json();
+            if (!response.ok) throw new Error(Object.values(payload.errors || {}).flat().join(' ') || payload.message || 'Could not save study time.');
+            config.eveningPeriods ||= {};
+            config.eveningPeriods[selectedProgram] = payload.periods;
+            resetChoices();
+            syncEveningPeriods(payload.id);
+            render();
+            periodDialog.close();
+        } catch (error) { periodDialog.querySelector('[data-evening-period-error]').textContent = error.message; }
+        finally { button.disabled = false; }
+    });
     syncSessions(config.old.session || 'Morning');
     syncClasses(String(config.old.school_class_id || ''));
+    syncEveningPeriods(config.old.evening_period || '');
+    render();
     syncClassTeacher();
     if (config.old.class_teacher_id) classTeacher.value = config.old.class_teacher_id;
     render();

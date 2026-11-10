@@ -57,7 +57,7 @@ class ClassroomAvailabilityService
         // Detail selectors scope the contents, while ordinary availability filters only find rooms.
         $scopeProgram = $filters['detail_program'] ?? null;
         $scopeSession = $filters['detail_session'] ?? null;
-        $period = $scopeProgram === 'Chinese' ? config('classrooms.chinese_evening_periods.'.($filters['detail_evening_period'] ?? '')) : null;
+        $period = \App\Models\EveningStudyPeriod::options($scopeProgram)[$filters['detail_evening_period'] ?? 0] ?? null;
         $period = is_array($period) && isset($period['starts_at']) ? $period : null;
         $weeklyLessons = $weeklyLessons->filter(fn ($lesson) =>
             (! $scopeProgram || $lesson->schoolClass?->program === $scopeProgram) &&
