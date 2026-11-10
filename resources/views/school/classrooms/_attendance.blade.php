@@ -1,11 +1,13 @@
 <section class="panel p-4 my-4" id="class-attendance" aria-label="Monthly student attendance">
     <h2 class="h5">Student attendance · {{ $selectedProgram }} · {{ $selectedSession }}</h2>
+    @include('school.classrooms._evening-period-time')
     <form method="get" class="d-flex flex-wrap align-items-end gap-2 mb-3">
-        @foreach(request()->only('date', 'time', 'academic_year', 'evening_period') as $key => $value)
+        @foreach(request()->only('date', 'time', 'academic_year') as $key => $value)
             <input type="hidden" name="{{ $key }}" value="{{ $value }}">
         @endforeach
         <input type="hidden" name="program" value="{{ $selectedProgram }}">
         <input type="hidden" name="session" value="{{ $selectedSession }}">
+        <input type="hidden" name="evening_period" value="{{ $selectedEveningPeriod }}">
         <label>Month<input class="form-control" type="month" name="attendance_month" value="{{ $attendanceMonth->format('Y-m') }}" required></label>
         <button class="btn btn-outline-primary">Show attendance</button>
     </form>
@@ -21,6 +23,7 @@
             ));
         @endphp
         <h3 class="h6 mt-4">{{ $attendanceClass->label }} · {{ $attendanceMonth->format('F Y') }}</h3>
+        @include('school.classrooms._evening-period-time')
         <p class="small">Class teacher: {{ $attendanceClass->teacher?->name ?? 'Unassigned' }}</p>
         <div class="table-responsive mb-3" tabindex="0" aria-label="{{ $attendanceClass->label }} attendance sheet">
             <table class="table table-bordered table-sm align-middle text-center">
@@ -46,7 +49,7 @@
         </div>
         @if($canMark && $classStudents->isNotEmpty())
         <details class="mb-4" @if(request()->filled('attendance_date')) open @endif>
-            <summary class="btn btn-outline-primary">Record daily attendance · {{ $attendanceClass->name }} {{ $attendanceClass->section }}</summary>
+            <summary class="btn btn-outline-primary">Record daily attendance · {{ $attendanceClass->name }} {{ $attendanceClass->section }}@if($selectedProgram === 'Chinese') &middot; {{ $eveningPeriods[$selectedEveningPeriod]['label'] }} ({{ $eveningPeriods[$selectedEveningPeriod]['starts_at'] }}&ndash;{{ $eveningPeriods[$selectedEveningPeriod]['ends_at'] }})@endif</summary>
             <form method="get" class="d-flex flex-wrap align-items-end gap-2 mt-3 mb-3">
                 @foreach(['evening_period' => $selectedEveningPeriod, 'program' => $selectedProgram, 'session' => $selectedSession, 'academic_year' => request('academic_year', $moment->year.'-'.($moment->year+1))] as $key => $value)
                     <input type="hidden" name="{{ $key }}" value="{{ $value }}">
