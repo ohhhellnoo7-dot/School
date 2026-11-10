@@ -40,6 +40,11 @@ return [
         'Chinese' => ['Evening'],
     ],
 
+    'chinese_evening_periods' => [
+        1 => ['label' => 'Evening 1', 'starts_at' => '17:30', 'ends_at' => '18:30'],
+        2 => ['label' => 'Evening 2', 'starts_at' => '18:30', 'ends_at' => '19:30'],
+    ],
+
     'program_session_hours' => ['Chinese' => ['Evening' => ['starts_at'=>'17:30','ends_at'=>'19:30']]],
 
     'rooms' => [...$khmerRooms, ...$englishRooms],

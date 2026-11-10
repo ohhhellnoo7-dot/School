@@ -59,6 +59,7 @@ class ClassroomController extends Controller
             'academic_year'=>['nullable','regex:/^\d{4}-\d{4}$/'],
             'program' => ['nullable', Rule::in(\App\Models\Program::names())],
             'session' => ['nullable', Rule::in(self::SESSIONS)],
+            'evening_period' => ['nullable', Rule::in([1, 2])],
             'attendance_month' => ['nullable', 'date_format:Y-m'],
             'attendance_date' => ['nullable', 'date_format:Y-m-d'],
         ]);
@@ -78,9 +79,13 @@ class ClassroomController extends Controller
         };
         $selectedSession = in_array($filters['session'] ?? null, $sessionOptions, true)
             ? $filters['session'] : $sessionOptions[0];
+        $eveningPeriods = config('classrooms.chinese_evening_periods');
+        $selectedEveningPeriod = $selectedProgram === 'Chinese' ? (int) ($filters['evening_period'] ?? 1) : null;
+        $eveningPeriod = $eveningPeriods[$selectedEveningPeriod] ?? null;
         $snapshot = $availabilityService->forMoment($moment, [
             'search' => $classroom->room_number, 'academic_year' => $academicYear,
             'detail_program' => $selectedProgram, 'detail_session' => $selectedSession,
+            'detail_evening_period' => $selectedEveningPeriod,
         ])->first(fn ($entry) => (int) $entry['classroom']->id === (int) $classroom->id);
 
         $classroom->load(['bookings' => fn ($query) => $query
@@ -93,7 +98,8 @@ class ClassroomController extends Controller
         if ($visibleCohorts !== null) $classroom->setRelation('bookings', $classroom->bookings->filter(fn ($b) => $visibleCohorts->contains(fn ($c) => $c->class_group_id === $b->class_group_id && $c->session === $b->classSession?->session)));
 
         $classroom->setRelation('bookings', $classroom->bookings->filter(fn ($booking) =>
-            $booking->classGroup?->program === $selectedProgram && $booking->classSession?->session === $selectedSession));
+            $booking->classGroup?->program === $selectedProgram && $booking->classSession?->session === $selectedSession
+            && \App\Services\ChineseEveningPeriod::matches($booking, $eveningPeriod)));
 
         $weekly = collect(self::SESSIONS)->mapWithKeys(function (string $session) use ($classroom) {
             return [$session => collect(self::DAYS)->mapWithKeys(fn (string $day) => [
@@ -102,7 +108,8 @@ class ClassroomController extends Controller
         });
 
         $lessons = app(\App\Services\RoomLessonService::class)->lessons($classroom, \App\Models\Schedule::with(['schoolClass', 'subject', 'teacher'])->where(fn ($q)=>$q->where('academic_year',$academicYear)->orWhereNull('academic_year'))->when($visibleCohorts !== null, fn ($q) => $q->whereIn('school_class_id', $visibleCohorts->map->timetableOwnerId()->unique()->all()))->get());
-        $lessons = $lessons->filter(fn ($lesson) => $lesson->schoolClass?->program === $selectedProgram && $lesson->schoolClass?->session === $selectedSession);
+        $lessons = $lessons->filter(fn ($lesson) => $lesson->schoolClass?->program === $selectedProgram && $lesson->schoolClass?->session === $selectedSession
+            && \App\Services\ChineseEveningPeriod::matches($lesson, $eveningPeriod));
         $roomClassIds = collect(data_get($snapshot, 'programDetails', []))->flatMap(fn ($details) => $details['class_ids'] ?? [])->unique()->values();
         $roomStudents = \App\Models\Student::visibleTo($request->user())->where('status', 'active')
             ->enrolledIn($roomClassIds)->with(['user', 'parent',
@@ -130,8 +137,10 @@ class ClassroomController extends Controller
             'sessionOptions' => $sessionOptions,
             'selectedProgram' => $selectedProgram,
             'selectedSession' => $selectedSession,
+            'eveningPeriods' => $eveningPeriods,
+            'selectedEveningPeriod' => $selectedEveningPeriod,
             'lessons' => $lessons,
-            'assignedClassGroups' => $this->assignedClassGroups($classroom)->where('program', $selectedProgram),
+            'assignedClassGroups' => $this->assignedClassGroups($classroom)->where('program', $selectedProgram)->when($eveningPeriod, fn ($groups) => $groups->whereIn('id', $attendanceClasses->pluck('class_group_id'))),
         ]);
     }
 
@@ -143,6 +152,7 @@ class ClassroomController extends Controller
             'school_class_id' => ['required', 'integer', 'exists:school_classes,id'],
             'attendance_date' => ['required', 'date_format:Y-m-d'],
             'academic_year' => ['nullable', 'regex:/^\d{4}-\d{4}$/'],
+            'evening_period' => ['nullable', Rule::in([1, 2])],
             'statuses' => ['required', 'array', 'max:500'],
             'statuses.*' => ['nullable', Rule::in(['present', 'absent', 'late', 'excused'])],
         ]);
@@ -176,6 +186,7 @@ class ClassroomController extends Controller
         return redirect()->route('classrooms.show', [
             'classroom' => $classroom, 'program' => $class->program, 'session' => $class->session,
             'academic_year' => $data['academic_year'] ?? null,
+            'evening_period' => $data['evening_period'] ?? null,
             'attendance_month' => substr($data['attendance_date'], 0, 7), 'attendance_date' => $data['attendance_date'],
         ])->with('success', 'Class attendance saved.');
     }
@@ -265,9 +276,9 @@ class ClassroomController extends Controller
     public function lessonStatus(Request $request, Classroom $classroom, ClassroomAvailabilityService $availabilityService): JsonResponse
     {
         abort_unless($this->visibleClassrooms($request->user())->whereKey($classroom)->exists(), 403);
-        $filters = $request->validate(['date' => 'nullable|date_format:Y-m-d', 'time' => 'nullable|date_format:H:i', 'academic_year' => ['nullable', 'regex:/^\d{4}-\d{4}$/'], 'program' => ['nullable', Rule::in(\App\Models\Program::names())], 'session' => ['nullable', Rule::in(self::SESSIONS)]]);
+        $filters = $request->validate(['date' => 'nullable|date_format:Y-m-d', 'time' => 'nullable|date_format:H:i', 'academic_year' => ['nullable', 'regex:/^\d{4}-\d{4}$/'], 'program' => ['nullable', Rule::in(\App\Models\Program::names())], 'session' => ['nullable', Rule::in(self::SESSIONS)], 'evening_period' => ['nullable', Rule::in([1, 2])]]);
         $moment = $request->boolean('live') ? CarbonImmutable::now(config('app.timezone')) : $this->moment($filters);
-        $snapshot = $availabilityService->forMoment($moment, ['academic_year' => $filters['academic_year'] ?? $moment->year.'-'.($moment->year+1), 'detail_program' => $filters['program'] ?? null, 'detail_session' => ($filters['program'] ?? null) === 'Chinese' ? 'Evening' : ($filters['session'] ?? null)])->first(fn ($row) => $row['classroom']->id === $classroom->id);
+        $snapshot = $availabilityService->forMoment($moment, ['academic_year' => $filters['academic_year'] ?? $moment->year.'-'.($moment->year+1), 'detail_evening_period' => $filters['evening_period'] ?? null, 'detail_program' => $filters['program'] ?? null, 'detail_session' => ($filters['program'] ?? null) === 'Chinese' ? 'Evening' : ($filters['session'] ?? null)])->first(fn ($row) => $row['classroom']->id === $classroom->id);
         return response()->json(['html' => view('school.classrooms._lesson-status', compact('snapshot'))->render(), 'label' => $moment->format('D, M j, Y H:i')])->header('Cache-Control', 'no-store');
     }
 

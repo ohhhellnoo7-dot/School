@@ -53,14 +53,17 @@ class ClassroomAvailabilityService
         $day = $selected->englishDayOfWeek;
         $academicYear = $filters['academic_year'] ?? $selected->year.'-'.($selected->year+1);
         $weeklyLessons = Schedule::with(['subject.teacher', 'teacher', 'schoolClass.classGroup'])->where(fn ($q)=>$q->where('academic_year',$academicYear)->orWhereNull('academic_year'))->get();
+        $scheduledOwnerIds = $weeklyLessons->pluck('school_class_id');
         // Detail selectors scope the contents, while ordinary availability filters only find rooms.
         $scopeProgram = $filters['detail_program'] ?? null;
         $scopeSession = $filters['detail_session'] ?? null;
+        $period = $scopeProgram === 'Chinese' ? config('classrooms.chinese_evening_periods.'.($filters['detail_evening_period'] ?? '')) : null;
+        $period = is_array($period) && isset($period['starts_at']) ? $period : null;
         $weeklyLessons = $weeklyLessons->filter(fn ($lesson) =>
             (! $scopeProgram || $lesson->schoolClass?->program === $scopeProgram) &&
-            (! $scopeSession || $lesson->schoolClass?->session === $scopeSession));
+            (! $scopeSession || $lesson->schoolClass?->session === $scopeSession) && ChineseEveningPeriod::matches($lesson, $period));
         $lessons = $weeklyLessons->where('day', $day);
-        $weeklyBookings = ClassroomBooking::with('classGroup', 'classSession', 'teacher')->get()->filter(fn ($booking) => (! $scopeProgram || $booking->classGroup?->program === $scopeProgram) && (! $scopeSession || $booking->classSession?->session === $scopeSession))->groupBy('classroom_id');
+        $weeklyBookings = ClassroomBooking::with('classGroup', 'classSession', 'teacher')->get()->filter(fn ($booking) => (! $scopeProgram || $booking->classGroup?->program === $scopeProgram) && (! $scopeSession || $booking->classSession?->session === $scopeSession) && ChineseEveningPeriod::matches($booking, $period))->groupBy('classroom_id');
         $programsByRoom = $weeklyLessons->groupBy('classroom_id')->map(fn ($entries) => $entries->pluck('schoolClass.program')->filter());
         $cohorts = \App\Models\SchoolClass::withCount(['students as enrolled_count' => fn ($query) => $query->where('status', 'active')])->get();
         $lessonsByRoom = $weeklyLessons->groupBy('classroom_id');
@@ -76,11 +79,11 @@ class ClassroomAvailabilityService
             ->get();
 
         return $rooms
-            ->map(function (Classroom $classroom) use ($minute, $day, $lessons, $weeklyBookings, $programsByRoom, $cohorts, $lessonsByRoom, $visibleStudyClasses, $scopeProgram, $scopeSession, $filters, $teacherAttendance, $activeStudies, $dailyTeacherStatuses) {
+            ->map(function (Classroom $classroom) use ($minute, $day, $lessons, $weeklyBookings, $programsByRoom, $cohorts, $lessonsByRoom, $visibleStudyClasses, $scopeProgram, $scopeSession, $filters, $teacherAttendance, $activeStudies, $dailyTeacherStatuses, $period, $scheduledOwnerIds) {
                 $programs = ($programsByRoom->get($classroom->id) ?? collect())
                     ->merge(($weeklyBookings->get($classroom->id) ?? collect())->pluck('classGroup.program'))
                     ->filter()->unique()->sort()->values();
-                $buildProgramDetails = function ($program, $detailSession = null, $dailyTeachers = false) use ($classroom, $weeklyBookings, $lessonsByRoom, $cohorts, $visibleStudyClasses, $day, $minute, $teacherAttendance) {
+                $buildProgramDetails = function ($program, $detailSession = null, $dailyTeachers = false) use ($classroom, $weeklyBookings, $lessonsByRoom, $cohorts, $visibleStudyClasses, $day, $minute, $teacherAttendance, $period, $scheduledOwnerIds) {
                     $programLessons = ($lessonsByRoom->get($classroom->id) ?? collect())->filter(fn ($lesson) => $lesson->schoolClass?->program === $program && (! $detailSession || $lesson->schoolClass?->session === $detailSession));
                     $programBookings = ($weeklyBookings->get($classroom->id) ?? collect())->filter(fn ($booking) => $booking->classGroup?->program === $program && (! $detailSession || $booking->classSession?->session === $detailSession));
                     if ($visibleStudyClasses !== null) {
@@ -90,7 +93,7 @@ class ClassroomAvailabilityService
                     }
                     $ownerIds = $programLessons->pluck('school_class_id');
                     $classes = $cohorts->filter(fn ($class) => $class->program === $program && (! $detailSession || $class->session === $detailSession) && ($ownerIds->contains($class->timetableOwnerId()) ||
-                        $programBookings->contains(fn ($booking) => $booking->class_group_id === $class->class_group_id && $booking->classSession?->session === $class->session)));
+                        ((! $period || ! $scheduledOwnerIds->contains($class->timetableOwnerId())) && $programBookings->contains(fn ($booking) => $booking->class_group_id === $class->class_group_id && $booking->classSession?->session === $class->session))));
                     $todayLessons = $programLessons->where('day', $day)->sortBy('starts_at');
                     $displayLesson = $todayLessons->first(fn ($lesson) => TeacherManagementService::minute($lesson->starts_at) <= $minute && TeacherManagementService::minute($lesson->ends_at) > $minute)
                         ?? $todayLessons->first(fn ($lesson) => TeacherManagementService::minute($lesson->starts_at) > $minute);
@@ -130,7 +133,7 @@ class ClassroomAvailabilityService
 
                     return [$program => $buildProgramDetails($program, $session, true)];
                 });
-                $bookings = $classroom->bookings->filter(fn ($booking) => (! $scopeProgram || $booking->classGroup?->program === $scopeProgram) && (! $scopeSession || $booking->classSession?->session === $scopeSession));
+                $bookings = $classroom->bookings->filter(fn ($booking) => (! $scopeProgram || $booking->classGroup?->program === $scopeProgram) && (! $scopeSession || $booking->classSession?->session === $scopeSession) && ChineseEveningPeriod::matches($booking, $period));
                 $current = $bookings->first(fn (ClassroomBooking $booking) => $booking->starts_minute <= $minute && $booking->ends_minute > $minute
                 );
                 $next = $bookings->first(fn (ClassroomBooking $booking) => $booking->starts_minute > $minute);

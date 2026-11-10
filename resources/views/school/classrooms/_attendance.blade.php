@@ -1,7 +1,7 @@
 <section class="panel p-4 my-4" id="class-attendance" aria-label="Monthly student attendance">
     <h2 class="h5">Student attendance · {{ $selectedProgram }} · {{ $selectedSession }}</h2>
     <form method="get" class="d-flex flex-wrap align-items-end gap-2 mb-3">
-        @foreach(request()->only('date', 'time', 'academic_year') as $key => $value)
+        @foreach(request()->only('date', 'time', 'academic_year', 'evening_period') as $key => $value)
             <input type="hidden" name="{{ $key }}" value="{{ $value }}">
         @endforeach
         <input type="hidden" name="program" value="{{ $selectedProgram }}">
@@ -48,7 +48,7 @@
         <details class="mb-4" @if(request()->filled('attendance_date')) open @endif>
             <summary class="btn btn-outline-primary">Record daily attendance · {{ $attendanceClass->name }} {{ $attendanceClass->section }}</summary>
             <form method="get" class="d-flex flex-wrap align-items-end gap-2 mt-3 mb-3">
-                @foreach(['program' => $selectedProgram, 'session' => $selectedSession, 'academic_year' => request('academic_year', $moment->year.'-'.($moment->year+1))] as $key => $value)
+                @foreach(['evening_period' => $selectedEveningPeriod, 'program' => $selectedProgram, 'session' => $selectedSession, 'academic_year' => request('academic_year', $moment->year.'-'.($moment->year+1))] as $key => $value)
                     <input type="hidden" name="{{ $key }}" value="{{ $value }}">
                 @endforeach
                 <label>Attendance date<input class="form-control" type="date" name="attendance_date" value="{{ $attendanceDate }}" required></label>
@@ -56,6 +56,7 @@
             </form>
             <form method="post" action="{{ route('classrooms.attendance.store', $classroom) }}" class="mt-3">
                 @csrf
+                <input type="hidden" name="evening_period" value="{{ $selectedEveningPeriod }}">
                 <input type="hidden" name="school_class_id" value="{{ $attendanceClass->id }}">
                 <input type="hidden" name="academic_year" value="{{ request('academic_year', $moment->year.'-'.($moment->year+1)) }}">
                 <input type="hidden" name="attendance_date" value="{{ $attendanceDate }}">

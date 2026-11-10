@@ -317,6 +317,30 @@ class ClassroomManagementTest extends TestCase
         }
     }
 
+    public function test_chinese_evening_periods_filter_lessons_and_their_rosters(): void
+    {
+        $admin = $this->user('administrator');
+        $teacher = $this->user('teacher');
+        $room = $this->classroom('EV1', 40);
+        $classes = [];
+        foreach ([1 => ['17:30', '18:30'], 2 => ['18:30', '19:30']] as $period => [$start, $end]) {
+            $group = $this->classGroup('Chinese', 1, (string) $period);
+            $class = SchoolClass::create(['name' => 'Chinese period '.$period, 'section' => (string) $period, 'program' => 'Chinese', 'session' => 'Evening', 'class_group_id' => $group->id]);
+            $subject = \App\Models\Subject::create(['name' => 'Chinese '.$period, 'code' => 'EV-'.$period, 'school_class_id' => $class->id]);
+            DB::table('schedules')->insert(['school_class_id' => $class->id, 'subject_id' => $subject->id, 'teacher_id' => $teacher->id, 'classroom_id' => $room->id, 'room' => 'EV1', 'day' => 'Monday', 'starts_at' => $start, 'ends_at' => $end, 'entry_type' => 'academic', 'academic_year' => '2026-2027']);
+            Student::factory()->create(['school_class_id' => $class->id, 'status' => 'active']);
+            $classes[$period] = $class->id;
+        }
+        foreach ($classes as $period => $classId) {
+            $this->actingAs($admin)->get(route('classrooms.show', ['classroom' => $room, 'program' => 'Chinese', 'session' => 'Evening', 'evening_period' => $period, 'date' => '2026-11-02']))
+                ->assertOk()->assertSee('Evening 1')->assertSee('Evening 2')
+                ->assertViewHas('lessons', fn ($lessons) => $lessons->pluck('school_class_id')->all() === [$classId])
+                ->assertViewHas('attendanceClasses', fn ($classes) => $classes->modelKeys() === [$classId])
+                ->assertViewHas('roomStudents', fn ($students) => $students->count() === 1);
+        }
+        $this->get(route('classrooms.show', ['classroom' => $room, 'evening_period' => 3]))->assertSessionHasErrors('evening_period');
+    }
+
     public function test_room_details_scope_program_session_roster_and_bookings(): void
     {
         $admin = $this->user('administrator');
