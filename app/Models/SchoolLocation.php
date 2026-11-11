@@ -11,7 +11,7 @@ class SchoolLocation extends Model
 
     protected $guarded = [];
 
-    protected $casts = ['latitude' => 'decimal:7', 'longitude' => 'decimal:7', 'radius_meters' => 'integer'];
+    protected $casts = ['latitude' => 'decimal:7', 'longitude' => 'decimal:7', 'radius_meters' => 'integer', 'is_active' => 'boolean'];
 
     public const LEGACY_TEST_NAME = 'administrator current location (test)';
 

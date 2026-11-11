@@ -6,6 +6,14 @@
         target.classList.remove('text-success', 'text-danger');
         if (state) target.classList.add(state === 'success' ? 'text-success' : 'text-danger');
     };
+    const mapInput = document.getElementById('map-location');
+    let targetVersion = 0;
+    mapInput?.addEventListener('input', () => {
+        targetVersion++;
+        if (result && scanner?.dataset.checkTarget === 'true') {
+            show(result, 'Location coordinates changed. Click Set attendance location before scanning.');
+        }
+    });
     // Run after the shared confirmation handler; only send an approved submission.
     document.addEventListener('submit', async event => {
         const form = event.target.closest('form[data-remove-location]');
@@ -33,9 +41,13 @@
             show(status, data.message, 'success');
             const remaining = document.querySelector('[data-saved-location-list] [data-attendance-eligible="true"]');
             if (scanner && !remaining) scanner.disabled = true;
+            if (!remaining) {
+                const summary = document.querySelector('[data-active-location-summary]');
+                if (summary) summary.textContent = 'No active attendance location. Save or activate a location before scanning.';
+            }
             if (result) show(result, remaining
-                ? 'Saved locations changed. Start a new scan to verify your position.'
-                : 'No attendance locations saved yet. Save a location before scanning.');
+                ? 'Locations changed. Start a new scan against the active attendance location.'
+                : 'No active attendance location. Save or activate a location before scanning.');
             nextButton?.focus({ preventScroll: true });
         } catch (error) {
             show(status, error instanceof TypeError ? 'Could not reach the server. Check your connection and try again.' : error.message, 'error');
@@ -83,6 +95,7 @@
                 button.textContent = entry.label === entry.value ? entry.value : `${entry.label} (${entry.value})`;
                 button.addEventListener('click', () => {
                     input.value = entry.value;
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
                     remember(entry.value);
                     close();
                     input.focus();
@@ -148,6 +161,8 @@
         }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
     });
     scanner?.addEventListener('click', async () => {
+        const version = targetVersion;
+        const target = scanner.dataset.checkTarget === 'true' ? mapInput.value.trim() : undefined;
         scanner.disabled = true;
         show(result, 'Finding your current location…');
         try {
@@ -156,16 +171,18 @@
             const response = await fetch(scanner.dataset.endpoint, {
                 method: 'POST', credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-                body: JSON.stringify({ latitude: position.coords.latitude, longitude: position.coords.longitude, accuracy: position.coords.accuracy, sampled_at: new Date(position.timestamp).toISOString() }),
+                body: JSON.stringify({ expected_location_id: Number(scanner.dataset.activeId), target_location: target, latitude: position.coords.latitude, longitude: position.coords.longitude, accuracy: position.coords.accuracy, sampled_at: new Date(position.timestamp).toISOString() }),
             });
             if (response.status === 419 || response.status === 401) throw new Error('Your session expired. Refresh the page and sign in again.');
             if (response.status === 429) throw new Error('Too many scans. Wait one minute and try again.');
             if (response.status === 403) throw new Error('Your account is not allowed to check in. Contact an administrator.');
-            if (response.status === 404) throw new Error('No attendance zones are available. Ask an administrator to save a location.');
+            if (response.status === 404) throw new Error('No active attendance location is available. Ask an administrator to save or activate one.');
             const data = await response.json();
+            if (version !== targetVersion) return;
             const message = data.message || 'The location check could not be completed. Please scan again.';
             show(result, message + (data.location_name ? ` Area: ${data.location_name}.` : '') + (data.distance_meters !== undefined ? ` Estimated distance: ${data.distance_meters} m. Location accuracy: ±${data.accuracy_meters} m. Allowed radius: ${data.radius_meters} m.` : ''), response.ok && data.success ? 'success' : 'error');
         } catch (error) {
+            if (version !== targetVersion) return;
             show(result, error instanceof TypeError ? 'Could not reach the server. Check your connection and scan again.' : error.message, 'error');
         } finally {
             scanner.disabled = false;
