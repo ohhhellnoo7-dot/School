@@ -325,6 +325,17 @@ class ClassroomManagementTest extends TestCase
 
                 return true;
             });
+
+        // Preview rotation includes the whole weekly roster for this session.
+        $html = $this->getJson(route('classrooms.data', [
+            'date' => '2026-11-02', 'time' => '12:00',
+            'room_sessions' => [$room->id => ['Khmer' => 'Morning']],
+        ]))->assertOk()->json('html');
+        $this->assertStringContainsString('data-teacher-rotation', $html);
+        $this->assertStringContainsString('Mathematics, Physics', $html);
+        $this->assertStringContainsString('Room Supervisor', $html);
+        $this->assertStringNotContainsString('Chemistry', $html);
+        $this->assertStringNotContainsString('History', $html);
     }
 
     public function test_program_preview_subject_follows_the_selected_weekday_and_lesson_time(): void
@@ -332,21 +343,24 @@ class ClassroomManagementTest extends TestCase
         $room = $this->classroom('C02', 30);
         $class = SchoolClass::create(['name'=>'C02','section'=>'A','program'=>'Japan','session'=>'Evening']);
         $teacher = $this->user('teacher', ['program'=>'Japan']);
+        $writingTeacher = $this->user('teacher', ['program'=>'Japan']);
         foreach ([['Monday','Japanese Vocabulary','17:30','18:30'],['Monday','Japanese Grammar','18:30','19:30'],['Tuesday','Japanese Writing','17:30','18:30']] as [$day,$name,$start,$end]) {
             $subject = \App\Models\Subject::create(['school_class_id'=>$class->id,'name'=>$name,'code'=>'JP-'.str_replace(' ','-',$name)]);
-            \Illuminate\Support\Facades\DB::table('schedules')->insert(['school_class_id'=>$class->id,'subject_id'=>$subject->id,'teacher_id'=>$teacher->id,'classroom_id'=>$room->id,'room'=>$room->room_number,'day'=>$day,'starts_at'=>$start,'ends_at'=>$end,'entry_type'=>'academic','academic_year'=>'2026-2027']);
+            \Illuminate\Support\Facades\DB::table('schedules')->insert(['school_class_id'=>$class->id,'subject_id'=>$subject->id,'teacher_id'=>($day === 'Tuesday' ? $writingTeacher : $teacher)->id,'classroom_id'=>$room->id,'room'=>$room->room_number,'day'=>$day,'starts_at'=>$start,'ends_at'=>$end,'entry_type'=>'academic','academic_year'=>'2026-2027']);
         }
         $service = app(ClassroomAvailabilityService::class);
         foreach ([['2026-11-02','10:00','Japanese Vocabulary'],['2026-11-02','17:45','Japanese Vocabulary'],['2026-11-02','18:30','Japanese Grammar'],['2026-11-03','10:00','Japanese Writing'],['2026-11-02','19:30',null]] as [$date,$time,$expected]) {
             $entry = $service->forDateAndTime($date,$time)->first();
             $this->assertSame($expected,$entry['programDetails']['Japan']['display_lesson']?->subject?->name);
             $this->assertSame(
-                $date === '2026-11-03' ? ['Japanese Writing'] : ['Japanese Vocabulary', 'Japanese Grammar'],
+                ['Japanese Vocabulary', 'Japanese Grammar'],
                 $entry['cardProgramDetails']['Japan']['teacher_assignments']->first()['subjects']->all()
             );
+            $this->assertSame([$teacher->id, $writingTeacher->id], $entry['cardProgramDetails']['Japan']['teacher_assignments']->pluck('id')->all());
         }
         $entry = $service->forDateAndTime('2026-11-04', '10:00')->first();
-        $this->assertCount(0, $entry['cardProgramDetails']['Japan']['teacher_assignments']);
+        $this->assertCount(2, $entry['cardProgramDetails']['Japan']['teacher_assignments']);
+        $this->assertNull($entry['cardProgramDetails']['Japan']['display_lesson']);
     }
 
     public function test_room_program_selection_follows_the_active_session_in_live_results(): void

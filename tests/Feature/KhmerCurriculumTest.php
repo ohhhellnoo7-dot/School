@@ -13,7 +13,7 @@ class KhmerCurriculumTest extends TestCase
     public function test_profiles_have_the_requested_counts_and_twenty_hour_allocations(): void
     {
         $this->seed(KhmerCurriculumSeeder::class);
-        foreach ([[7,'',10],[8,'',11],[9,'',10],[10,'',12],[11,'science',8],[11,'social_science',8],[12,'science',7],[12,'social_science',7]] as [$grade,$stream,$count]) {
+        foreach ([[7,'',10],[8,'',11],[9,'',10],[10,'',12],[11,'science',12],[11,'social_science',12],[12,'science',12],[12,'social_science',12]] as [$grade,$stream,$count]) {
             $profile=CurriculumProfile::where('grade',$grade)->where('stream',$stream)->sole();
             $this->assertCount($count,$profile->requirements);
             $this->assertSame(1200,$profile->requirements->sum('weekly_minutes'));
@@ -25,6 +25,39 @@ class KhmerCurriculumTest extends TestCase
     {
         $group=ClassGroup::create(['name'=>'Grade '.$grade,'grade'=>$grade,'section'=>'A','program'=>'Khmer','capacity'=>40,'status'=>'active','stream'=>$stream?:null]);
         return SchoolClass::create(['name'=>'Grade '.$grade,'section'=>'A','program'=>'Khmer','session'=>'Morning','class_group_id'=>$group->id]);
+    }
+    public function test_senior_repair_restores_all_subjects_and_reduces_opposite_stream_hours_idempotently(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('local');
+        $this->seed(KhmerCurriculumSeeder::class);
+        $class = $this->cohort(11, 'social_science');
+        $profile = CurriculumProfile::where('grade', 11)->where('stream', 'social_science')->sole();
+        $profile->requirements()->whereIn('name', ['Physics', 'Chemistry', 'Biology', 'Physical Education'])->delete();
+        foreach (['Mathematics'=>4, 'History'=>3, 'Earth Science'=>2] as $name=>$hours) {
+            $profile->requirements()->where('name', $name)->update(['weekly_minutes'=>$hours * 60]);
+        }
+        app(KhmerCurriculumService::class)->configure($class);
+        $oldIds = $class->subjects()->pluck('id')->all();
+        $service = app(\App\Services\KhmerSeniorCurriculum::class);
+        $result = $service->apply();
+        \Illuminate\Support\Facades\Storage::disk('local')->assertExists($result['backup']);
+        $this->assertSame(4, $result['profiles']);
+        $this->assertSame(1, $result['classes']);
+        $this->assertCount(12, $class->subjects()->get());
+        $this->assertSame(60, $class->subjects()->where('name', 'Physics')->sole()->required_weekly_minutes);
+        foreach ($oldIds as $id) $this->assertTrue($class->subjects()->whereKey($id)->exists());
+        foreach ([11, 12] as $grade) {
+            $profiles = CurriculumProfile::where('grade', $grade)->with('requirements')->get()->keyBy('stream');
+            $science = $profiles['science']->requirements->pluck('weekly_minutes', 'name');
+            $social = $profiles['social_science']->requirements->pluck('weekly_minutes', 'name');
+            $this->assertSame($science->keys()->sort()->values()->all(), $social->keys()->sort()->values()->all());
+            foreach (['Physics', 'Chemistry', 'Biology', 'Mathematics'] as $name) $this->assertGreaterThan($social[$name], $science[$name]);
+            foreach (['History', 'Geography', 'Civics', 'Khmer Literature'] as $name) $this->assertGreaterThan($science[$name], $social[$name]);
+        }
+        $ids = $class->subjects()->pluck('id')->all();
+        $service->apply();
+        $this->assertSame($ids, $class->subjects()->pluck('id')->all());
+        $this->assertSame(1200, (int) $class->subjects()->sum('required_weekly_minutes'));
     }
     public function test_sync_reuses_historical_subject_ids_and_creates_only_missing_requirements(): void
     {
@@ -64,9 +97,9 @@ class KhmerCurriculumTest extends TestCase
         $this->put(route('class-groups.update',$group),['name'=>$group->name,'grade'=>11,'section'=>'A','program'=>'Khmer','stream'=>'science','capacity'=>40,'status'=>'active'])->assertSessionHasNoErrors()->assertRedirect();
         $this->assertSame('science',$group->fresh()->stream);
         $this->assertSame(1,ClassGroup::where('grade',11)->count());
-        $this->assertSame(8,$class->subjects()->whereNotNull('curriculum_requirement_id')->count());
+        $this->assertSame(12,$class->subjects()->whereNotNull('curriculum_requirement_id')->count());
         $this->assertNotNull($class->subjects()->where('name','Physics')->first());
-        $this->assertNull($class->subjects()->where('name','Civics')->whereNotNull('curriculum_requirement_id')->first());
+        $this->assertSame(60,$class->subjects()->where('name','Civics')->whereNotNull('curriculum_requirement_id')->sole()->required_weekly_minutes);
     }
     public function test_generation_is_blocked_when_staffing_cannot_cover_the_curriculum(): void
     {
