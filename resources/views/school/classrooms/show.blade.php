@@ -39,7 +39,8 @@
     <div class="room-context-grid"><div><h3 class="room-filter-label">01 <span>Academic program</span></h3>
     <div class="d-flex flex-wrap gap-2 mb-3" role="group" aria-label="Program">
         @forelse($programOptions as $program)
-            <a class="btn {{ $program === $selectedProgram ? 'btn-primary' : 'btn-outline-primary' }}" aria-current="{{ $program === $selectedProgram ? 'true' : 'false' }}" href="{{ route('classrooms.show', ['classroom' => $classroom] + array_merge(request()->only('date', 'time', 'live', 'academic_year'), ['program' => $program, 'session' => $program === 'Chinese' ? 'Evening' : 'Morning'])) }}"><i class="bi bi-book" aria-hidden="true"></i><span>{{ $program }}</span>@if($program === $selectedProgram)<i class="bi bi-check-circle-fill room-choice-check" aria-hidden="true"></i>@endif</a>
+            @php($programFlag = match($program) { 'Khmer' => 'km', 'Chinese' => 'zh', 'English' => 'en', 'Japan', 'Japanese' => 'jp', 'French' => 'fr', default => null })
+            <a class="btn {{ $program === $selectedProgram ? 'btn-primary' : 'btn-outline-primary' }}" aria-current="{{ $program === $selectedProgram ? 'true' : 'false' }}" href="{{ route('classrooms.show', ['classroom' => $classroom] + array_merge(request()->only('date', 'time', 'live', 'academic_year'), ['program' => $program, 'session' => $program === 'Chinese' ? 'Evening' : 'Morning'])) }}">@if($programFlag)<img class="room-program-flag" src="{{ asset('images/flags/'.$programFlag.'.svg') }}" width="32" height="22" alt="" aria-hidden="true">@else<i class="bi bi-book" aria-hidden="true"></i>@endif<span>{{ $program }}</span>@if($program === $selectedProgram)<i class="bi bi-check-circle-fill room-choice-check" aria-hidden="true"></i>@endif</a>
         @empty <p>No programs assigned yet.</p> @endforelse
     </div>
     </div><div><h3 class="room-filter-label">02 <span>Study session</span></h3>
