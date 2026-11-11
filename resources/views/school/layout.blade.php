@@ -22,6 +22,7 @@
     <link href="{{ asset('css/workspace-refresh.css') }}?v={{ filemtime(public_path('css/workspace-refresh.css')) }}" rel="stylesheet">
     @if(request()->routeIs('modules.index') && request()->route('module') === 'subjects')<link href="{{ asset('css/subject-refresh.css') }}?v={{ filemtime(public_path('css/subject-refresh.css')) }}" rel="stylesheet">@endif
     <link href="{{ asset('css/scholar-hero.css') }}?v={{ filemtime(public_path('css/scholar-hero.css')) }}" rel="stylesheet">
+    @if(request()->routeIs('classrooms.show'))<link href="{{ asset('css/room-detail-refresh.css') }}?v={{ filemtime(public_path('css/room-detail-refresh.css')) }}" rel="stylesheet">@endif
     @if(request()->routeIs('classrooms.index'))<link href="{{ asset('css/classroom-refresh.css') }}?v={{ filemtime(public_path('css/classroom-refresh.css')) }}" rel="stylesheet">@endif
 @if(request()->routeIs('dashboard', 'teacher-attendance.*') || request()->route('module') === 'teachers')
 <link href="{{ asset('css/teacher-attendance.css') }}?v={{ filemtime(public_path('css/teacher-attendance.css')) }}" rel="stylesheet">
