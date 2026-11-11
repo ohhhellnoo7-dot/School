@@ -67,12 +67,16 @@
                             <span class="room-stream-badge room-stream-{{ $stream }}" data-room-stream-program="{{ $streamProgram }}" @if($streamProgram !== $selectedProgram) hidden @endif>{{ $streamLabel }}</span>
                         @endforeach
                     @endforeach
+                @if(in_array($lessonState, ['studying', 'free', 'incomplete'], true))
+                    <div data-room-program-overview="{{ $activeOverviewProgram }}" @if($selectedProgram !== $activeOverviewProgram) hidden @endif>
+                    <span class="lesson-state lesson-state-{{ $lessonState }}">{{ match ($lessonState) { 'studying' => 'Studying now', 'incomplete' => 'Incomplete timetable', default => 'Free period' } }}</span>
+                    </div>
+                @endif
             </div>
             <div class="room-card-body">
                 @include('school.classrooms._study-arrangement', ['entry' => $entry])
                 <div data-room-program-overview="{{ $activeOverviewProgram }}" @if($selectedProgram !== $activeOverviewProgram) hidden @endif>
                 @if(in_array($lessonState, ['studying', 'free', 'incomplete'], true))
-                    <span class="lesson-state lesson-state-{{ $lessonState }}">{{ match ($lessonState) { 'studying' => 'Studying now', 'incomplete' => 'Incomplete timetable', default => 'Free period' } }}</span>
                     @if($lessonState === 'free' && data_get($entry, 'currentTeacherAttendance'))<p class="small text-secondary mb-1">Teacher {{ data_get($entry, 'currentTeacherAttendance') }} for the selected date.</p>@endif
                     @if($lessonState === 'incomplete')<p class="text-warning-emphasis small">An academic lesson is missing. This is not a planned student free period.</p>@endif
                 @endif

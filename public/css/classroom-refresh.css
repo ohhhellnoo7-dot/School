@@ -56,11 +56,56 @@
     }
 }
 
-/* Stream and activity badges share the same centered axis and spacing. */
+/* Compact room cards with a consistent reading order across palettes. */
 :root[data-theme]:root:root:root:root:root:root:root:root:root .scholar-workspace .classroom-availability-page {
-    & .room-card-streams { display:flex; justify-content:center; flex-wrap:wrap; gap:6px; padding:0 18px 12px; }
-    & .room-card-streams:not(:has(.room-stream-badge:not([hidden]))) { display:none; }
-    & .room-card-streams .room-stream-badge { display:inline-flex; align-items:center; justify-content:center; min-height:30px; padding:6px 14px; border-radius:8px; font-size:12px; line-height:1.4; font-weight:700; text-align:center; color:var(--primary); background:var(--surface-tint); border:1px solid var(--border-color); }
-    & .room-card-streams .room-stream-badge[hidden] { display:none; }
-    & .room-card-body > [data-room-program-overview] > .lesson-state:first-child { display:flex; align-items:center; justify-content:center; width:fit-content; min-height:30px; margin:0 auto 12px; padding:6px 14px; border-radius:8px; text-align:center; line-height:1.4; }
+    & .classroom-card { border:1px solid var(--border-color); border-radius:22px; box-shadow:0 5px 18px var(--shadow-color); }
+    & .room-card-visual { margin:0 10px; border-radius:15px; }
+    & .room-card-visual img { height:138px; aspect-ratio:auto; }
+    & .room-card-head { padding:16px 20px 12px; }
+    & .room-heading strong { font-size:27px; font-weight:800; letter-spacing:-.7px; }
+    & .room-heading > span { margin-top:3px; }
+    & .room-card-streams { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding:0 20px 16px; }
+    & .room-card-streams:not(:has(.room-stream-badge:not([hidden]),[data-room-program-overview]:not([hidden]))) { display:none; }
+    & .room-card-streams .room-stream-badge,& .room-card-streams .lesson-state { display:inline-flex; align-items:center; justify-content:center; padding:6px 9px; margin:0; min-height:28px; border-radius:7px; font-size:10px; font-weight:700; line-height:1.4; }
+    & .room-card-streams .room-stream-badge { color:var(--primary); background:var(--surface-tint); border:1px solid var(--border-color); }
+    & .room-card-streams [hidden] { display:none!important; }
+    & .room-card-streams .lesson-state-studying { color:var(--primary); background:var(--surface-tint); }
+    & .room-card-streams .lesson-state::before { content:''; width:5px; height:5px; border-radius:50%; background:currentColor; margin-right:5px; }
+    & .room-card-body { padding:0 20px 16px; }
+    & .booking-context { display:flex; align-items:flex-start; flex-wrap:wrap; gap:6px 10px; padding:14px; border:1px solid var(--border-color); border-radius:12px; background:color-mix(in srgb,var(--primary) 5%,var(--surface)); }
+    & .booking-context small { flex-basis:100%; font-size:8px; letter-spacing:1px; color:var(--text-secondary); }
+    & .booking-context strong { flex:1 1 150px; min-width:0; font-size:13px; line-height:1.6; white-space:normal; overflow:visible; text-overflow:clip; color:var(--text-primary); }
+    & .booking-context .program-badge { align-self:center; font-size:9px; padding:5px 8px; }
+    & .room-facts { margin:12px 0 8px; }
+    & .room-facts :is(dt,dd) { font-size:10px; line-height:1.6; }
+    & .room-card-body p.small { font-size:11px; margin-top:6px; color:var(--text-primary); }
+    & .room-current-teacher { padding:12px 0 0; margin-top:12px; border-top:1px solid var(--border-color); background:transparent; border-radius:0; }
+    & .room-current-teacher > i { display:grid; place-items:center; width:32px; height:32px; flex:0 0 32px; border-radius:10px; color:var(--primary); background:var(--surface-tint); font-size:17px; }
+    & .room-current-teacher small { color:var(--text-secondary); font-size:9px; }
+    & .room-current-teacher strong { color:var(--text-primary); font-size:12px; }
+    & .room-program-section { padding:0 20px 16px; }
+    & .room-program-tabs { background:var(--surface-tint); padding:3px; border-radius:10px; margin-bottom:12px; }
+    & .room-program-tabs button { padding:7px 10px; border-radius:7px; font-size:10px; }
+    & .room-program-tabs button[aria-pressed=true] { background:var(--surface); color:var(--primary); box-shadow:0 1px 4px var(--shadow-color); }
+    & .room-enrollment-summary { padding:10px 0 12px; }
+    & .room-enrollment-summary strong { font-size:23px; color:var(--text-primary); }
+    & .room-enrollment-summary span { font-size:10px; color:var(--text-secondary); }
+    & .room-session-tags { gap:7px; display:flex; flex-wrap:wrap; margin-bottom:0; }
+    & .room-session-tags button { flex:1; display:flex; align-items:center; justify-content:center; gap:5px; padding:9px; border-radius:9px; background:var(--surface); color:var(--text-secondary); border:1px solid var(--border-color); font-size:10px; }
+    & .room-session-tags button[aria-pressed=true] { background:var(--action); border-color:var(--action); color:var(--on-action); }
+    & .room-card-footer { padding:13px 20px; background:var(--surface); border-top:1px solid var(--border-color); }
+    & .room-card-footer a { border-radius:9px; padding:8px 12px; color:var(--action); font-size:10px; }
+    & .classroom-card :is(button,a,summary):focus-visible { outline:2px solid var(--primary); outline-offset:3px; }
+}
+
+/* Equal columns keep the stream and activity labels symmetrical. */
+:root[data-theme]:root:root:root:root:root:root:root:root:root .scholar-workspace .classroom-availability-page {
+    & .room-card-streams { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:stretch; gap:10px; }
+    & .room-card-streams > .room-stream-badge,
+    & .room-card-streams > [data-room-program-overview] { min-width:0; width:100%; margin:0; }
+    & .room-card-streams > [data-room-program-overview] { display:flex; }
+    & .room-card-streams .room-stream-badge,
+    & .room-card-streams .lesson-state { display:flex; flex:1; width:100%; min-height:34px; height:100%; box-sizing:border-box; padding:7px 8px; justify-content:center; align-items:center; text-align:center; font-size:10px; line-height:1.4; border:1px solid transparent; border-radius:7px; }
+    & .room-card-streams .lesson-state::before { display:none; }
+    & .room-card-streams [hidden] { display:none!important; }
 }
