@@ -59,6 +59,7 @@ a.attendance-status-tile:hover, a.attendance-status-tile:focus-visible { outline
 @endif
 <div class="nav-group-caption">{{ __('Workspace') }}</div>
         <a class="{{ request()->routeIs('classrooms.*', 'classroom-bookings.*') ? 'active' : '' }}" href="{{ route('classrooms.index') }}"><i class="bi bi-door-open"></i><span class="nav-label">{{ __('Classroom availability') }}</span></a>
+        <a class="{{ request()->routeIs('school.map') ? 'active' : '' }}" href="{{ route('school.map') }}"><i class="bi bi-geo-alt" aria-hidden="true"></i><span class="nav-label">{{ __('School map') }}</span></a>
         @if(auth()->user()->role === 'administrator')<a class="{{ request()->routeIs('reports') ? 'active' : '' }}" href="{{ route('reports') }}"><i class="bi bi-bar-chart-line"></i><span class="nav-label"> {{ __('Reports') }}</span></a>@endif
     </nav>
     <div class="school-switch"><span class="school-icon"><i class="bi bi-buildings"></i></span><div><strong>Greenfield Academy</strong><small>{{ __('School management portal') }}</small></div></div>

@@ -14,6 +14,8 @@ return [
     |
     */
 
+    'school_map' => ['location' => env('SCHOOL_MAP_LOCATION', '')],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],
