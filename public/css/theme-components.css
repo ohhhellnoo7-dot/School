@@ -71,3 +71,13 @@
 @media (prefers-reduced-motion:reduce) {
     :root[data-theme] :is(.theme-option,.theme-options,.shared-lesson) { animation:none; transition:none; }
 }
+
+/* Keep header disclosures above image-backed page sections in every palette. */
+:root[data-theme]:root:root:root:root:root:root:root:root:root .scholar-workspace .topbar {
+    position:sticky;
+    z-index:1035;
+    overflow:visible;
+}
+:root[data-theme]:root:root:root:root:root:root:root:root:root .theme-switcher[open] {
+    z-index:1050;
+}

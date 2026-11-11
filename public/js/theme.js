@@ -48,7 +48,17 @@
             });
             let closeTimer;
             let keyboardNavigation = false;
+            let openedByClick = false;
+            summary.addEventListener('click', event => {
+                event.preventDefault();
+                clearTimeout(closeTimer);
+                const opening = !menu.open || !openedByClick;
+                document.querySelectorAll('[data-theme-menu], [data-language-menu]').forEach(other => { if (other !== menu) other.open = false; });
+                openedByClick = opening;
+                menu.open = opening;
+            });
             menu.addEventListener('pointerenter', event => {
+                if (root.dataset.hoverMenus === 'off') return;
                 if (event.pointerType !== 'mouse' || !window.matchMedia('(hover: hover)').matches) return;
                 keyboardNavigation = false;
                 clearTimeout(closeTimer);
@@ -56,6 +66,7 @@
                 menu.open = true;
             });
             menu.addEventListener('pointerleave', event => {
+                if (openedByClick || root.dataset.hoverMenus === 'off') return;
                 if (event.pointerType !== 'mouse') return;
                 closeTimer = setTimeout(() => {
                     if (!keyboardNavigation || !menu.contains(document.activeElement)) menu.open = false;
@@ -80,7 +91,7 @@
                 });
             });
             menu.addEventListener('pointerleave', restoreSelection);
-            menu.addEventListener('toggle', () => { if (!menu.open) restoreSelection(); });
+            menu.addEventListener('toggle', () => { if (!menu.open) { openedByClick = false; restoreSelection(); } });
             menu.addEventListener('keydown', event => {
                 keyboardNavigation = true;
                 clearTimeout(closeTimer);
