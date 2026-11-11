@@ -39,11 +39,10 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,1');
 });
 Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(function () {
-    Route::get('/school/map', function (\Illuminate\Http\Request $request) {
-        $data = $request->validate(['location' => 'nullable|string|max:300']);
-        $location = trim($data['location'] ?? config('services.school_map.location', ''));
-        return view('school.map', compact('location'));
-    })->name('school.map');
+    Route::get('/school/map', [\App\Http\Controllers\SchoolMapController::class, 'index'])->name('school.map');
+    Route::post('/school/map/locations', [\App\Http\Controllers\SchoolMapController::class, 'store'])->middleware('role:administrator')->name('school.map.locations.store');
+    Route::delete('/school/map/locations/{location}', [\App\Http\Controllers\SchoolMapController::class, 'destroy'])->middleware('role:administrator')->name('school.map.locations.destroy');
+    Route::post('/school/map/scan', [\App\Http\Controllers\SchoolMapController::class, 'scan'])->middleware(['role:administrator,teacher', 'throttle:12,1'])->name('school.map.scan');
     Route::get('/school/timetables', [\App\Http\Controllers\UnifiedTimetableController::class, 'index'])->name('timetables.index');
     Route::get('/school/timetables/data', [\App\Http\Controllers\UnifiedTimetableController::class, 'data'])->name('timetables.data');
     Route::middleware('role:administrator')->prefix('school/timetables')->group(function () {
