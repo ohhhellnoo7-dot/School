@@ -55,3 +55,12 @@
         & .room-grid-heading h2 { font-size:18px; }
     }
 }
+
+/* Stream and activity badges share the same centered axis and spacing. */
+:root[data-theme]:root:root:root:root:root:root:root:root:root .scholar-workspace .classroom-availability-page {
+    & .room-card-streams { display:flex; justify-content:center; flex-wrap:wrap; gap:6px; padding:0 18px 12px; }
+    & .room-card-streams:not(:has(.room-stream-badge:not([hidden]))) { display:none; }
+    & .room-card-streams .room-stream-badge { display:inline-flex; align-items:center; justify-content:center; min-height:30px; padding:6px 14px; border-radius:8px; font-size:12px; line-height:1.4; font-weight:700; text-align:center; color:var(--primary); background:var(--surface-tint); border:1px solid var(--border-color); }
+    & .room-card-streams .room-stream-badge[hidden] { display:none; }
+    & .room-card-body > [data-room-program-overview] > .lesson-state:first-child { display:flex; align-items:center; justify-content:center; width:fit-content; min-height:30px; margin:0 auto 12px; padding:6px 14px; border-radius:8px; text-align:center; line-height:1.4; }
+}

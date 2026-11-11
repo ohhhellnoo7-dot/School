@@ -58,13 +58,15 @@
             <div class="room-card-head">
                 <span class="room-icon"><i class="bi bi-door-open" aria-hidden="true"></i></span>
                 <span class="room-heading"><small>{{ $room->buildingRecord ? $room->buildingRecord->name.' / ' : '' }}{{ __('Room') }}</small><strong>{{ $room->room_number }}</strong>@if($room->name && $room->name !== $room->room_number)<span>{{ $room->name }}</span>@endif
+                </span>
+                <span class="room-status"><i class="bi bi-{{ $icons[$status] ?? 'circle-fill' }}" aria-hidden="true"></i> {{ str_replace('_', ' ', ucfirst($status)) }}</span>
+            </div>
+            <div class="room-card-streams">
                     @foreach($programDetails as $streamProgram => $streamDetails)
                         @foreach($streamDetails['streams'] ?? [] as $stream => $streamLabel)
                             <span class="room-stream-badge room-stream-{{ $stream }}" data-room-stream-program="{{ $streamProgram }}" @if($streamProgram !== $selectedProgram) hidden @endif>{{ $streamLabel }}</span>
                         @endforeach
                     @endforeach
-                </span>
-                <span class="room-status"><i class="bi bi-{{ $icons[$status] ?? 'circle-fill' }}" aria-hidden="true"></i> {{ str_replace('_', ' ', ucfirst($status)) }}</span>
             </div>
             <div class="room-card-body">
                 @include('school.classrooms._study-arrangement', ['entry' => $entry])
