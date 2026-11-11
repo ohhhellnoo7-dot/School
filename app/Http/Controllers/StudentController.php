@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Attendance;
 use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\User;
@@ -30,8 +31,14 @@ class StudentController extends Controller
             ->when($request->session, fn ($q, $session) => $q->where('session', $session))->exists()) {
             $request->merge(['class' => null]);
         }
-        $students = Student::visibleTo($request->user())->with(['schoolClass', 'studyClasses', 'user', 'parent'])
+        $request->validate(['attendance_date' => 'nullable|date_format:Y-m-d|before_or_equal:today',
+            'attendance_status' => 'nullable|in:present,absent,late,excused']);
+        $attendanceDate = $request->input('attendance_date', today()->toDateString());
+        $students = Student::visibleTo($request->user())->with(['schoolClass', 'studyClasses', 'user', 'parent',
+            'attendances' => fn ($query) => $query->whereDate('date', $attendanceDate)])
             ->search($request->input('search'))
+            ->when($request->attendance_status, fn ($query, $status) => $query->whereHas('attendances',
+                fn ($attendance) => $attendance->whereDate('date', $attendanceDate)->where('status', $status)))
             ->when($request->class || $request->program || $request->session, fn ($q) => $q->whereHas('studyClasses', fn ($classes) => $classes
                 ->when($request->class, fn ($c, $id) => $c->where('school_classes.id', $id))
                 ->when($request->program, fn ($c, $program) => $c->where('program', $program))
@@ -47,7 +54,27 @@ class StudentController extends Controller
             'new' => (clone $visibleStudents)->whereBetween('enrollment_date', [now()->startOfMonth()->toDateString(), now()->toDateString()])->count(),
         ];
 
-        return view('school.students.index', ['students' => $students, 'studentSummary' => $studentSummary, 'classes' => SchoolClass::orderBy('name')->get()]);
+        return view('school.students.index', ['students' => $students, 'attendanceDate' => $attendanceDate, 'studentSummary' => $studentSummary, 'classes' => SchoolClass::orderBy('name')->get()]);
+    }
+
+    public function saveAttendance(Request $request, Student $student)
+    {
+        Gate::authorize('update', $student);
+        $data = $request->validate([
+            'date' => 'required|date_format:Y-m-d|before_or_equal:today',
+            'status' => 'required|in:present,absent,late,excused',
+        ]);
+        DB::transaction(function () use ($student, $data) {
+            Student::whereKey($student->id)->lockForUpdate()->firstOrFail();
+            $attendance = Attendance::where('student_id', $student->id)->whereDate('date', $data['date'])->first()
+                ?? new Attendance(['student_id' => $student->id, 'date' => $data['date']]);
+            $attendance->fill(['status' => $data['status']])->save();
+        });
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'status' => $data['status'], 'message' => 'Attendance saved.']);
+        }
+
+        return back()->with('success', 'Student attendance saved.');
     }
 
     public function create()

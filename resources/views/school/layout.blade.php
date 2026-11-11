@@ -27,6 +27,7 @@
 @if(request()->routeIs('dashboard', 'teacher-attendance.*') || request()->route('module') === 'teachers')
 <link href="{{ asset('css/teacher-attendance.css') }}?v={{ filemtime(public_path('css/teacher-attendance.css')) }}" rel="stylesheet">
 @endif
+@if(request()->routeIs('students.index'))<link href="{{ asset('css/student-attendance-workspace.css') }}?v={{ filemtime(public_path('css/student-attendance-workspace.css')) }}" rel="stylesheet">@endif
 <script src="{{ asset('js/hover-menus.js') }}?v={{ filemtime(public_path('js/hover-menus.js')) }}"></script>
 <style>
 html[data-hover-menus=off] .stat-breakdown:not(.is-open) .stat-breakdown-menu,

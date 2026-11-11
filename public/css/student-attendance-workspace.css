@@ -1,0 +1,60 @@
+/* Attendance workspace: scoped to the student directory. */
+:root:root:root:root .students-page .student-directory { border-radius: 20px; background: var(--surface); }
+:root:root:root:root .students-page .student-directory .directory-heading { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:26px 28px 20px; border-bottom:0; }
+.students-page .student-directory .directory-heading::after { display:none; }
+.students-page .directory-eyebrow { display:block; font-size:10px; font-weight:800; letter-spacing:1.6px; color:var(--text-secondary); margin-bottom:8px; }
+:root:root:root:root .students-page .student-directory .directory-heading h2 { display:flex; align-items:center; gap:10px; font-size:25px; letter-spacing:-.7px; margin:0; }
+.students-page .directory-heading p { margin:7px 0 0; font-size:12px; color:var(--text-secondary); }
+.students-page .directory-count { font-size:12px; font-weight:700; letter-spacing:0; background:var(--surface-tint); color:var(--primary); padding:5px 9px; border-radius:7px; }
+.students-page .directory-date { display:flex; align-items:center; gap:9px; white-space:nowrap; font-size:12px; color:var(--text-secondary); border:1px solid var(--border-color); padding:10px 13px; border-radius:10px; }
+:root:root:root:root .students-page .student-directory .directory-workspace { margin:0 20px 22px; padding:20px; background:color-mix(in srgb,var(--surface-tint) 35%,var(--surface)); border:1px solid var(--border-color); border-radius:14px; }
+.students-page .directory-search-row { display:grid; grid-template-columns:minmax(200px,1fr) 180px auto; gap:16px; align-items:end; }
+.students-page .directory-search-input { position:relative; }
+.students-page .directory-search-input > i { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-secondary); z-index:1; pointer-events:none; }
+:root:root:root:root .students-page .student-directory .directory-search-input input { padding-left:38px; }
+:root:root:root:root .students-page .student-directory .student-filters :is(.form-control,.form-select) { min-height:42px; border-radius:9px; box-shadow:none; font-size:12px; }
+.students-page .student-directory .directory-filter-actions { display:flex; flex-wrap:nowrap; gap:8px; }
+.students-page .student-directory .attendance-filter-group { margin:20px 0; padding:0; border:0; min-width:0; }
+.students-page .attendance-filter-group legend { float:none; width:auto; font-size:11px; font-weight:600; margin-bottom:9px; color:var(--text-secondary); }
+.students-page .attendance-filter-tabs { display:flex; flex-wrap:wrap; gap:8px; }
+.students-page .attendance-tab { --attendance-color:var(--primary); position:relative; cursor:pointer; }
+.students-page .attendance-present { --attendance-color:#158361; }
+.students-page .attendance-absent { --attendance-color:#c34558; }
+.students-page .attendance-late { --attendance-color:#a56909; }
+.students-page .attendance-excused { --attendance-color:#7560b7; }
+.students-page .attendance-tab input { position:absolute; width:1px; height:1px; opacity:0; }
+.students-page .attendance-tab span { display:flex; align-items:center; gap:8px; min-height:38px; padding:8px 16px; border:1px solid var(--border-color); border-radius:9px; background:var(--surface); color:var(--text-secondary); font-size:12px; font-weight:600; transition:background .15s,border-color .15s; }
+.students-page .attendance-tab input:checked + span { color:var(--attendance-color); border-color:var(--attendance-color); background:color-mix(in srgb,var(--attendance-color) 10%,var(--surface)); box-shadow:0 0 0 1px var(--attendance-color); }
+.students-page .attendance-tab input:focus-visible + span { outline:3px solid var(--primary); outline-offset:3px; }
+.students-page .attendance-tab span:hover { border-color:var(--attendance-color); }
+.students-page .directory-refine-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:12px; padding-top:17px; border-top:1px solid var(--border-color); }
+:root:root:root:root .students-page .student-directory > .table-responsive { margin:0; border-radius:0; border-left:0; border-right:0; }
+:root:root:root:root .students-page .student-directory .directory-roster { width:100%; min-width:1000px; table-layout:fixed; }
+:root:root:root:root .students-page .student-directory .directory-roster thead th { background:color-mix(in srgb,var(--surface-tint) 60%,var(--surface)); color:var(--text-secondary); font-size:10px; font-weight:700; letter-spacing:.6px; padding:15px 14px; }
+.students-page .directory-roster th:nth-child(1) { width:20%; }
+.students-page .directory-roster th:nth-child(2) { width:16%; }
+.students-page .directory-roster th:nth-child(3) { width:18%; }
+.students-page .directory-roster th:nth-child(4) { width:14%; }
+.students-page .directory-roster th:nth-child(5) { width:9%; }
+.students-page .directory-roster th:nth-child(6) { width:14%; }
+.students-page .directory-roster th:nth-child(7) { width:9%; }
+:root:root:root:root .students-page .student-directory .directory-roster td { padding:18px 14px; background:var(--surface); overflow-wrap:anywhere; }
+:root:root:root:root .students-page .student-directory .directory-roster tbody tr:nth-child(even) > td { background:color-mix(in srgb,var(--surface-tint) 20%,var(--surface)); }
+.students-page .directory-student { display:flex; align-items:center; gap:10px; }
+.students-page .directory-student > :first-child { flex-shrink:0; }
+.students-page .directory-student strong { font-size:12px; font-weight:700; }
+.students-page .directory-contact > span,.students-page .directory-contact > small { display:block; }
+.students-page .directory-contact > small { margin-top:7px; color:var(--text-secondary); font-size:11px; }
+.students-page .directory-class-link { display:block; color:var(--text-primary); font-size:11px; text-decoration:none; padding:5px 0; }
+.students-page .directory-class-link + .directory-class-link { border-top:1px dashed var(--border-color); }
+.students-page [data-student-attendance] { --attendance-color:var(--text-secondary); min-width:0; }
+.students-page [data-attendance-state="present"] { --attendance-color:#158361; }
+.students-page [data-attendance-state="absent"] { --attendance-color:#c34558; }
+.students-page [data-attendance-state="late"] { --attendance-color:#a56909; }
+.students-page [data-attendance-state="excused"] { --attendance-color:#7560b7; }
+:root:root:root:root .students-page .student-directory [data-student-attendance] select { width:100%; min-width:0; min-height:36px; font-size:11px; border-radius:8px; color:var(--attendance-color); border-color:color-mix(in srgb,var(--attendance-color) 35%,var(--border-color)); background-color:color-mix(in srgb,var(--attendance-color) 7%,var(--surface)); }
+:root:root:root:root .students-page .student-directory [data-student-attendance] button { font-size:10px; min-height:27px; padding:3px 10px; border-radius:6px; box-shadow:none; }
+.students-page .directory-roster td:last-child .d-flex { flex-wrap:wrap; gap:4px !important; }
+@media (max-width:1200px) { .students-page .directory-refine-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } .students-page .directory-search-row { grid-template-columns:minmax(0,1fr) 170px; } .students-page .directory-filter-actions { grid-column:1/-1; justify-content:flex-end; } :root:root:root:root .students-page .student-directory .directory-filter-actions .btn { flex:0 0 auto; padding:9px 16px; } }
+@media (max-width:650px) { :root:root:root:root .students-page .student-directory .directory-heading { padding:20px; align-items:flex-start; flex-direction:column; gap:12px; } :root:root:root:root .students-page .student-directory .directory-workspace { margin:0 12px 16px; padding:14px; } .students-page .directory-search-row { grid-template-columns:1fr; } .students-page .directory-refine-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .students-page .attendance-filter-tabs { gap:7px; } .students-page .attendance-tab span { padding:8px 11px; font-size:11px; } }
+@media print { .students-page .directory-workspace { display:none; } }
