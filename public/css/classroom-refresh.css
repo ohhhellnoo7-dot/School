@@ -109,3 +109,9 @@
     & .room-card-streams .lesson-state::before { display:none; }
     & .room-card-streams [hidden] { display:none!important; }
 }
+
+/* Restore distinct academic stream colors without changing badge alignment. */
+:root[data-theme]:root:root:root:root:root:root:root:root:root .scholar-workspace .classroom-availability-page {
+    & .room-card-streams .room-stream-science { color:#076954; background:#dcf7ec; border-color:#a8e5ce; }
+    & .room-card-streams .room-stream-social_science { color:#6d28a0; background:#f2e8ff; border-color:#dfc7fa; }
+}
