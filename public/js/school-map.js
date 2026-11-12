@@ -4,6 +4,28 @@
     const result = dialog?.querySelector('[data-scan-dialog-result]') || document.querySelector('[data-scan-result]');
     dialog?.querySelector('[data-close-scan]')?.addEventListener('click', () => dialog.close());
     const headerScanner = document.querySelector('.teacher-scan-shortcut');
+    const showLoading = (checking = false) => {
+        const template = document.getElementById('scan-loading-template');
+        if (!dialog || !template) return false;
+        dialog.classList.add('scan-dialog--loading');
+        result.classList.remove('p-3', 'border', 'rounded-3', 'text-success', 'text-danger');
+        result.replaceChildren(template.content.cloneNode(true));
+        result.setAttribute('aria-busy', 'true');
+        if (checking) {
+            result.querySelector('[data-loading-heading]').textContent = 'Verifying your school location…';
+            result.querySelector('[data-loading-description]').textContent = 'Checking the attendance zone and preparing your check-in.';
+            result.querySelector('[role="progressbar"]').setAttribute('aria-valuetext', 'Verifying school location');
+            result.querySelectorAll('.scan-loading-steps li').forEach((step, index) => {
+                step.classList.toggle('is-active', index === 2);
+                step.classList.toggle('is-complete', index < 2);
+            });
+        }
+        return true;
+    };
+    const finishLoading = () => {
+        dialog?.classList.remove('scan-dialog--loading');
+        result?.removeAttribute('aria-busy');
+    };
     headerScanner?.addEventListener('click', event => {
         // On the map, both controls start the same scan; the link carries scan intent across pages.
         if (!scanner || !result) return;
@@ -12,6 +34,7 @@
         scanner.click();
     });
     const showReceipt = data => {
+        finishLoading();
         const late = data.status === 'late';
         const card = document.createElement('article');
         card.className = `checkin-receipt${late ? ' checkin-receipt--late' : ''}`;
@@ -53,6 +76,7 @@
         if (!dialog) card.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'nearest' });
     };
     const show = (target, message, state = '') => {
+        if (target === result) finishLoading();
         if (target === result) target.classList.add('p-3', 'border', 'rounded-3');
         target.textContent = message;
         target.classList.remove('text-success', 'text-danger');
@@ -218,12 +242,14 @@
         const version = targetVersion;
         const target = scanner.dataset.checkTarget === 'true' ? mapInput.value.trim() : undefined;
         scanner.disabled = true;
+        const minimumLoading = new Promise(resolve => setTimeout(resolve, 3000));
+        showLoading();
         headerScanner?.setAttribute('aria-disabled', 'true');
         headerScanner?.setAttribute('aria-busy', 'true');
-        show(result, 'Finding your current location…');
+        if (!dialog) show(result, 'Finding your current location…');
         try {
             const position = await locate();
-            show(result, 'Checking your distance from the school…');
+            if (!showLoading(true)) show(result, 'Checking your distance from the school…');
             const response = await fetch(scanner.dataset.endpoint, {
                 method: 'POST', credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
@@ -234,6 +260,7 @@
             if (response.status === 403) throw new Error('Your account is not allowed to check in. Contact an administrator.');
             if (response.status === 404) throw new Error('No active attendance location is available. Ask an administrator to save or activate one.');
             const data = await response.json();
+            await minimumLoading;
             if (version !== targetVersion) return;
             if (response.ok && data.success && data.teacher_name && ['present', 'late'].includes(data.status)) {
                 showReceipt(data);
@@ -242,6 +269,7 @@
             const message = data.message || 'The location check could not be completed. Please scan again.';
             show(result, message + (data.location_name ? ` Area: ${data.location_name}.` : '') + (data.distance_meters !== undefined ? ` Estimated distance: ${data.distance_meters} m. Location accuracy: ±${data.accuracy_meters} m. Allowed radius: ${data.radius_meters} m.` : ''), response.ok && data.success ? 'success' : 'error');
         } catch (error) {
+            await minimumLoading;
             if (version !== targetVersion) return;
             show(result, error instanceof TypeError ? 'Could not reach the server. Check your connection and scan again.' : error.message, 'error');
         } finally {

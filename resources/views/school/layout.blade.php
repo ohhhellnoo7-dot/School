@@ -93,6 +93,7 @@ a.attendance-status-tile:hover, a.attendance-status-tile:focus-visible { outline
     <button type="button" data-global-scan data-endpoint="{{ route('school.map.scan') }}" hidden></button>
     <div data-scan-dialog-result role="status" aria-live="polite"></div>
 </dialog>
+@include('school.partials.scan-loading')
 <script src="{{ asset('js/school-map.js') }}?v={{ filemtime(public_path('js/school-map.js')) }}" defer></script>
 @endif
 <script src="{{ asset('vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
