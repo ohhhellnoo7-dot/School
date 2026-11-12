@@ -41,7 +41,7 @@ class SchoolMapTest extends TestCase
         $teacher = User::factory()->create(['role' => 'teacher', 'status' => 'active']);
         $this->actingAs($teacher)->get(route('school.map', ['site' => $site->id]))
             ->assertOk()->assertDontSee('Administrator current location (test)')
-            ->assertDontSee('Start scan location');
+            ->assertDontSee('data-scan-location', false);
         $this->postJson(route('school.map.scan'), $scan)->assertNotFound();
         $this->actingAs($admin)->postJson(route('school.map.scan'), $scan)->assertNotFound();
         $this->get(route('school.map'))->assertOk()
