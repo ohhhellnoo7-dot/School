@@ -1,6 +1,15 @@
 (() => {
     const scanner = document.querySelector('[data-scan-location]');
     const result = document.querySelector('[data-scan-result]');
+    const headerScanner = document.querySelector('.teacher-scan-shortcut');
+    headerScanner?.addEventListener('click', event => {
+        // On the map, both controls start the same scan. Elsewhere the link opens the map.
+        if (!scanner || !result) return;
+        event.preventDefault();
+        if (scanner.disabled) return;
+        document.getElementById('attendance-check-in')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        scanner.click();
+    });
     const showReceipt = data => {
         const late = data.status === 'late';
         const card = document.createElement('article');
@@ -203,9 +212,12 @@
         }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
     });
     scanner?.addEventListener('click', async () => {
+        if (scanner.disabled) return;
         const version = targetVersion;
         const target = scanner.dataset.checkTarget === 'true' ? mapInput.value.trim() : undefined;
         scanner.disabled = true;
+        headerScanner?.setAttribute('aria-disabled', 'true');
+        headerScanner?.setAttribute('aria-busy', 'true');
         show(result, 'Finding your current location…');
         try {
             const position = await locate();
@@ -232,6 +244,8 @@
             show(result, error instanceof TypeError ? 'Could not reach the server. Check your connection and scan again.' : error.message, 'error');
         } finally {
             scanner.disabled = false;
+            headerScanner?.removeAttribute('aria-disabled');
+            headerScanner?.removeAttribute('aria-busy');
         }
     });
 })();
