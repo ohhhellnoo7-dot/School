@@ -57,3 +57,5 @@
 .reports-redesign .reports-status-list .status-unpaid{color:var(--chart-absent,#e35d79)}
 @media(max-width:767px){.main-content:has(.reports-redesign){padding:18px 14px}}
 @media print{.main-content:has(.reports-redesign){background:white!important;padding:0}}
+.reports-metrics.reports-cash-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:767px){.reports-metrics.reports-cash-metrics{grid-template-columns:1fr}}

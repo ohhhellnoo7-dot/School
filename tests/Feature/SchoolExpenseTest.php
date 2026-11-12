@@ -25,7 +25,8 @@ class SchoolExpenseTest extends TestCase {
   $this->assertSame(8000,$report['totals']['USD']['remaining']);
   $this->assertSame(2000,$report['days'][today()->toDateString()]['USD']['expenses']);
   $this->assertSame('100.00',$fee->fresh()->paid);
-  $this->get(route('reports'))->assertOk()->assertSee('New student chair')->assertSee('80.00');
+  $this->get(route('reports'))->assertOk()->assertSee('New student chair')
+   ->assertSeeInOrder(['Net receipts before expenses', '$100.00', 'Money taken out', '$20.00', 'Money remaining', '$80.00']);
   $this->assertDatabaseCount('finance_audits',2);
  }
  public function test_expenses_enforce_balance_currency_date_amount_and_permissions(): void {

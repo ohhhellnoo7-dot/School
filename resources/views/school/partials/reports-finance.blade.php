@@ -15,6 +15,15 @@ $statusTotal = array_sum($statuses);
 <section class="reports-metric {{ $metric[2] }}"><span class="reports-metric-icon"><i class="bi bi-{{ $metric[1] }}"></i></span><div><h3>{{ $metric[0] }}</h3><strong>{{ $currency === 'USD' ? '$' : '' }}{{ \App\Support\Money::display($s[$key]) }}</strong><small>{{ $currency }} &middot; {{ $key === 'month' ? today()->format('F Y') : 'Current invoice totals' }}</small>@if($key === 'month')<a class="btn btn-sm btn-outline-primary mt-2" href="#school-expenses">Record expense / daily report</a>@endif</div></section>
 @endforeach
 </div>
+@php
+$cash = $cashReport['totals'][$currency] ?? ['receipts' => 0, 'refunds' => 0, 'expenses' => 0, 'remaining' => 0];
+@endphp
+<div class="reports-section-title"><h2><i class="bi bi-wallet2"></i> Money remaining &middot; {{ $cashReport['month']->format('F Y') }}</h2><span>All academic years &middot; {{ $currency }}</span></div>
+<div class="reports-metrics reports-cash-metrics">
+    <section class="reports-metric sky"><span class="reports-metric-icon"><i class="bi bi-receipt" aria-hidden="true"></i></span><div><h3>Net receipts before expenses</h3><strong>{{ $currency === 'USD' ? '$' : '' }}{{ \App\Support\Money::display($cash['receipts'] - $cash['refunds']) }}</strong><small>Payments received minus refunds</small></div></section>
+    <section class="reports-metric rose"><span class="reports-metric-icon"><i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></span><div><h3>Money taken out</h3><strong>{{ $currency === 'USD' ? '$' : '' }}{{ \App\Support\Money::display($cash['expenses']) }}</strong><small>Recorded expenses this month</small><a class="btn btn-sm btn-outline-primary mt-2" href="#expense-amount">Add expense &amp; reason</a></div></section>
+    <section class="reports-metric mint"><span class="reports-metric-icon"><i class="bi bi-wallet2" aria-hidden="true"></i></span><div><h3>Money remaining</h3><strong>{{ $currency === 'USD' ? '$' : '' }}{{ \App\Support\Money::display($cash['remaining']) }}</strong><small>Net receipts minus money taken out</small></div></section>
+</div>
 <div class="reports-chart-grid">
 <section class="panel reports-collected"><div class="panel-header"><h2><i class="bi bi-stack"></i> Collected by Program</h2><a href="{{ route('finance.index', array_filter(['academic_year'=>request('academic_year')])) }}#invoice-list" aria-label="View invoices" title="View invoices"><i class="bi bi-arrow-up-right"></i></a></div><div class="reports-donut-layout"><div class="reports-donut"><canvas data-program-collection data-labels='@json($programLabels)' data-values='@json($programValues)' role="img" aria-label="Collected fees by program in {{ $currency }}"></canvas><div class="reports-donut-center"><strong>{{ $currency === 'USD' ? '$' : '' }}{{ \App\Support\Money::display($s['paid']) }}</strong><small>Total Collected</small></div></div><div class="reports-legend">
 @foreach($programs as $index=>$program)

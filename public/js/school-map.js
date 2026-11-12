@@ -5,6 +5,7 @@
     dialog?.querySelector('[data-close-scan]')?.addEventListener('click', () => dialog.close());
     const headerScanner = document.querySelector('.teacher-scan-shortcut');
     const showLoading = (checking = false) => {
+        dialog?.classList.remove('scan-dialog--failed');
         const template = document.getElementById('scan-loading-template');
         if (!dialog || !template) return false;
         dialog.classList.add('scan-dialog--loading');
@@ -35,6 +36,7 @@
     });
     const showReceipt = data => {
         finishLoading();
+        dialog?.classList.remove('scan-dialog--failed');
         const late = data.status === 'late';
         const card = document.createElement('article');
         card.className = `checkin-receipt${late ? ' checkin-receipt--late' : ''}`;
@@ -78,7 +80,53 @@
         result.replaceChildren(card);
         if (!dialog) card.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'nearest' });
     };
+    const showFailure = data => {
+        finishLoading();
+        dialog?.classList.add('scan-dialog--failed');
+        result.classList.remove('p-3', 'border', 'rounded-3', 'text-success', 'text-danger');
+        const card = document.createElement('article');
+        card.className = 'checkin-failure';
+        const art = document.createElement('div');
+        art.className = 'checkin-failure-art';
+        art.setAttribute('aria-hidden', 'true');
+        art.innerHTML = `<svg viewBox="0 0 460 190" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="failure-pin" x1="210" y1="20" x2="255" y2="150" gradientUnits="userSpaceOnUse"><stop stop-color="#ff6578"/><stop offset=".5" stop-color="#ef2349"/><stop offset="1" stop-color="#ba0730"/></linearGradient><linearGradient id="failure-ground"><stop stop-color="#e0f3ff"/><stop offset="1" stop-color="#f7e5f1"/></linearGradient></defs><path d="M28 153 134 91 308 91 436 154 319 178 139 175Z" fill="url(#failure-ground)"/><path d="m65 158 93-56m-36 68 89-70m85 73-51-73m141 62-93-57M48 139l356 3" stroke="white" stroke-width="9"/><ellipse cx="227" cy="153" rx="99" ry="26" fill="#ff7896" opacity=".23"/><ellipse cx="227" cy="153" rx="59" ry="16" fill="#f44a70" opacity=".22"/><path d="M227 15c-28 0-48 20-48 46 0 32 48 86 48 86s48-54 48-86c0-26-20-46-48-46Z" fill="url(#failure-pin)" stroke="#ff8c9b" stroke-width="2"/><circle cx="227" cy="60" r="24" fill="#fff3f5"/><path d="m218 51 18 18m0-18-18 18" stroke="#e92449" stroke-width="7" stroke-linecap="round"/><path d="M322 78h67v64h-67z" fill="#ffd482"/><path d="m313 80 43-26 43 26z" fill="#ed8b48"/><path d="M346 97h20v45h-20z" fill="#edaa60"/><path d="M351 124a5 5 0 0 1 10 0v18h-10z" fill="#ac6271"/><path d="M330 91h9v12h-9zm44 0h9v12h-9zm-44 23h9v12h-9zm44 0h9v12h-9z" fill="#619bb4"/><path d="M356 54V30" stroke="#ab7180" stroke-width="3"/><path d="m358 30 18 3-3 6 3 6-18-3z" fill="#f65072"/><path d="M74 150v-32m23 21v-35m309 51v-29" stroke="#75a775" stroke-width="5"/><ellipse cx="74" cy="119" rx="13" ry="20" fill="#64c886"/><ellipse cx="97" cy="105" rx="14" ry="23" fill="#3db970"/><ellipse cx="406" cy="127" rx="14" ry="23" fill="#64c886"/><path d="M104 40h40m168-4h31" stroke="#eddfef" stroke-width="12" stroke-linecap="round"/><circle cx="123" cy="34" r="12" fill="#f2e7f3"/></svg>`;
+        card.append(art);
+        const add = (tag, className, text, parent = card) => {
+            const node = document.createElement(tag);
+            node.className = className;
+            node.textContent = text;
+            parent.append(node);
+            return node;
+        };
+        add('h2', 'checkin-failure-title', 'Check-in Failed!');
+        const outside = data.distance_meters !== undefined;
+        add('p', 'checkin-failure-subtitle', outside ? 'You are outside the allowed school area.' : data.message);
+        if (outside) {
+            const details = add('dl', 'checkin-failure-details', '');
+            const meters = value => Number.isFinite(Number(value)) ? `${new Intl.NumberFormat('en-US').format(Number(value))} m` : 'Unavailable';
+            [
+                ['geo-alt-fill', 'School area', data.location_name || 'Active attendance location'],
+                ['signpost-split', 'Estimated distance', meters(data.distance_meters)],
+                ['crosshair', 'Location accuracy', data.accuracy_meters == null ? 'Unavailable' : `±${meters(data.accuracy_meters)}`],
+                ['bullseye', 'Allowed radius', meters(data.radius_meters)],
+            ].forEach(([icon, label, value]) => {
+                const row = add('div', 'checkin-failure-row', '', details);
+                const term = add('dt', '', '', row);
+                add('i', `bi bi-${icon}`, '', term).setAttribute('aria-hidden', 'true');
+                add('span', '', label, term);
+                add('dd', '', value, row);
+            });
+        }
+        const retry = add('button', 'checkin-failure-retry', '');
+        retry.type = 'button';
+        add('i', 'bi bi-cursor-fill', '', retry).setAttribute('aria-hidden', 'true');
+        add('span', '', 'Try Again', retry);
+        retry.addEventListener('click', () => scanner?.click());
+        result.replaceChildren(card);
+    };
     const show = (target, message, state = '') => {
+        if (target === result && state === 'error') return showFailure({ message });
+        if (target === result) dialog?.classList.remove('scan-dialog--failed');
         if (target === result) finishLoading();
         if (target === result) target.classList.add('p-3', 'border', 'rounded-3');
         target.textContent = message;
@@ -270,6 +318,10 @@
                 return;
             }
             const message = data.message || 'The location check could not be completed. Please scan again.';
+            if (!data.success) {
+                showFailure({ ...data, message });
+                return;
+            }
             show(result, message + (data.location_name ? ` Area: ${data.location_name}.` : '') + (data.distance_meters !== undefined ? ` Estimated distance: ${data.distance_meters} m. Location accuracy: ±${data.accuracy_meters} m. Allowed radius: ${data.radius_meters} m.` : ''), response.ok && data.success ? 'success' : 'error');
         } catch (error) {
             await minimumLoading;
