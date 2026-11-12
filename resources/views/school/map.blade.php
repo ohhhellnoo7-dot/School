@@ -82,5 +82,7 @@
 @endsection
 
 @push('scripts')
+@if(auth()->user()->role !== 'teacher')
 <script src="{{ asset('js/school-map.js') }}?v={{ filemtime(public_path('js/school-map.js')) }}" defer></script>
+@endif
 @endpush

@@ -12,6 +12,17 @@ class SchoolMapTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_teacher_can_scan_from_overview_with_a_closable_result_dialog(): void
+    {
+        $teacher = User::factory()->create(['role' => 'teacher', 'status' => 'active']);
+        $this->actingAs($teacher)->get(route('dashboard'))->assertOk()
+            ->assertSee('data-scan-dialog', false)
+            ->assertSee('data-close-scan', false)
+            ->assertSee('data-global-scan', false)
+            ->assertSee(route('school.map.scan'), false)
+            ->assertSee('js/school-map.js', false);
+    }
+
     public function test_map_requires_login_and_displays_the_requested_location(): void
     {
         $this->get(route('school.map'))->assertRedirect(route('login'));

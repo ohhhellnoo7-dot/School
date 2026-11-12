@@ -1,13 +1,14 @@
 (() => {
-    const scanner = document.querySelector('[data-scan-location]');
-    const result = document.querySelector('[data-scan-result]');
+    const scanner = document.querySelector('[data-scan-location]') || document.querySelector('[data-global-scan]');
+    const dialog = document.querySelector('[data-scan-dialog]');
+    const result = dialog?.querySelector('[data-scan-dialog-result]') || document.querySelector('[data-scan-result]');
+    dialog?.querySelector('[data-close-scan]')?.addEventListener('click', () => dialog.close());
     const headerScanner = document.querySelector('.teacher-scan-shortcut');
     headerScanner?.addEventListener('click', event => {
-        // On the map, both controls start the same scan. Elsewhere the link opens the map.
+        // On the map, both controls start the same scan; the link carries scan intent across pages.
         if (!scanner || !result) return;
         event.preventDefault();
         if (scanner.disabled) return;
-        document.getElementById('attendance-check-in')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
         scanner.click();
     });
     const showReceipt = data => {
@@ -49,7 +50,7 @@
         add('div', 'checkin-landscape', 'អបអរសាទរ · SCHOOL ATTENDANCE').setAttribute('aria-hidden', 'true');
         result.classList.remove('p-3', 'border', 'rounded-3', 'text-success', 'text-danger');
         result.replaceChildren(card);
-        card.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'nearest' });
+        if (!dialog) card.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'nearest' });
     };
     const show = (target, message, state = '') => {
         if (target === result) target.classList.add('p-3', 'border', 'rounded-3');
@@ -213,6 +214,7 @@
     });
     scanner?.addEventListener('click', async () => {
         if (scanner.disabled) return;
+        if (dialog && !dialog.open) dialog.showModal();
         const version = targetVersion;
         const target = scanner.dataset.checkTarget === 'true' ? mapInput.value.trim() : undefined;
         scanner.disabled = true;
@@ -225,7 +227,7 @@
             const response = await fetch(scanner.dataset.endpoint, {
                 method: 'POST', credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-                body: JSON.stringify({ expected_location_id: Number(scanner.dataset.activeId), target_location: target, latitude: position.coords.latitude, longitude: position.coords.longitude, accuracy: position.coords.accuracy, sampled_at: new Date(position.timestamp).toISOString() }),
+                body: JSON.stringify({ expected_location_id: scanner.dataset.activeId ? Number(scanner.dataset.activeId) : undefined, target_location: target, latitude: position.coords.latitude, longitude: position.coords.longitude, accuracy: position.coords.accuracy, sampled_at: new Date(position.timestamp).toISOString() }),
             });
             if (response.status === 419 || response.status === 401) throw new Error('Your session expired. Refresh the page and sign in again.');
             if (response.status === 429) throw new Error('Too many scans. Wait one minute and try again.');
@@ -248,4 +250,11 @@
             headerScanner?.removeAttribute('aria-busy');
         }
     });
+    const scanUrl = new URL(window.location.href);
+    if (scanUrl.searchParams.get('scan') === '1') {
+        // Consume once so refreshing or returning to this page does not trigger another scan.
+        scanUrl.searchParams.delete('scan');
+        window.history.replaceState(window.history.state, '', scanUrl);
+        if (scanner && !scanner.disabled) scanner.click();
+    }
 })();
