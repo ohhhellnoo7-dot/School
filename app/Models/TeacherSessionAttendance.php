@@ -15,6 +15,6 @@ class TeacherSessionAttendance extends Model
 
     protected function casts(): array
     {
-        return ['date' => 'date', 'scanned_at' => 'datetime'];
+        return ['date' => 'date', 'scanned_at' => 'datetime', 'scheduled_start' => 'datetime', 'scheduled_end' => 'datetime', 'checked_out_at' => 'datetime'];
     }
 }

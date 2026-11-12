@@ -155,14 +155,84 @@ class ClassTeacherSwapTest extends TestCase
         }
     }
 
-    public function test_khmer_subject_swap_rejects_different_times_and_rolls_back_unavailable_teachers(): void
+    public function test_subject_picker_prefers_real_assignments_over_empty_duplicates_per_session(): void
+    {
+        $a = $this->khmerCohort(7);
+        $b = $this->khmerCohort(8);
+        foreach ([$a, $b] as $cohort) {
+            Subject::create(['name' => 'Writing', 'code' => 'EMPTY'.$cohort['class']->id, 'school_class_id' => $cohort['class']->id]);
+        }
+        $afternoon = SchoolClass::create(['class_group_id' => $a['group']->id, 'name' => 'Afternoon class', 'program' => 'Khmer', 'section' => 'A', 'session' => 'Afternoon']);
+        $afternoonSubject = Subject::create(['name' => 'Writing', 'code' => 'AFTERNOON', 'school_class_id' => $afternoon->id]);
+
+        $rows = collect(app(\App\Services\KhmerSubjectSwapService::class)->formData($a['group']));
+
+        $this->assertCount(2, $rows);
+        $morning = $rows->firstWhere('session', 'Morning');
+        $this->assertEquals($a['subject']->id, $morning['id']);
+        $this->assertEquals([$b['subject']->id], array_column($morning['candidates'], 'id'));
+        $this->assertEquals($afternoonSubject->id, $rows->firstWhere('session', 'Afternoon')['id']);
+    }
+
+    public function test_subject_swap_lists_teachers_with_different_times_or_no_lessons(): void
+    {
+        $a = $this->khmerCohort(7);
+        $b = $this->khmerCohort(8);
+        $c = $this->khmerCohort(9);
+        $other = $this->khmerCohort(10);
+        $inactive = $this->khmerCohort(11);
+        Subject::whereKey($other['subject']->id)->update(['name' => 'Chemistry']);
+        $inactive['teacher']->update(['status' => 'inactive']);
+        Schedule::whereKey($b['lesson']->id)->update(['starts_at' => '08:00', 'ends_at' => '09:00']);
+        $a['lesson']->delete();
+        $c['lesson']->delete();
+
+        $row = collect(app(\App\Services\KhmerSubjectSwapService::class)->formData($a['group']))->first();
+        $this->assertEqualsCanonicalizing([$b['subject']->id, $c['subject']->id], array_column($row['candidates'], 'id'));
+        $this->assertStringStartsWith($b['teacher']->name.' - ', collect($row['candidates'])->firstWhere('id', $b['subject']->id)['label']);
+        $this->actingAs(User::factory()->create(['role' => 'administrator']));
+        $this->requestSubjectSwap($a, $c)->assertSessionHasNoErrors();
+        $this->assertEquals($c['teacher']->id, $a['subject']->fresh()->teacher_id);
+        $this->assertEquals($a['teacher']->id, $c['subject']->fresh()->teacher_id);
+    }
+
+    public function test_subject_swap_only_lists_and_accepts_the_selected_session(): void
+    {
+        $a = $this->khmerCohort(7);
+        $b = $this->khmerCohort(8);
+        $c = $this->khmerCohort(9);
+        $c['class']->update(['session' => 'Afternoon']);
+        $afternoon = SchoolClass::create(['class_group_id' => $a['group']->id, 'name' => 'Afternoon class', 'program' => 'Khmer', 'section' => 'A', 'session' => 'Afternoon']);
+        $afternoonSubject = Subject::create(['name' => 'Writing', 'code' => 'SESSION-AFTERNOON', 'school_class_id' => $afternoon->id, 'teacher_id' => $a['teacher']->id]);
+
+        $rows = collect(app(\App\Services\KhmerSubjectSwapService::class)->formData($a['group']));
+        $this->assertEquals([$b['subject']->id], array_column($rows->firstWhere('session', 'Morning')['candidates'], 'id'));
+        $this->assertEquals([$c['subject']->id], array_column($rows->firstWhere('session', 'Afternoon')['candidates'], 'id'));
+        $this->actingAs(User::factory()->create(['role' => 'administrator']));
+        $this->requestSubjectSwap($a, $c)->assertSessionHasErrors('subject_swap');
+        $this->assertEquals($a['teacher']->id, $a['subject']->fresh()->teacher_id);
+        $this->assertEquals($c['teacher']->id, $c['subject']->fresh()->teacher_id);
+    }
+
+    public function test_subject_swap_accepts_different_lesson_times_and_preserves_them(): void
+    {
+        $a = $this->khmerCohort(7);
+        $b = $this->khmerCohort(8);
+        Schedule::whereKey($b['lesson']->id)->update(['starts_at' => '08:00', 'ends_at' => '09:00']);
+        $this->actingAs(User::factory()->create(['role' => 'administrator']));
+        $this->requestSubjectSwap($a, $b)->assertSessionHasNoErrors();
+        $this->assertEquals($b['teacher']->id, $a['lesson']->fresh()->teacher_id);
+        $this->assertEquals($a['teacher']->id, $b['lesson']->fresh()->teacher_id);
+        $this->assertStringStartsWith('07:00', $a['lesson']->fresh()->starts_at);
+        $this->assertStringStartsWith('08:00', $b['lesson']->fresh()->starts_at);
+    }
+
+    public function test_khmer_subject_swap_rolls_back_unavailable_teachers(): void
     {
         $a = $this->khmerCohort(7);
         $b = $this->khmerCohort(8);
         $this->actingAs(User::factory()->create(['role' => 'administrator']));
         Schedule::whereKey($b['lesson']->id)->update(['starts_at' => '08:00', 'ends_at' => '09:00']);
-        $this->requestSubjectSwap($a, $b)->assertSessionHasErrors('subject_swap');
-        Schedule::whereKey($b['lesson']->id)->update(['starts_at' => '07:00', 'ends_at' => '08:00']);
         \Illuminate\Support\Facades\DB::table('teacher_working_periods')->where('teacher_id', $b['teacher']->id)->update(['unavailable' => true]);
         $this->requestSubjectSwap($a, $b)->assertSessionHasErrors('subject_swap');
         foreach ([$a, $b] as $cohort) {
@@ -171,6 +241,23 @@ class ClassTeacherSwapTest extends TestCase
         }
         $this->actingAs($a['teacher']);
         $this->requestSubjectSwap($a, $b)->assertForbidden();
+    }
+
+    public function test_subject_swap_rolls_back_when_incoming_teacher_has_another_lesson(): void
+    {
+        $a = $this->khmerCohort(7);
+        $b = $this->khmerCohort(8);
+        $other = $this->khmerCohort(9);
+        Schedule::whereKey($b['lesson']->id)->update(['starts_at' => '08:00', 'ends_at' => '09:00']);
+        Schedule::whereKey($other['lesson']->id)->update(['teacher_id' => $b['teacher']->id]);
+        $this->actingAs(User::factory()->create(['role' => 'administrator']));
+
+        $this->requestSubjectSwap($a, $b)->assertSessionHasErrors('subject_swap');
+
+        foreach ([$a, $b] as $cohort) {
+            $this->assertEquals($cohort['teacher']->id, $cohort['subject']->fresh()->teacher_id);
+            $this->assertEquals($cohort['teacher']->id, $cohort['lesson']->fresh()->teacher_id);
+        }
     }
 }
 

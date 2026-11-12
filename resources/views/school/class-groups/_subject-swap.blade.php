@@ -3,11 +3,11 @@
         @csrf
         <h2 class="h5">Swap subject teachers</h2>
         <p data-subject-swap-summary></p>
-        <p class="small text-secondary">Choose another Khmer class teaching this subject at the same weekday, time and academic year. Both subject assignments and their lessons exchange teachers. Save class edits before swapping.</p>
+        <p class="small text-secondary">Choose a teacher who teaches this subject in another Khmer class in the selected session. Both class assignments exchange teachers, keeping their existing lesson times. Availability and timetable conflicts are checked when you swap. Save class edits before swapping.</p>
         <input type="hidden" name="source_subject_id" data-source-subject>
         <input type="hidden" name="source_teacher_id" data-source-teacher>
         <input type="hidden" name="target_teacher_id" data-target-teacher>
-        <label class="form-label" for="target-subject">Other class and teacher</label>
+        <label class="form-label" for="target-subject">Teacher and class</label>
         <select id="target-subject" class="form-select" name="target_subject_id" required></select>
         <p data-subject-swap-empty class="form-text" role="status"></p>
         @foreach(['subject_swap', 'source_subject_id', 'target_subject_id', 'source_teacher_id', 'target_teacher_id'] as $field)
@@ -38,20 +38,20 @@
         document.querySelector('[data-source-subject]').value = selected?.id || '';
         document.querySelector('[data-source-teacher]').value = selected?.teacher_id || '';
         document.querySelector('[data-subject-swap-summary]').textContent = selected ? `${selected.label} - ${selected.teacher}. ${selected.times}` : '';
-        target.replaceChildren(new Option('Choose another class and teacher', ''));
+        target.replaceChildren(new Option('Choose a teacher and class', ''));
         (selected?.candidates || []).forEach(item => {
             const option = new Option(item.label, item.id);
             option.dataset.teacher = item.teacher_id;
             target.add(option);
         });
-        document.querySelector('[data-subject-swap-empty]').textContent = selected?.candidates.length ? '' : 'No other teacher has this subject with matching lesson times.';
+        document.querySelector('[data-subject-swap-empty]').textContent = selected?.candidates.length ? '' : 'No other active teacher is assigned to this subject in another Khmer class in the selected session.';
         document.getElementById('submit-subject-swap').disabled = !selected?.candidates.length;
         syncTarget();
     };
     const filterSession = (wantedSubject = '') => {
         const previous = subjects.find(item => String(item.id) === subject.value);
         const visible = subjects.filter(item => item.session === activeSession);
-        subject.replaceChildren(new Option(visible.length ? 'Choose a subject' : 'No subjects in this session', ''), ...visible.map(item => new Option(item.label, item.id)));
+        subject.replaceChildren(new Option(visible.length ? 'Choose a subject' : 'No subjects in this session', ''), ...visible.map(item => new Option(`${item.teacher} - ${item.label}`, item.id)));
         const selected = visible.find(item => String(item.id) === wantedSubject)
             || visible.find(item => item.label.split(' - ')[0] === previous?.label.split(' - ')[0]);
         subject.value = selected ? String(selected.id) : '';

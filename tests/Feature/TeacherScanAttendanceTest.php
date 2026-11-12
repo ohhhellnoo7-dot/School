@@ -11,6 +11,44 @@ class TeacherScanAttendanceTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_monthly_grid_shows_program_and_three_separate_sessions(): void
+    {
+        $this->travelTo(now()->setDate(2026, 11, 11)->setTime(7, 10));
+        $teacher = $this->teacher();
+        app(TeacherScanAttendance::class)->scan($teacher);
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $this->actingAs($admin)->get(route('teacher-attendance.monthly', ['month' => '2026-11']))
+            ->assertOk()->assertSee($teacher->name)->assertSee('Khmer')->assertSee('Morning, Afternoon, Evening')
+            ->assertSee('Scanned 07:10')->assertSee('Afternoon · Not recorded')->assertSee('Evening · Not recorded');
+        $this->get(route('teacher-attendance.monthly', ['month' => 'bad']))->assertSessionHasErrors('month');
+        $this->actingAs(User::factory()->create(['role' => 'teacher']))
+            ->get(route('teacher-attendance.monthly', ['month' => '2026-11']))->assertOk()->assertDontSee($teacher->name);
+        $this->actingAs(User::factory()->create(['role' => 'student']))
+            ->get(route('teacher-attendance.monthly'))->assertForbidden();
+    }
+
+    public function test_monthly_daily_summary_uses_the_same_administrator_marks_as_the_overview(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = User::factory()->create(['role' => 'teacher', 'program' => 'Khmer']);
+        \App\Models\TeacherAttendance::create(['teacher_id' => $teacher->id, 'date' => today(), 'program' => 'Khmer', 'status' => 'excused', 'recorded_by' => $admin->id]);
+        $this->actingAs($admin)->get(route('teacher-attendance.monthly'))
+            ->assertOk()->assertSee($teacher->name)->assertSee('Daily summary')
+            ->assertSee('Daily summary · excused')->assertSee('mark-excused');
+    }
+
+    public function test_monthly_session_honors_admin_marks_like_the_overview_without_claiming_a_scan(): void
+    {
+        $this->travelTo(now()->setDate(2026, 11, 11)->setTime(19, 0));
+        $teacher = $this->teacher();
+        $admin = User::factory()->create(['role' => 'administrator']);
+        \App\Models\TeacherAttendance::create(['teacher_id' => $teacher->id, 'date' => today(), 'program' => 'Khmer', 'status' => 'present', 'recorded_by' => $admin->id]);
+        app(TeacherScanAttendance::class)->refreshDate(today()->toDateString());
+        $this->actingAs($admin)->get(route('teacher-attendance.monthly', ['month' => '2026-11', 'session' => 'Evening']))
+            ->assertOk()->assertSee('Evening · present · Administrator daily mark')->assertDontSee('>Admin</small>', false);
+        $this->assertDatabaseHas('teacher_session_attendances', ['teacher_id' => $teacher->id, 'session' => 'Evening', 'status' => 'absent', 'scanned_at' => null]);
+    }
+
     private function teacher(): User
     {
         $teacher = User::factory()->create(['role' => 'teacher', 'status' => 'active', 'program' => 'Khmer']);
@@ -20,6 +58,80 @@ class TeacherScanAttendanceTest extends TestCase
             Schedule::create(['subject_id' => $subject->id, 'day' => 'Wednesday', 'starts_at' => $start, 'ends_at' => $end, 'room' => 'A']);
         }
         return $teacher;
+    }
+
+    public function test_checkout_requires_verified_location_arrival_and_session_end_and_is_idempotent(): void
+    {
+        $this->travelTo(now()->setDate(2026, 11, 11)->setTime(7, 0));
+        $teacher = $this->teacher();
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $location = SchoolLocation::create(['name' => 'Campus', 'latitude' => 11.6, 'longitude' => 104.94,
+            'radius_meters' => 100, 'is_active' => true, 'created_by' => $admin->id]);
+        \App\Models\AttendanceSessionSetting::create(['session' => 'Morning', 'starts_at' => '07:00', 'ends_at' => '11:30', 'grace_minutes' => 10]);
+        $payload = fn ($action) => ['action' => $action, 'latitude' => 11.6, 'longitude' => 104.94,
+            'accuracy' => 10, 'sampled_at' => now()->toIso8601String()];
+        $this->actingAs($teacher)->get(route('dashboard'))->assertOk()->assertSee('Finish work');
+        $this->postJson(route('school.map.scan'), $payload('check_out'))->assertUnprocessable()->assertJsonPath('success', false);
+        $this->postJson(route('school.map.scan'), $payload('check_in'))->assertOk()->assertJsonPath('status', 'present');
+        $this->travelTo(now()->setTime(11, 29));
+        $this->postJson(route('school.map.scan'), $payload('check_out'))->assertUnprocessable();
+        $this->travelTo(now()->setTime(11, 30));
+        $this->postJson(route('school.map.scan'), array_replace($payload('check_out'), ['latitude' => 0]))->assertUnprocessable();
+        $this->assertDatabaseMissing('teacher_session_attendances', ['teacher_id' => $teacher->id, 'checked_out_at' => now()]);
+        $stamp = now()->toIso8601String();
+        $this->postJson(route('school.map.scan'), $payload('check_out'))->assertOk()
+            ->assertJsonPath('action', 'check_out')->assertJsonPath('scanned_at', $stamp)->assertJsonPath('status', 'present');
+        $this->travelTo(now()->addMinutes(5));
+        $this->postJson(route('school.map.scan'), $payload('check_out'))->assertOk()->assertJsonPath('scanned_at', $stamp);
+        $record = \App\Models\TeacherSessionAttendance::where('teacher_id', $teacher->id)->where('session', 'Morning')->firstOrFail();
+        $this->assertSame('07:00', $record->scanned_at->format('H:i'));
+        $this->assertSame('11:30', $record->checked_out_at->format('H:i'));
+        $this->assertSame($location->id, $record->checkout_location_id);
+        $this->assertDatabaseCount('school_location_check_ins', 1);
+        $this->actingAs($admin)->get(route('teacher-attendance.monthly'))->assertOk()->assertSee('Out 11:30');
+    }
+
+    public function test_administrator_can_configure_each_session_and_other_roles_cannot(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $sessions = [];
+        foreach (['Morning' => '07:15', 'Afternoon' => '13:15', 'Evening' => '16:45'] as $session => $start) {
+            $sessions[$session] = ['starts_at' => $start, 'ends_at' => null, 'grace_minutes' => 0];
+        }
+        $this->actingAs($admin)->get(route('attendance-settings.edit'))->assertOk()->assertSee('Work start time');
+        $this->put(route('attendance-settings.update'), ['sessions' => $sessions])->assertRedirect(route('attendance-settings.edit'));
+        $this->assertDatabaseHas('attendance_session_settings', ['session' => 'Morning', 'starts_at' => '07:15', 'grace_minutes' => 0]);
+        $sessions['Morning']['ends_at'] = '11:30';
+        $this->put(route('attendance-settings.update'), ['sessions' => $sessions])->assertRedirect();
+        $this->assertDatabaseHas('attendance_session_settings', ['session' => 'Morning', 'ends_at' => '11:30']);
+        $sessions['Morning']['ends_at'] = '06:00';
+        $this->putJson(route('attendance-settings.update'), ['sessions' => $sessions])->assertUnprocessable();
+        $sessions['Morning']['starts_at'] = '25:15';
+        $this->putJson(route('attendance-settings.update'), ['sessions' => $sessions])->assertUnprocessable();
+        foreach (['teacher', 'student', 'parent'] as $role) {
+            $this->actingAs(User::factory()->create(['role' => $role]))->get(route('attendance-settings.edit'))->assertForbidden();
+            $this->putJson(route('attendance-settings.update'), ['sessions' => $sessions])->assertForbidden();
+        }
+    }
+
+    public function test_custom_cutoffs_apply_per_session_and_preserve_first_scan_timing(): void
+    {
+        $this->travelTo(now()->setDate(2026, 11, 11)->setTime(7, 15));
+        $teacher = $this->teacher();
+        foreach (['Morning' => '07:15', 'Afternoon' => '13:15', 'Evening' => '16:45'] as $session => $start) {
+            \App\Models\AttendanceSessionSetting::create(['session' => $session, 'starts_at' => $start, 'grace_minutes' => 0]);
+        }
+        $service = app(TeacherScanAttendance::class);
+        $this->assertSame('present', $service->scan($teacher)['status']);
+        $this->travelTo(now()->setTime(13, 16));
+        $scan = $service->scan($teacher);
+        $this->assertSame('Afternoon', $scan['session']);
+        $this->assertSame('late', $scan['status']);
+        $this->assertSame(1, $scan['late_minutes']);
+        \App\Models\AttendanceSessionSetting::where('session', 'Afternoon')->update(['starts_at' => '13:30']);
+        $this->assertSame(1, $service->scan($teacher)['late_minutes']);
+        $this->travelTo(now()->setTime(16, 45, 1));
+        $this->assertSame('late', $service->scan($teacher)['status']);
     }
 
     public function test_ten_minute_boundary_and_first_scan_are_preserved_for_every_session(): void
@@ -53,6 +165,51 @@ class TeacherScanAttendanceTest extends TestCase
         $service->refreshDate('2026-11-11');
         $this->assertDatabaseHas('teacher_session_attendances', ['teacher_id' => $teacher->id, 'session' => 'Afternoon', 'status' => 'absent']);
         $this->assertDatabaseMissing('teacher_session_attendances', ['session' => 'Evening']);
+    }
+
+    public function test_after_hours_scan_returns_a_distinct_session_notice_without_recording_attendance(): void
+    {
+        $this->travelTo(now()->setDate(2026, 11, 11)->setTime(22, 0));
+        $teacher = $this->teacher();
+        $result = app(TeacherScanAttendance::class)->scan($teacher);
+        $this->assertFalse($result['success']);
+        $this->assertSame('outside_session', $result['reason']);
+        $this->assertDatabaseCount('teacher_session_attendances', 0);
+    }
+
+    public function test_session_messages_follow_live_cutoff_and_thank_teachers_on_departure(): void
+    {
+        $this->travelTo(now()->setDate(2026, 11, 11)->setTime(7, 0));
+        $teacher = $this->teacher();
+        $service = app(TeacherScanAttendance::class);
+        foreach ([['Morning', 7, 0, 11, 0], ['Afternoon', 13, 0, 16, 0], ['Evening', 16, 30, 18, 30]] as [$session, $hour, $minute, $endHour, $endMinute]) {
+            $this->travelTo(now()->setTime($hour, $minute)->subMinute());
+            $arrival = $service->scan($teacher);
+            $this->assertSame($session, $arrival['session']);
+            $this->assertStringContainsString('Good '.strtolower($session), $arrival['encouragement']);
+            $this->travelTo(now()->setTime($hour, $minute)->addMinutes(10));
+            $this->assertNotNull($service->scan($teacher)['encouragement']);
+            $this->travelTo(now()->addSecond());
+            $this->assertNull($service->scan($teacher)['encouragement']);
+            $this->travelTo(now()->setTime($endHour, $endMinute));
+            $departure = $service->checkout($teacher, []);
+            $this->assertTrue($departure['success']);
+            $this->assertStringContainsString('Thank you', $departure['encouragement']);
+            $this->assertStringContainsString(strtolower($session), $departure['encouragement']);
+        }
+    }
+
+    public function test_late_arrival_has_no_motivation_and_custom_allowance_is_respected(): void
+    {
+        $this->travelTo(now()->setDate(2026, 11, 11)->setTime(7, 15));
+        $teacher = $this->teacher();
+        \App\Models\AttendanceSessionSetting::create(['session' => 'Morning', 'starts_at' => '07:15', 'grace_minutes' => 0]);
+        $service = app(TeacherScanAttendance::class);
+        $this->assertNotNull($service->scan($teacher)['encouragement']);
+        $this->travelTo(now()->addWeek()->addSecond());
+        $scan = $service->scan($teacher);
+        $this->assertSame('late', $scan['status']);
+        $this->assertNull($scan['encouragement']);
     }
 
     public function test_verified_scan_updates_directory_and_records_each_session_check_in_once(): void

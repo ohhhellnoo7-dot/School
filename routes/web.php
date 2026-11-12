@@ -39,10 +39,13 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,1');
 });
 Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(function () {
+    Route::get('/attendance-settings', [\App\Http\Controllers\AttendanceSessionSettingController::class, 'edit'])->middleware('role:administrator')->name('attendance-settings.edit');
+    Route::put('/attendance-settings', [\App\Http\Controllers\AttendanceSessionSettingController::class, 'update'])->middleware('role:administrator')->name('attendance-settings.update');
     Route::get('/school/map', [\App\Http\Controllers\SchoolMapController::class, 'index'])->name('school.map');
     Route::post('/school/map/locations', [\App\Http\Controllers\SchoolMapController::class, 'store'])->middleware('role:administrator')->name('school.map.locations.store');
     Route::post('/school/map/set-location', [\App\Http\Controllers\SchoolMapController::class, 'setFromMap'])->middleware('role:administrator')->name('school.map.set-location');
     Route::post('/school/map/locations/{location}/activate', [\App\Http\Controllers\SchoolMapController::class, 'activate'])->middleware('role:administrator')->name('school.map.locations.activate');
+    Route::patch('/school/map/locations/{location}/radius', [\App\Http\Controllers\SchoolMapController::class, 'updateRadius'])->middleware('role:administrator')->name('school.map.locations.radius');
     Route::delete('/school/map/locations/{location}', [\App\Http\Controllers\SchoolMapController::class, 'destroy'])->middleware('role:administrator')->name('school.map.locations.destroy');
     Route::post('/school/map/scan', [\App\Http\Controllers\SchoolMapController::class, 'scan'])->middleware(['role:administrator,teacher', 'throttle:12,1'])->name('school.map.scan');
     Route::get('/school/timetables', [\App\Http\Controllers\UnifiedTimetableController::class, 'index'])->name('timetables.index');
@@ -79,9 +82,12 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
     Route::post('/dashboard/attendance/all-present', [DashboardController::class, 'markAllPresent'])->middleware('role:administrator')->name('dashboard.attendance.all-present');
     Route::post('/dashboard/attendance/random', [DashboardController::class, 'randomAttendance'])->middleware('role:administrator')->name('dashboard.attendance.random');
     Route::post('/dashboard/teacher-attendance/{action}', [\App\Http\Controllers\TeacherAttendanceController::class, 'bulk'])->where('action', 'all-present|random')->middleware('role:administrator')->name('dashboard.teacher-attendance.bulk');
+    Route::get('/teacher-attendance/monthly', [\App\Http\Controllers\TeacherAttendanceController::class, 'monthly'])->name('teacher-attendance.monthly');
     Route::get('/teacher-attendance', [\App\Http\Controllers\TeacherAttendanceController::class, 'index'])->name('teacher-attendance.index');
     Route::post('/teacher-attendance', [\App\Http\Controllers\TeacherAttendanceController::class, 'store'])->middleware('role:administrator')->name('teacher-attendance.store');
     Route::get('/reports', [DashboardController::class, 'reports'])->middleware('role:administrator')->name('reports');
+    Route::get('/reports/expenses', [\App\Http\Controllers\SchoolExpenseController::class, 'index'])->middleware('role:administrator')->name('reports.expenses.index');
+    Route::get('/reports/expenses/create', [\App\Http\Controllers\SchoolExpenseController::class, 'create'])->middleware('role:administrator')->name('reports.expenses.create');
     Route::post('/reports/expenses', [\App\Http\Controllers\SchoolExpenseController::class, 'store'])->middleware('role:administrator')->name('reports.expenses.store');
     Route::get('/users/{user}/photo', [ProfileController::class, 'userPhoto'])->name('users.photo');
     Route::get('/students/{student}/photo', [ProfileController::class, 'studentPhoto'])->name('students.photo');

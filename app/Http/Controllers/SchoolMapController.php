@@ -92,6 +92,19 @@ class SchoolMapController extends Controller
         return redirect()->route('school.map')->with('success', 'Active attendance location changed. Start a new scan.');
     }
 
+    public function updateRadius(Request $request, SchoolLocation $location)
+    {
+        abort_unless($request->user()->role === 'administrator', 403);
+        $data = $request->validate(['radius_meters' => 'required|integer|between:20,5000']);
+        DB::transaction(function () use ($location, $data) {
+            $target = SchoolLocation::whereKey($location->id)->lockForUpdate()->firstOrFail();
+            $target->update($data);
+        });
+
+        return redirect()->route('school.map', ['site' => $location->id])
+            ->with('success', 'Attendance radius updated. Start a new scan to use the new radius.');
+    }
+
     public function destroy(Request $request, SchoolLocation $location)
     {
         abort_unless($request->user()->role === 'administrator', 403);
@@ -115,6 +128,7 @@ class SchoolMapController extends Controller
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
             'accuracy' => 'required|numeric|min:0|max:100000',
+            'action' => 'nullable|in:check_in,check_out',
             'expected_location_id' => 'nullable|integer',
             'target_location' => 'nullable|string|max:300',
             'sampled_at' => ['required', 'date', 'after_or_equal:'.now()->subMinutes(2)->toIso8601String(), 'before_or_equal:'.now()->addSeconds(30)->toIso8601String()],
@@ -139,7 +153,8 @@ class SchoolMapController extends Controller
             $deltaLng = deg2rad((float) $data['longitude'] - (float) $location->longitude);
             $a = sin($deltaLat / 2) ** 2 + cos($lat1) * cos($lat2) * sin($deltaLng / 2) ** 2;
             $distance = 6371000 * 2 * asin(sqrt(min(1, max(0, $a))));
-            $result = ['location_name' => $location->name, 'distance_meters' => (int) round($distance), 'radius_meters' => $location->radius_meters, 'accuracy_meters' => (int) ceil($data['accuracy'])];
+            $result = ['location_name' => $location->name, 'distance_meters' => (int) round($distance), 'radius_meters' => $location->radius_meters, 'accuracy_meters' => (int) ceil($data['accuracy']),
+                'profile_photo_url' => $request->user()->profile_photo_path ? route('profile.photo') : null];
             if ($distance > $location->radius_meters) {
                 return response()->json($result + ['success' => false, 'message' => 'Scan not successful. You are outside the allowed school area.'], 422);
             }
@@ -156,6 +171,15 @@ class SchoolMapController extends Controller
             $teacher = User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
             abort_unless(in_array($teacher->status, [null, 'active'], true), 403);
             $scanService = app(\App\Services\TeacherScanAttendance::class);
+            if (($data['action'] ?? 'check_in') === 'check_out') {
+                $scan = $scanService->checkout($teacher, [
+                    'checkout_location_id' => $location->id,
+                    'checkout_distance_meters' => (int) round($distance),
+                    'checkout_accuracy_meters' => (int) ceil($data['accuracy']),
+                ]);
+                return response()->json($result + $scan + ['teacher_name' => $teacher->name,
+                    'teacher_number' => $teacher->profile_number, 'timezone' => config('app.timezone')], $scan['success'] ? 200 : 422);
+            }
             if ($scanService->sessions($teacher, today()->toDateString())->isNotEmpty()) {
                 $scan = $scanService->scan($teacher);
                 if (! $scan['success']) return response()->json($result + $scan, 422);

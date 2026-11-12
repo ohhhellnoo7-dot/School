@@ -12,7 +12,7 @@ $statusTotal = array_sum($statuses);
 <div class="reports-section-title"><h2><i class="bi bi-stack"></i> {{ $currency }} Overview</h2><span>Currencies are reported separately</span></div>
 <div class="reports-metrics">
 @foreach(['billed'=>['Total Net Billed','file-earmark-text','violet'],'paid'=>['Payments Collected','wallet2','mint'],'balance'=>['Outstanding Balance','hourglass-split','amber'],'overdue'=>['Overdue Balance','exclamation-triangle','rose'],'month'=>['Net Receipts This Month','receipt','sky']] as $key=>$metric)
-<section class="reports-metric {{ $metric[2] }}"><span class="reports-metric-icon"><i class="bi bi-{{ $metric[1] }}"></i></span><div><h3>{{ $metric[0] }}</h3><strong>{{ $currency === 'USD' ? '$' : '' }}{{ \App\Support\Money::display($s[$key]) }}</strong><small>{{ $currency }} &middot; {{ $key === 'month' ? today()->format('F Y') : 'Current invoice totals' }}</small>@if($key === 'month')<a class="btn btn-sm btn-outline-primary mt-2" href="#school-expenses">Record expense / daily report</a>@endif</div></section>
+<section class="reports-metric {{ $metric[2] }}"><span class="reports-metric-icon"><i class="bi bi-{{ $metric[1] }}"></i></span><div><h3>{{ $metric[0] }}</h3><strong>{{ $currency === 'USD' ? '$' : '' }}{{ \App\Support\Money::display($s[$key]) }}</strong><small>{{ $currency }} &middot; {{ $key === 'month' ? today()->format('F Y') : 'Current invoice totals' }}</small></div></section>
 @endforeach
 </div>
 @php
@@ -20,8 +20,7 @@ $cash = $cashReport['totals'][$currency] ?? ['receipts' => 0, 'refunds' => 0, 'e
 @endphp
 <div class="reports-section-title"><h2><i class="bi bi-wallet2"></i> Money remaining &middot; {{ $cashReport['month']->format('F Y') }}</h2><span>All academic years &middot; {{ $currency }}</span></div>
 <div class="reports-metrics reports-cash-metrics">
-    <section class="reports-metric sky"><span class="reports-metric-icon"><i class="bi bi-receipt" aria-hidden="true"></i></span><div><h3>Net receipts before expenses</h3><strong>{{ $currency === 'USD' ? '$' : '' }}{{ \App\Support\Money::display($cash['receipts'] - $cash['refunds']) }}</strong><small>Payments received minus refunds</small></div></section>
-    <section class="reports-metric rose"><span class="reports-metric-icon"><i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></span><div><h3>Money taken out</h3><strong>{{ $currency === 'USD' ? '$' : '' }}{{ \App\Support\Money::display($cash['expenses']) }}</strong><small>Recorded expenses this month</small><a class="btn btn-sm btn-outline-primary mt-2" href="#expense-amount">Add expense &amp; reason</a></div></section>
+    <section class="reports-metric rose"><span class="reports-metric-icon"><i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></span><div><h3>Money taken out</h3><strong>{{ $currency === 'USD' ? '$' : '' }}{{ \App\Support\Money::display($cash['expenses']) }}</strong><small>Recorded expenses this month</small><a class="btn btn-sm btn-outline-primary mt-2" href="{{ route('reports.expenses.create', ['currency' => $currency]) }}">Add expense &amp; reason</a></div><a class="reports-expense-view" href="{{ route('reports.expenses.index', ['currency' => $currency, 'month' => $cashReport['month']->format('Y-m')]) }}" aria-label="View expense details in {{ $currency }}" title="View expense details"><i class="bi bi-eye" aria-hidden="true"></i></a></section>
     <section class="reports-metric mint"><span class="reports-metric-icon"><i class="bi bi-wallet2" aria-hidden="true"></i></span><div><h3>Money remaining</h3><strong>{{ $currency === 'USD' ? '$' : '' }}{{ \App\Support\Money::display($cash['remaining']) }}</strong><small>Net receipts minus money taken out</small></div></section>
 </div>
 <div class="reports-chart-grid">

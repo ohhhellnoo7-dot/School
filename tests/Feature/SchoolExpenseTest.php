@@ -25,9 +25,19 @@ class SchoolExpenseTest extends TestCase {
   $this->assertSame(8000,$report['totals']['USD']['remaining']);
   $this->assertSame(2000,$report['days'][today()->toDateString()]['USD']['expenses']);
   $this->assertSame('100.00',$fee->fresh()->paid);
-  $this->get(route('reports'))->assertOk()->assertSee('New student chair')
-   ->assertSeeInOrder(['Net receipts before expenses', '$100.00', 'Money taken out', '$20.00', 'Money remaining', '$80.00']);
+  $this->assertDatabaseHas('school_expenses',['note'=>'New student chair']);
+  $this->get(route('reports'))->assertOk()->assertDontSee('Daily money report')
+   ->assertDontSee('Net receipts before expenses')
+   ->assertSeeInOrder(['Money taken out', '$20.00', 'Money remaining', '$80.00']);
   $this->assertDatabaseCount('finance_audits',2);
+ }
+ public function test_expense_creation_page_is_available_only_to_administrators(): void {
+  [$admin]=$this->funds();
+  $this->actingAs($admin)->get(route('reports.expenses.create',['currency'=>'KHR']))
+   ->assertOk()->assertSee('Add expense &amp; reason',false)->assertSee('Reason / note')
+   ->assertSee('Money available')->assertSee('name="request_key"',false);
+  $this->get(route('reports'))->assertOk()->assertSee(route('reports.expenses.create',['currency'=>'USD']),false);
+  $this->actingAs(User::factory()->create(['role'=>'teacher']))->get(route('reports.expenses.create'))->assertForbidden();
  }
  public function test_expenses_enforce_balance_currency_date_amount_and_permissions(): void {
   [$admin]=$this->funds();
@@ -38,6 +48,17 @@ class SchoolExpenseTest extends TestCase {
   }
   foreach(['teacher','parent','student'] as $role) $this->actingAs(User::factory()->create(['role'=>$role]))->postJson(route('reports.expenses.store'),$data)->assertForbidden();
   $this->assertDatabaseCount('school_expenses',0);
+ }
+ public function test_expense_details_are_filtered_by_month_and_currency_and_protected(): void {
+  [$admin]=$this->funds();
+  foreach ([['USD',today(),'Classroom supplies'],['KHR',today(),'Other currency'],['USD',today()->subMonth()->startOfMonth(),'Previous month']] as [$currency,$day,$note]) {
+   SchoolExpense::create(['amount'=>'10.00','currency'=>$currency,'spent_on'=>$day,'note'=>$note,'request_key'=>(string)Str::uuid(),'recorded_by'=>$admin->id]);
+  }
+  $this->actingAs($admin)->get(route('reports.expenses.index',['currency'=>'USD','month'=>today()->format('Y-m')]))
+   ->assertOk()->assertSee('Classroom supplies')->assertSee($admin->name)->assertSee('90.00 USD')
+   ->assertDontSee('Other currency')->assertDontSee('Previous month');
+  $this->get(route('reports.expenses.index',['month'=>'invalid']))->assertRedirect()->assertSessionHasErrors('month');
+  $this->actingAs(User::factory()->create(['role'=>'teacher']))->get(route('reports.expenses.index'))->assertForbidden();
  }
  public function test_refunds_reduce_remaining_and_previous_month_receipts_are_not_spendable_this_month(): void {
   [$admin,$fee,$payment]=$this->funds();

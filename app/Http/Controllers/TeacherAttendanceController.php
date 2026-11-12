@@ -10,6 +10,46 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 class TeacherAttendanceController extends Controller
 {
+    public function monthly(Request $request)
+    {
+        abort_unless(in_array($request->user()->role, ['administrator', 'teacher']), 403);
+        $filters = $request->validate(['month' => 'nullable|date_format:Y-m', 'program' => ['nullable', Rule::in(Program::names())], 'session' => ['nullable', Rule::in(AttendanceSession::OPTIONS)]]);
+        $month = \Carbon\Carbon::createFromFormat('!Y-m', $filters['month'] ?? today()->format('Y-m'));
+        $teachers = User::where('role', 'teacher')->with(['classes', 'subjects.schoolClass'])
+            ->when($request->user()->role === 'teacher', fn ($q) => $q->whereKey($request->user()->id))
+            ->when($filters['program'] ?? null, fn ($q, $program) => $q->where('program', $program))
+            ->orderBy('program')->orderBy('name')->get();
+        $records = \App\Models\TeacherSessionAttendance::whereIn('teacher_id', $teachers->modelKeys())
+            ->whereBetween('date', [$month->toDateString(), $month->copy()->endOfMonth()->toDateString()])->get();
+        $dailyRecords = TeacherAttendance::whereIn('teacher_id', $teachers->modelKeys())
+            ->whereBetween('date', [$month->toDateString(), $month->copy()->endOfMonth()->toDateString()])->get()->groupBy('teacher_id');
+        $lessons = \App\Models\Schedule::with('schoolClass')->whereIn('teacher_id', $teachers->modelKeys())
+            ->where(fn ($q) => $q->whereNull('entry_type')->orWhere('entry_type', \App\Models\Schedule::TYPE_ACADEMIC))->get()->groupBy('teacher_id');
+        $rows = collect();
+        foreach ($teachers as $teacher) {
+            $assigned = $teacher->classes->pluck('session')
+                ->merge($teacher->subjects->map(fn ($subject) => $subject->schoolClass?->session))
+                ->merge(($lessons[$teacher->id] ?? collect())->map(fn ($lesson) => $lesson->schoolClass?->session))
+                ->filter()->unique()->values();
+            $sessions = $assigned->merge($records->where('teacher_id', $teacher->id)->pluck('session'))->unique();
+            if (empty($filters['session'])) {
+                $rows->push(['teacher' => $teacher, 'session' => 'Daily summary', 'assigned' => $assigned,
+                    'marks' => ($dailyRecords[$teacher->id] ?? collect())->keyBy(fn ($record) => $record->date->day)]);
+            }
+            foreach ($sessions as $session) {
+                if (($filters['session'] ?? null) && $filters['session'] !== $session) continue;
+                $marks = $records->where('teacher_id', $teacher->id)->where('session', $session)->keyBy(fn ($record) => $record->date->day);
+                // Match the overview: explicit administrator marks take precedence.
+                foreach ($dailyRecords[$teacher->id] ?? collect() as $daily) {
+                    if ($daily->recorded_by !== $teacher->id) $marks->put($daily->date->day, $daily);
+                }
+                $rows->push(['teacher' => $teacher, 'session' => $session, 'assigned' => $assigned, 'marks' => $marks]);
+            }
+        }
+        $groups = $rows->groupBy(fn ($row) => $row['teacher']->program ?: 'Unassigned program');
+        return view('school.attendance.teacher-monthly', compact('groups', 'month', 'filters'));
+    }
+
     public function bulk(Request $request, string $action) {
         abort_unless($request->user()->role === 'administrator', 403);
         abort_unless(in_array($action, ['all-present', 'random'], true), 404);

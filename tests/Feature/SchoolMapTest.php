@@ -12,6 +12,23 @@ class SchoolMapTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_only_administrators_can_edit_saved_location_radius(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $location = SchoolLocation::create(['name' => 'Campus', 'latitude' => 11.58739, 'longitude' => 104.93052, 'radius_meters' => 272, 'is_active' => true, 'created_by' => $admin->id]);
+        $this->actingAs($admin)->get(route('school.map'))->assertOk()->assertSee('Edit radius');
+        $this->patch(route('school.map.locations.radius', $location), ['radius_meters' => 350])
+            ->assertRedirect(route('school.map', ['site' => $location->id]));
+        $this->assertSame(350, (int) $location->fresh()->radius_meters);
+        $this->assertTrue((bool) $location->fresh()->is_active);
+        foreach ([19, 5001, 25.5] as $radius) {
+            $this->patchJson(route('school.map.locations.radius', $location), ['radius_meters' => $radius])->assertUnprocessable();
+        }
+        $this->actingAs(User::factory()->create(['role' => 'teacher']))
+            ->patchJson(route('school.map.locations.radius', $location), ['radius_meters' => 100])->assertForbidden();
+        $this->assertSame(350, (int) $location->fresh()->radius_meters);
+    }
+
     public function test_administrator_can_open_the_shared_scan_popup_from_overview(): void
     {
         $admin = User::factory()->create(['role' => 'administrator']);

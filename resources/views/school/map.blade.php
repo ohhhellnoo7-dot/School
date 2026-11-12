@@ -66,6 +66,7 @@
         @if(! $site->is_active && ! $site->isLegacyTest())
         <form method="post" action="{{ route('school.map.locations.activate', $site) }}">@csrf<button class="btn btn-sm btn-outline-primary">Use for attendance</button></form>
         @endif
+        <details data-click-only><summary class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil" aria-hidden="true"></i> Edit radius</summary><form method="post" action="{{ route('school.map.locations.radius', $site) }}" class="border rounded-3 p-3 mt-2">@csrf @method('PATCH')<label class="form-label" for="radius-{{ $site->id }}">Radius (metres) for {{ $site->name }}</label><div class="d-flex gap-2"><input id="radius-{{ $site->id }}" name="radius_meters" class="form-control" type="number" min="20" max="5000" step="1" value="{{ $site->radius_meters }}" required><button class="btn btn-primary btn-sm" type="submit">Save radius</button></div><small class="text-secondary">20–5,000 metres. Applies to new scans.</small></form></details>
         <form method="post" action="{{ route('school.map.locations.destroy', $site) }}" data-remove-location data-confirm="Remove this attendance location?">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger">Remove</button></form></div></li>@endforeach</ul></details>
     @endif
 </section>

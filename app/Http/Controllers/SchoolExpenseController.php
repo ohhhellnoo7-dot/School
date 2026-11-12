@@ -6,6 +6,26 @@ use App\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 class SchoolExpenseController extends Controller {
+ public function index(Request $request) {
+  abort_unless($request->user()->role === 'administrator',403);
+  $filters=$request->validate(['currency'=>'nullable|in:USD,KHR','month'=>'nullable|date_format:Y-m']);
+  $currency=$filters['currency'] ?? 'USD';
+  $month=\Carbon\Carbon::createFromFormat('!Y-m',$filters['month'] ?? today()->format('Y-m'));
+  $expenses=SchoolExpense::with('recorder')->where('currency',$currency)
+   ->whereBetween('spent_on',[$month->toDateString(),$month->copy()->endOfMonth()->toDateString()])
+   ->orderByDesc('spent_on')->orderByDesc('id')->paginate(25)->withQueryString();
+  $cashReport=app(SchoolCashReport::class)->month($month->toDateString());
+  $total=$cashReport['totals'][$currency] ?? ['receipts'=>0,'refunds'=>0,'expenses'=>0,'remaining'=>0];
+  return view('school.expenses.index',compact('expenses','currency','month','total'));
+ }
+ public function create(Request $request) {
+  abort_unless($request->user()->role === 'administrator',403);
+  $data=$request->validate(['currency'=>'nullable|in:USD,KHR','date'=>'nullable|date_format:Y-m-d|before_or_equal:today']);
+  $date=$data['date'] ?? today()->toDateString();
+  $currency=$data['currency'] ?? 'USD';
+  $cashReport=app(SchoolCashReport::class)->month($date);
+  return view('school.expenses.create',compact('date','currency','cashReport'));
+ }
  public function store(Request $request) {
   abort_unless($request->user()->role === 'administrator',403);
   $data=$request->validate(['amount'=>['required','regex:/^\d{1,10}(?:\.\d{1,2})?$/'], 'currency'=>'required|in:USD,KHR',

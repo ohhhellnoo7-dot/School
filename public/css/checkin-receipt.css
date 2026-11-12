@@ -39,3 +39,246 @@
 .checkin-failure-retry:hover{background:linear-gradient(180deg,#d9103a,#980627)}
 .checkin-failure-retry:focus-visible{outline:3px solid #9b245c;outline-offset:4px}
 @media(max-width:600px){.scan-dialog--failed{padding:37px 18px 23px;border-radius:28px}.scan-dialog--failed .scan-dialog-close{top:12px;right:12px;width:36px;height:36px}.checkin-failure-art{width:90%}.checkin-failure-details{padding:5px 14px;border-radius:21px}.checkin-failure-row{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:10px}.checkin-failure-row dt{font-size:13px;gap:8px}.checkin-failure-row dd{font-size:13px;padding:5px 10px}.checkin-failure-retry{width:100%;border-radius:18px;font-size:19px}}
+
+/* Receipt entrance and celebration, replayed with each new result. */
+.checkin-receipt{animation:receipt-arrive .5s cubic-bezier(.2,.8,.2,1) both}
+.checkin-symbol{position:relative;animation:receipt-symbol .65s .1s cubic-bezier(.2,1.5,.5,1) both}
+.checkin-symbol:after{content:'';position:absolute;inset:-12px;border:2px solid var(--receipt-bright);border-radius:50%;pointer-events:none;animation:receipt-halo 2s .4s infinite both}
+.checkin-drawn-check{width:74px;height:74px;overflow:visible}
+.checkin-drawn-check path{stroke-dasharray:1;stroke-dashoffset:0;animation:receipt-check .55s .45s ease-out both}
+.checkin-ribbon{animation:receipt-ribbon .65s .3s cubic-bezier(.2,1.25,.4,1) both}
+.checkin-title,.checkin-subtitle,.checkin-delay,.checkin-detail,.checkin-status{animation:receipt-rise .45s ease-out both}
+.checkin-title{animation-delay:.5s}.checkin-subtitle,.checkin-delay{animation-delay:.6s}
+.checkin-detail:nth-child(1){animation-delay:.65s}.checkin-detail:nth-child(2){animation-delay:.75s}.checkin-detail:nth-child(3){animation-delay:.85s}.checkin-detail:nth-child(4){animation-delay:.95s}
+.checkin-status{overflow:hidden;animation-delay:1.05s}
+.checkin-status:after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 30%,#ffffff40 50%,transparent 70%);transform:translateX(-120%);animation:receipt-shine 3s 1.4s ease-in-out infinite both}
+@keyframes receipt-arrive{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes receipt-symbol{from{opacity:0;transform:scale(.65)}to{opacity:1;transform:scale(1)}}
+@keyframes receipt-check{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes receipt-halo{from{opacity:.45;transform:scale(.85)}to{opacity:0;transform:scale(1.3)}}
+@keyframes receipt-ribbon{from{opacity:0;transform:translateY(10px) rotate(-6deg) scaleX(.85)}to{opacity:1;transform:rotate(-2deg)}}
+@keyframes receipt-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes receipt-shine{0%,35%{transform:translateX(-120%)}75%,100%{transform:translateX(120%)}}
+.checkin-symbol{animation:receipt-symbol .65s .1s cubic-bezier(.2,1.5,.5,1) both,receipt-breathe 2.8s .8s ease-in-out infinite}
+.checkin-drawn-check path{animation:receipt-check-loop 4s .45s ease-in-out infinite both}
+.checkin-receipt--late .checkin-symbol>i{animation:receipt-clock 3s ease-in-out infinite;transform-origin:50% 65%}
+.checkin-ribbon{animation:receipt-ribbon .65s .3s cubic-bezier(.2,1.25,.4,1) both,receipt-ribbon-wave 3.4s 1s ease-in-out infinite}
+.checkin-title{animation:receipt-rise .45s .5s ease-out both,receipt-title-glow 3s 1s ease-in-out infinite}
+.checkin-detail>i{animation:receipt-icon-float 3s ease-in-out infinite}.checkin-detail:nth-child(2)>i{animation-delay:.3s}.checkin-detail:nth-child(3)>i{animation-delay:.6s}.checkin-detail:nth-child(4)>i{animation-delay:.9s}
+.checkin-landscape{animation:receipt-landscape 5s ease-in-out infinite}
+.checkin-failure-art svg{animation:receipt-icon-float 3s ease-in-out infinite;transform-origin:center}
+.checkin-failure-retry>i{animation:receipt-icon-float 2.6s ease-in-out infinite}
+@keyframes receipt-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+@keyframes receipt-check-loop{0%,8%{stroke-dashoffset:1;opacity:0}12%{opacity:1}30%,90%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}
+@keyframes receipt-clock{0%,25%,100%{transform:rotate(0)}5%,15%{transform:rotate(-9deg)}10%,20%{transform:rotate(9deg)}}
+@keyframes receipt-ribbon-wave{0%,100%{transform:rotate(-2deg) translateY(0)}50%{transform:rotate(-1deg) translateY(-3px)}}
+@keyframes receipt-title-glow{0%,100%{text-shadow:0 0 0 transparent}50%{text-shadow:0 2px 14px #14c85b38}}
+@keyframes receipt-icon-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes receipt-landscape{0%,100%{transform:translateX(-1%)}50%{transform:translateX(1%)}}
+@media(prefers-reduced-motion:reduce){.checkin-receipt,.checkin-receipt *,.checkin-receipt:before,.checkin-receipt:after,.checkin-receipt *:before,.checkin-receipt *:after,.checkin-failure-art svg,.checkin-failure-retry>i{animation:none!important}}
+
+/* Campus celebration receipt. */
+.scan-dialog--celebration{width:min(690px,calc(100% - 24px));padding:0;border:2px solid #d5faff;border-radius:38px;background:#eefaff;box-shadow:0 28px 100px #032e4c77;scrollbar-width:thin}
+.scan-dialog--celebration::backdrop{background:#102b41ba;backdrop-filter:blur(8px)}
+.scan-dialog--celebration .scan-dialog-close{position:sticky;float:right;top:16px;margin:16px 16px -60px 0;width:44px;height:44px;background:#fffffff0;color:#11234b;border:1px solid white;z-index:5}
+.scan-dialog--celebration .checkin-receipt{max-width:none;border:0;border-radius:0;padding:155px 26px 60px;background:radial-gradient(ellipse at 50% 45%,white 10%,#eefaff 65%);box-shadow:none;overflow:hidden}
+.scan-dialog--celebration .checkin-receipt:before{content:'';position:absolute;z-index:-1;inset:0 0 auto;height:285px;background:linear-gradient(0deg,#effaff 0%,transparent 58%),url('../images/school-hero.png') center 46%/cover no-repeat}
+.scan-dialog--celebration .checkin-symbol{width:132px;height:132px;border-radius:35%;border:5px solid #b9ff67;background:linear-gradient(145deg,#9aef08,#04ad13 50%,#00851b);box-shadow:inset 0 3px 9px #edffa6aa,0 12px 20px #00bb4a55,0 0 24px #afffa6}
+.scan-dialog--celebration .checkin-symbol:before{content:'';position:absolute;inset:8px;border-radius:50%;background:linear-gradient(140deg,#2dd700,#00971b);z-index:-1}
+.scan-dialog--celebration .checkin-title{margin:18px 0 12px;font-size:clamp(29px,6vw,46px);letter-spacing:-1.5px;color:#082d50;text-shadow:0 2px white}
+.scan-dialog--celebration .checkin-ribbon{width:fit-content;max-width:90%;min-width:65%;margin:0 auto 16px;padding:9px 22px;font-size:clamp(18px,4vw,25px);background:linear-gradient(160deg,#50e523,#02ab22 55%,#00831a);box-shadow:inset 0 2px 3px #c6ff9c,0 5px 10px #069b3833}
+.scan-dialog--celebration .checkin-subtitle{font-size:17px;color:#172c51;margin:0 0 22px}
+.scan-dialog--celebration .checkin-details{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));padding:18px 16px 22px;border-radius:28px;background:linear-gradient(135deg,#fffffff5,#f2fbfff5);border:1px solid #d5e9fc;box-shadow:0 12px 25px #217bb923;margin-bottom:28px}
+.checkin-identity{grid-column:1/-1;display:flex;align-items:center;gap:14px;text-align:left;padding-bottom:18px;margin-bottom:18px;border-bottom:1px solid #cde3f7;color:#10274e}
+.checkin-avatar{display:grid;place-items:center;flex-shrink:0;width:64px;height:64px;border-radius:50%;font-size:36px;color:white;background:linear-gradient(145deg,#2ed4ff,#0054cc);box-shadow:0 4px 10px #0076d733}
+.checkin-person{flex:1;min-width:0;overflow-wrap:anywhere}.checkin-person strong{font-size:22px}.checkin-person small{display:block;margin-top:3px;color:#455e80;font-size:13px}
+.checkin-presence{padding:8px 15px;border-radius:30px;background:#b5f7ce;color:#14582c;font-size:17px;font-weight:750}
+.scan-dialog--celebration .checkin-detail{flex-direction:column;text-align:center;gap:8px;padding:0 8px;font-size:14px;line-height:1.4;border:0;font-weight:600}
+.scan-dialog--celebration .checkin-detail+.checkin-detail{border-left:1px solid #cce2f7}.scan-dialog--celebration .checkin-detail>i{color:#1262ca;font-size:29px;flex-basis:auto}.scan-dialog--celebration .checkin-detail small{font-size:11px}
+.scan-dialog--celebration .checkin-status{width:85%;margin:auto;padding:15px 12px;border-radius:40px;border:2px solid #a9ffa4;background:linear-gradient(165deg,#56e969,#00ad35 45%,#008223);box-shadow:inset 0 2px 7px #efffc5aa,0 7px 22px #08d65555;font-size:clamp(19px,4vw,28px)}
+.scan-dialog--celebration .checkin-landscape{height:90px;bottom:-35px;background:linear-gradient(140deg,#a6f7db,#b7eefa,#77e5bf);color:transparent}
+.scan-dialog--celebration .checkin-receipt--late .checkin-symbol,.scan-dialog--celebration .checkin-receipt--late .checkin-ribbon{background:linear-gradient(145deg,#ffe57c,#ff9c13,#e07404);border-color:#fff2ad}.scan-dialog--celebration .checkin-receipt--late .checkin-symbol:before{background:#ee970e}.checkin-receipt--late .checkin-presence{background:#fff0bf;color:#8b5100}
+.checkin-confetti{position:absolute;top:140px;left:10%;right:10%;height:180px;pointer-events:none}
+.checkin-confetti span{position:absolute;left:calc(var(--piece)*8%);top:0;width:7px;height:15px;border-radius:2px;background:#ffd52f;animation:campus-confetti 4s ease-in-out infinite;animation-delay:calc(var(--piece)*-.37s)}
+.checkin-confetti span:nth-child(3n){background:#149cff}.checkin-confetti span:nth-child(3n+1){background:#ffab28}.checkin-confetti span:nth-child(even){width:5px;height:10px}
+@keyframes campus-confetti{0%{opacity:0;transform:translateY(-25px) rotate(0deg)}15%{opacity:1}80%{opacity:.8}100%{opacity:0;transform:translateY(150px) rotate(280deg)}}
+@media(max-width:480px){.scan-dialog--celebration{border-radius:26px}.scan-dialog--celebration .checkin-receipt{padding:125px 14px 45px}.scan-dialog--celebration .checkin-details{padding:16px 10px;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 0}.checkin-identity{gap:9px;margin-bottom:0;padding-bottom:14px}.checkin-avatar{width:44px;height:44px;font-size:26px}.checkin-person strong{font-size:17px}.checkin-person small{font-size:11px}.checkin-presence{padding:6px 9px;font-size:13px}.scan-dialog--celebration .checkin-detail{font-size:13px}.scan-dialog--celebration .checkin-detail:nth-of-type(4){border-left:0}.scan-dialog--celebration .checkin-subtitle{font-size:14px}.scan-dialog--celebration .checkin-status{width:95%}}
+@media(prefers-reduced-motion:reduce){.checkin-confetti{display:none}}
+/* Medium receipt, with the signed-in user's photo. */
+.checkin-avatar{position:relative;overflow:hidden;font-family:inherit;font-weight:750}
+.checkin-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit}
+.scan-dialog--celebration{width:min(520px,calc(100% - 24px));max-height:calc(100dvh - 28px);border-radius:28px}
+.scan-dialog--celebration .checkin-receipt{padding:86px 20px 32px}
+.scan-dialog--celebration .checkin-receipt:before{height:200px}
+.scan-dialog--celebration .checkin-symbol{width:90px;height:90px;border-width:3px}
+.scan-dialog--celebration .checkin-drawn-check{width:58px;height:58px}
+.scan-dialog--celebration .checkin-title{font-size:32px;margin:12px 0 10px;letter-spacing:-1px}
+.scan-dialog--celebration .checkin-ribbon{font-size:19px;padding:7px 16px;margin-bottom:12px}
+.scan-dialog--celebration .checkin-subtitle{font-size:14px;margin-bottom:16px}
+.scan-dialog--celebration .checkin-details{padding:14px 10px 16px;margin-bottom:18px;border-radius:22px}
+.checkin-identity{gap:10px;padding-bottom:12px;margin-bottom:14px}
+.checkin-avatar{width:48px;height:48px;font-size:25px}
+.checkin-person strong{font-size:18px}.checkin-person small{font-size:11px}.checkin-presence{font-size:13px;padding:6px 10px}
+.scan-dialog--celebration .checkin-detail{font-size:12px;padding:0 6px;gap:6px}
+.scan-dialog--celebration .checkin-detail>i{font-size:24px}
+.scan-dialog--celebration .checkin-status{font-size:22px;padding:10px}
+.checkin-confetti{top:80px;height:150px}
+@media(max-width:480px){.scan-dialog--celebration .checkin-receipt{padding:78px 14px 28px}.scan-dialog--celebration .checkin-title{font-size:28px}.scan-dialog--celebration .checkin-details{gap:12px 0}.checkin-identity{margin-bottom:0}.scan-dialog--celebration .checkin-status{font-size:20px}}
+/* Blue campus failure dialog, paired with the medium success receipt. */
+.scan-dialog--failed{width:min(520px,calc(100% - 24px));padding:0;border:2px solid #d7f5ff;border-radius:28px;background:#eefaff;box-shadow:0 28px 90px #123a5d66;isolation:isolate}
+.scan-dialog--failed::backdrop{background:#102b41ba;backdrop-filter:blur(8px)}
+.scan-dialog--failed .scan-dialog-close{position:sticky;float:right;top:14px;margin:14px 14px -54px 0;width:42px;height:42px;background:#fffffff0;color:#11234b;border:1px solid white;z-index:5}
+.checkin-failure{position:relative;isolation:isolate;overflow:hidden;padding:110px 22px 28px;background:radial-gradient(ellipse at 50% 48%,#fff 0,transparent 70%);animation:receipt-arrive .45s ease-out both}
+.checkin-failure:before{content:'';position:absolute;z-index:-2;inset:0 0 auto;height:230px;background:linear-gradient(0deg,#eefaff 0%,transparent 65%),url('../images/school-hero.png') center 45%/cover no-repeat}
+.checkin-failure:after{content:'';position:absolute;z-index:-1;bottom:-65px;left:-15%;width:130%;height:120px;border-radius:50%;background:linear-gradient(120deg,#b5efdc,#bde9ff,#91e2c6);animation:receipt-landscape 5s ease-in-out infinite}
+.checkin-failure-art{width:250px;max-width:80%;margin:-28px auto 0}
+.checkin-failure-art svg{animation:none}
+.failure-pin-float{animation:receipt-icon-float 2.4s ease-in-out infinite}
+.failure-pin-rings{transform-origin:160px 151px;animation:failure-rings 2.4s ease-in-out infinite}
+.checkin-failure-title{font-size:34px;color:#142b50;letter-spacing:-1.1px;margin:0 0 8px}.checkin-failure-title span{color:#e51145}
+.checkin-failure-subtitle{font-size:15px;color:#53617e;margin-bottom:16px}
+.checkin-failure-identity{border:1px solid #d5e9fc;border-radius:20px;padding:12px 16px;margin-bottom:14px;background:#ffffffcf;box-shadow:0 6px 15px #217bb915}
+.checkin-failure-details{padding:3px 16px;margin-bottom:20px;border:1px solid #d5e9fc;border-radius:22px;background:linear-gradient(135deg,#fffffff5,#f2fbfff5);box-shadow:0 10px 20px #217bb91c}
+.checkin-failure-row{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);padding:9px 0;gap:10px;min-height:46px}
+.checkin-failure-row+.checkin-failure-row{border-color:#cee4f9}
+.checkin-failure-row dt{font-size:14px;gap:10px;color:#243454}.checkin-failure-row dt i{color:#ff513b;font-size:22px}
+.checkin-failure-row dd{font-size:13px;border-radius:20px;background:#d9efff;color:#0759ab;padding:5px 11px}
+.checkin-failure-row:nth-child(2) dd{background:#fce0ef;color:#ec164d}
+.checkin-failure-row dt i{animation:receipt-icon-float 3s ease-in-out infinite}.checkin-failure-row:nth-child(2) dt i{animation-delay:.4s}.checkin-failure-row:nth-child(3) dt i{animation-delay:.8s}.checkin-failure-row:nth-child(4) dt i{animation-delay:1.2s}
+.checkin-failure-retry{position:relative;overflow:hidden;width:90%;border:2px solid white;border-radius:35px;padding:11px 18px;background:linear-gradient(165deg,#55bcff,#0085e8 65%,#006ed6);color:white;font-size:23px;box-shadow:inset 0 2px 4px #ffffff66,0 6px 15px #127bdd33}
+.checkin-failure-retry:hover{background:linear-gradient(165deg,#30aaff,#006ac9)}
+.checkin-failure-retry>i{animation:failure-retry-spin 3s ease-in-out infinite}
+.checkin-failure-retry:after{content:'';position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,#ffffff35 50%,transparent 70%);pointer-events:none;animation:receipt-shine 3s ease-in-out infinite}
+@keyframes failure-rings{0%,100%{opacity:.6;transform:scale(.92)}50%{opacity:1;transform:scale(1.04)}}
+@keyframes failure-retry-spin{0%,30%{transform:rotate(0)}75%,100%{transform:rotate(360deg)}}
+@media(max-width:480px){.checkin-failure{padding:100px 14px 24px}.checkin-failure-title{font-size:29px}.checkin-failure-subtitle{font-size:14px}.checkin-failure-row dt,.checkin-failure-row dd{font-size:12px}.checkin-failure-row dt{gap:7px}.checkin-failure-details{padding:3px 12px}.checkin-failure-retry{font-size:20px}}
+@media(prefers-reduced-motion:reduce){.checkin-failure,.checkin-failure *,.checkin-failure:after,.checkin-failure *:after{animation:none!important}}
+/* Keep the failure receipt at the same scale as the present receipt. */
+.scan-dialog--failed{width:min(520px,calc(100% - 24px));max-height:calc(100dvh - 28px);scrollbar-width:thin}
+.scan-dialog--failed .checkin-failure{padding:86px 20px 32px}
+.scan-dialog--failed .checkin-failure:before{height:200px}
+.scan-dialog--failed .checkin-failure-art{width:180px;max-width:70%;margin:-10px auto 0}
+.scan-dialog--failed .checkin-failure-title{font-size:32px;margin:8px 0 10px}
+.scan-dialog--failed .checkin-failure-subtitle{font-size:13px;line-height:1.45;margin-bottom:14px}
+.scan-dialog--failed .checkin-failure-identity{padding:12px;margin-bottom:0;border-radius:22px 22px 0 0;border-bottom:0;box-shadow:none}
+.scan-dialog--failed .checkin-failure-details{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));padding:14px 8px 16px;margin-bottom:14px;border-radius:0 0 22px 22px;border-top:0}
+.scan-dialog--failed .checkin-failure-row{display:flex;flex-direction:column;justify-content:flex-start;gap:8px;padding:0 6px;min-width:0;min-height:0;border:0;text-align:center}
+.scan-dialog--failed .checkin-failure-row+.checkin-failure-row{border-left:1px solid #cee4f9}
+.scan-dialog--failed .checkin-failure-row dt{flex-direction:column;gap:6px;font-size:11px;line-height:1.3;text-align:center}
+.scan-dialog--failed .checkin-failure-row dt i{font-size:24px;animation:none}
+.scan-dialog--failed .checkin-failure-row dd{padding:4px 6px;font-size:11px;line-height:1.4}
+.checkin-location-diagnostics{margin:0 0 14px;color:#53617e;font-size:12px;text-align:left;line-height:1.5;overflow-wrap:anywhere}
+.checkin-location-diagnostics summary{cursor:pointer;text-align:center;color:#0759ab;padding:4px}
+.checkin-location-diagnostics p{margin:8px 0}
+.scan-dialog--failed .checkin-failure-retry{width:85%;font-size:22px;padding:10px}
+/* The close control must not reserve a float column beside the receipt. */
+.scan-dialog--failed .scan-dialog-close{position:absolute;float:none;top:14px;right:14px;margin:0}
+.scan-dialog--failed [data-scan-dialog-result]{width:100%;min-width:0}
+.scan-dialog--failed .checkin-failure{width:100%;box-sizing:border-box}
+.scan-dialog--failed .checkin-failure-row dt{width:100%;min-height:65px;justify-content:flex-start}
+.scan-dialog--failed .checkin-failure-row dd{margin-top:0;max-width:100%;box-sizing:border-box}
+/* Present and late share the celebration dialog and its full-width layout. */
+.scan-dialog--celebration .scan-dialog-close{position:absolute;float:none;top:14px;right:14px;margin:0}
+.scan-dialog--celebration [data-scan-dialog-result]{width:100%;min-width:0}
+.scan-dialog--celebration .checkin-receipt{width:100%;box-sizing:border-box}
+@media(max-width:480px){.scan-dialog--failed .checkin-failure{padding:78px 14px 28px}.scan-dialog--failed .checkin-failure-title{font-size:28px}.scan-dialog--failed .checkin-failure-details{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 0}.scan-dialog--failed .checkin-failure-row:nth-child(3){border-left:0}.scan-dialog--failed .checkin-failure-retry{width:95%;font-size:20px}}
+/* Amber companion to the success and failure receipts. */
+.scan-dialog--celebration .checkin-receipt--late{--receipt-accent:#dc7900;--receipt-bright:#ffc443;background:radial-gradient(ellipse at 50% 45%,#fffdf5 10%,#fff4dc 75%);color:#624011}
+.scan-dialog--celebration .checkin-receipt--late:before{background:linear-gradient(0deg,#fff5de 0%,transparent 65%),url('../images/school-hero.png') center 46%/cover no-repeat}
+.scan-dialog--celebration .checkin-receipt--late .checkin-symbol{border-color:#fff1a9;border-radius:50%;background:linear-gradient(145deg,#ffe48b,#ffb426 50%,#e18106);box-shadow:inset 0 3px 9px #fff8d7aa,0 10px 20px #e79d2755,0 0 22px #ffdf8c;color:white;font-size:51px}
+.scan-dialog--celebration .checkin-receipt--late .checkin-symbol:before{background:linear-gradient(140deg,#ffc442,#e58a0a)}
+.scan-dialog--celebration .checkin-receipt--late .checkin-title{color:#674113;text-shadow:0 2px #fff9e9;animation:receipt-rise .45s .5s ease-out both}
+.scan-dialog--celebration .checkin-receipt--late .checkin-ribbon{background:linear-gradient(160deg,#ffd25a,#efa218 55%,#ca7600);box-shadow:inset 0 2px 3px #fff0b2,0 5px 10px #ac710b33;color:#fffdf4}
+.scan-dialog--celebration .checkin-receipt--late .checkin-subtitle{color:#7f6035;margin-bottom:10px}
+.scan-dialog--celebration .checkin-receipt--late .checkin-delay{display:table;margin:0 auto 16px;padding:7px 15px;border:1px solid #f1c365;border-radius:20px;background:#ffedbb;color:#885000;font-size:13px;box-shadow:0 3px 10px #d19c1914}
+.scan-dialog--celebration .checkin-receipt--late .checkin-details{background:linear-gradient(135deg,#fffffff5,#fffaedf5);border-color:#f4dfb6;box-shadow:0 10px 22px #b7801d1c}
+.checkin-receipt--late .checkin-identity{border-color:#f1dfbe}.checkin-receipt--late .checkin-presence{background:#ffe4a1;color:#8a4c00;border:1px solid #f4c565}
+.scan-dialog--celebration .checkin-receipt--late .checkin-detail>i{color:#b77a15}.scan-dialog--celebration .checkin-receipt--late .checkin-detail+.checkin-detail{border-color:#f1dfbe}
+.scan-dialog--celebration .checkin-receipt--late .checkin-status{background:linear-gradient(160deg,#ffdb78,#efa419 50%,#ce7906);border:2px solid #fff0b4;color:#fffdf5;box-shadow:inset 0 2px 7px #fff6caaa,0 7px 20px #e6a12944;font-size:20px}
+.scan-dialog--celebration .checkin-receipt--late .checkin-landscape{background:linear-gradient(140deg,#ffe9b0,#ffe0a1,#ffd07b)}
+.checkin-receipt--late .checkin-confetti span{background:#e8a12b}.checkin-receipt--late .checkin-confetti span:nth-child(3n){background:#ffd768}.checkin-receipt--late .checkin-confetti span:nth-child(3n+1){background:#e9b976}
+@media(max-width:480px){.scan-dialog--celebration .checkin-receipt--late .checkin-status{font-size:17px}}
+@media(prefers-reduced-motion:reduce){.scan-dialog--celebration .checkin-receipt--late .checkin-title{animation:none}}
+
+/* Animated blue campus location scanner. */
+.scan-dialog--loading{width:min(600px,calc(100% - 24px));padding:0;border:2px solid #dbfaff;border-radius:32px;background:#eef8ff;color:#102954;isolation:isolate;scrollbar-width:thin}
+.scan-dialog--loading::backdrop{background:#102b41ba;backdrop-filter:blur(8px)}
+.scan-dialog--loading .scan-dialog-close{position:absolute;float:none;top:16px;right:16px;margin:0;width:42px;height:42px;z-index:5;background:#ffffffd9;color:#102954}
+.scan-dialog--loading [data-scan-dialog-result]{width:100%;min-width:0}
+.scan-dialog--loading .scan-loading{isolation:isolate;padding:26px 28px 42px;overflow:hidden;color:#102954}
+.scan-dialog--loading .scan-loading:before{content:'';position:absolute;inset:0 0 auto;height:310px;z-index:-2;background:linear-gradient(0deg,#eef8ff 0%,#eef8ff00 55%,#bfeaff80),url('../images/school-hero.png') center/cover no-repeat}
+.scan-dialog--loading .scan-loading:after{content:'';position:absolute;z-index:-1;bottom:-60px;left:-15%;width:130%;height:100px;border-radius:50% 65% 0 0;background:linear-gradient(120deg,#24adff,#9beaff,#38b9f2);box-shadow:20px -14px 0 #8cdefc55;animation:receipt-landscape 5s ease-in-out infinite}
+.scan-dialog--loading .scan-loading-brand{gap:12px;margin:0 35px 12px;color:#082651}
+.scan-dialog--loading .scan-loading-brand>span{width:57px;height:57px;border-radius:17px;background:linear-gradient(145deg,#1dccff,#0062ff 55%,#0640d9);box-shadow:inset 0 2px 4px #ffffffb0,0 6px 18px #187ee533}
+.scan-dialog--loading .scan-loading-brand strong{font-size:32px;letter-spacing:-1px}
+.scan-dialog--loading .scan-loading-brand small{font-size:17px;color:#3f5b7e}
+.scan-dialog--loading .scan-loading-art{height:190px;max-width:340px;margin:0 auto 12px;color:#007aff}
+.scan-dialog--loading .scan-map-paper,.scan-dialog--loading .scan-map-school,.scan-dialog--loading .scan-map-tree{display:none}
+.scan-dialog--loading .scan-map-pin{top:40px;font-size:130px;line-height:1;filter:drop-shadow(0 8px 7px #0087ff80);color:#0074ff;animation:scan-float 2.4s ease-in-out infinite}
+.scan-dialog--loading .scan-map-rings{bottom:15px;width:170px;height:34px;border:2px solid #e5ffff;background:#1bbcff66;box-shadow:0 0 0 16px #3cd3ff33,0 0 25px #25d5ff,0 0 0 33px #8ce7ff22;animation:scan-pulse 2.4s ease-in-out infinite}
+.scan-dialog--loading .scan-cloud{opacity:.75;animation:loading-cloud-drift 7s ease-in-out infinite;background:#ffffffdc}
+.scan-dialog--loading .scan-cloud--two{animation-delay:-3s}
+.scan-dialog--loading .scan-loading h2{font-size:27px;line-height:1.25;letter-spacing:-.8px;color:#092653;margin:0 0 10px}
+.scan-dialog--loading .scan-loading h2 span{color:#0063ff}
+.scan-dialog--loading .scan-loading p{font-size:15px;line-height:1.5;color:#506787;margin-bottom:22px}
+.scan-dialog--loading .scan-loading-progress{height:14px;margin:0 0 26px;background:#d1e2f2;box-shadow:inset 0 1px 3px #6085b51a}
+.scan-dialog--loading .scan-loading-progress>span{width:70%;background:repeating-linear-gradient(130deg,#159fff 0 14px,#0076ff 14px 28px);background-size:72px 100%;box-shadow:0 0 15px #2fbaff80;animation:loading-stripes 1s linear infinite,loading-progress-breathe 3s ease-in-out infinite}
+.scan-dialog--loading .scan-loading-steps{gap:18px;padding:0 8px}
+.scan-dialog--loading .scan-loading-steps li{color:#687f9e;font-size:13px;line-height:1.25}
+.scan-dialog--loading .scan-loading-steps li>span{display:block;border-radius:24px;background:#dcefff99;padding:8px 4px}
+.scan-dialog--loading .scan-loading-steps i{position:relative;width:56px;height:56px;margin-bottom:10px;border:2px solid #ccdeef;background:#f3faffb3;font-size:28px;color:#7c96b5}
+.scan-dialog--loading .scan-loading-steps li:not(:last-child):after{content:'';height:2px;width:calc(100% - 44px);right:calc(-50% + 13px);top:28px;background:#bed4ea}
+.scan-dialog--loading .scan-loading-steps .is-active{color:#0063ff}
+.scan-dialog--loading .scan-loading-steps .is-active i{background:linear-gradient(145deg,#12cfff,#0066ff);color:white;border-color:#e5ffff;box-shadow:0 0 0 5px #a0efff66,0 4px 15px #007aff44}
+.scan-dialog--loading .scan-loading-steps .is-active i:after{content:'';position:absolute;inset:-7px;border:3px solid transparent;border-top-color:#00caff;border-right-color:#0080ff;border-radius:50%;animation:loading-orbit 1.4s linear infinite}
+.scan-dialog--loading .scan-loading-steps .is-complete{color:#143b68}
+.scan-dialog--loading .scan-loading-steps .is-complete i{background:#e4fff6;color:#04a67a;border-color:#6ee9cf}
+@keyframes loading-stripes{to{background-position:72px 0}}
+@keyframes loading-progress-breathe{50%{opacity:.65}}
+@keyframes loading-orbit{to{transform:rotate(360deg)}}
+@keyframes loading-cloud-drift{50%{transform:translateX(18px)}}
+@media(max-width:480px){.scan-dialog--loading{border-radius:26px}.scan-dialog--loading .scan-loading{padding:24px 16px 34px}.scan-dialog--loading .scan-loading-brand strong{font-size:27px}.scan-dialog--loading .scan-loading-brand small{font-size:14px}.scan-dialog--loading .scan-loading-brand>span{width:46px;height:46px;font-size:26px}.scan-dialog--loading .scan-loading-art{height:170px}.scan-dialog--loading .scan-loading h2{font-size:23px}.scan-dialog--loading .scan-loading p{font-size:13px}.scan-dialog--loading .scan-loading-steps{gap:12px;padding:0}.scan-dialog--loading .scan-loading-steps li{font-size:11px}}
+@media(prefers-reduced-motion:reduce){.scan-dialog--loading .scan-loading:after,.scan-dialog--loading .scan-map-pin,.scan-dialog--loading .scan-map-rings,.scan-dialog--loading .scan-cloud,.scan-dialog--loading .scan-loading-progress>span,.scan-dialog--loading .scan-loading-steps i:after{animation:none}}
+/* Stage-based estimated progress, completed only after the server responds. */
+.scan-loading-progress-row{display:flex;align-items:center;gap:14px;margin-bottom:26px}
+.scan-dialog--loading .scan-loading-progress-row .scan-loading-progress{flex:1;min-width:0;margin:0}
+.scan-loading-progress-row>strong{min-width:44px;text-align:right;color:#0063ff;font-size:19px;font-variant-numeric:tabular-nums}
+.scan-dialog--loading .scan-loading-progress>span{width:1%;transition:width .18s linear;animation:loading-stripes 1s linear infinite}
+.scan-dialog--loading .scan-loading-steps .is-complete i:after{content:'\F26E';font-family:bootstrap-icons;position:absolute;right:-6px;bottom:-4px;display:grid;place-items:center;width:23px;height:23px;border-radius:50%;background:white;color:#04a67a;box-shadow:0 2px 7px #008c7955;font-size:16px;animation:receipt-symbol .25s ease-out both}
+.scan-dialog--loading .scan-loading-steps .is-complete:not(:last-child):after{background:linear-gradient(90deg,#42d9ff,#007aff)}
+@media(prefers-reduced-motion:reduce){.scan-dialog--loading .scan-loading-progress>span{animation:none;transition:none}.scan-dialog--loading .scan-loading-steps .is-complete i:after{animation:none}}
+/* A small crying companion for unsuccessful check-ins. */
+.checkin-crying{display:block;flex:0 0 52px;width:52px;height:58px;margin:0 8px 0 4px;align-self:center}
+.checkin-crying svg{display:block;width:100%;height:100%;overflow:visible}
+.crying-face{transform-origin:32px 30px;animation:checkin-sob 2s ease-in-out infinite}
+.crying-tear{transform-box:view-box;animation:checkin-tears 1.5s ease-in infinite}
+.crying-tear--right{animation-delay:.7s}
+@keyframes checkin-sob{0%,100%{transform:rotate(-3deg) translateY(0)}35%{transform:rotate(2deg) translateY(1px)}45%{transform:rotate(2deg) translateY(-1px)}55%{transform:rotate(2deg) translateY(1px)}70%{transform:rotate(-1deg) translateY(0)}}
+@keyframes checkin-tears{0%{opacity:0;transform:translateY(-2px)}15%{opacity:1}75%{opacity:.9}100%{opacity:0;transform:translateY(25px)}}
+@media(max-width:480px){.checkin-crying{flex-basis:44px;width:44px;height:50px;margin-right:0}}
+@media(prefers-reduced-motion:reduce){.crying-face,.crying-tear{animation:none}}
+/* Relaxed companion for present and verified results. */
+.checkin-chill{display:grid;place-items:center;flex:0 0 44px;width:44px;height:48px;font-size:36px;line-height:1;transform-origin:50% 75%;animation:checkin-chill-sway 3s ease-in-out infinite}
+@keyframes checkin-chill-sway{0%,100%{transform:rotate(-7deg) translateY(0)}50%{transform:rotate(7deg) translateY(-3px)}}
+@media(max-width:480px){.checkin-chill{flex-basis:32px;width:32px;height:38px;font-size:28px}}
+@media(prefers-reduced-motion:reduce){.checkin-chill{animation:none}}
+/* A playful huff for late arrivals. */
+.checkin-angry{display:grid;place-items:center;flex:0 0 44px;width:44px;height:48px;font-size:36px;line-height:1;transform-origin:50% 75%;animation:checkin-funny-huff 2.6s ease-in-out infinite}
+@keyframes checkin-funny-huff{0%,45%,100%{transform:rotate(0) scale(1)}55%{transform:rotate(-9deg) scale(1.08)}62%{transform:rotate(9deg) scale(1.08)}69%{transform:rotate(-7deg) scale(1.08)}76%{transform:rotate(7deg) scale(1.04)}85%{transform:rotate(0) scale(1)}}
+@media(max-width:480px){.checkin-angry{flex-basis:32px;width:32px;height:38px;font-size:28px}}
+@media(prefers-reduced-motion:reduce){.checkin-angry{animation:none}}
+/* Outside session hours is a neutral scheduling notice. */
+.checkin-failure--session .checkin-failure-art{display:grid;place-items:center;width:96px;height:96px;margin:0 auto 18px;border-radius:50%;background:linear-gradient(145deg,#fff5d7,#ffe0a0);border:3px solid #fff3cf;box-shadow:0 8px 24px #b27c252e;color:#a46614}
+.checkin-failure--session .checkin-failure-art>i{font-size:54px;animation:session-clock-sway 4s ease-in-out infinite}
+.scan-dialog--failed .checkin-failure--session .checkin-failure-title{color:#825318;font-size:28px}
+.checkin-failure--session .checkin-failure-identity{border-bottom:1px solid #d5e9fc;border-radius:22px;margin-bottom:22px}
+.checkin-session-emoji{display:grid;place-items:center;font-size:36px}
+.checkin-failure--session .checkin-failure-retry>i{animation:none}
+@keyframes session-clock-sway{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+@media(prefers-reduced-motion:reduce){.checkin-failure--session .checkin-failure-art>i{animation:none}}
+/* Session greetings appear only for eligible arrivals and completed departures. */
+.checkin-encouragement{display:flex;align-items:center;gap:10px;margin:0 0 16px;padding:12px 14px;border:1px solid #c9eccc;border-radius:16px;background:linear-gradient(125deg,#f4fff2,#effaff);color:#27583e;text-align:left;animation:receipt-rise .4s ease-out both}
+.checkin-encouragement-icon{flex:0 0 28px;font-size:25px;line-height:1;animation:checkin-chill-sway 3s ease-in-out infinite}
+.checkin-encouragement p{margin:0;font-size:13px;line-height:1.55}
+@media(max-width:480px){.checkin-encouragement{padding:10px;gap:8px}.checkin-encouragement p{font-size:12px}}
+@media(prefers-reduced-motion:reduce){.checkin-encouragement,.checkin-encouragement-icon{animation:none}}

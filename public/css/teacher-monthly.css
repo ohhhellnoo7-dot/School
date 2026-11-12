@@ -1,0 +1,7 @@
+.teacher-monthly-grid{width:100%;border-collapse:collapse;color:var(--text-primary);font-size:14px}
+.teacher-monthly-grid th,.teacher-monthly-grid td{border:1px solid var(--border-color,#ddd8eb);padding:18px 12px;text-align:center;min-width:58px;height:68px}
+.teacher-monthly-grid thead th{background:var(--surface-tint,#f0edf8);font-size:12px;text-transform:uppercase;color:var(--text-secondary)}
+.teacher-monthly-grid tbody th{text-align:left;min-width:190px;background:var(--surface,#fff)}
+.teacher-monthly-grid td:nth-child(4){min-width:210px}.teacher-monthly-grid td:nth-child(5){min-width:110px}.teacher-monthly-grid small{font-size:11px;line-height:1.6;margin-top:4px}
+.teacher-monthly-grid .attendance-mark{font-size:23px;font-weight:700}.teacher-monthly-grid .mark-present{background:#baf3d2;color:#185b38}.teacher-monthly-grid .mark-late{background:#fff08c;color:#785009}.teacher-monthly-grid .mark-absent{background:#facaca;color:#8c2424}.teacher-monthly-grid .mark-excused{background:#e9dffc;color:#65419a}.teacher-monthly-grid .mark-empty{font-size:17px;font-weight:400}.teacher-monthly-grid .is-weekend{color:#c32f53}
+.attendance-insight-footer .teacher-monthly-view{margin-left:auto;flex-shrink:0;padding:6px 10px;border-radius:50%;color:var(--primary);font-size:19px}.attendance-insight-footer{display:flex;align-items:center;gap:8px}
