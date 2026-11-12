@@ -233,6 +233,8 @@ class DashboardController extends Controller
 
         $studentsByProgram = collect(['Khmer', 'Chinese', 'English', 'Japan'])->merge(\App\Models\Program::names())->unique()->mapWithKeys(fn ($program) => [$program => Student::where('status', 'active')->whereDate('enrollment_date', '<=', today())->whereHas('studyClasses', fn ($q) => $q->where('program', $program))->count()]);
 
-        return view('school.reports', compact('classes', 'date', 'attendance', 'summary', 'studentsByProgram', 'reportDetails', 'reportYears'));
+        $cashReport = app(\App\Services\SchoolCashReport::class)->month($date);
+        $dailyExpenses = \App\Models\SchoolExpense::with('recorder')->whereDate('spent_on', $date)->latest('id')->get();
+        return view('school.reports', compact('classes', 'date', 'attendance', 'summary', 'studentsByProgram', 'reportDetails', 'reportYears', 'cashReport', 'dailyExpenses'));
     }
 }

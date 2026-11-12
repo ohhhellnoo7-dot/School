@@ -82,6 +82,7 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
     Route::get('/teacher-attendance', [\App\Http\Controllers\TeacherAttendanceController::class, 'index'])->name('teacher-attendance.index');
     Route::post('/teacher-attendance', [\App\Http\Controllers\TeacherAttendanceController::class, 'store'])->middleware('role:administrator')->name('teacher-attendance.store');
     Route::get('/reports', [DashboardController::class, 'reports'])->middleware('role:administrator')->name('reports');
+    Route::post('/reports/expenses', [\App\Http\Controllers\SchoolExpenseController::class, 'store'])->middleware('role:administrator')->name('reports.expenses.store');
     Route::get('/users/{user}/photo', [ProfileController::class, 'userPhoto'])->name('users.photo');
     Route::get('/students/{student}/photo', [ProfileController::class, 'studentPhoto'])->name('students.photo');
     Route::post('/students/{student}/attendance', [StudentController::class, 'saveAttendance'])->middleware('role:administrator')->name('students.attendance.store');

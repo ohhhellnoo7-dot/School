@@ -14,6 +14,7 @@
 </x-scholar-hero>
 <div id="report-finance">
 @include('school.partials.reports-finance')
+@include('school.partials.reports-expenses')
 </div>
 <section class="panel mb-4" id="report-students"><div class="panel-header"><div><h2><i class="bi bi-people"></i> Students by program</h2><p>Current active students. Each student is counted once per program, across all sessions.</p></div></div><div class="panel-body"><div class="row align-items-center g-4"><div class="col-md-6"><div style="position:relative;height:300px"><canvas id="programStudentsChart" data-labels='@json($studentsByProgram->keys()->map(fn ($program) => $program === 'Japan' ? 'Japanese' : $program))' data-values='@json($studentsByProgram->values())' role="img" aria-label="Active students by academic program"></canvas></div></div><div class="col-md-6"><ul class="list-group list-group-flush">
 @foreach($studentsByProgram as $program => $count)

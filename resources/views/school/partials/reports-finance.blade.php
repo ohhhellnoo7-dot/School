@@ -12,7 +12,7 @@ $statusTotal = array_sum($statuses);
 <div class="reports-section-title"><h2><i class="bi bi-stack"></i> {{ $currency }} Overview</h2><span>Currencies are reported separately</span></div>
 <div class="reports-metrics">
 @foreach(['billed'=>['Total Net Billed','file-earmark-text','violet'],'paid'=>['Payments Collected','wallet2','mint'],'balance'=>['Outstanding Balance','hourglass-split','amber'],'overdue'=>['Overdue Balance','exclamation-triangle','rose'],'month'=>['Net Receipts This Month','receipt','sky']] as $key=>$metric)
-<section class="reports-metric {{ $metric[2] }}"><span class="reports-metric-icon"><i class="bi bi-{{ $metric[1] }}"></i></span><div><h3>{{ $metric[0] }}</h3><strong>{{ $currency === 'USD' ? '$' : '' }}{{ \App\Support\Money::display($s[$key]) }}</strong><small>{{ $currency }} &middot; {{ $key === 'month' ? today()->format('F Y') : 'Current invoice totals' }}</small></div></section>
+<section class="reports-metric {{ $metric[2] }}"><span class="reports-metric-icon"><i class="bi bi-{{ $metric[1] }}"></i></span><div><h3>{{ $metric[0] }}</h3><strong>{{ $currency === 'USD' ? '$' : '' }}{{ \App\Support\Money::display($s[$key]) }}</strong><small>{{ $currency }} &middot; {{ $key === 'month' ? today()->format('F Y') : 'Current invoice totals' }}</small>@if($key === 'month')<a class="btn btn-sm btn-outline-primary mt-2" href="#school-expenses">Record expense / daily report</a>@endif</div></section>
 @endforeach
 </div>
 <div class="reports-chart-grid">
