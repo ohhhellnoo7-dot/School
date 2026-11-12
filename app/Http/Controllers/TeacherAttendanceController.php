@@ -22,8 +22,16 @@ class TeacherAttendanceController extends Controller
             $present = (int) round($total * .7);
             $late = min($total - $present, (int) round($total * .15));
             $absent = min($total - $present - $late, (int) round($total * .1));
+            $scannedTeachers = \App\Models\TeacherSessionAttendance::whereDate('date', today())
+                ->whereNotNull('scanned_at')->pluck('teacher_id')->flip();
+            $checkedInRecords = DB::table('school_location_check_ins')->whereIn('teacher_attendance_id',
+                TeacherAttendance::whereDate('date', today())->select('id'))->pluck('teacher_attendance_id')->flip();
+            $saved = 0;
             foreach ($teachers as $index => $teacher) {
                 $existing = TeacherAttendance::where('teacher_id', $teacher->id)->whereDate('date', today())->first();
+                if ($action === 'all-present' && $existing && (
+                    $existing->recorded_by === $teacher->id || $scannedTeachers->has($teacher->id) || $checkedInRecords->has($existing->id)
+                )) continue;
                 $status = $action === 'all-present' || $index < $present ? 'present'
                     : ($index < $present + $late ? 'late' : ($index < $present + $late + $absent ? 'absent' : 'excused'));
                 $record = $existing ?? new TeacherAttendance(['teacher_id' => $teacher->id, 'date' => today()->toDateString()]);
@@ -31,8 +39,9 @@ class TeacherAttendanceController extends Controller
                     'program' => $existing?->program ?? $teacher->program,
                     'status' => $status, 'recorded_by' => $request->user()->id,
                 ])->save();
+                $saved++;
             }
-            return $total;
+            return $saved;
         });
         return redirect()->route('dashboard', array_filter(['session' => $session]))->with('success', $count.' teacher attendance records saved for today.');
     }

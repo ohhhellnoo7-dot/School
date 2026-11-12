@@ -11,6 +11,25 @@ class BulkTeacherAttendanceTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_mark_all_present_preserves_self_scans_and_marks_unscanned_teachers(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $late = User::factory()->create(['role' => 'teacher', 'status' => 'active']);
+        $present = User::factory()->create(['role' => 'teacher', 'status' => 'active']);
+        $unscanned = User::factory()->create(['role' => 'teacher', 'status' => 'active']);
+        foreach ([$late->id => 'late', $present->id => 'present'] as $teacherId => $status) {
+            TeacherAttendance::create(['teacher_id' => $teacherId, 'date' => today(), 'status' => $status, 'recorded_by' => $teacherId]);
+            \App\Models\TeacherSessionAttendance::create(['teacher_id' => $teacherId, 'date' => today(), 'session' => 'Morning', 'status' => $status, 'scanned_at' => now()]);
+        }
+        foreach (range(1, 2) as $attempt) {
+            $this->actingAs($admin)->post(route('dashboard.teacher-attendance.bulk', 'all-present'))->assertRedirect();
+            $this->assertDatabaseHas('teacher_attendances', ['teacher_id' => $late->id, 'status' => 'late', 'recorded_by' => $late->id]);
+            $this->assertDatabaseHas('teacher_attendances', ['teacher_id' => $present->id, 'status' => 'present', 'recorded_by' => $present->id]);
+            $this->assertDatabaseHas('teacher_attendances', ['teacher_id' => $unscanned->id, 'status' => 'present', 'recorded_by' => $admin->id]);
+            $this->assertDatabaseHas('teacher_session_attendances', ['teacher_id' => $late->id, 'status' => 'late']);
+        }
+    }
+
     public function test_bulk_actions_update_active_teachers_and_preserve_history_and_notes(): void
     {
         $admin = User::factory()->create(['role' => 'administrator']);

@@ -35,7 +35,7 @@
                     <button type="submit" class="btn attendance-random-button w-100"><i class="bi bi-shuffle me-2" aria-hidden="true"></i>Random attendance</button>
                     <div class="attendance-ratio"><span>70% present</span><span>15% late</span><span>10% absent</span><span>5% excused</span></div>
                 </form>
-                <small class="attendance-action-note">Either action replaces today's statuses for {{ $attendanceSession ? $attendanceSession.' active teachers' : 'all active teachers' }}. Random totals are rounded to whole teachers.</small>
+                <small class="attendance-action-note">Mark all present preserves teachers' scan results and marks teachers who have not scanned as present. Random attendance replaces today's statuses for {{ $attendanceSession ? $attendanceSession.' active teachers' : 'all active teachers' }}. Random totals are rounded to whole teachers.</small>
             </div>
         </details>
         <details class="attendance-actions">
