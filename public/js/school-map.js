@@ -48,8 +48,8 @@
         const symbol = add('div', 'checkin-symbol', '');
         add('i', late ? 'bi bi-alarm' : 'bi bi-check-lg', '', symbol).setAttribute('aria-hidden', 'true');
         add('div', 'checkin-ribbon', late ? 'You are Late!' : 'Congratulations!');
-        add('h2', 'checkin-title', late ? 'Check-in Recorded' : 'Check-in Successful');
-        add('p', 'checkin-subtitle', late ? 'You checked in after the allowed time.' : 'You are Present today. 🎉');
+        add('h2', 'checkin-title', data.test_only ? 'Location Verified' : (late ? 'Check-in Recorded' : 'Check-in Successful'));
+        add('p', 'checkin-subtitle', data.test_only ? 'Administrator test · no attendance saved.' : (late ? 'You checked in after the allowed time.' : 'You are Present today. 🎉'));
         const lateDuration = Number.isInteger(data.late_minutes) && data.late_minutes >= 60
             ? `${Math.floor(data.late_minutes / 60)}h${data.late_minutes % 60 ? ` ${data.late_minutes % 60}m` : ''}`
             : `${data.late_minutes} ${data.late_minutes === 1 ? 'minute' : 'minutes'}`;
@@ -72,7 +72,7 @@
         row('calendar4', validStamp ? format({ day: '2-digit', month: 'short', year: 'numeric' }) : 'Date unavailable');
         row('clock', validStamp ? format({ hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase() : 'Time unavailable', data.session ? `${data.session} session` : null);
         row('geo-alt-fill', data.location_name);
-        add('div', 'checkin-status', late ? '◷  Late' : '✓  Present');
+        add('div', 'checkin-status', data.test_only ? '✓  Inside school area' : (late ? '◷  Late' : '✓  Present'));
         add('div', 'checkin-landscape', 'អបអរសាទរ · SCHOOL ATTENDANCE').setAttribute('aria-hidden', 'true');
         result.classList.remove('p-3', 'border', 'rounded-3', 'text-success', 'text-danger');
         result.replaceChildren(card);

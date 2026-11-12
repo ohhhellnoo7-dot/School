@@ -148,7 +148,10 @@ class SchoolMapController extends Controller
                 return response()->json($result + ['success' => false, 'message' => 'Your estimated position is near the school, but the device location is too uncertain to confirm check-in. For this position, accuracy must be '.$requiredAccuracy.' m or better. Enable precise location on your phone, move outdoors and scan again.'], 422);
             }
             if ($request->user()->role === 'administrator') {
-                return response()->json($result + ['success' => true, 'message' => 'Scan successful. You are inside the school area. Administrator test only; no teacher attendance saved.']);
+                return response()->json($result + ['success' => true, 'status' => 'present', 'test_only' => true,
+                    'teacher_name' => $request->user()->name, 'teacher_number' => $request->user()->profile_number,
+                    'scanned_at' => now()->toIso8601String(), 'timezone' => config('app.timezone'),
+                    'message' => 'Scan successful. You are inside the school area. Administrator test only; no teacher attendance saved.']);
             }
             $teacher = User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
             abort_unless(in_array($teacher->status, [null, 'active'], true), 403);

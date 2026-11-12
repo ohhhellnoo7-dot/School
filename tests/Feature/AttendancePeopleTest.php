@@ -14,6 +14,27 @@ class AttendancePeopleTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_student_program_name_and_first_letter_filters_work_together(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $khmer = SchoolClass::create(['name' => 'Khmer class', 'section' => 'A', 'program' => 'Khmer', 'session' => 'Morning']);
+        $english = SchoolClass::create(['name' => 'English class', 'section' => 'A', 'program' => 'English', 'session' => 'Morning']);
+        foreach ([['Alice Green', $khmer], ['Adam Brown', $khmer], ['Bella Green', $khmer], ['Amy Green', $english]] as [$name, $class]) {
+            $student = Student::factory()->create(['name' => $name, 'school_class_id' => $class->id]);
+            $student->studyClasses()->syncWithoutDetaching([$class->id]);
+            Attendance::create(['student_id' => $student->id, 'date' => today(), 'status' => 'present']);
+        }
+        $base = ['kind' => 'students', 'status' => 'present', 'session' => 'Morning'];
+        $this->actingAs($admin)->get(route('attendance.people', $base + ['program' => 'Khmer', 'letter' => 'A', 'search' => 'Green']))
+            ->assertOk()->assertSee('Alice Green')->assertDontSee('Adam Brown')->assertDontSee('Bella Green')->assertDontSee('Amy Green')
+            ->assertViewHas('records', fn ($records) => $records->total() === 1);
+        $this->get(route('attendance.people', $base + ['letter' => 'A']))->assertOk()
+            ->assertSee('Alice Green')->assertSee('Adam Brown')->assertSee('Amy Green')->assertDontSee('Bella Green');
+        $this->get(route('attendance.people', $base + ['letter' => 'Z']))->assertOk()
+            ->assertViewHas('records', fn ($records) => $records->total() === 0);
+        $this->getJson(route('attendance.people', $base + ['letter' => 'AB']))->assertUnprocessable();
+    }
+
     public function test_status_lists_respect_date_session_and_account_access(): void
     {
         $admin = User::factory()->create(['role' => 'administrator']);

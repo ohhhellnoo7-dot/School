@@ -12,6 +12,15 @@ class SchoolMapTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_administrator_can_open_the_shared_scan_popup_from_overview(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $this->actingAs($admin)->get(route('dashboard'))->assertOk()
+            ->assertSee('teacher-scan-shortcut', false)->assertSee('data-scan-dialog', false)
+            ->assertSee('data-close-scan', false)->assertSee('scan-loading-template', false);
+        $this->get(route('school.map'))->assertOk()->assertSee('data-scan-dialog', false);
+    }
+
     public function test_teacher_can_scan_from_overview_with_a_closable_result_dialog(): void
     {
         $teacher = User::factory()->create(['role' => 'teacher', 'status' => 'active']);

@@ -82,7 +82,7 @@
 @endsection
 
 @push('scripts')
-@if(auth()->user()->role !== 'teacher')
+@if(!in_array(auth()->user()->role, ['administrator', 'teacher'], true))
 <script src="{{ asset('js/school-map.js') }}?v={{ filemtime(public_path('js/school-map.js')) }}" defer></script>
 @endif
 @endpush
