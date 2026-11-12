@@ -50,8 +50,11 @@
         add('div', 'checkin-ribbon', late ? 'You are Late!' : 'Congratulations!');
         add('h2', 'checkin-title', late ? 'Check-in Recorded' : 'Check-in Successful');
         add('p', 'checkin-subtitle', late ? 'You checked in after the allowed time.' : 'You are Present today. 🎉');
+        const lateDuration = Number.isInteger(data.late_minutes) && data.late_minutes >= 60
+            ? `${Math.floor(data.late_minutes / 60)}h${data.late_minutes % 60 ? ` ${data.late_minutes % 60}m` : ''}`
+            : `${data.late_minutes} ${data.late_minutes === 1 ? 'minute' : 'minutes'}`;
         if (late) add('p', 'checkin-delay', Number.isInteger(data.late_minutes)
-            ? `${data.late_minutes} ${data.late_minutes === 1 ? 'minute' : 'minutes'} late · from session start`
+            ? `${lateDuration} late · from session start`
             : 'Late arrival · timing details unavailable');
         const details = add('div', 'checkin-details', '');
         const row = (icon, text, secondary) => {
