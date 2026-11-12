@@ -14,6 +14,28 @@ class AttendancePeopleTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_live_name_search_matches_only_the_start_for_students_and_teachers(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        foreach (['Sophia Chen', 'Skye Haley', 'William Scott', 'Alexander Stanton'] as $name) {
+            $student = Student::factory()->create(['name' => $name]);
+            Attendance::create(['student_id' => $student->id, 'date' => today(), 'status' => 'present']);
+            $teacher = User::factory()->create(['name' => $name, 'role' => 'teacher']);
+            TeacherAttendance::create(['teacher_id' => $teacher->id, 'date' => today(), 'status' => 'present', 'recorded_by' => $admin->id]);
+        }
+        foreach (['students', 'teachers'] as $kind) {
+            $this->actingAs($admin)->get(route('attendance.people', ['kind' => $kind, 'status' => 'present', 'search' => 's', 'name_part' => 'last']))
+                ->assertOk()->assertSee('William Scott')->assertSee('Alexander Stanton')->assertDontSee('Sophia Chen')->assertDontSee('Skye Haley')
+                ->assertViewHas('records', fn ($records) => $records->total() === 2);
+            $this->actingAs($admin)->get(route('attendance.people', ['kind' => $kind, 'status' => 'present', 'search' => 's']))
+                ->assertOk()->assertSee('Sophia Chen')->assertSee('Skye Haley')->assertDontSee('William Scott')->assertDontSee('Alexander Stanton')
+                ->assertViewHas('records', fn ($records) => $records->total() === 2);
+            $this->get(route('attendance.people', ['kind' => $kind, 'status' => 'present', 'search' => 'So']))
+                ->assertOk()->assertSee('Sophia Chen')->assertDontSee('Skye Haley')
+                ->assertViewHas('records', fn ($records) => $records->total() === 1);
+        }
+    }
+
     public function test_student_program_name_and_first_letter_filters_work_together(): void
     {
         $admin = User::factory()->create(['role' => 'administrator']);
@@ -25,7 +47,7 @@ class AttendancePeopleTest extends TestCase
             Attendance::create(['student_id' => $student->id, 'date' => today(), 'status' => 'present']);
         }
         $base = ['kind' => 'students', 'status' => 'present', 'session' => 'Morning'];
-        $this->actingAs($admin)->get(route('attendance.people', $base + ['program' => 'Khmer', 'letter' => 'A', 'search' => 'Green']))
+        $this->actingAs($admin)->get(route('attendance.people', $base + ['program' => 'Khmer', 'letter' => 'A', 'search' => 'ali']))
             ->assertOk()->assertSee('Alice Green')->assertDontSee('Adam Brown')->assertDontSee('Bella Green')->assertDontSee('Amy Green')
             ->assertViewHas('records', fn ($records) => $records->total() === 1);
         $this->get(route('attendance.people', $base + ['letter' => 'A']))->assertOk()
@@ -62,6 +84,12 @@ class AttendancePeopleTest extends TestCase
         $this->get($teachersUrl)->assertForbidden();
         $this->actingAs($teacher)->get($teachersUrl)->assertOk()->assertSee($teacher->name)->assertDontSee($otherTeacher->name);
         $this->actingAs($admin)->get($teachersUrl.'?session=Morning')->assertOk()->assertSee($teacher->name)->assertDontSee($otherTeacher->name);
+        $this->get($teachersUrl.'?search='.urlencode($teacher->name))->assertOk()
+            ->assertSee($teacher->name)->assertDontSee($otherTeacher->name)
+            ->assertSee('data-attendance-search', false)->assertSee('Filter attendance status')
+            ->assertSee('Excused')->assertSee('js/attendance-people.js', false);
+        $this->get($teachersUrl.'?search=NoMatchingTeacherName')->assertOk()
+            ->assertViewHas('records', fn ($records) => $records->total() === 0);
         $this->get('/dashboard')->assertOk()->assertSee('hover-menus-toggle')->assertSee('View absent teachers');
     }
 }

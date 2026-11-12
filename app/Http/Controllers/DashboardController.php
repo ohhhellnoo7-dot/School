@@ -184,20 +184,29 @@ class DashboardController extends Controller
         $filters = $request->validate([
             'program' => ['nullable', \Illuminate\Validation\Rule::in(\App\Models\Program::names())],
             'search' => 'nullable|string|max:100',
+            'name_part' => ['nullable', \Illuminate\Validation\Rule::in(['first', 'last'])],
             'letter' => ['nullable', 'regex:/^[A-Z]$/'],
         ]);
+        // Names are stored as one field; last-name search uses its final word.
+        $nameExpression = ($filters['name_part'] ?? 'first') === 'last'
+            ? match (\Illuminate\Support\Facades\DB::connection()->getDriverName()) {
+                'sqlite' => "SUBSTR(TRIM(name), LENGTH(RTRIM(TRIM(name), REPLACE(TRIM(name), ' ', ''))) + 1)",
+                'pgsql' => "REVERSE(SPLIT_PART(REVERSE(TRIM(name)), ' ', 1))",
+                default => "SUBSTRING_INDEX(TRIM(name), ' ', -1)",
+            }
+            : 'LTRIM(name)';
+        $nameMatch = fn ($query, $search) => $query->whereRaw('LOWER('.$nameExpression.') LIKE ?', [mb_strtolower(trim($search)).'%']);
         if ($kind === 'teachers') {
             abort_unless(in_array($user->role, ['administrator', 'teacher'], true), 403);
             $teachers = AttendanceSession::teachers(User::where('role', 'teacher'), $session)
                 ->when($user->role === 'teacher', fn ($q) => $q->whereKey($user->id));
-            $filters = $request->validate(['program' => ['nullable', \Illuminate\Validation\Rule::in(\App\Models\Program::names())], 'search' => 'nullable|string|max:100']);
             $records = \App\Models\TeacherAttendance::with('teacher')->whereIn('teacher_id', $teachers->select('users.id'))
                 ->when($filters['program'] ?? null, fn ($q, $program) => $q->where('program', $program))
-                ->when($filters['search'] ?? null, fn ($q, $search) => $q->whereHas('teacher', fn ($teacher) => $teacher->where(fn ($match) => $match->where('name', 'like', '%'.$search.'%')->orWhere('email', 'like', '%'.$search.'%'))));
+                ->when($filters['search'] ?? null, fn ($q, $search) => $q->whereHas('teacher', fn ($teacher) => $nameMatch($teacher, $search)));
         } else {
             $students = AttendanceSession::students(Student::visibleTo($user), $session)
                 ->when($filters['program'] ?? null, fn ($q, $program) => $q->whereHas('studyClasses', fn ($classes) => $classes->where('program', $program)))
-                ->when($filters['search'] ?? null, fn ($q, $search) => $q->where('name', 'like', '%'.$search.'%'))
+                ->when($filters['search'] ?? null, $nameMatch)
                 ->when($filters['letter'] ?? null, fn ($q, $letter) => $q->whereRaw('UPPER(LTRIM(name)) LIKE ?', [$letter.'%']));
             $records = Attendance::with('student.schoolClass')->whereIn('student_id', $students->select('id'));
         }
