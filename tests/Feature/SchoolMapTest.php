@@ -159,6 +159,27 @@ class SchoolMapTest extends TestCase
         $this->assertDatabaseCount('teacher_attendances', 0);
     }
 
+    public function test_teacher_map_is_read_only_and_only_the_scan_action_is_available(): void
+    {
+        [$admin, $site, $scan] = $this->siteAndScan();
+        $other = SchoolLocation::create(['name' => 'Historical area', 'latitude' => 13.09486,
+            'longitude' => 103.19811, 'radius_meters' => 100, 'created_by' => $admin->id]);
+        $teacher = User::factory()->create(['role' => 'teacher', 'status' => 'active']);
+        $this->actingAs($teacher)->get(route('school.map', ['location' => '13.09486,103.19811', 'site' => $other->id]))
+            ->assertOk()->assertSee('Start scan location')->assertSee('This location is set by the administrator.')
+            ->assertSee('q=11.6000000%2C104.9400000', false)
+            ->assertSee('inert aria-label="Read-only school map"', false)
+            ->assertDontSee('id="map-location"', false)->assertDontSee('Show on map')
+            ->assertDontSee('Set attendance location</button>', false)
+            ->assertDontSee('data-location-history', false)->assertDontSee('Get directions')
+            ->assertDontSee('Manage saved locations')->assertDontSee('Historical area');
+        $this->post(route('school.map.set-location'), ['location' => '13.09486,103.19811'])->assertForbidden();
+        $this->post(route('school.map.locations.activate', $other))->assertForbidden();
+        $this->delete(route('school.map.locations.destroy', $site))->assertForbidden();
+        $this->postJson(route('school.map.scan'), $scan)->assertOk()->assertJsonPath('success', true);
+        $this->assertDatabaseHas('teacher_attendances', ['teacher_id' => $teacher->id, 'status' => 'present']);
+    }
+
     private function siteAndScan(): array
     {
         $admin = User::factory()->create(['role' => 'administrator']);

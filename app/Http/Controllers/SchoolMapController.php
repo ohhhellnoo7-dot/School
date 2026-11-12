@@ -19,6 +19,13 @@ class SchoolMapController extends Controller
         $selectedLocation = $locations->firstWhere('id', $data['site'] ?? null) ?? $activeLocation ?? $locations->first();
         $location = trim($data['location'] ?? ($selectedLocation ? $selectedLocation->latitude.','.$selectedLocation->longitude : config('services.school_map.location', '')));
 
+        if ($request->user()->role === 'teacher') {
+            $selectedLocation = $activeLocation;
+            $location = $activeLocation ? $activeLocation->latitude.','.$activeLocation->longitude : '';
+            $locations = collect($activeLocation ? [$activeLocation] : []);
+            $savedLocations = collect();
+        }
+
         return view('school.map', compact('location', 'locations', 'selectedLocation', 'savedLocations', 'activeLocation'));
     }
 
@@ -145,6 +152,21 @@ class SchoolMapController extends Controller
             }
             $teacher = User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
             abort_unless(in_array($teacher->status, [null, 'active'], true), 403);
+            $scanService = app(\App\Services\TeacherScanAttendance::class);
+            if ($scanService->sessions($teacher, today()->toDateString())->isNotEmpty()) {
+                $scan = $scanService->scan($teacher);
+                if (! $scan['success']) return response()->json($result + $scan, 422);
+                if ($scan['fresh']) {
+                    DB::table('school_location_check_ins')->insert([
+                        'school_location_id' => $location->id, 'teacher_attendance_id' => $scan['attendance']->id,
+                        'teacher_session_attendance_id' => $scan['session_record_id'],
+                        'distance_meters' => (int) round($distance), 'accuracy_meters' => (int) ceil($data['accuracy']),
+                        'created_at' => now(), 'updated_at' => now(),
+                    ]);
+                }
+                unset($scan['attendance'], $scan['fresh'], $scan['session_record_id']);
+                return response()->json($result + $scan);
+            }
             $attendance = TeacherAttendance::where('teacher_id', $teacher->id)->whereDate('date', today())->first();
             if (! $attendance) {
                 $attendance = TeacherAttendance::create([

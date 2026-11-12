@@ -3,8 +3,16 @@
 @section('content')
 <div class="page-heading">
     <div><div class="eyebrow">Campus location</div><h1>School map</h1><p>Find the campus, verify your location and check in for today.</p></div>
-    <a class="btn btn-outline-secondary" href="{{ route('classrooms.index') }}">Classroom availability</a>
+    @if(auth()->user()->role !== 'teacher')<a class="btn btn-outline-secondary" href="{{ route('classrooms.index') }}">Classroom availability</a>@endif
 </div>
+@if(auth()->user()->role === 'teacher')
+<section class="panel p-4 mb-4" aria-label="School attendance location">
+    <h2 class="h6">School attendance location</h2>
+    <p class="mb-1">{{ $activeLocation?->name ?? 'No active attendance location' }}</p>
+    @if($activeLocation)<p class="text-secondary mb-2">{{ $location }} &middot; {{ $activeLocation->radius_meters }} m radius</p>@endif
+    <p class="small text-secondary mb-0">This location is set by the administrator. You can only scan to check in.</p>
+</section>
+@else
 <section class="panel p-4 mb-4" aria-label="Find a location">
     <form method="{{ auth()->user()->role === 'administrator' ? 'post' : 'get' }}" action="{{ auth()->user()->role === 'administrator' ? route('school.map.set-location') : route('school.map') }}" class="d-flex flex-wrap align-items-end gap-3">
         @if(auth()->user()->role === 'administrator') @csrf @endif
@@ -18,6 +26,7 @@
     </form>
     <p class="small text-secondary mt-2 mb-0">@if(auth()->user()->role === 'administrator') Enter latitude, longitude or choose history, then click Set attendance location. This replaces the active zone. Existing locations keep their saved radius; new locations use 100 m. @else This previews the map. Attendance uses the location set by the administrator. @endif</p>
 </section>
+@endif
 @if(auth()->user()->role === 'administrator')
 <section class="panel p-4 mb-4" aria-labelledby="save-location-heading">
     <h2 id="save-location-heading" class="h5">Set a school attendance location</h2>
@@ -33,7 +42,7 @@
     </form>
 </section>
 @endif
-<section class="panel p-4 mb-4" aria-labelledby="scan-location-heading">
+<section id="attendance-check-in" class="panel p-4 mb-4" aria-labelledby="scan-location-heading">
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3"><div><h2 id="scan-location-heading" class="h5">School location check-in</h2><p class="small text-secondary mb-0">Check-in succeeds only inside the active attendance zone. Your device location and its reported accuracy must fit within the allowed radius. Allow precise location access on your device.</p></div></div>
     <p class="small" data-active-location-summary>
         @if($activeLocation)
@@ -61,8 +70,10 @@
 </section>
 <section class="panel" aria-label="Google Maps">
     @if($location !== '')
-        <div class="panel-header"><div><h2><i class="bi bi-geo-alt me-1" aria-hidden="true"></i>{{ $location }}</h2><p>Explore the surrounding area with Google Maps.</p></div><a class="btn btn-outline-secondary" href="https://www.google.com/maps/dir/?{{ http_build_query(['api' => 1, 'destination' => $location]) }}" target="_blank" rel="noopener noreferrer">Get directions <i class="bi bi-box-arrow-up-right ms-1" aria-hidden="true"></i></a></div>
-        <iframe title="Google Maps location: {{ $location }}" src="https://www.google.com/maps?{{ http_build_query(['q' => $location, 'output' => 'embed']) }}" width="100%" height="560" style="display:block;border:0;max-height:70vh;min-height:320px" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
+        <div class="panel-header"><div><h2><i class="bi bi-geo-alt me-1" aria-hidden="true"></i>{{ $location }}</h2><p>Explore the surrounding area with Google Maps.</p></div>@if(auth()->user()->role !== 'teacher')<a class="btn btn-outline-secondary" href="https://www.google.com/maps/dir/?{{ http_build_query(['api' => 1, 'destination' => $location]) }}" target="_blank" rel="noopener noreferrer">Get directions <i class="bi bi-box-arrow-up-right ms-1" aria-hidden="true"></i></a>@endif</div>
+        <div @if(auth()->user()->role === 'teacher') inert aria-label="Read-only school map" @endif>
+        <iframe @if(auth()->user()->role === 'teacher') tabindex="-1" @endif title="Google Maps location: {{ $location }}" src="https://www.google.com/maps?{{ http_build_query(['q' => $location, 'output' => 'embed']) }}" width="100%" height="560" style="display:block;border:0;max-height:70vh;min-height:320px" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
+        </div>
     @else
         <div class="empty-state"><i class="bi bi-map" aria-hidden="true"></i><h2 class="h5">Where is your campus?</h2><p class="mb-0">Enter the school address above to display its location.</p></div>
     @endif

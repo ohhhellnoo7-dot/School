@@ -32,18 +32,30 @@ class StudentController extends Controller
             $request->merge(['class' => null]);
         }
         $request->validate(['attendance_date' => 'nullable|date_format:Y-m-d|before_or_equal:today',
-            'attendance_status' => 'nullable|in:present,absent,late,excused']);
+            'attendance_status' => 'nullable|in:present,absent,late,excused,unrecorded']);
         $attendanceDate = $request->input('attendance_date', today()->toDateString());
-        $students = Student::visibleTo($request->user())->with(['schoolClass', 'studyClasses', 'user', 'parent',
+        $studentQuery = Student::visibleTo($request->user())->with(['schoolClass', 'studyClasses', 'user', 'parent',
             'attendances' => fn ($query) => $query->whereDate('date', $attendanceDate)])
             ->search($request->input('search'))
-            ->when($request->attendance_status, fn ($query, $status) => $query->whereHas('attendances',
-                fn ($attendance) => $attendance->whereDate('date', $attendanceDate)->where('status', $status)))
             ->when($request->class || $request->program || $request->session, fn ($q) => $q->whereHas('studyClasses', fn ($classes) => $classes
                 ->when($request->class, fn ($c, $id) => $c->where('school_classes.id', $id))
                 ->when($request->program, fn ($c, $program) => $c->where('program', $program))
                 ->when($request->session, fn ($c, $session) => $c->where('session', $session))))
-            ->when($request->status, fn ($q, $status) => $q->where('status', $status))
+            ->when($request->status, fn ($q, $status) => $q->where('status', $status));
+        // Counts span every matching student, independent of pagination and the status tab.
+        $attendanceCounts = array_fill_keys(['total', 'present', 'absent', 'late', 'excused', 'unrecorded'], 0);
+        $attendanceCounts['total'] = (clone $studentQuery)->count();
+        $dailyCounts = Attendance::whereDate('date', $attendanceDate)
+            ->whereIn('student_id', (clone $studentQuery)->select('students.id'))
+            ->selectRaw('status, COUNT(*) AS total')->groupBy('status')->pluck('total', 'status');
+        foreach (['present', 'absent', 'late', 'excused'] as $status) $attendanceCounts[$status] = (int) $dailyCounts->get($status, 0);
+        $attendanceCounts['unrecorded'] = $attendanceCounts['total'] - array_sum(array_intersect_key($attendanceCounts, array_flip(['present', 'absent', 'late', 'excused'])));
+        $students = $studentQuery
+            ->when($request->attendance_status, function ($query, $status) use ($attendanceDate) {
+                return $status === 'unrecorded'
+                    ? $query->whereDoesntHave('attendances', fn ($q) => $q->whereDate('date', $attendanceDate))
+                    : $query->whereHas('attendances', fn ($q) => $q->whereDate('date', $attendanceDate)->where('status', $status));
+            })
             ->orderBy($request->input('sort', 'name'), $request->input('direction', 'asc'))->orderBy('id')->paginate(12)->withQueryString();
 
         $visibleStudents = Student::visibleTo($request->user());
@@ -54,7 +66,7 @@ class StudentController extends Controller
             'new' => (clone $visibleStudents)->whereBetween('enrollment_date', [now()->startOfMonth()->toDateString(), now()->toDateString()])->count(),
         ];
 
-        return view('school.students.index', ['students' => $students, 'attendanceDate' => $attendanceDate, 'studentSummary' => $studentSummary, 'classes' => SchoolClass::orderBy('name')->get()]);
+        return view('school.students.index', ['students' => $students, 'attendanceDate' => $attendanceDate, 'attendanceCounts' => $attendanceCounts, 'studentSummary' => $studentSummary, 'classes' => SchoolClass::orderBy('name')->get()]);
     }
 
     public function saveAttendance(Request $request, Student $student)

@@ -4,6 +4,12 @@ use App\Support\SampleSchoolVerifier;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 
+Artisan::command('attendance:refresh-teachers', function () {
+    app(\App\Services\TeacherScanAttendance::class)->refreshDate(today()->toDateString());
+})->purpose('Mark unscanned scheduled teacher sessions absent after the ten-minute grace period');
+
+\Illuminate\Support\Facades\Schedule::command('attendance:refresh-teachers')->everyMinute()->withoutOverlapping();
+
 Artisan::command('school:setup-chinese {--year=2026-2027} {--dry-run}', function () {
     if (! preg_match('/^\d{4}-\d{4}$/', $this->option('year'))) throw new \InvalidArgumentException('Use an academic year such as 2026-2027.');
     $dryRun = $this->option('dry-run');

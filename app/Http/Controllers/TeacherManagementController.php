@@ -63,7 +63,9 @@ class TeacherManagementController extends Controller
             'full' => $all->filter(fn ($r) => $r['teacher']->status === 'active' && $r['workload']['status'] === 'FULL')->count(),
             'classes' => SchoolClass::orderBy('name')->get(),
             'attendance' => $attendance = app(TeacherAttendanceController::class)->data($request, true),
-            'rowAttendance' => \App\Models\TeacherAttendance::whereDate('date', $attendance['date'])->whereIn('teacher_id', $rows->pluck('teacher.id'))->get()->keyBy('teacher_id')]);
+            'rowAttendance' => $request->filled('session')
+                ? app(TeacherAttendanceController::class)->data($request->duplicate(array_merge($request->query(), ['attendance_session' => $request->input('session')])), true)['records']
+                : \App\Models\TeacherAttendance::whereDate('date', $attendance['date'])->whereIn('teacher_id', $rows->pluck('teacher.id'))->get()->keyBy('teacher_id')]);
     }
 
     public function form(?User $teacher = null)

@@ -32,6 +32,17 @@
                     if (!replacement || !existing) throw new Error('Missing results');
                     existing.replaceWith(replacement);
                 }
+                // Student attendance totals must follow the same live search as the roster.
+                const summary = document.querySelector('.students-page .attendance-summary');
+                const nextSummary = html.querySelector('.students-page .attendance-summary');
+                if (summary && nextSummary) summary.replaceWith(nextSummary);
+                panel.querySelectorAll('[data-attendance-count]').forEach(count => {
+                    const replacement = next.querySelector(`[data-attendance-count="${count.dataset.attendanceCount}"]`);
+                    if (replacement) {
+                        count.dataset.count = replacement.dataset.count;
+                        count.textContent = replacement.textContent;
+                    }
+                });
                 panel.querySelectorAll('form[data-confirm]').forEach(deleteForm => {
                     deleteForm.addEventListener('submit', event => {
                         if (!confirm(deleteForm.dataset.confirm)) event.preventDefault();

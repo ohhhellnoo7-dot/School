@@ -19,7 +19,7 @@ class StudentDirectoryAttendanceTest extends TestCase
         $yesterday = today()->subDay()->toDateString();
         Attendance::create(['student_id' => $student->id, 'date' => $yesterday, 'status' => 'absent', 'notes' => 'Existing note']);
         $this->actingAs($admin)->get(route('students.index'))->assertOk()
-            ->assertSee('Attendance date')->assertSee('Not recorded')->assertSee('Excused');
+            ->assertSee('Attendance date')->assertSee('Not Marked')->assertSee('Excused');
         foreach (['present', 'absent', 'late', 'excused'] as $status) {
             $this->postJson(route('students.attendance.store', $student), ['date' => today()->toDateString(), 'status' => $status])
                 ->assertOk()->assertJsonPath('status', $status)->assertHeaderMissing('Location');
@@ -74,5 +74,38 @@ class StudentDirectoryAttendanceTest extends TestCase
             ->assertUnprocessable()->assertJsonValidationErrors('date');
         $this->getJson(route('students.index', ['attendance_date' => 'invalid']))->assertUnprocessable();
         $this->assertDatabaseCount('attendances', 0);
+    }
+
+    public function test_summary_counts_span_pages_and_ignore_status_tab_but_follow_other_filters(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $students = Student::factory()->count(15)->create(['name' => 'Matching Student']);
+        foreach ($students as $index => $student) {
+            if ($index < 12) Attendance::create(['student_id' => $student->id, 'date' => today(), 'status' => ['present', 'absent', 'late', 'excused'][$index % 4]]);
+        }
+        $other = Student::factory()->create(['name' => 'Other Person']);
+        Attendance::create(['student_id' => $other->id, 'date' => today(), 'status' => 'present']);
+        $expected = ['total' => 15, 'present' => 3, 'absent' => 3, 'late' => 3, 'excused' => 3, 'unrecorded' => 3];
+        $this->actingAs($admin)->get(route('students.index', ['search' => 'Matching Student', 'page' => 2]))
+            ->assertOk()->assertViewHas('attendanceCounts', $expected)
+            ->assertViewHas('students', fn ($rows) => $rows->count() === 3 && $rows->total() === 15);
+        $this->get(route('students.index', ['search' => 'Matching Student', 'attendance_status' => 'present']))
+            ->assertOk()->assertViewHas('attendanceCounts', $expected)
+            ->assertViewHas('students', fn ($rows) => $rows->total() === 3);
+        $this->get(route('students.index', ['search' => 'Matching Student', 'attendance_status' => 'unrecorded']))
+            ->assertOk()->assertViewHas('attendanceCounts', $expected)
+            ->assertViewHas('students', fn ($rows) => $rows->total() === 3 && $rows->every(fn ($s) => $s->attendances->isEmpty()));
+        $this->get(route('students.index', ['search' => 'Matching Student', 'attendance_date' => today()->subDay()->toDateString()]))
+            ->assertOk()->assertViewHas('attendanceCounts', ['total' => 15, 'present' => 0, 'absent' => 0, 'late' => 0, 'excused' => 0, 'unrecorded' => 15]);
+    }
+
+    public function test_attendance_summary_respects_parent_visibility(): void
+    {
+        $parent = User::factory()->create(['role' => 'parent']);
+        $child = Student::factory()->create(['parent_id' => $parent->id]);
+        $other = Student::factory()->create();
+        foreach ([$child, $other] as $student) Attendance::create(['student_id' => $student->id, 'date' => today(), 'status' => 'present']);
+        $this->actingAs($parent)->get(route('students.index'))->assertOk()
+            ->assertViewHas('attendanceCounts', ['total' => 1, 'present' => 1, 'absent' => 0, 'late' => 0, 'excused' => 0, 'unrecorded' => 0]);
     }
 }

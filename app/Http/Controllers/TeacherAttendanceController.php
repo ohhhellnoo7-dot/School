@@ -53,6 +53,7 @@ class TeacherAttendanceController extends Controller
         ], ['date' => 'nullable|date_format:Y-m-d', 'program' => ['nullable', Rule::in(Program::names())], 'search' => 'nullable|string|max:100'])->validate();
         $filters['session'] = $session;
         $date = $filters['date'] ?? today()->toDateString();
+        app(\App\Services\TeacherScanAttendance::class)->refreshDate($date);
         $sessionTeacherIds = AttendanceSession::teachers(User::where('role', 'teacher'), $session)->select('users.id');
         $records = TeacherAttendance::whereDate('date', $date)
             ->when($session, fn ($q) => $q->whereIn('teacher_id', clone $sessionTeacherIds))
@@ -65,6 +66,21 @@ class TeacherAttendanceController extends Controller
             ->when($filters['search'] ?? null, fn ($q, $search) => $q->where(fn ($q) => $q->where('name', 'like', '%'.$search.'%')->orWhere('email', 'like', '%'.$search.'%')))
             ->orderBy('name')->get();
         $records = $records->only($teachers->pluck('id')->all());
+        if ($session) {
+            $sessionRecords = \App\Models\TeacherSessionAttendance::whereDate('date', $date)
+                ->where('session', $session)->whereIn('teacher_id', $teachers->pluck('id'))->get();
+            foreach ($sessionRecords as $record) {
+                $daily = $records->get($record->teacher_id);
+                if ($daily && $daily->recorded_by !== $record->teacher_id) continue;
+                $display = $daily ? clone $daily : new TeacherAttendance(['teacher_id' => $record->teacher_id, 'date' => $date]);
+                $display->status = $record->status;
+                $records->put($record->teacher_id, $display);
+            }
+            // A scan in another session cannot mark this session present.
+            foreach ($records as $teacherId => $record) {
+                if ($record->recorded_by === $teacherId && ! $sessionRecords->contains('teacher_id', $teacherId)) $records->forget($teacherId);
+            }
+        }
         $counts = $records->countBy('status');
         $total = $teachers->count();
         $insights = null;
