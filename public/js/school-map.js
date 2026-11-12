@@ -4,12 +4,26 @@
     const result = dialog?.querySelector('[data-scan-dialog-result]') || document.querySelector('[data-scan-result]');
     dialog?.querySelector('[data-close-scan]')?.addEventListener('click', () => dialog.close());
     const headerScanner = document.querySelector('.teacher-scan-shortcut');
-    let nextScanAction = 'check_in';
-    document.querySelector('[data-finish-work]')?.addEventListener('click', () => {
-        if (!scanner || scanner.disabled) return;
-        nextScanAction = 'check_out';
-        scanner.click();
-    });
+    const refreshScanState = async () => {
+        if (!headerScanner?.dataset.scanStateUrl) return;
+        const response = await fetch(headerScanner.dataset.scanStateUrl, {
+            credentials: 'same-origin', headers: { Accept: 'application/json' }, cache: 'no-store',
+        });
+        if (!response.ok) throw new Error('Could not update your work scan. Please try again.');
+        const state = await response.json();
+        headerScanner.dataset.scanAction = state.action;
+        headerScanner.setAttribute('aria-label', state.label);
+        headerScanner.title = state.label;
+        headerScanner.querySelector('span').textContent = state.label;
+        headerScanner.querySelector('i').className = state.action === 'check_out' ? 'bi bi-box-arrow-right' : 'bi bi-crosshair';
+        if (scanner?.matches('[data-scan-location]')) scanner.textContent = state.label;
+    };
+    if (headerScanner?.dataset.scanStateUrl) {
+        refreshScanState().catch(() => {});
+        setInterval(() => { if (!document.hidden) refreshScanState().catch(() => {}); }, 15000);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshScanState().catch(() => {}); });
+        window.addEventListener('focus', () => refreshScanState().catch(() => {}));
+    }
     let loadingTimer;
     let loadingPercent = 1;
     let loadingStage = 0;
@@ -164,7 +178,7 @@
             card.querySelector('.checkin-angry')?.remove();
             card.classList.remove('checkin-receipt--late');
         }
-        if (!data.test_only && data.encouragement && (!late || data.action === 'check_out')) {
+        if (!data.test_only && data.encouragement && (data.already_scanned || !late || data.action === 'check_out')) {
             const message = add('div', 'checkin-encouragement', '');
             add('span', 'checkin-encouragement-icon', data.action === 'check_out' ? '💛' : '🌟', message).setAttribute('aria-hidden', 'true');
             add('p', '', data.encouragement, message);
@@ -464,8 +478,7 @@
     });
     scanner?.addEventListener('click', async () => {
         if (scanner.disabled) return;
-        const action = nextScanAction;
-        nextScanAction = 'check_in';
+        let action = headerScanner?.dataset.scanAction || 'check_in';
         if (dialog && !dialog.open) dialog.showModal();
         const version = targetVersion;
         const target = scanner.dataset.checkTarget === 'true' ? mapInput.value.trim() : undefined;
@@ -476,6 +489,8 @@
         headerScanner?.setAttribute('aria-busy', 'true');
         if (!dialog) show(result, 'Finding your current location…');
         try {
+            await refreshScanState();
+            action = headerScanner?.dataset.scanAction || 'check_in';
             const position = await locate();
             if (!showLoading(true)) show(result, 'Checking your distance from the school…');
             const response = await fetch(scanner.dataset.endpoint, {
@@ -514,6 +529,7 @@
             scanner.disabled = false;
             headerScanner?.removeAttribute('aria-disabled');
             headerScanner?.removeAttribute('aria-busy');
+            refreshScanState().catch(() => {});
         }
     });
     const scanUrl = new URL(window.location.href);

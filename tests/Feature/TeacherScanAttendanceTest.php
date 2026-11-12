@@ -70,7 +70,7 @@ class TeacherScanAttendanceTest extends TestCase
         \App\Models\AttendanceSessionSetting::create(['session' => 'Morning', 'starts_at' => '07:00', 'ends_at' => '11:30', 'grace_minutes' => 10]);
         $payload = fn ($action) => ['action' => $action, 'latitude' => 11.6, 'longitude' => 104.94,
             'accuracy' => 10, 'sampled_at' => now()->toIso8601String()];
-        $this->actingAs($teacher)->get(route('dashboard'))->assertOk()->assertSee('Finish work');
+        $this->actingAs($teacher)->get(route('dashboard'))->assertOk()->assertSee('Start work scan')->assertDontSee('data-finish-work', false);
         $this->postJson(route('school.map.scan'), $payload('check_out'))->assertUnprocessable()->assertJsonPath('success', false);
         $this->postJson(route('school.map.scan'), $payload('check_in'))->assertOk()->assertJsonPath('status', 'present');
         $this->travelTo(now()->setTime(11, 29));
@@ -82,13 +82,38 @@ class TeacherScanAttendanceTest extends TestCase
         $this->postJson(route('school.map.scan'), $payload('check_out'))->assertOk()
             ->assertJsonPath('action', 'check_out')->assertJsonPath('scanned_at', $stamp)->assertJsonPath('status', 'present');
         $this->travelTo(now()->addMinutes(5));
-        $this->postJson(route('school.map.scan'), $payload('check_out'))->assertOk()->assertJsonPath('scanned_at', $stamp);
+        $this->postJson(route('school.map.scan'), $payload('check_out'))->assertOk()->assertJsonPath('scanned_at', $stamp)
+            ->assertJsonPath('already_scanned', true)->assertJsonPath('encouragement', 'You already scanned.');
+        $this->postJson(route('school.map.scan'), $payload('check_out'))->assertOk()->assertJsonPath('scanned_at', $stamp)
+            ->assertJsonPath('encouragement', 'You already scanned.');
         $record = \App\Models\TeacherSessionAttendance::where('teacher_id', $teacher->id)->where('session', 'Morning')->firstOrFail();
         $this->assertSame('07:00', $record->scanned_at->format('H:i'));
         $this->assertSame('11:30', $record->checked_out_at->format('H:i'));
         $this->assertSame($location->id, $record->checkout_location_id);
         $this->assertDatabaseCount('school_location_check_ins', 1);
         $this->actingAs($admin)->get(route('teacher-attendance.monthly'))->assertOk()->assertSee('Out 11:30');
+    }
+
+    public function test_single_work_scan_switches_at_session_end_and_resets_for_next_session(): void
+    {
+        $this->travelTo(now()->setDate(2026, 11, 11)->setTime(7, 0));
+        $teacher = $this->teacher();
+        $this->actingAs($teacher)->getJson(route('school.map.scan-state'))->assertOk()
+            ->assertJsonPath('action', 'check_in')->assertJsonPath('label', 'Start work scan');
+        app(TeacherScanAttendance::class)->scan($teacher);
+        $this->travelTo(now()->setTime(10, 59));
+        $this->getJson(route('school.map.scan-state'))->assertJsonPath('action', 'check_in');
+        $this->travelTo(now()->setTime(11, 0));
+        $this->getJson(route('school.map.scan-state'))->assertJsonPath('action', 'check_out')
+            ->assertJsonPath('label', 'Finish work scan');
+        app(TeacherScanAttendance::class)->checkout($teacher, []);
+        $this->getJson(route('school.map.scan-state'))->assertJsonPath('action', 'check_out');
+        $this->travelTo(now()->setTime(13, 0));
+        $this->getJson(route('school.map.scan-state'))->assertJsonPath('action', 'check_in');
+        $this->travelTo(now()->addDay()->setTime(7, 0));
+        $this->getJson(route('school.map.scan-state'))->assertJsonPath('action', 'check_in');
+        $this->actingAs(User::factory()->create(['role' => 'student']))
+            ->getJson(route('school.map.scan-state'))->assertForbidden();
     }
 
     public function test_administrator_can_configure_each_session_and_other_roles_cannot(): void
@@ -190,7 +215,7 @@ class TeacherScanAttendanceTest extends TestCase
             $this->travelTo(now()->setTime($hour, $minute)->addMinutes(10));
             $this->assertNotNull($service->scan($teacher)['encouragement']);
             $this->travelTo(now()->addSecond());
-            $this->assertNull($service->scan($teacher)['encouragement']);
+            $this->assertSame('You already scanned.', $service->scan($teacher)['encouragement']);
             $this->travelTo(now()->setTime($endHour, $endMinute));
             $departure = $service->checkout($teacher, []);
             $this->assertTrue($departure['success']);
@@ -224,7 +249,10 @@ class TeacherScanAttendanceTest extends TestCase
             ->assertJsonPath('teacher_name', $teacher->name)->assertJsonPath('scanned_at', $originalTime)
             ->assertJsonPath('late_minutes', 11)->assertJsonPath('location_name', 'School');
         $this->travelTo(now()->setTime(7, 25));
-        $this->postJson(route('school.map.scan'), $scan())->assertOk()->assertJsonPath('scanned_at', $originalTime)->assertJsonPath('late_minutes', 11);
+        $this->postJson(route('school.map.scan'), $scan())->assertOk()->assertJsonPath('scanned_at', $originalTime)->assertJsonPath('late_minutes', 11)
+            ->assertJsonPath('already_scanned', true)->assertJsonPath('encouragement', 'You already scanned.');
+        $this->postJson(route('school.map.scan'), $scan())->assertOk()->assertJsonPath('scanned_at', $originalTime)
+            ->assertJsonPath('encouragement', 'You already scanned.');
         $this->assertDatabaseCount('school_location_check_ins', 1);
         $this->travelTo(now()->setTime(13, 5));
         $this->postJson(route('school.map.scan'), $scan())->assertOk()->assertJsonPath('status', 'present')->assertJsonPath('session', 'Afternoon')->assertJsonPath('late_minutes', 0);

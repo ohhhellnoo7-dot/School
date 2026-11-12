@@ -9,6 +9,20 @@ use Illuminate\Support\Facades\DB;
 
 class TeacherScanAttendance
 {
+    public function scanState(User $teacher): array
+    {
+        $now = now();
+        $sessions = $this->sessions($teacher, $now->toDateString())->sortBy('start');
+        $session = $sessions->filter(fn ($times) => $times['start']->lte($now))->keys()->last()
+            ?? $sessions->keys()->first();
+        $record = $session ? TeacherSessionAttendance::where('teacher_id', $teacher->id)
+            ->whereDate('date', $now)->where('session', $session)->first() : null;
+        $finish = $record?->scanned_at && $now->gte($record->scheduled_end ?? $sessions[$session]['end']);
+
+        return ['action' => $finish ? 'check_out' : 'check_in',
+            'label' => $finish ? 'Finish work scan' : 'Start work scan'];
+    }
+
     public function sessions(User $teacher, string $date): Collection
     {
         $settings = \App\Models\AttendanceSessionSetting::where('updated_at', '<=', Carbon::parse($date)->endOfDay())->get()->keyBy('session');
@@ -43,8 +57,9 @@ class TeacherScanAttendance
         }
         $this->refresh($teacher, $now->toDateString());
         return ['success' => true, 'status' => $record->status, 'session' => $session, 'fresh' => $fresh, 'session_record_id' => $record->id,
-            'encouragement' => $record->status === 'present' && $now->lte($sessions[$session]['start']->copy()->addMinutes($sessions[$session]['grace_minutes']))
-                ? $this->sessionMessage($session, false) : null,
+            'already_scanned' => ! $fresh,
+            'encouragement' => ! $fresh ? 'You already scanned.' : ($record->status === 'present' && $now->lte($sessions[$session]['start']->copy()->addMinutes($sessions[$session]['grace_minutes']))
+                ? $this->sessionMessage($session, false) : null),
             'scanned_at' => $record->scanned_at->toIso8601String(),
             'scheduled_start' => ($record->scheduled_start ?? $sessions[$session]['start'])->toIso8601String(),
             'late_minutes' => $record->status === 'late' ? (int) floor(($record->scheduled_start ?? $sessions[$session]['start'])->diffInMinutes($record->scanned_at, false)) : 0,
@@ -91,11 +106,13 @@ class TeacherScanAttendance
                 ? 'Your '.$record->session.' session finishes at '.$end->format('g:i A').'. Scan Finish work at or after that time.'
                 : 'The session end time is unavailable. Ask an administrator to review your timetable.'];
         }
-        if (! $record->checked_out_at) {
+        $fresh = ! $record->checked_out_at;
+        if ($fresh) {
             $record->fill($location + ['checked_out_at' => $now, 'scheduled_end' => $end])->save();
         }
         return ['success' => true, 'action' => 'check_out', 'status' => $record->status, 'session' => $record->session,
-            'encouragement' => $this->sessionMessage($record->session, true),
+            'already_scanned' => ! $fresh,
+            'encouragement' => $fresh ? $this->sessionMessage($record->session, true) : 'You already scanned.',
             'scanned_at' => $record->checked_out_at->toIso8601String(), 'checked_in_at' => $record->scanned_at->toIso8601String(),
             'message' => 'Work finished. Your departure time has been saved.'];
     }

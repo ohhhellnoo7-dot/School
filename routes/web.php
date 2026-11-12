@@ -47,6 +47,7 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
     Route::post('/school/map/locations/{location}/activate', [\App\Http\Controllers\SchoolMapController::class, 'activate'])->middleware('role:administrator')->name('school.map.locations.activate');
     Route::patch('/school/map/locations/{location}/radius', [\App\Http\Controllers\SchoolMapController::class, 'updateRadius'])->middleware('role:administrator')->name('school.map.locations.radius');
     Route::delete('/school/map/locations/{location}', [\App\Http\Controllers\SchoolMapController::class, 'destroy'])->middleware('role:administrator')->name('school.map.locations.destroy');
+    Route::get('/school/map/scan-state', [\App\Http\Controllers\SchoolMapController::class, 'scanState'])->middleware('role:teacher')->name('school.map.scan-state');
     Route::post('/school/map/scan', [\App\Http\Controllers\SchoolMapController::class, 'scan'])->middleware(['role:administrator,teacher', 'throttle:12,1'])->name('school.map.scan');
     Route::get('/school/timetables', [\App\Http\Controllers\UnifiedTimetableController::class, 'index'])->name('timetables.index');
     Route::get('/school/timetables/data', [\App\Http\Controllers\UnifiedTimetableController::class, 'data'])->name('timetables.data');

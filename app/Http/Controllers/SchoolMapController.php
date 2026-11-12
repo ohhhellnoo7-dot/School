@@ -10,6 +10,12 @@ use Illuminate\Support\Facades\DB;
 
 class SchoolMapController extends Controller
 {
+    public function scanState(Request $request)
+    {
+        return response()->json(app(\App\Services\TeacherScanAttendance::class)->scanState($request->user()))
+            ->header('Cache-Control', 'no-store');
+    }
+
     public function index(Request $request)
     {
         $data = $request->validate(['location' => 'nullable|string|max:300', 'site' => 'nullable|integer']);
