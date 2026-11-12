@@ -164,8 +164,11 @@ class SchoolMapController extends Controller
                         'created_at' => now(), 'updated_at' => now(),
                     ]);
                 }
+                $savedLocation = DB::table('school_location_check_ins')->join('school_locations', 'school_locations.id', '=', 'school_location_check_ins.school_location_id')
+                    ->where('teacher_session_attendance_id', $scan['session_record_id'])->value('school_locations.name');
+                if ($savedLocation) $result['location_name'] = $savedLocation;
                 unset($scan['attendance'], $scan['fresh'], $scan['session_record_id']);
-                return response()->json($result + $scan);
+                return response()->json($result + $scan + ['teacher_name' => $teacher->name, 'teacher_number' => $teacher->profile_number, 'timezone' => config('app.timezone')]);
             }
             $attendance = TeacherAttendance::where('teacher_id', $teacher->id)->whereDate('date', today())->first();
             if (! $attendance) {
@@ -182,7 +185,14 @@ class SchoolMapController extends Controller
                 ]);
             }
 
-            return response()->json($result + ['success' => true, 'message' => $attendance->wasRecentlyCreated
+            $checkIn = DB::table('school_location_check_ins')->where('teacher_attendance_id', $attendance->id)->orderBy('created_at')->first();
+            return response()->json($result + ['success' => true,
+                'teacher_name' => $teacher->name, 'teacher_number' => $teacher->profile_number,
+                'timezone' => config('app.timezone'),
+                'status' => $attendance->status,
+                'scanned_at' => $checkIn ? \Carbon\Carbon::parse($checkIn->created_at)->toIso8601String() : null,
+                'late_minutes' => null,
+                'message' => $attendance->wasRecentlyCreated
                 ? 'Scan successful. Your attendance has been recorded as present for today.'
                 : 'Scan successful. Today’s attendance is already recorded as '.$attendance->status.'. No changes were made.']);
         });

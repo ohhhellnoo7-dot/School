@@ -41,6 +41,9 @@ class TeacherScanAttendance
         }
         $this->refresh($teacher, $now->toDateString());
         return ['success' => true, 'status' => $record->status, 'session' => $session, 'fresh' => $fresh, 'session_record_id' => $record->id,
+            'scanned_at' => $record->scanned_at->toIso8601String(),
+            'scheduled_start' => $sessions[$session]['start']->toIso8601String(),
+            'late_minutes' => $record->status === 'late' ? (int) floor($sessions[$session]['start']->diffInMinutes($record->scanned_at, false)) : 0,
             'attendance' => TeacherAttendance::where('teacher_id', $teacher->id)->whereDate('date', $now)->firstOrFail(),
             'message' => 'Scan successful. '.$session.' attendance: '.$record->status.'.'];
     }

@@ -62,11 +62,15 @@ class TeacherScanAttendanceTest extends TestCase
         $admin = User::factory()->create(['role' => 'administrator']);
         SchoolLocation::create(['name' => 'School', 'is_active' => true, 'latitude' => 11.6, 'longitude' => 104.94, 'radius_meters' => 100, 'created_by' => $admin->id]);
         $scan = fn () => ['latitude' => 11.6, 'longitude' => 104.94, 'accuracy' => 10, 'sampled_at' => now()->toIso8601String()];
-        $this->actingAs($teacher)->postJson(route('school.map.scan'), $scan())->assertOk()->assertJsonPath('status', 'late')->assertJsonPath('session', 'Morning');
-        $this->postJson(route('school.map.scan'), $scan())->assertOk();
+        $originalTime = now()->toIso8601String();
+        $this->actingAs($teacher)->postJson(route('school.map.scan'), $scan())->assertOk()->assertJsonPath('status', 'late')->assertJsonPath('session', 'Morning')
+            ->assertJsonPath('teacher_name', $teacher->name)->assertJsonPath('scanned_at', $originalTime)
+            ->assertJsonPath('late_minutes', 11)->assertJsonPath('location_name', 'School');
+        $this->travelTo(now()->setTime(7, 25));
+        $this->postJson(route('school.map.scan'), $scan())->assertOk()->assertJsonPath('scanned_at', $originalTime)->assertJsonPath('late_minutes', 11);
         $this->assertDatabaseCount('school_location_check_ins', 1);
         $this->travelTo(now()->setTime(13, 5));
-        $this->postJson(route('school.map.scan'), $scan())->assertOk()->assertJsonPath('status', 'present')->assertJsonPath('session', 'Afternoon');
+        $this->postJson(route('school.map.scan'), $scan())->assertOk()->assertJsonPath('status', 'present')->assertJsonPath('session', 'Afternoon')->assertJsonPath('late_minutes', 0);
         $this->assertDatabaseCount('school_location_check_ins', 2);
         $this->actingAs($admin)->get(route('modules.index', ['module' => 'teachers', 'session' => 'Afternoon']))
             ->assertOk()->assertViewHas('rowAttendance', fn ($records) => $records->get($teacher->id)?->status === 'present');

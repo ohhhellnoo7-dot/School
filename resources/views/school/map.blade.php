@@ -1,6 +1,7 @@
 @extends('school.layout')
 @section('title', 'School map')
 @section('content')
+<link href="{{ asset('css/checkin-receipt.css') }}?v={{ filemtime(public_path('css/checkin-receipt.css')) }}" rel="stylesheet">
 <div class="page-heading">
     <div><div class="eyebrow">Campus location</div><h1>School map</h1><p>Find the campus, verify your location and check in for today.</p></div>
     @if(auth()->user()->role !== 'teacher')<a class="btn btn-outline-secondary" href="{{ route('classrooms.index') }}">Classroom availability</a>@endif

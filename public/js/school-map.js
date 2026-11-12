@@ -1,7 +1,49 @@
 (() => {
     const scanner = document.querySelector('[data-scan-location]');
     const result = document.querySelector('[data-scan-result]');
+    const showReceipt = data => {
+        const late = data.status === 'late';
+        const card = document.createElement('article');
+        card.className = `checkin-receipt${late ? ' checkin-receipt--late' : ''}`;
+        const add = (tag, className, text, parent = card) => {
+            const node = document.createElement(tag);
+            node.className = className;
+            node.textContent = text;
+            parent.append(node);
+            return node;
+        };
+        const symbol = add('div', 'checkin-symbol', '');
+        add('i', late ? 'bi bi-alarm' : 'bi bi-check-lg', '', symbol).setAttribute('aria-hidden', 'true');
+        add('div', 'checkin-ribbon', late ? 'You are Late!' : 'Congratulations!');
+        add('h2', 'checkin-title', late ? 'Check-in Recorded' : 'Check-in Successful');
+        add('p', 'checkin-subtitle', late ? 'You checked in after the allowed time.' : 'You are Present today. 🎉');
+        if (late) add('p', 'checkin-delay', Number.isInteger(data.late_minutes)
+            ? `${data.late_minutes} ${data.late_minutes === 1 ? 'minute' : 'minutes'} late · from session start`
+            : 'Late arrival · timing details unavailable');
+        const details = add('div', 'checkin-details', '');
+        const row = (icon, text, secondary) => {
+            const line = add('div', 'checkin-detail', '', details);
+            add('i', `bi bi-${icon}`, '', line).setAttribute('aria-hidden', 'true');
+            const value = add('div', '', '', line);
+            add('span', '', text, value);
+            if (secondary) add('small', '', secondary, value);
+        };
+        const stamp = data.scanned_at ? new Date(data.scanned_at) : null;
+        const validStamp = stamp && !Number.isNaN(stamp.getTime());
+        // Match the school's attendance timezone, regardless of the device timezone.
+        const format = options => new Intl.DateTimeFormat('en-GB', { timeZone: data.timezone || 'Asia/Phnom_Penh', ...options }).format(stamp);
+        row('person', data.teacher_name, data.teacher_number);
+        row('calendar4', validStamp ? format({ day: '2-digit', month: 'short', year: 'numeric' }) : 'Date unavailable');
+        row('clock', validStamp ? format({ hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase() : 'Time unavailable', data.session ? `${data.session} session` : null);
+        row('geo-alt-fill', data.location_name);
+        add('div', 'checkin-status', late ? '◷  Late' : '✓  Present');
+        add('div', 'checkin-landscape', 'អបអរសាទរ · SCHOOL ATTENDANCE').setAttribute('aria-hidden', 'true');
+        result.classList.remove('p-3', 'border', 'rounded-3', 'text-success', 'text-danger');
+        result.replaceChildren(card);
+        card.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'nearest' });
+    };
     const show = (target, message, state = '') => {
+        if (target === result) target.classList.add('p-3', 'border', 'rounded-3');
         target.textContent = message;
         target.classList.remove('text-success', 'text-danger');
         if (state) target.classList.add(state === 'success' ? 'text-success' : 'text-danger');
@@ -179,6 +221,10 @@
             if (response.status === 404) throw new Error('No active attendance location is available. Ask an administrator to save or activate one.');
             const data = await response.json();
             if (version !== targetVersion) return;
+            if (response.ok && data.success && data.teacher_name && ['present', 'late'].includes(data.status)) {
+                showReceipt(data);
+                return;
+            }
             const message = data.message || 'The location check could not be completed. Please scan again.';
             show(result, message + (data.location_name ? ` Area: ${data.location_name}.` : '') + (data.distance_meters !== undefined ? ` Estimated distance: ${data.distance_meters} m. Location accuracy: ±${data.accuracy_meters} m. Allowed radius: ${data.radius_meters} m.` : ''), response.ok && data.success ? 'success' : 'error');
         } catch (error) {
