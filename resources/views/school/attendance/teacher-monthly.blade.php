@@ -11,7 +11,9 @@
 @foreach(['' => 'All statuses', 'present' => 'Present', 'absent' => 'Absent', 'late' => 'Late', 'excused' => 'Excused'] as $value => $label)
 <button type="submit" name="status" value="{{ $value }}" @class(['btn', 'btn-primary' => ($filters['status'] ?? '') === $value, 'btn-outline-primary' => ($filters['status'] ?? '') !== $value]) aria-pressed="{{ ($filters['status'] ?? '') === $value ? 'true' : 'false' }}">{{ $label }}</button>
 @endforeach
-</div><small class="text-secondary">Show teachers with this status on at least one day in the selected month and session.</small></div>
+</div><small class="text-secondary">@if(!empty($filters['date']))Show teachers with this status on {{ \Carbon\Carbon::parse($filters['date'])->format('d M Y') }} in the selected session.@else Show teachers with this status on at least one day in the selected month and session.@endif</small></div>
+<div class="col-md-4"><label class="form-label" for="grid-date">Filter status by day (optional)</label><input id="grid-date" class="form-control" type="date" name="date" value="{{ $filters['date'] ?? '' }}"><small class="text-secondary">Leave empty to check the whole month.</small></div>
+<div class="col-md-8 d-flex gap-2"><a class="btn btn-outline-primary" href="{{ request()->fullUrlWithQuery(['date' => today()->toDateString(), 'month' => today()->format('Y-m')]) }}">Today</a><a class="btn btn-outline-primary" href="{{ request()->fullUrlWithQuery(['date' => null, 'month' => $month->format('Y-m')]) }}">Whole month</a></div>
 </form></section>
 <p class="small text-secondary">✓ Present &nbsp; L Late &nbsp; X Absent &nbsp; E Excused &nbsp; — Not recorded. Attendance follows the overview. Each scheduled session requires its own scan.</p>
 @forelse($groups as $program => $rows)

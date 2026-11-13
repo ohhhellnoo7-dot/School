@@ -116,6 +116,25 @@ class ClassroomSetupTest extends TestCase
         }
     }
 
+    public function test_planner_only_lists_active_student_classes_including_empty_classes(): void
+    {
+        \App\Models\Program::firstOrCreate(['name' => 'Japan'], ['sessions' => ['Evening']]);
+        $f = $this->fixture('Japan', 'Evening');
+        $legacy = SchoolClass::create(['name' => 'C01', 'section' => '', 'program' => 'Japan', 'session' => 'Evening']);
+        $inactiveGroup = ClassGroup::create(['name' => 'Inactive class', 'program' => 'Japan', 'grade' => 8, 'status' => 'inactive']);
+        SchoolClass::create(['name' => 'Inactive class', 'section' => '', 'program' => 'Japan', 'session' => 'Evening', 'class_group_id' => $inactiveGroup->id]);
+
+        $classes = app(\App\Services\ClassroomSetupService::class)->formData()['plannerClasses'];
+        $this->assertSame([$f['class']->id], $classes->pluck('id')->all());
+        $this->assertDatabaseCount('students', 0);
+        $this->get(route('classrooms.create'))->assertOk()->assertViewHas('plannerClasses', fn ($classes) => $classes->pluck('id')->all() === [$f['class']->id]);
+
+        $data = $this->data($f);
+        $data['school_class_id'] = $legacy->id;
+        $this->post(route('classrooms.store'), $data)->assertSessionHasErrors('slots');
+        $this->assertDatabaseMissing('classrooms', ['room_number' => 'NEW1']);
+    }
+
     private function fixture(string $program = 'Khmer', string $session = 'Morning'): array
     {
         $admin = User::factory()->create(['role' => 'administrator']);

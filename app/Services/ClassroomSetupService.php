@@ -13,7 +13,8 @@ class ClassroomSetupService
 {
     public function formData(): array
     {
-        $classes = SchoolClass::with('subjects', 'classGroup')->orderBy('name')->orderBy('section')->get();
+        $classes = SchoolClass::whereHas('classGroup', fn ($group) => $group->active())
+            ->with('subjects', 'classGroup')->orderBy('name')->orderBy('section')->get();
         $plannerClasses = $classes->map(function ($class) {
             return ['id' => $class->id, 'class_group_id' => $class->class_group_id, 'label' => $class->label, 'program' => $class->program, 'session' => $class->session, 'teacher_id' => $class->teacher_id,
                 'hours' => $class->sessionHours(), 'subjects' => $class->timetableOwner()->subjects->filter(fn ($subject) => $class->program !== 'Khmer' || ! $class->subjects->contains(fn ($s) => $s->curriculum_requirement_id) || $subject->curriculum_requirement_id !== null)->map(fn ($subject) => [
@@ -71,6 +72,9 @@ class ClassroomSetupService
             if (! $request->boolean('plan_enabled')) return $classroom;
 
             $class = SchoolClass::findOrFail($plan['school_class_id']);
+            if (! $class->classGroup || $class->classGroup->status !== 'active') {
+                $this->fail('Choose an active student class created in Student classes.');
+            }
             if ($class->program !== $plan['program'] || $class->session !== $plan['session'] || ! in_array($class->session, ProgramSessions::for($class->program), true)) {
                 $this->fail('Choose a class matching the selected program and session.');
             }

@@ -29,6 +29,9 @@
     form.addEventListener('change', updateSummary);
 
     const config = JSON.parse(root.querySelector('[data-planner-config]').textContent);
+    // Keep only the class created during this setup in the student class picker.
+    // Restore its group after a failed classroom submission so the user can retry.
+    let latestClassGroupId = config.classes.find(cls => String(cls.id) === String(config.old.school_class_id || ''))?.class_group_id ?? null;
     const fields = root.querySelector('[data-plan-fields]');
     const program = form.elements.program;
     const session = form.elements.session;
@@ -255,7 +258,8 @@
     const syncClasses = (wanted = '') => {
         syncEveningPeriods();
         cohort.replaceChildren(option('', 'Select student class'));
-        config.classes.filter(c => c.program === program.value && c.session === session.value).forEach(c => cohort.append(option(c.id, c.label)));
+        config.classes.filter(c => latestClassGroupId !== null && String(c.class_group_id) === String(latestClassGroupId)
+            && c.program === program.value && c.session === session.value).forEach(c => cohort.append(option(c.id, c.label)));
         cohort.value = wanted;
         render();
     };
@@ -517,6 +521,7 @@
             const payload = await response.json();
             if (!response.ok) throw new Error(payload.errors ? Object.values(payload.errors).flat().join(' ') : payload.message || 'Could not create the class. Please try again.');
             config.classes.push(...payload.classes);
+            latestClassGroupId = payload.classes[0]?.class_group_id ?? null;
             const created = payload.classes.find(cls => cls.session === session.value) || payload.classes[0];
             if (!created) throw new Error('The class was saved, but no study session was returned. Refresh to load it.');
             program.value = created.program;

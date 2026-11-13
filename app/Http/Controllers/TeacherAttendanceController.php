@@ -14,7 +14,9 @@ class TeacherAttendanceController extends Controller
     {
         abort_unless(in_array($request->user()->role, ['administrator', 'teacher']), 403);
         $filters = $request->validate(['month' => 'nullable|date_format:Y-m', 'program' => ['nullable', Rule::in(Program::names())], 'session' => ['nullable', Rule::in(AttendanceSession::OPTIONS)], 'status' => ['nullable', Rule::in(['present', 'absent', 'late', 'excused'])]]);
-        $month = \Carbon\Carbon::createFromFormat('!Y-m', $filters['month'] ?? today()->format('Y-m'));
+        $filters += $request->validate(['date' => 'nullable|date_format:Y-m-d']);
+        $selectedDate = empty($filters['date']) ? null : \Carbon\Carbon::parse($filters['date']);
+        $month = $selectedDate ? $selectedDate->copy()->startOfMonth() : \Carbon\Carbon::createFromFormat('!Y-m', $filters['month'] ?? today()->format('Y-m'));
         $teachers = User::where('role', 'teacher')->with(['classes', 'subjects.schoolClass'])
             ->when($request->user()->role === 'teacher', fn ($q) => $q->whereKey($request->user()->id))
             ->when($filters['program'] ?? null, fn ($q, $program) => $q->where('program', $program))
@@ -48,7 +50,9 @@ class TeacherAttendanceController extends Controller
             }
         }
         if (! empty($filters['status'])) {
-            $rows = $rows->filter(fn ($row) => $row['marks']->contains('status', $filters['status']));
+            $rows = $rows->filter(fn ($row) => $selectedDate
+                ? $row['marks']->get($selectedDate->day)?->status === $filters['status']
+                : $row['marks']->contains('status', $filters['status']));
         }
         $groups = $rows->groupBy(fn ($row) => $row['teacher']->program ?: 'Unassigned program');
         return view('school.attendance.teacher-monthly', compact('groups', 'month', 'filters'));

@@ -15,7 +15,7 @@
                     <button type="button" class="btn btn-link p-0 small" data-add-evening-period>+ Add evening study time</button>
                     <small class="d-block text-muted">Choose a time for this class. Add more times whenever needed.</small>
                 </div>
-                <div><label class="form-label" for="setup-class">Student class</label><select class="form-select" name="school_class_id" id="setup-class" required></select><small class="text-muted">Create the class and curriculum first. Students can enroll later.</small><br><button type="button" class="btn btn-link p-0 small" data-open-create-class>+ Create student class</button></div>
+                <div><label class="form-label" for="setup-class">Student class</label><select class="form-select" name="school_class_id" id="setup-class" required></select><small class="text-muted">Only the latest student class created in this setup appears here. Students can enroll later.</small><br><button type="button" class="btn btn-link p-0 small" data-open-create-class>+ Create student class</button></div>
                 <div><label class="form-label" for="setup-class-days">Class days</label><select class="form-select" id="setup-class-days" name="class_days"><option value="weekday" @selected(old('class_days', 'weekday') === 'weekday')>Weekday (Monday to Friday)</option><option value="weekend" @selected(old('class_days') === 'weekend')>Weekend (Saturday to Sunday)</option></select></div>
 
                 <div><label class="form-label" for="setup-year">Academic year</label><input class="form-control" name="academic_year" id="setup-year" value="{{ old('academic_year', now()->year.'-'.(now()->year + 1)) }}" pattern="[0-9]{4}-[0-9]{4}" required></div>

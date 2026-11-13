@@ -11,6 +11,24 @@ class TeacherScanAttendanceTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_monthly_status_can_be_filtered_to_a_specific_day(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = User::factory()->create(['role' => 'teacher', 'program' => 'English']);
+        foreach (['2026-11-09' => 'absent', '2026-11-13' => 'present'] as $date => $status) {
+            \App\Models\TeacherSessionAttendance::create(['teacher_id' => $teacher->id, 'date' => $date, 'session' => 'Morning', 'status' => $status]);
+        }
+        $filters = ['month' => '2026-11', 'program' => 'English', 'session' => 'Morning', 'status' => 'absent'];
+        $this->actingAs($admin)->get(route('teacher-attendance.monthly', $filters))
+            ->assertOk()->assertViewHas('groups', fn ($groups) => $groups->has('English'));
+        $this->get(route('teacher-attendance.monthly', $filters + ['date' => '2026-11-13']))
+            ->assertOk()->assertViewHas('groups', fn ($groups) => $groups->isEmpty());
+        $filters['status'] = 'present';
+        $this->get(route('teacher-attendance.monthly', $filters + ['date' => '2026-11-13']))
+            ->assertOk()->assertViewHas('groups', fn ($groups) => $groups->has('English'))->assertSee('13 Nov 2026');
+        $this->getJson(route('teacher-attendance.monthly', ['date' => 'invalid']))->assertUnprocessable();
+    }
+
     public function test_monthly_grid_shows_program_and_three_separate_sessions(): void
     {
         $this->travelTo(now()->setDate(2026, 11, 11)->setTime(7, 10));
