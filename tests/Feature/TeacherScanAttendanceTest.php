@@ -27,6 +27,25 @@ class TeacherScanAttendanceTest extends TestCase
             ->get(route('teacher-attendance.monthly'))->assertForbidden();
     }
 
+    public function test_monthly_status_buttons_filter_effective_session_marks(): void
+    {
+        $this->travelTo(now()->setDate(2026, 11, 11)->setTime(7, 0));
+        $teacher = $this->teacher();
+        app(TeacherScanAttendance::class)->scan($teacher);
+        $admin = User::factory()->create(['role' => 'administrator']);
+        foreach (['present', 'absent', 'late', 'excused'] as $status) {
+            \App\Models\TeacherAttendance::updateOrCreate(['teacher_id' => $teacher->id, 'date' => today()],
+                ['program' => 'Khmer', 'status' => $status, 'recorded_by' => $admin->id]);
+            $this->actingAs($admin)->get(route('teacher-attendance.monthly', [
+                'month' => '2026-11', 'program' => 'Khmer', 'session' => 'Morning', 'status' => $status,
+            ]))->assertOk()->assertSee('All statuses')->assertViewHas('groups', fn ($groups) => $groups->flatten(1)->count() === 1);
+            $other = $status === 'present' ? 'absent' : 'present';
+            $this->get(route('teacher-attendance.monthly', ['month' => '2026-11', 'session' => 'Morning', 'status' => $other]))
+                ->assertOk()->assertViewHas('groups', fn ($groups) => $groups->isEmpty());
+        }
+        $this->getJson(route('teacher-attendance.monthly', ['status' => 'invalid']))->assertUnprocessable();
+    }
+
     public function test_monthly_daily_summary_uses_the_same_administrator_marks_as_the_overview(): void
     {
         $admin = User::factory()->create(['role' => 'administrator']);

@@ -6,7 +6,12 @@
 <section class="panel p-4 mb-4"><form method="get" class="row g-3 align-items-end">
 <div class="col-md-3"><label class="form-label" for="grid-month">Month</label><input id="grid-month" class="form-control" type="month" name="month" value="{{ $month->format('Y-m') }}" required></div>
 <div class="col-md-3"><label class="form-label" for="grid-program">Program</label><select id="grid-program" name="program" class="form-select"><option value="">All programs</option>@foreach(\App\Models\Program::names() as $program)<option @selected(($filters['program'] ?? '') === $program)>{{ $program }}</option>@endforeach</select></div>
-<div class="col-md-3"><label class="form-label" for="grid-session">Session</label><select id="grid-session" name="session" class="form-select"><option value="">All sessions</option>@foreach(\App\Support\AttendanceSession::OPTIONS as $session)<option @selected(($filters['session'] ?? '') === $session)>{{ $session }}</option>@endforeach</select></div><div class="col-md-3"><button class="btn btn-primary">View attendance</button></div>
+<div class="col-md-3"><label class="form-label" for="grid-session">Session</label><select id="grid-session" name="session" class="form-select"><option value="">All sessions</option>@foreach(\App\Support\AttendanceSession::OPTIONS as $session)<option @selected(($filters['session'] ?? '') === $session)>{{ $session }}</option>@endforeach</select></div><div class="col-md-3"><button class="btn btn-primary" name="status" value="{{ $filters['status'] ?? '' }}">View attendance</button></div>
+<div class="col-12"><label class="form-label d-block">Attendance status</label><div class="d-flex flex-wrap gap-2" role="group" aria-label="Filter attendance by status">
+@foreach(['' => 'All statuses', 'present' => 'Present', 'absent' => 'Absent', 'late' => 'Late', 'excused' => 'Excused'] as $value => $label)
+<button type="submit" name="status" value="{{ $value }}" @class(['btn', 'btn-primary' => ($filters['status'] ?? '') === $value, 'btn-outline-primary' => ($filters['status'] ?? '') !== $value]) aria-pressed="{{ ($filters['status'] ?? '') === $value ? 'true' : 'false' }}">{{ $label }}</button>
+@endforeach
+</div><small class="text-secondary">Show teachers with this status on at least one day in the selected month and session.</small></div>
 </form></section>
 <p class="small text-secondary">✓ Present &nbsp; L Late &nbsp; X Absent &nbsp; E Excused &nbsp; — Not recorded. Attendance follows the overview. Each scheduled session requires its own scan.</p>
 @forelse($groups as $program => $rows)
