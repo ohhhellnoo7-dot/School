@@ -64,6 +64,25 @@ class TeacherScanAttendanceTest extends TestCase
         $this->get($url)->assertOk()->assertDontSee('0 min late');
     }
 
+    public function test_monthly_scan_out_remains_visible_after_an_administrator_overrides_status(): void
+    {
+        $this->travelTo(now()->setDate(2026, 11, 11)->setTime(7, 23));
+        $teacher = $this->teacher();
+        $service = app(TeacherScanAttendance::class);
+        $service->scan($teacher);
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $url = route('teacher-attendance.monthly', ['month' => '2026-11', 'session' => 'Morning']);
+        $this->actingAs($admin)->get($url)->assertOk()->assertSee('Not scanned')->assertDontSee('Out 11:30');
+        $this->travelTo(now()->setTime(11, 30));
+        $service->checkout($teacher, []);
+        \App\Models\TeacherAttendance::where('teacher_id', $teacher->id)->update([
+            'status' => 'excused', 'recorded_by' => $admin->id,
+        ]);
+        $this->get($url)->assertOk()->assertSee('In 07:23')->assertSee('Out 11:30')
+            ->assertSee('23 min late')->assertSee('Administrator daily mark')
+            ->assertSee('mark-excused')->assertDontSee('Out <span>Not scanned</span>', false);
+    }
+
     public function test_monthly_status_buttons_filter_effective_session_marks(): void
     {
         $this->travelTo(now()->setDate(2026, 11, 11)->setTime(7, 0));
