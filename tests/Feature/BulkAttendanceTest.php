@@ -12,6 +12,29 @@ class BulkAttendanceTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_selected_session_marks_only_enrolled_students_and_preserves_late_records(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $morning = \App\Models\SchoolClass::create(['name' => 'Morning class', 'section' => 'A', 'session' => 'Morning']);
+        $afternoon = \App\Models\SchoolClass::create(['name' => 'Afternoon class', 'section' => 'A', 'session' => 'Afternoon']);
+        $unmarked = Student::factory()->create(['school_class_id' => $morning->id]);
+        $late = Student::factory()->create(['school_class_id' => $morning->id]);
+        $other = Student::factory()->create(['school_class_id' => $afternoon->id]);
+        Attendance::create(['student_id' => $late->id, 'date' => today(), 'status' => 'late', 'notes' => 'Arrived late']);
+        Attendance::create(['student_id' => $other->id, 'date' => today(), 'status' => 'absent']);
+
+        $this->actingAs($admin)->get('/dashboard')->assertOk()->assertSee('id="student-bulk-session"', false);
+        foreach (range(1, 2) as $attempt) {
+            $this->post(route('dashboard.attendance.all-present'), ['session' => 'Morning'])
+                ->assertRedirect(route('dashboard', ['session' => 'Morning']));
+            $this->assertDatabaseHas('attendances', ['student_id' => $unmarked->id, 'status' => 'present']);
+            $this->assertDatabaseHas('attendances', ['student_id' => $late->id, 'status' => 'late', 'notes' => 'Arrived late']);
+            $this->assertDatabaseHas('attendances', ['student_id' => $other->id, 'status' => 'absent']);
+        }
+        $this->assertDatabaseCount('attendances', 3);
+        $this->postJson(route('dashboard.attendance.all-present'), ['session' => 'Invalid'])->assertUnprocessable();
+    }
+
     public function test_random_attendance_saves_balanced_totals_without_duplicates_or_changing_history(): void
     {
         $admin = User::factory()->create();
@@ -48,11 +71,12 @@ class BulkAttendanceTest extends TestCase
         foreach (range(1, 2) as $attempt) {
             $this->post(route('dashboard.attendance.all-present'))->assertRedirect(route('dashboard'))->assertSessionHas('success');
             $this->assertSame(4, Attendance::whereDate('date', today())->count());
-            $this->assertSame(4, Attendance::whereDate('date', today())->where('status', 'present')->count());
+            $this->assertSame(3, Attendance::whereDate('date', today())->where('status', 'present')->count());
+            $this->assertDatabaseHas('attendances', ['student_id' => $students[1]->id, 'status' => 'late', 'notes' => 'Original note']);
         }
         $this->assertDatabaseHas('attendances', ['student_id' => $students[0]->id, 'status' => 'present', 'notes' => 'Original note']);
         $this->assertSame(1, Attendance::whereDate('date', today()->subDay())->where('status', 'absent')->count());
-        $this->getJson('/dashboard/data')->assertOk()->assertJsonPath('summary.presentCount', 4)->assertJsonPath('summary.absentCount', 0);
+        $this->getJson('/dashboard/data')->assertOk()->assertJsonPath('summary.presentCount', 3)->assertJsonPath('summary.absentCount', 0);
     }
 
     public function test_guests_and_non_admin_roles_cannot_mark_all_present(): void

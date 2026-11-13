@@ -51,17 +51,23 @@
                 <p class="attendance-recorded">{{ $attendanceCount }} recorded &middot; {{ max(0, $attendanceStudentCount - $attendanceCount) }} unmarked</p>
                 <form method="post" action="{{ route('dashboard.attendance.all-present') }}">
                     @csrf
-                    <input type="hidden" name="session" value="{{ $attendanceSession }}">
+                    <label for="student-bulk-session" class="form-label">Session to mark present</label>
+                    <select id="student-bulk-session" name="session" class="form-select mb-2">
+                        <option value="">All sessions</option>
+                        @foreach(\App\Support\AttendanceSession::OPTIONS as $sessionOption)
+                        <option value="{{ $sessionOption }}" @selected($attendanceSession === $sessionOption)>{{ $sessionOption }}</option>
+                        @endforeach
+                    </select>
                     <button type="submit" class="btn btn-primary w-100"><i class="bi bi-check2-all me-2" aria-hidden="true"></i>Mark all present today</button>
                 </form>
-                <small class="attendance-action-note">{{ $attendanceSession ? $attendanceSession.' students only.' : 'All students, across every class.' }}</small>
+                <small class="attendance-action-note">Marks students enrolled in the selected session. Existing present and late records are preserved.</small>
                 <form method="post" action="{{ route('dashboard.attendance.random') }}" class="attendance-random-form">
                     @csrf
                     <input type="hidden" name="session" value="{{ $attendanceSession }}">
                     <button type="submit" class="btn attendance-random-button w-100"><i class="bi bi-shuffle me-2" aria-hidden="true"></i>Random attendance</button>
                     <div class="attendance-ratio"><span>70% present</span><span>15% late</span><span>10% absent</span><span>5% excused</span></div>
                 </form>
-                <small class="attendance-action-note">Either action replaces today's statuses for {{ $attendanceSession ? $attendanceSession.' students' : 'all students' }}. Random totals are rounded to whole students.</small>
+                <small class="attendance-action-note">Mark all present preserves existing present and late records. Random attendance replaces today's statuses for {{ $attendanceSession ? $attendanceSession.' students' : 'all students' }}. Random totals are rounded to whole students.</small>
             </div>
         </details>
         </div>

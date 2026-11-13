@@ -49,7 +49,8 @@ class DashboardController extends Controller
             $date = today()->toDateString();
             $students = AttendanceSession::students(Student::query(), $session);
             $count = (clone $students)->count();
-            Attendance::whereIn('student_id', (clone $students)->select('id'))->whereDate('date', $date)->update(['status' => 'present', 'updated_at' => now()]);
+            Attendance::whereIn('student_id', (clone $students)->select('id'))->whereDate('date', $date)
+                ->whereNotIn('status', ['present', 'late'])->update(['status' => 'present', 'updated_at' => now()]);
             (clone $students)->whereDoesntHave('attendances', fn ($query) => $query->whereDate('date', $date))
                 ->select('id')->chunkById(500, function ($students) use ($date) {
                     $now = now();
@@ -63,7 +64,7 @@ class DashboardController extends Controller
             return $count;
         });
 
-        return redirect()->route('dashboard', array_filter(['session' => $session]))->with('success', "All {$count} students marked present for today.");
+        return redirect()->route('dashboard', array_filter(['session' => $session]))->with('success', "Attendance saved for {$count} students today. Existing present and late records preserved.");
     }
 
     public function __invoke(Request $request)
