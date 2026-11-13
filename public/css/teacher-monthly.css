@@ -3,17 +3,16 @@
 .teacher-monthly-grid thead th{background:var(--surface-tint,#f0edf8);font-size:12px;text-transform:uppercase;color:var(--text-secondary)}
 .teacher-monthly-grid tbody th{text-align:left;min-width:190px;background:var(--surface,#fff)}
 .teacher-monthly-grid td:nth-child(4){min-width:210px}.teacher-monthly-grid td:nth-child(5){min-width:110px}.teacher-monthly-grid small{font-size:11px;line-height:1.6;margin-top:4px}
-.teacher-monthly-grid .attendance-mark{font-size:23px;font-weight:700}.teacher-monthly-grid .mark-present{background:#baf3d2;color:#185b38}.teacher-monthly-grid .mark-late{background:#fff08c;color:#785009}.teacher-monthly-grid .mark-absent{background:#facaca;color:#8c2424}.teacher-monthly-grid .mark-excused{background:#e9dffc;color:#65419a}.teacher-monthly-grid .mark-empty{font-size:17px;font-weight:400}.teacher-monthly-grid .is-weekend{color:#c32f53}
+.teacher-monthly-grid .is-weekend{color:#c32f53}
 .attendance-insight-footer .teacher-monthly-view{margin-left:auto;flex-shrink:0;padding:6px 10px;border-radius:50%;color:var(--primary);font-size:19px}.attendance-insight-footer{display:flex;align-items:center;gap:8px}
 
-/* Keep attendance status and the two work scans visually distinct. */
-.teacher-monthly-grid .attendance-mark{min-width:112px;padding:12px 10px;vertical-align:top}
-.teacher-monthly-grid .attendance-status{display:flex;align-items:center;justify-content:center;gap:5px;min-height:28px}
-.teacher-monthly-grid .attendance-status-label{font-size:11px;font-weight:600}
-.teacher-monthly-grid .mark-empty .attendance-status-label{display:none}
-.teacher-monthly-grid .attendance-scan-times{display:grid;gap:4px;margin-top:8px;padding-top:8px;border-top:1px solid currentColor}
-.teacher-monthly-grid .attendance-scan-times small{display:block;margin:0;padding:3px 6px;border-radius:4px;background:rgba(255,255,255,.55);font-size:12px;font-weight:700;line-height:1.5;white-space:nowrap;font-variant-numeric:tabular-nums;text-align:left}
-.teacher-monthly-grid .attendance-scan-times .scan-missing{background:transparent;font-weight:500}
-.teacher-monthly-grid .scan-missing span{font-size:10px}
-.teacher-monthly-grid .attendance-lateness{display:block;margin-top:7px;font-size:11px;font-weight:600;white-space:nowrap}
-@media print{.teacher-monthly-grid .attendance-mark{min-width:80px;padding:6px}.teacher-monthly-grid .attendance-scan-times small{font-size:10px}}
+/* Plain text keeps the monthly grid compact and inexpensive to render. */
+.teacher-monthly-grid .attendance-mark{min-width:92px;padding:8px 6px;vertical-align:middle;font-size:12px;line-height:1.5;background:var(--surface,#fff);color:var(--text-primary)}
+.teacher-monthly-grid .attendance-status{font-weight:700;margin-bottom:3px}
+.teacher-monthly-grid .mark-present .attendance-status{color:#16803c}
+.teacher-monthly-grid .mark-absent .attendance-status{color:#dc2626}
+.teacher-monthly-grid .mark-late .attendance-status{color:#c05a08}
+.teacher-monthly-grid .mark-excused .attendance-status{color:#2563eb}
+.teacher-monthly-grid .attendance-detail{font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
+
+.teacher-monthly-grid .attendance-times span{display:block}

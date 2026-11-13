@@ -15,7 +15,7 @@
 <div class="col-md-4"><label class="form-label" for="grid-date">Filter status by day (optional)</label><input id="grid-date" class="form-control" type="date" name="date" value="{{ $filters['date'] ?? '' }}"><small class="text-secondary">Leave empty to check the whole month.</small></div>
 <div class="col-md-8 d-flex gap-2"><a class="btn btn-outline-primary" href="{{ request()->fullUrlWithQuery(['date' => today()->toDateString(), 'month' => today()->format('Y-m')]) }}">Today</a><a class="btn btn-outline-primary" href="{{ request()->fullUrlWithQuery(['date' => null, 'month' => $month->format('Y-m')]) }}">Whole month</a></div>
 </form></section>
-<p class="small text-secondary">✓ Present &nbsp; L Late &nbsp; X Absent &nbsp; E Excused &nbsp; — Not recorded. Attendance follows the overview. Each scheduled session requires its own scan. In = start work; Out = finish work. Times use the 24-hour clock. Not scanned = no finish scan recorded.</p>
+<p class="small text-secondary">✓ Present &nbsp; L Late &nbsp; X Absent &nbsp; E Excused &nbsp; — Not recorded. Attendance follows the overview. Each scheduled session requires its own scan. In = start work; Out = finish work. Times use the 24-hour clock. Out ? = no finish scan recorded. Hover over a cell for details.</p>
 @forelse($groups as $program => $rows)
 <section class="panel mb-4"><div class="panel-header"><h2>{{ $program }} <small class="text-secondary">&middot; {{ $rows->pluck('teacher.id')->unique()->count() }} teachers</small></h2></div>
 <div class="table-responsive"><table class="teacher-monthly-grid"><thead><tr><th>No.</th><th>Teacher's name</th><th>Sex</th><th>Assigned sessions</th><th>Session</th>@for($day = 1; $day <= $month->daysInMonth; $day++)<th @class(['is-weekend' => $month->copy()->day($day)->isWeekend()])>{{ $day }}</th>@endfor</tr></thead><tbody>
@@ -37,13 +37,16 @@ $adminMark = $record instanceof \App\Models\TeacherAttendance && $record->record
 $description = $month->copy()->day($day)->format('d M Y').' · '.($row['session'] ?: 'Unassigned').' · '.($status ?: 'Not recorded').($record?->scanned_at ? ' · Scanned '.$record->scanned_at->format('H:i') : '');
 @endphp
 <td class="attendance-mark mark-{{ $status ?: 'empty' }}" title="{{ $description }}{{ $timingDescription }}{{ $checkoutDescription }}{{ $adminMark ? ' · Administrator daily mark' : '' }}" aria-label="{{ $description }}{{ $timingDescription }}{{ $checkoutDescription }}{{ $adminMark ? ' · Administrator daily mark' : '' }}">
-<span class="attendance-status">{{ $symbol }}<span class="attendance-status-label">{{ ucfirst($status ?: 'Not recorded') }}</span></span>
+@if($status)
+<div class="attendance-status">{{ ucfirst($status) }}</div>
 @if($arrival || $departure)
-<div class="attendance-scan-times">
-<small class="attendance-scan-in">@if($arrival)In {{ $arrival->format('H:i') }}@else In &mdash;@endif</small>
-<small @class(['attendance-scan-out', 'scan-missing' => !$departure])>@if($departure)Out {{ $departure->format('H:i') }}@else Out <span>Not scanned</span>@endif</small>
-</div>
-@if($lateMinutes !== null)<small class="attendance-lateness">{{ $lateMinutes }} min late</small>@endif
+<div class="attendance-detail attendance-times">@if($arrival)<span>In {{ $arrival->format('H:i') }}</span>@endif @if($departure)<span>Out {{ $departure->format('H:i') }}</span>@elseif($arrival)<span>Out &mdash;</span>@endif</div>
+@endif
+@if($lateMinutes !== null)
+<div class="attendance-detail">{{ $lateMinutes }} min late</div>
+@endif
+@else
+<span aria-hidden="true">&mdash;</span>
 @endif
 </td>
 @endfor</tr>
