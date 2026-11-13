@@ -32,6 +32,20 @@ class ClassroomSetupService
                 ->map(fn ($class) => ['id' => $class->id, 'class_group_id' => $class->class_group_id, 'name' => $class->name])->values());
         }
         return ['buildings' => Building::orderBy('name')->get(), 'plannerClasses' => $plannerClasses,
+            'plannerRooms' => Classroom::with(['buildingRecord', 'lessons.schoolClass', 'bookings.classGroup'])->orderBy('room_number')->get()->map(fn ($room) => [
+                'id' => $room->id, 'number' => $room->room_number, 'name' => $room->name,
+                'building' => $room->building, 'building_name' => $room->buildingRecord?->name ?? $room->building,
+                'status' => $room->status, 'url' => route('classrooms.edit', $room),
+                'commitments' => $room->lessons->map(fn ($lesson) => [
+                    'day' => $lesson->day, 'start' => substr($lesson->starts_at, 0, 5), 'end' => substr($lesson->ends_at, 0, 5),
+                    'year' => $lesson->academic_year, 'label' => $lesson->schoolClass?->label ?? 'Scheduled lesson',
+                ])->concat($room->bookings->map(fn ($booking) => [
+                    'day' => $booking->day_of_week, 'start' => substr($booking->starts_at, 0, 5), 'end' => substr($booking->ends_at, 0, 5),
+                    'year' => null, 'label' => $booking->classGroup?->name ?? 'Reserved classroom',
+                ]))->values(),
+            ]),
+            'plannerSessionHours' => config('classrooms.sessions'),
+            'plannerProgramHours' => config('classrooms.program_session_hours'),
             'japaneseTeachers' => $teachers,
             'classTeachers' => \App\Models\User::where('role', 'teacher')->where('status', 'active')->orderBy('name')->get(['id', 'name', 'program']),
             'eveningStudyPeriods' => \App\Models\EveningStudyPeriod::orderBy('starts_at')->get()->groupBy('program')->map(fn ($items) => $items->mapWithKeys(fn ($p) => [$p->id => ['label' => $p->label, 'starts_at' => substr($p->starts_at, 0, 5), 'ends_at' => substr($p->ends_at, 0, 5)]])),

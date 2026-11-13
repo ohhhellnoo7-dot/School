@@ -135,6 +135,28 @@ class ClassroomSetupTest extends TestCase
         $this->assertDatabaseMissing('classrooms', ['room_number' => 'NEW1']);
     }
 
+    public function test_planner_lists_all_buildings_and_room_commitments_across_programs(): void
+    {
+        $f = $this->fixture();
+        Building::firstOrCreate(['code' => 'A'], ['name' => 'Building A']);
+        Building::firstOrCreate(['code' => 'EMPTY'], ['name' => 'Empty building']);
+        $room = Classroom::create(['room_number' => 'AVAILABLE', 'name' => 'Shared room', 'building' => 'A', 'capacity' => 40, 'status' => 'active']);
+        $data = $this->data($f);
+        $data['room_number'] = 'BUSY';
+        $this->post(route('classrooms.store'), $data)->assertSessionHasNoErrors();
+        $this->get(route('classrooms.create'))->assertOk()
+            ->assertSee('Empty building')->assertSee('Classrooms by building')
+            ->assertViewHas('plannerRooms', function ($rooms) use ($room) {
+                $this->assertCount(0, $rooms->firstWhere('id', $room->id)['commitments']);
+                $busy = $rooms->firstWhere('number', 'BUSY');
+                $this->assertSame('Monday', $busy['commitments'][0]['day']);
+                $this->assertSame('07:00', $busy['commitments'][0]['start']);
+                $this->assertSame('2026-2027', $busy['commitments'][0]['year']);
+                $this->assertStringContainsString('Khmer', $busy['commitments'][0]['label']);
+                return true;
+            });
+    }
+
     private function fixture(string $program = 'Khmer', string $session = 'Morning'): array
     {
         $admin = User::factory()->create(['role' => 'administrator']);

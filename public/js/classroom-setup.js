@@ -29,9 +29,6 @@
     form.addEventListener('change', updateSummary);
 
     const config = JSON.parse(root.querySelector('[data-planner-config]').textContent);
-    // Keep only the class created during this setup in the student class picker.
-    // Restore its group after a failed classroom submission so the user can retry.
-    let latestClassGroupId = config.classes.find(cls => String(cls.id) === String(config.old.school_class_id || ''))?.class_group_id ?? null;
     const fields = root.querySelector('[data-plan-fields]');
     const program = form.elements.program;
     const session = form.elements.session;
@@ -154,7 +151,53 @@
             status.append(retry);
         }
     };
+    const availabilityBuilding = root.querySelector('[data-availability-building]');
+    const renderRoomAvailability = () => {
+        const target = root.querySelector('[data-room-availability]');
+        target.replaceChildren();
+        const cls = selectedClass();
+        const fallback = config.programHours?.[program.value]?.[session.value] || config.sessionHours[session.value];
+        const hours = cls ? studyHours(cls) : [fallback.starts_at, fallback.ends_at];
+        const evening = session.value === 'Evening' ? config.eveningPeriods?.[program.value]?.[eveningPeriod.value] : null;
+        const [start, end] = evening ? [evening.starts_at, evening.ends_at] : hours;
+        root.querySelector('[data-room-availability-context]').textContent = `${session.value} · ${day.value} · ${start}–${end} · ${year.value}. Availability includes all programs.`;
+        const groups = new Map((config.buildings || []).filter(b => !availabilityBuilding.value || b.code === availabilityBuilding.value).map(b => [b.code, {name: b.name, rooms: []}]));
+        (config.rooms || []).filter(room => !availabilityBuilding.value || room.building === availabilityBuilding.value).forEach(room => {
+            if (!groups.has(room.building)) groups.set(room.building, {name: room.building_name || 'No building', rooms: []});
+            groups.get(room.building).rooms.push(room);
+        });
+        groups.forEach(group => {
+            target.append(node('h4', group.name, 'h6 mt-3'));
+            if (!group.rooms.length) { target.append(node('p', 'No classrooms in this building.', 'text-muted')); return; }
+            const list = node('div', '', 'list-group mb-3');
+            group.rooms.forEach(room => {
+                const conflicts = room.commitments.filter(item => item.day === day.value && (!item.year || !year.value || item.year === year.value) && item.start < end && item.end > start);
+                const unavailable = room.status !== 'active';
+                const row = node('div', '', 'list-group-item d-flex justify-content-between align-items-center gap-3');
+                const details = node('div');
+                details.append(node('strong', `${room.number} · ${room.name}`));
+                details.append(node('div', unavailable ? 'Out of service' : conflicts.length ? 'Busy' : 'Free to use', unavailable || conflicts.length ? 'text-danger' : 'text-success'));
+                if (conflicts.length) details.append(node('small', [...new Set(conflicts.map(item => `${item.label} (${item.start}–${item.end})`))].join(', '), 'text-muted'));
+                row.append(details);
+                if (!unavailable) {
+                    const link = node('a', 'Open classroom', 'btn btn-sm btn-outline-secondary');
+                    const url = new URL(room.url, window.location.origin);
+                    url.searchParams.set('program', program.value);
+                    url.searchParams.set('session', session.value);
+                    url.searchParams.set('academic_year', year.value);
+                    if (eveningPeriod.value) url.searchParams.set('evening_period', eveningPeriod.value);
+                    link.href = url.toString();
+                    row.append(link);
+                }
+                list.append(row);
+            });
+            target.append(list);
+        });
+        if (!groups.size) target.append(node('p', 'No buildings or classrooms yet.', 'text-muted'));
+    };
+    availabilityBuilding.addEventListener('change', renderRoomAvailability);
     const render = () => {
+        renderRoomAvailability();
         const currentGeneration = ++generation;
         root.querySelector('[data-active-weekday]').textContent = `${day.value} subjects`;
         root.querySelectorAll('[data-weekday]').forEach(button => {
@@ -258,8 +301,8 @@
     const syncClasses = (wanted = '') => {
         syncEveningPeriods();
         cohort.replaceChildren(option('', 'Select student class'));
-        config.classes.filter(c => latestClassGroupId !== null && String(c.class_group_id) === String(latestClassGroupId)
-            && c.program === program.value && c.session === session.value).forEach(c => cohort.append(option(c.id, c.label)));
+        config.classes.filter(c => c.program === program.value && c.session === session.value)
+            .forEach(c => cohort.append(option(c.id, c.label)));
         cohort.value = wanted;
         render();
     };
@@ -364,9 +407,12 @@
         } catch (error) { periodDialog.querySelector('[data-evening-period-error]').textContent = error.message; }
         finally { button.disabled = false; }
     });
-    syncSessions(config.old.session || 'Morning');
+    const roomContext = new URLSearchParams(window.location.search);
+    if (!config.old.program && config.sessions[roomContext.get('program')]) program.value = roomContext.get('program');
+    if (!config.old.academic_year && /^\d{4}-\d{4}$/.test(roomContext.get('academic_year') || '')) year.value = roomContext.get('academic_year');
+    syncSessions(config.old.session || roomContext.get('session') || 'Morning');
     syncClasses(String(config.old.school_class_id || ''));
-    syncEveningPeriods(config.old.evening_period || '');
+    syncEveningPeriods(config.old.evening_period || roomContext.get('evening_period') || '');
     render();
     syncClassTeacher();
     if (config.old.class_teacher_id) classTeacher.value = config.old.class_teacher_id;
@@ -521,7 +567,6 @@
             const payload = await response.json();
             if (!response.ok) throw new Error(payload.errors ? Object.values(payload.errors).flat().join(' ') : payload.message || 'Could not create the class. Please try again.');
             config.classes.push(...payload.classes);
-            latestClassGroupId = payload.classes[0]?.class_group_id ?? null;
             const created = payload.classes.find(cls => cls.session === session.value) || payload.classes[0];
             if (!created) throw new Error('The class was saved, but no study session was returned. Refresh to load it.');
             program.value = created.program;
