@@ -58,6 +58,7 @@ class LessonManagementService
     public function validate(Schedule $lesson, bool $teacherRules = true): void
     {
         $class = SchoolClass::findOrFail($lesson->school_class_id);
+        if ($class->program === 'Khmer' && in_array($lesson->day, ['Saturday', 'Sunday'], true)) $this->rules->fail('Khmer classes run Monday to Friday only.');
         if ($class->shared_timetable_class_id) $this->rules->fail('Save lessons on the shared timetable owner.');
         $room = Classroom::findOrFail($lesson->classroom_id);
         $minutes = $this->rules::duration($lesson->starts_at, $lesson->ends_at);

@@ -44,6 +44,10 @@
     const classDays = form.elements.class_days;
     const availableDays = () => classDays.value === 'weekend' ? ['Saturday', 'Sunday'] : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
     const syncDays = () => {
+        const weekend = classDays.querySelector('option[value="weekend"]');
+        weekend.hidden = program.value === 'Khmer';
+        weekend.disabled = program.value === 'Khmer';
+        if (program.value === 'Khmer') classDays.value = 'weekday';
         const days = availableDays();
         const wanted = day.value;
         day.value = days.includes(wanted) ? wanted : days[0];
@@ -268,7 +272,7 @@
         Object.values(weeklyChoices).forEach(slots => Object.values(slots).forEach(slot => { slot.teacher_id = classTeacher.value; }));
         render();
     });
-    program.addEventListener('change', () => { resetChoices(); syncSessions(); syncClasses(); });
+    program.addEventListener('change', () => { syncDays(); displayedDay = day.value; resetChoices(); syncSessions(); syncClasses(); });
     session.addEventListener('change', () => { resetChoices(); syncClasses(); });
     cohort.addEventListener('change', () => { resetChoices(); syncClassTeacher(); render(); });
     classDays.addEventListener('change', () => {

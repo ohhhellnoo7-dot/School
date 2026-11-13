@@ -75,6 +75,9 @@ class ClassroomSetupService
                 $this->fail('Choose a class matching the selected program and session.');
             }
             $allowedDays = ($plan['class_days'] ?? 'weekday') === 'weekend' ? ['Saturday', 'Sunday'] : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+            if ($class->program === 'Khmer' && (($plan['class_days'] ?? 'weekday') === 'weekend' || in_array($plan['day'], ['Saturday', 'Sunday'], true))) {
+                $this->fail('Khmer classes run Monday to Friday only.');
+            }
             foreach ($plan['slots'] ?? [] as $slot) {
                 if ((! empty($slot['subject_id']) || ! empty($slot['teacher_id'])) && ! in_array($slot['day'] ?? $plan['day'], $allowedDays, true)) {
                     $this->fail('Choose lesson days matching Weekday or Weekend.');

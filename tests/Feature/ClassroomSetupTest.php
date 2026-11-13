@@ -144,7 +144,7 @@ class ClassroomSetupTest extends TestCase
 
     public function test_weekend_lessons_save_and_weekday_choice_rejects_weekend_slots(): void
     {
-        $f = $this->fixture();
+        $f = $this->fixture('English');
         app(TeacherManagementService::class)->saveProfile($f['teacher'], [$f['subject']->name], 1200, [
             ['weekday' => 'Saturday', 'start_time' => $f['start'], 'end_time' => $f['end'], 'unavailable' => false],
         ]);
@@ -157,6 +157,23 @@ class ClassroomSetupTest extends TestCase
         $data['class_days'] = 'weekend';
         $this->post(route('classrooms.store'), $data)->assertSessionHasNoErrors()->assertRedirect();
         $this->assertDatabaseHas('schedules', ['school_class_id' => $f['class']->id, 'day' => 'Saturday']);
+    }
+
+    public function test_khmer_rejects_weekend_plans_and_weekend_slots(): void
+    {
+        $f = $this->fixture();
+        foreach (['Saturday', 'Sunday'] as $day) {
+            $data = $this->data($f);
+            $data['class_days'] = 'weekend';
+            $data['day'] = $day;
+            $data['slots'][0]['day'] = $day;
+            $this->post(route('classrooms.store'), $data)->assertSessionHasErrors('slots');
+            $data['class_days'] = 'weekday';
+            $data['day'] = 'Monday';
+            $this->post(route('classrooms.store'), $data)->assertSessionHasErrors('slots');
+        }
+        $this->assertDatabaseMissing('classrooms', ['room_number' => 'NEW1']);
+        $this->assertDatabaseCount('schedules', 0);
     }
 
     public function test_room_card_shows_teacher_only_during_the_current_lesson(): void
