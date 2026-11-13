@@ -39,11 +39,12 @@ class TeacherAttendanceController extends Controller
             foreach ($sessions as $session) {
                 if (($filters['session'] ?? null) && $filters['session'] !== $session) continue;
                 $marks = $records->where('teacher_id', $teacher->id)->where('session', $session)->keyBy(fn ($record) => $record->date->day);
+                $scanMarks = clone $marks;
                 // Match the overview: explicit administrator marks take precedence.
                 foreach ($dailyRecords[$teacher->id] ?? collect() as $daily) {
                     if ($daily->recorded_by !== $teacher->id) $marks->put($daily->date->day, $daily);
                 }
-                $rows->push(['teacher' => $teacher, 'session' => $session, 'assigned' => $assigned, 'marks' => $marks]);
+                $rows->push(['teacher' => $teacher, 'session' => $session, 'assigned' => $assigned, 'marks' => $marks, 'scan_marks' => $scanMarks]);
             }
         }
         if (! empty($filters['status'])) {
@@ -66,6 +67,7 @@ class TeacherAttendanceController extends Controller
             $late = min($total - $present, (int) round($total * .15));
             $absent = min($total - $present - $late, (int) round($total * .1));
             $scannedTeachers = \App\Models\TeacherSessionAttendance::whereDate('date', today())
+                ->when($session, fn ($q) => $q->where('session', $session))
                 ->whereNotNull('scanned_at')->pluck('teacher_id')->flip();
             $checkedInRecords = DB::table('school_location_check_ins')->whereIn('teacher_attendance_id',
                 TeacherAttendance::whereDate('date', today())->select('id'))->pluck('teacher_attendance_id')->flip();
@@ -73,14 +75,30 @@ class TeacherAttendanceController extends Controller
             foreach ($teachers as $index => $teacher) {
                 $existing = TeacherAttendance::where('teacher_id', $teacher->id)->whereDate('date', today())->first();
                 if ($action === 'all-present' && $existing && (
-                    $existing->recorded_by === $teacher->id || $scannedTeachers->has($teacher->id) || $checkedInRecords->has($existing->id)
+                    $scannedTeachers->has($teacher->id) || (! $session && $checkedInRecords->has($existing->id))
                 )) continue;
                 $status = $action === 'all-present' || $index < $present ? 'present'
                     : ($index < $present + $late ? 'late' : ($index < $present + $late + $absent ? 'absent' : 'excused'));
+                if ($action === 'all-present') {
+                    if ($session) {
+                        \App\Models\TeacherSessionAttendance::updateOrCreate(
+                            ['teacher_id' => $teacher->id, 'date' => today()->toDateString(), 'session' => $session],
+                            ['status' => 'present']
+                        );
+                        // Keep the daily summary derived from each session, so a morning
+                        // bulk mark cannot mark the afternoon present as well.
+                        $statuses = \App\Models\TeacherSessionAttendance::where('teacher_id', $teacher->id)
+                            ->whereDate('date', today())->pluck('status');
+                        $status = $statuses->contains('absent') ? 'absent' : ($statuses->contains('late') ? 'late' : 'present');
+                    } else {
+                        \App\Models\TeacherSessionAttendance::where('teacher_id', $teacher->id)
+                            ->whereDate('date', today())->whereNull('scanned_at')->update(['status' => 'present']);
+                    }
+                }
                 $record = $existing ?? new TeacherAttendance(['teacher_id' => $teacher->id, 'date' => today()->toDateString()]);
                 $record->fill([
                     'program' => $existing?->program ?? $teacher->program,
-                    'status' => $status, 'recorded_by' => $request->user()->id,
+                    'status' => $status, 'recorded_by' => $session && $action === 'all-present' ? $teacher->id : $request->user()->id,
                 ])->save();
                 $saved++;
             }

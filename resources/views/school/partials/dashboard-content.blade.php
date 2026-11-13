@@ -25,10 +25,16 @@
                 <p class="attendance-recorded">{{ $teacherRecordedCount }} recorded &middot; {{ max(0, $activeTeacherCount - $teacherRecordedCount) }} unmarked</p>
                 <form method="post" action="{{ route('dashboard.teacher-attendance.bulk', 'all-present') }}">
                     @csrf
-                    <input type="hidden" name="session" value="{{ $attendanceSession }}">
+                    <label for="teacher-bulk-session" class="form-label">Session to mark present</label>
+                    <select id="teacher-bulk-session" name="session" class="form-select mb-2">
+                        <option value="">All sessions</option>
+                        @foreach(\App\Support\AttendanceSession::OPTIONS as $sessionOption)
+                        <option value="{{ $sessionOption }}" @selected($attendanceSession === $sessionOption)>{{ $sessionOption }}</option>
+                        @endforeach
+                    </select>
                     <button type="submit" class="btn btn-primary w-100"><i class="bi bi-check2-all me-2" aria-hidden="true"></i>Mark all present today</button>
                 </form>
-                <small class="attendance-action-note">{{ $attendanceSession ? $attendanceSession.' active teachers only.' : 'All active teachers, across every program.' }}</small>
+                <small class="attendance-action-note">Marks active teachers in the selected session. Existing scans keep their present or late status.</small>
                 <form method="post" action="{{ route('dashboard.teacher-attendance.bulk', 'random') }}" class="attendance-random-form">
                     @csrf
                     <input type="hidden" name="session" value="{{ $attendanceSession }}">

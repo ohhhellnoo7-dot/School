@@ -23,12 +23,19 @@
 @php
 $record = $row['marks']->get($day);
 $status = $record?->status;
+$scan = ($row['scan_marks'] ?? collect())->get($day);
+$arrival = $scan?->scanned_at;
+$lateMinutes = $scan?->status === 'late' && $arrival && $scan->scheduled_start
+    ? max(0, (int) floor($scan->scheduled_start->diffInMinutes($arrival, false))) : null;
+$timingDescription = $arrival ? ' | In '.$arrival->format('H:i').($lateMinutes !== null ? ' | '.$lateMinutes.' min late' : '') : '';
 $symbol = ['present' => '✓', 'late' => 'L', 'absent' => 'X', 'excused' => 'E'][$status] ?? '—';
 $checkoutDescription = $record instanceof \App\Models\TeacherSessionAttendance && $record->checked_out_at ? ' | Finished '.$record->checked_out_at->format('H:i') : '';
 $adminMark = $record instanceof \App\Models\TeacherAttendance && $record->recorded_by !== $row['teacher']->id;
 $description = $month->copy()->day($day)->format('d M Y').' · '.($row['session'] ?: 'Unassigned').' · '.($status ?: 'Not recorded').($record?->scanned_at ? ' · Scanned '.$record->scanned_at->format('H:i') : '');
 @endphp
-<td class="attendance-mark mark-{{ $status ?: 'empty' }}" title="{{ $description }}{{ $checkoutDescription }}{{ $adminMark ? ' · Administrator daily mark' : '' }}" aria-label="{{ $description }}{{ $checkoutDescription }}{{ $adminMark ? ' · Administrator daily mark' : '' }}">{{ $symbol }}@if($checkoutDescription)<small class="d-block">Out {{ $record->checked_out_at->format('H:i') }}</small>@endif</td>
+<td class="attendance-mark mark-{{ $status ?: 'empty' }}" title="{{ $description }}{{ $timingDescription }}{{ $checkoutDescription }}{{ $adminMark ? ' · Administrator daily mark' : '' }}" aria-label="{{ $description }}{{ $timingDescription }}{{ $checkoutDescription }}{{ $adminMark ? ' · Administrator daily mark' : '' }}">{{ $symbol }}@if($arrival)<small class="d-block text-nowrap">In {{ $arrival->format('H:i') }}</small>@if($lateMinutes !== null)<small class="d-block text-nowrap">{{ $lateMinutes }} min late</small>@endif
+@endif
+@if($checkoutDescription)<small class="d-block">Out {{ $record->checked_out_at->format('H:i') }}</small>@endif</td>
 @endfor</tr>
 @endforeach
 </tbody></table></div></section>

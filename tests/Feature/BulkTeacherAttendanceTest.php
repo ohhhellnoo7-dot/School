@@ -11,6 +11,37 @@ class BulkTeacherAttendanceTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_auto_absent_without_a_scan_is_marked_present(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = User::factory()->create(['role' => 'teacher', 'status' => 'active']);
+        TeacherAttendance::create(['teacher_id' => $teacher->id, 'date' => today(), 'status' => 'absent', 'recorded_by' => $teacher->id]);
+        \App\Models\TeacherSessionAttendance::create(['teacher_id' => $teacher->id, 'date' => today(), 'session' => 'Morning', 'status' => 'absent']);
+
+        $this->actingAs($admin)->post(route('dashboard.teacher-attendance.bulk', 'all-present'))->assertRedirect();
+
+        $this->assertDatabaseHas('teacher_attendances', ['teacher_id' => $teacher->id, 'status' => 'present']);
+        $this->assertDatabaseHas('teacher_session_attendances', ['teacher_id' => $teacher->id, 'session' => 'Morning', 'status' => 'present', 'scanned_at' => null]);
+    }
+
+    public function test_session_bulk_preserves_scans_and_does_not_mark_other_sessions_present(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = User::factory()->create(['role' => 'teacher', 'status' => 'active']);
+        foreach (['Morning', 'Afternoon'] as $session) {
+            \App\Models\SchoolClass::create(['name' => $session, 'section' => 'A', 'session' => $session, 'teacher_id' => $teacher->id]);
+            \App\Models\TeacherSessionAttendance::create(['teacher_id' => $teacher->id, 'date' => today(), 'session' => $session, 'status' => $session === 'Morning' ? 'late' : 'absent', 'scanned_at' => $session === 'Morning' ? now() : null]);
+        }
+        TeacherAttendance::create(['teacher_id' => $teacher->id, 'date' => today(), 'status' => 'absent', 'recorded_by' => $teacher->id]);
+        $this->actingAs($admin)->post(route('dashboard.teacher-attendance.bulk', 'all-present'), ['session' => 'Morning'])->assertRedirect();
+        $this->assertDatabaseHas('teacher_session_attendances', ['teacher_id' => $teacher->id, 'session' => 'Afternoon', 'status' => 'absent']);
+        $this->post(route('dashboard.teacher-attendance.bulk', 'all-present'), ['session' => 'Afternoon'])->assertRedirect();
+        $this->assertDatabaseHas('teacher_session_attendances', ['teacher_id' => $teacher->id, 'session' => 'Morning', 'status' => 'late']);
+        $this->assertDatabaseHas('teacher_session_attendances', ['teacher_id' => $teacher->id, 'session' => 'Afternoon', 'status' => 'present', 'scanned_at' => null]);
+        $this->get('/teacher-attendance?session=Afternoon')->assertViewHas('counts', fn ($counts) => $counts->get('present') === 1);
+        $this->get('/teacher-attendance?session=Morning')->assertViewHas('counts', fn ($counts) => $counts->get('late') === 1);
+    }
+
     public function test_mark_all_present_preserves_self_scans_and_marks_unscanned_teachers(): void
     {
         $admin = User::factory()->create(['role' => 'administrator']);

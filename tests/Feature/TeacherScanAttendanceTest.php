@@ -27,6 +27,25 @@ class TeacherScanAttendanceTest extends TestCase
             ->get(route('teacher-attendance.monthly'))->assertForbidden();
     }
 
+    public function test_monthly_cells_show_actual_arrival_and_minutes_late_without_inventing_admin_scan_times(): void
+    {
+        $this->travelTo(now()->setDate(2026, 11, 11)->setTime(7, 23));
+        $teacher = $this->teacher();
+        app(TeacherScanAttendance::class)->scan($teacher);
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $url = route('teacher-attendance.monthly', ['month' => '2026-11', 'session' => 'Morning']);
+        $this->actingAs($admin)->get($url)->assertOk()->assertSee('In 07:23')->assertSee('23 min late');
+        $this->travelTo(now()->setTime(7, 45));
+        app(TeacherScanAttendance::class)->scan($teacher);
+        $this->get($url)->assertSee('In 07:23')->assertSee('23 min late')->assertDontSee('In 07:45');
+        $this->travelTo(now()->addWeek()->setTime(7, 0));
+        app(TeacherScanAttendance::class)->scan($teacher);
+        $this->get($url)->assertSee('In 07:00');
+        \App\Models\TeacherAttendance::create(['teacher_id' => $teacher->id, 'date' => '2026-11-12',
+            'program' => 'Khmer', 'status' => 'late', 'recorded_by' => $admin->id]);
+        $this->get($url)->assertOk()->assertDontSee('0 min late');
+    }
+
     public function test_monthly_status_buttons_filter_effective_session_marks(): void
     {
         $this->travelTo(now()->setDate(2026, 11, 11)->setTime(7, 0));
