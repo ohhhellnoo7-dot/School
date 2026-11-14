@@ -11,6 +11,92 @@ class ClassroomSetupTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_japan_class_can_have_different_teachers_in_separate_evening_periods(): void
+    {
+        $f = $this->fixture('Japan', 'Evening');
+        \App\Models\Program::updateOrCreate(['name' => 'Japan'], ['sessions' => ['Evening']]);
+        $first = \App\Models\EveningStudyPeriod::firstOrCreate(['program' => 'Japan', 'starts_at' => '17:30', 'ends_at' => '18:30'], ['label' => 'Evening 1']);
+        $second = \App\Models\EveningStudyPeriod::firstOrCreate(['program' => 'Japan', 'starts_at' => '18:30', 'ends_at' => '19:30'], ['label' => 'Evening 2']);
+        $data = $this->data($f);
+        $data['class_teacher_id'] = $f['teacher']->id;
+        $data['evening_period'] = $first->id;
+        $this->post(route('classrooms.store'), $data)->assertSessionHasNoErrors();
+        $room = Classroom::where('room_number', 'NEW1')->sole();
+        $teacher = User::factory()->create(['role' => 'teacher', 'program' => 'Japan', 'status' => 'active']);
+        app(TeacherManagementService::class)->saveProfile($teacher, [$f['subject']->name], 1200, []);
+        $data['existing_classroom_id'] = $room->id;
+        $data['class_teacher_id'] = $teacher->id;
+        $data['evening_period'] = $second->id;
+        $data['slots'][0]['starts_at'] = '18:30';
+        $this->post(route('classrooms.store'), $data)->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('schedules', ['school_class_id' => $f['class']->id, 'teacher_id' => $f['teacher']->id, 'starts_at' => '17:30']);
+        $this->assertDatabaseHas('schedules', ['school_class_id' => $f['class']->id, 'teacher_id' => $teacher->id, 'starts_at' => '18:30']);
+        $this->assertSame($f['teacher']->id, $f['class']->fresh()->teacher_id);
+        $data['evening_period'] = $first->id;
+        $data['slots'][0]['starts_at'] = '17:30';
+        $this->post(route('classrooms.store'), $data)->assertSessionHasErrors('slots');
+    }
+
+    public function test_japan_teacher_can_add_evening_two_work_without_losing_evening_one(): void
+    {
+        $f = $this->fixture('Japan', 'Evening');
+        \App\Models\Program::updateOrCreate(['name' => 'Japan'], ['sessions' => ['Evening']]);
+        $period = \App\Models\EveningStudyPeriod::firstOrCreate(['program' => 'Japan', 'starts_at' => '18:30', 'ends_at' => '19:30'], ['label' => 'Evening 2']);
+        app(TeacherManagementService::class)->saveProfile($f['teacher'], [$f['subject']->name], 1200, [
+            ['weekday' => 'Monday', 'start_time' => '17:30', 'end_time' => '18:30', 'unavailable' => false],
+        ]);
+        $otherGroup = ClassGroup::create(['name' => 'Evening one class', 'program' => 'Japan', 'grade' => 8, 'section' => 'B', 'status' => 'active']);
+        SchoolClass::create(['name' => 'Evening one class', 'section' => 'B', 'program' => 'Japan', 'session' => 'Evening', 'class_group_id' => $otherGroup->id, 'teacher_id' => $f['teacher']->id]);
+        $query = ['school_class_id' => $f['class']->id, 'subject_id' => $f['subject']->id, 'class_teacher_id' => $f['teacher']->id,
+            'day' => 'Monday', 'starts_at' => '18:30', 'ends_at' => '19:30', 'academic_year' => '2026-2027'];
+        $this->getJson(route('classrooms.setup-options', $query))->assertOk()->assertJsonPath('teachers.0.available', true);
+        $this->assertFalse(app(TeacherManagementService::class)->onDuty($f['teacher'], 'Monday', '18:30', '19:30'));
+        $data = $this->data($f);
+        $data['class_teacher_id'] = $f['teacher']->id;
+        $data['evening_period'] = $period->id;
+        $data['slots'][0]['starts_at'] = '18:30';
+        $this->post(route('classrooms.store'), $data)->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertTrue(app(TeacherManagementService::class)->onDuty($f['teacher'], 'Monday', '18:30', '19:30'));
+        $this->assertTrue(app(TeacherManagementService::class)->onDuty($f['teacher'], 'Monday', '17:30', '18:30'));
+        \Illuminate\Support\Facades\DB::table('teacher_working_periods')->insert([
+            'teacher_id' => $f['teacher']->id, 'weekday' => 'Tuesday', 'start_time' => '18:30', 'end_time' => '19:30', 'unavailable' => true,
+        ]);
+        $query['day'] = 'Tuesday';
+        $this->getJson(route('classrooms.setup-options', $query))->assertOk()->assertJsonPath('teachers.0.available', false);
+    }
+
+    public function test_existing_classroom_selection_saves_lessons_without_new_room_details(): void
+    {
+        $f = $this->fixture();
+        $room = Classroom::create(['room_number' => 'SHARED', 'name' => 'Existing room', 'building' => 'A', 'capacity' => 40, 'status' => 'active']);
+        $data = $this->data($f);
+        foreach (['room_number', 'name', 'building', 'capacity', 'status'] as $field) unset($data[$field]);
+        $data['existing_classroom_id'] = $room->id;
+        $this->post(route('classrooms.store'), $data)->assertSessionHasNoErrors()->assertRedirect(route('classrooms.show', $room));
+        $this->assertDatabaseCount('classrooms', 1);
+        $this->assertDatabaseHas('classrooms', ['id' => $room->id, 'name' => 'Existing room', 'room_number' => 'SHARED']);
+        $this->assertDatabaseHas('schedules', ['classroom_id' => $room->id, 'school_class_id' => $f['class']->id]);
+    }
+
+    public function test_missing_japan_evening_times_are_added_without_changing_custom_times(): void
+    {
+        $this->fixture('Japan', 'Evening');
+        \App\Models\Program::updateOrCreate(['name' => 'Japan'], ['sessions' => ['Evening']]);
+        \App\Models\EveningStudyPeriod::where('program', 'Japan')->delete();
+        $migration = require database_path('migrations/2026_11_13_000001_add_missing_program_evening_periods.php');
+        $migration->up();
+        $migration->up();
+        $periods = \App\Models\EveningStudyPeriod::options('Japan');
+        $this->assertCount(2, $periods);
+        $this->assertSame(['17:30', '18:30'], array_column($periods, 'starts_at'));
+        $this->assertSame(['18:30', '19:30'], array_column($periods, 'ends_at'));
+        $this->get(route('classrooms.create'))->assertOk()->assertViewHas('eveningStudyPeriods', fn ($items) => $items['Japan']->count() === 2);
+        \App\Models\EveningStudyPeriod::where('program', 'Japan')->delete();
+        \App\Models\EveningStudyPeriod::create(['program' => 'Japan', 'label' => 'Custom time', 'starts_at' => '20:00', 'ends_at' => '21:00']);
+        $migration->up();
+        $this->assertSame(['20:00'], array_column(\App\Models\EveningStudyPeriod::options('Japan'), 'starts_at'));
+    }
+
     public function test_admin_can_add_a_third_evening_time_and_schedule_a_class_in_it(): void
     {
         $f = $this->fixture('Chinese', 'Evening');
@@ -46,7 +132,7 @@ class ClassroomSetupTest extends TestCase
     {
         $f = $this->fixture('Chinese', 'Evening');
         \App\Models\Program::firstOrCreate(['name' => 'English'], ['sessions' => ['Evening']]);
-        $id = $this->postJson(route('evening-study-periods.store'), ['program' => 'English', 'label' => 'English late class', 'starts_at' => '19:00', 'ends_at' => '20:00'])->assertCreated()->json('id');
+        $id = $this->postJson(route('evening-study-periods.store'), ['program' => 'English', 'label' => 'English late class', 'starts_at' => '20:00', 'ends_at' => '21:00'])->assertCreated()->json('id');
         $data = $this->data($f); $data['evening_period'] = $id;
         $this->post(route('classrooms.store'), $data)->assertSessionHasErrors('slots');
         $this->assertDatabaseMissing('classrooms', ['room_number' => 'NEW1']);
@@ -58,7 +144,7 @@ class ClassroomSetupTest extends TestCase
     {
         $f = $this->fixture('English', 'Evening');
         foreach ([['17:30', '18:30'], ['18:30', '19:30']] as $index => [$start, $end]) {
-            \App\Models\EveningStudyPeriod::create(['program' => 'English', 'label' => 'Time '.$index, 'starts_at' => $start, 'ends_at' => $end]);
+            \App\Models\EveningStudyPeriod::firstOrCreate(['program' => 'English', 'starts_at' => $start, 'ends_at' => $end], ['label' => 'Time '.$index]);
         }
         $room = Classroom::create(['room_number' => 'ENG1', 'name' => 'English room', 'building' => 'A', 'capacity' => 40, 'status' => 'active']);
         $existing = new Schedule(['school_class_id' => $f['class']->id, 'subject_id' => $f['subject']->id, 'teacher_id' => $f['teacher']->id, 'classroom_id' => $room->id, 'room' => 'ENG1', 'day' => 'Monday', 'starts_at' => '17:30', 'ends_at' => '18:30', 'entry_type' => 'academic', 'academic_year' => '2026-2027']);
@@ -145,7 +231,7 @@ class ClassroomSetupTest extends TestCase
         $data['room_number'] = 'BUSY';
         $this->post(route('classrooms.store'), $data)->assertSessionHasNoErrors();
         $this->get(route('classrooms.create'))->assertOk()
-            ->assertSee('Empty building')->assertSee('Classrooms by building')
+            ->assertSee('Empty building')->assertSee('data-availability-classroom', false)->assertDontSee('Classrooms by building')
             ->assertViewHas('plannerRooms', function ($rooms) use ($room) {
                 $this->assertCount(0, $rooms->firstWhere('id', $room->id)['commitments']);
                 $busy = $rooms->firstWhere('number', 'BUSY');

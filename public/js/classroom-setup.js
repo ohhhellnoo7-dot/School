@@ -24,6 +24,15 @@
         write('capacity', `${form.elements.capacity?.value || '0'} students`);
         write('status', form.elements.status?.value === 'out_of_service' ? 'Out of service' : 'Active');
         write('plan', `${form.elements.program.value} / ${form.elements.session.value}`);
+        const selectedRoom = form.elements.existing_classroom_id?.value;
+        const room = (config.rooms || []).find(item => String(item.id) === selectedRoom);
+        if (room) {
+            write('name', room.name);
+            write('number', room.number);
+            write('building', room.building_name);
+            write('capacity', `${room.capacity} students`);
+            write('status', room.status === 'active' ? 'Active' : 'Out of service');
+        }
     };
     form.addEventListener('input', updateSummary);
     form.addEventListener('change', updateSummary);
@@ -152,50 +161,45 @@
         }
     };
     const availabilityBuilding = root.querySelector('[data-availability-building]');
+    const restoredRoom = (config.rooms || []).find(room => String(room.id) === String(config.old.existing_classroom_id || ''));
+    if (restoredRoom) availabilityBuilding.value = restoredRoom.building;
+    const availabilityClassroom = root.querySelector('[data-availability-classroom]');
+    const originalClassroomId = root.dataset.classroomId;
+    const syncRoomSelection = () => {
+        const room = (config.rooms || []).find(item => String(item.id) === availabilityClassroom.value);
+        form.elements.existing_classroom_id.value = room?.id || '';
+        root.dataset.classroomId = room ? String(room.id) : originalClassroomId;
+        const details = document.querySelector('[aria-labelledby="room-details-heading"]');
+        details.querySelectorAll('input, select, textarea').forEach(control => { control.disabled = !!room; });
+        if (!room) syncBuilding();
+        const editDetails = form.querySelector('[data-open-room-details]');
+        if (editDetails) editDetails.hidden = !!room;
+        const save = form.querySelector('.room-editor-actions button[type="submit"]');
+        save.textContent = room ? 'Save lessons' : originalClassroomId ? 'Save changes' : 'Create classroom';
+        updateSummary();
+    };
     const renderRoomAvailability = () => {
-        const target = root.querySelector('[data-room-availability]');
-        target.replaceChildren();
+        const previous = availabilityClassroom.value || String(config.old.existing_classroom_id || root.dataset.classroomId);
+        availabilityClassroom.replaceChildren(option('', availabilityBuilding.value ? 'Select classroom' : 'Select a building first'));
         const cls = selectedClass();
         const fallback = config.programHours?.[program.value]?.[session.value] || config.sessionHours[session.value];
         const hours = cls ? studyHours(cls) : [fallback.starts_at, fallback.ends_at];
         const evening = session.value === 'Evening' ? config.eveningPeriods?.[program.value]?.[eveningPeriod.value] : null;
         const [start, end] = evening ? [evening.starts_at, evening.ends_at] : hours;
-        root.querySelector('[data-room-availability-context]').textContent = `${session.value} · ${day.value} · ${start}–${end} · ${year.value}. Availability includes all programs.`;
-        const groups = new Map((config.buildings || []).filter(b => !availabilityBuilding.value || b.code === availabilityBuilding.value).map(b => [b.code, {name: b.name, rooms: []}]));
-        (config.rooms || []).filter(room => !availabilityBuilding.value || room.building === availabilityBuilding.value).forEach(room => {
-            if (!groups.has(room.building)) groups.set(room.building, {name: room.building_name || 'No building', rooms: []});
-            groups.get(room.building).rooms.push(room);
+        root.querySelector('[data-room-availability-context]').textContent = `${session.value} / ${day.value} / ${start}-${end}. Busy means an overlapping lesson or reservation from any program.`;
+        const rooms = (config.rooms || []).filter(room => room.building === availabilityBuilding.value);
+        rooms.forEach(room => {
+            const busy = room.commitments.some(item => item.day === day.value && (!item.year || !year.value || item.year === year.value) && item.start < end && item.end > start);
+            const unavailable = room.status !== 'active';
+            const status = unavailable ? 'Out of service' : busy ? 'Busy' : 'Free';
+            availabilityClassroom.append(option(room.id, `${room.number} - ${room.name} - ${status}`, unavailable || busy));
         });
-        groups.forEach(group => {
-            target.append(node('h4', group.name, 'h6 mt-3'));
-            if (!group.rooms.length) { target.append(node('p', 'No classrooms in this building.', 'text-muted')); return; }
-            const list = node('div', '', 'list-group mb-3');
-            group.rooms.forEach(room => {
-                const conflicts = room.commitments.filter(item => item.day === day.value && (!item.year || !year.value || item.year === year.value) && item.start < end && item.end > start);
-                const unavailable = room.status !== 'active';
-                const row = node('div', '', 'list-group-item d-flex justify-content-between align-items-center gap-3');
-                const details = node('div');
-                details.append(node('strong', `${room.number} · ${room.name}`));
-                details.append(node('div', unavailable ? 'Out of service' : conflicts.length ? 'Busy' : 'Free to use', unavailable || conflicts.length ? 'text-danger' : 'text-success'));
-                if (conflicts.length) details.append(node('small', [...new Set(conflicts.map(item => `${item.label} (${item.start}–${item.end})`))].join(', '), 'text-muted'));
-                row.append(details);
-                if (!unavailable) {
-                    const link = node('a', 'Open classroom', 'btn btn-sm btn-outline-secondary');
-                    const url = new URL(room.url, window.location.origin);
-                    url.searchParams.set('program', program.value);
-                    url.searchParams.set('session', session.value);
-                    url.searchParams.set('academic_year', year.value);
-                    if (eveningPeriod.value) url.searchParams.set('evening_period', eveningPeriod.value);
-                    link.href = url.toString();
-                    row.append(link);
-                }
-                list.append(row);
-            });
-            target.append(list);
-        });
-        if (!groups.size) target.append(node('p', 'No buildings or classrooms yet.', 'text-muted'));
+        if (rooms.some(room => String(room.id) === previous)) availabilityClassroom.value = previous;
+        if (availabilityBuilding.value && !rooms.length) availabilityClassroom.replaceChildren(option('', 'No classrooms in this building'));
+        syncRoomSelection();
     };
     availabilityBuilding.addEventListener('change', renderRoomAvailability);
+    availabilityClassroom.addEventListener('change', () => { syncRoomSelection(); render(); });
     const render = () => {
         renderRoomAvailability();
         const currentGeneration = ++generation;
@@ -213,10 +217,14 @@
             if (!entry) return;
             const assignments = teacher.assignments || [];
             const sameClass = assignment => cls && (String(assignment.id) === String(cls.id) || (cls.class_group_id && String(assignment.class_group_id) === String(cls.class_group_id)));
-            const other = assignments.filter(assignment => !sameClass(assignment));
-            const label = other.length ? `Busy — ${[...new Set(other.map(assignment => assignment.name))].join(', ')}` : assignments.some(sameClass) ? 'Assigned to this class' : 'No classroom yet';
-            entry.textContent = `${teacher.name} — ${label}`;
-            entry.disabled = other.length > 0;
+            const period = session.value === 'Evening' ? config.eveningPeriods?.[program.value]?.[eveningPeriod.value] : null;
+            const busy = period ? (teacher.commitments || []).some(item =>
+                String(item.class_id) !== String(cls?.id) && availableDays().includes(item.day) &&
+                (!item.year || item.year === year.value) && item.start < period.ends_at && item.end > period.starts_at)
+                : assignments.some(assignment => !sameClass(assignment));
+            const label = busy ? 'Busy at this study time' : period ? 'Free at this study time' : assignments.some(sameClass) ? 'Assigned to this class' : 'No classroom yet';
+            entry.textContent = `${teacher.name} - ${label}`;
+            entry.disabled = busy;
         });
         const japanese = program.value === 'Japan';
         root.querySelector('[data-class-teacher-field]').hidden = !japanese;
@@ -312,7 +320,11 @@
     };
     const resetChoices = () => { weeklyChoices = {}; choices = weeklyChoices[displayedDay] = {}; };
     const syncClassTeacher = () => {
-        classTeacher.value = String(selectedClass()?.teacher_id || '');
+        const cls = selectedClass();
+        const period = session.value === 'Evening' ? config.eveningPeriods?.[program.value]?.[eveningPeriod.value] : null;
+        const assigned = period && cls ? (config.japaneseTeachers || []).find(teacher => (teacher.commitments || []).some(item =>
+            String(item.class_id) === String(cls.id) && (!item.year || item.year === year.value) && item.start < period.ends_at && item.end > period.starts_at)) : null;
+        classTeacher.value = String(assigned?.id || (period ? '' : cls?.teacher_id) || '');
     };
     classTeacher.addEventListener('change', () => {
         remember();
@@ -377,7 +389,7 @@
         render();
         message.textContent = added ? `Filled ${added} periods with different subjects. Your existing choices were kept. You can edit any day.` : 'No empty periods or unused subjects remain. You can edit the existing choices.';
     });
-    eveningPeriod.addEventListener('change', () => { resetChoices(); render(); });
+    eveningPeriod.addEventListener('change', () => { resetChoices(); syncClassTeacher(); render(); });
     const periodDialog = document.querySelector('[data-evening-period-dialog]');
     const periodForm = periodDialog.querySelector('form');
     root.querySelector('[data-add-evening-period]').addEventListener('click', () => {
@@ -409,9 +421,16 @@
     });
     const roomContext = new URLSearchParams(window.location.search);
     if (!config.old.program && config.sessions[roomContext.get('program')]) program.value = roomContext.get('program');
+    if (!config.old.class_days && ['weekday', 'weekend'].includes(roomContext.get('class_days'))) classDays.value = roomContext.get('class_days');
+    syncDays();
     if (!config.old.academic_year && /^\d{4}-\d{4}$/.test(roomContext.get('academic_year') || '')) year.value = roomContext.get('academic_year');
+    if (!config.old.day && availableDays().includes(roomContext.get('day'))) {
+        day.value = roomContext.get('day');
+        displayedDay = day.value;
+        choices = weeklyChoices[displayedDay] ||= {};
+    }
     syncSessions(config.old.session || roomContext.get('session') || 'Morning');
-    syncClasses(String(config.old.school_class_id || ''));
+    syncClasses(String(config.old.school_class_id || roomContext.get('school_class_id') || ''));
     syncEveningPeriods(config.old.evening_period || roomContext.get('evening_period') || '');
     render();
     syncClassTeacher();

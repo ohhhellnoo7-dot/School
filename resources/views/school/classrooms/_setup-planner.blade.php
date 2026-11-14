@@ -4,6 +4,7 @@
     <div class="room-section-heading"><span class="room-step">02</span><div><h2>Program & lesson setup</h2><p>Choose a program and class, then plan lessons using the day buttons below.</p></div></div>
     <div class="room-fields">
         <input type="hidden" name="plan_enabled" value="1">
+        <input type="hidden" name="existing_classroom_id" value="{{ old('existing_classroom_id') }}">
         <input type="hidden" name="day" id="setup-day" value="{{ old('day', old('class_days') === 'weekend' ? 'Saturday' : 'Monday') }}">
         <fieldset data-plan-fields>
             <div class="room-planner-context form-section-grid">
@@ -15,23 +16,24 @@
                     <button type="button" class="btn btn-link p-0 small" data-add-evening-period>+ Add evening study time</button>
                     <small class="d-block text-muted">Choose a time for this class. Add more times whenever needed.</small>
                 </div>
+                <div>
+                    <label class="form-label" for="availability-building">Building</label>
+                    <select class="form-select" id="availability-building" data-availability-building>
+                        <option value="">Select building</option>
+                        @foreach($buildings as $building)<option value="{{ $building->code }}" @selected($classroom->building === $building->code)>{{ $building->name }}</option>@endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label" for="availability-classroom">Classroom</label>
+                    <select class="form-select" id="availability-classroom" data-availability-classroom></select>
+                    <small class="d-block text-muted" data-room-availability-context></small>
+                </div>
                 <div><label class="form-label" for="setup-class">Student class</label><select class="form-select" name="school_class_id" id="setup-class" required></select><small class="text-muted">All active student classes for the selected program and session appear here. Students can enroll later.</small><br><button type="button" class="btn btn-link p-0 small" data-open-create-class>+ Create student class</button></div>
                 <div><label class="form-label" for="setup-class-days">Class days</label><select class="form-select" id="setup-class-days" name="class_days"><option value="weekday" @selected(old('class_days', 'weekday') === 'weekday')>Weekday (Monday to Friday)</option><option value="weekend" @selected(old('class_days') === 'weekend')>Weekend (Saturday to Sunday)</option></select></div>
 
                 <div><label class="form-label" for="setup-year">Academic year</label><input class="form-control" name="academic_year" id="setup-year" value="{{ old('academic_year', now()->year.'-'.(now()->year + 1)) }}" pattern="[0-9]{4}-[0-9]{4}" required></div>
                 <div><label class="form-label" for="room-change-reason">Room change reason <small class="text-muted">(if needed)</small></label><input class="form-control" id="room-change-reason" name="room_change_reason" maxlength="500" value="{{ old('room_change_reason') }}" placeholder="Reason for using a different reserved room"></div>
             </div>
-            <section class="my-4" aria-label="Classroom availability">
-                <h3>Classrooms by building</h3>
-                <label class="form-label" for="availability-building">Building</label>
-                <select class="form-select mb-3" id="availability-building" data-availability-building>
-                    <option value="">All buildings</option>
-                    @foreach($buildings as $building)<option value="{{ $building->code }}">{{ $building->name }}</option>@endforeach
-                </select>
-                <p class="text-muted" data-room-availability-context></p>
-                <div data-room-availability aria-live="polite"></div>
-                <small class="text-muted">Busy means at least one lesson or reservation overlaps this time. Open a free classroom to add lessons there.</small>
-            </section>
             <div class="room-schedule-heading"><div><h3>Study periods</h3><p>Choose a subject first, then select a free teacher.</p></div><span class="room-section-tag"><i class="bi bi-clock" aria-hidden="true"></i> Hour by hour</span></div>
             <div data-class-teacher-field hidden>
                 <label class="form-label" for="setup-class-teacher">Japanese class teacher — Monday to Friday</label>

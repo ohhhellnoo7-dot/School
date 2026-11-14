@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\{ClassSession, Schedule, Subject, User};
+use App\Models\{ClassSession, Schedule, SchoolClass, Subject, User};
 use App\Support\{TeacherTimetable, TimetableConflicts};
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -122,6 +122,13 @@ class TeacherManagementService
         $periods = $this->periods($teacher)->where('weekday', $day);
         if (! $periods->contains(fn ($p) => ! $p->unavailable && self::minute($p->start_time) <= self::minute($start) && self::minute($p->end_time) >= self::minute($end))) return false;
         return ! $periods->contains(fn ($p) => $p->unavailable && self::overlaps($start, $end, $p->start_time, $p->end_time));
+    }
+
+    public function canAddEveningWork(User $teacher, SchoolClass $class, string $day, string $start, string $end): bool
+    {
+        if ($class->session !== 'Evening' || $class->program !== 'Japan' || $teacher->program !== $class->program || $teacher->status !== 'active') return false;
+        if (! \App\Models\EveningStudyPeriod::where('program', $class->program)->where('starts_at', '<=', $start)->where('ends_at', '>=', $end)->exists()) return false;
+        return ! $this->periods($teacher)->contains(fn ($p) => $p->weekday === $day && $p->unavailable && self::overlaps($start, $end, $p->start_time, $p->end_time));
     }
 
     public function validateSubject(Subject $subject): void

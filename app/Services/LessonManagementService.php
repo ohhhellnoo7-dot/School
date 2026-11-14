@@ -88,7 +88,8 @@ class LessonManagementService
             ->when($lesson->id, fn ($query) => $query->where('id', '!=', $lesson->id))
             ->when($lesson->academic_year, fn ($query) => $query->where(fn ($year) => $year
                 ->where('academic_year', $lesson->academic_year)->orWhereNull('academic_year')));
-        if ($otherTeachers->exists()) $this->rules->fail('Each subject must have one teacher in this class and academic year. Use the same teacher for every '.$subject->name.' lesson, or reassign the complete subject timetable.');
+        if ($class->program === 'Japan' && $studyPeriod) $otherTeachers->where('starts_at', '<', $studyPeriod->ends_at)->where('ends_at', '>', $studyPeriod->starts_at);
+        if ($otherTeachers->exists()) $this->rules->fail('Each subject must have one teacher in this class and academic year within the same study time. Use the same teacher for every '.$subject->name.' lesson, or reassign the complete subject timetable.');
         if (! $teacherRules) return;
         $teacher = User::findOrFail($lesson->teacher_id);
         if ($teacher->role !== 'teacher' || $teacher->status !== 'active' || ! $this->rules->qualifications($teacher)->contains($subject->name)) $this->rules->fail('Select an active qualified teacher.');

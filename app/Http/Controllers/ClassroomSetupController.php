@@ -35,7 +35,7 @@ class ClassroomSetupController extends Controller
             $reasons = [];
             if ($teacher->status !== 'active') $reasons[] = 'Inactive';
             if (! $qualifications->contains($subject->name)) $reasons[] = 'Not qualified for this subject';
-            if (! $rules->onDuty($teacher, $data['day'], $data['starts_at'], $data['ends_at'])) $reasons[] = 'Outside working hours or unavailable';
+            if (! $rules->onDuty($teacher, $data['day'], $data['starts_at'], $data['ends_at']) && ! $rules->canAddEveningWork($teacher, $class, $data['day'], $data['starts_at'], $data['ends_at'])) $reasons[] = 'Outside working hours or unavailable';
             if ($breaks->contains(fn ($b) => $b->weekday === $data['day'] && $rules::overlaps($b->start_time, $b->end_time, $data['starts_at'], $data['ends_at']))) $reasons[] = 'Scheduled break';
             $busy = $otherLessons->filter(fn ($s) => $s->day === $data['day'] && $rules::overlaps($s->starts_at, $s->ends_at, $data['starts_at'], $data['ends_at']));
             if ($busy->isNotEmpty()) {

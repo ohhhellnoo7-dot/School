@@ -23,9 +23,13 @@ class ClassroomSetupService
                 ])->values()];
         })->values();
 
-        $lessons = \App\Models\Schedule::whereHas('schoolClass', fn ($query) => $query->where('program', 'Japan'))->get(['teacher_id', 'school_class_id']);
+        $lessons = \App\Models\Schedule::whereHas('schoolClass', fn ($query) => $query->where('program', 'Japan'))->get();
         $teachers = \App\Models\User::where('role', 'teacher')->where('program', 'Japan')->where('status', 'active')->orderBy('name')->get(['id', 'name']);
         foreach ($teachers as $teacher) {
+            $teacher->setAttribute('commitments', $lessons->where('teacher_id', $teacher->id)->map(fn ($lesson) => [
+                'class_id' => $lesson->school_class_id, 'day' => $lesson->day, 'year' => $lesson->academic_year,
+                'start' => substr($lesson->starts_at, 0, 5), 'end' => substr($lesson->ends_at, 0, 5),
+            ])->values());
             $lessonClasses = $lessons->where('teacher_id', $teacher->id)->pluck('school_class_id');
             $teacher->setAttribute('assignments', $classes->filter(fn ($class) => $class->program === 'Japan' &&
                 ($class->teacher_id === $teacher->id || $class->classGroup?->teacher_id === $teacher->id || $lessonClasses->contains($class->id)))
@@ -35,7 +39,7 @@ class ClassroomSetupService
             'plannerRooms' => Classroom::with(['buildingRecord', 'lessons.schoolClass', 'bookings.classGroup'])->orderBy('room_number')->get()->map(fn ($room) => [
                 'id' => $room->id, 'number' => $room->room_number, 'name' => $room->name,
                 'building' => $room->building, 'building_name' => $room->buildingRecord?->name ?? $room->building,
-                'status' => $room->status, 'url' => route('classrooms.edit', $room),
+                'status' => $room->status, 'capacity' => $room->capacity, 'url' => route('classrooms.edit', $room),
                 'commitments' => $room->lessons->map(fn ($lesson) => [
                     'day' => $lesson->day, 'start' => substr($lesson->starts_at, 0, 5), 'end' => substr($lesson->ends_at, 0, 5),
                     'year' => $lesson->academic_year, 'label' => $lesson->schoolClass?->label ?? 'Scheduled lesson',
@@ -75,7 +79,7 @@ class ClassroomSetupService
         return app(TeacherManagementService::class)->locked(function () use ($attributes, $request, $classroom, $plan) {
             $newName = trim($attributes['new_building_name'] ?? '');
             unset($attributes['new_building_name']);
-            if ($attributes['building'] === '__new') {
+            if (($attributes['building'] ?? null) === '__new') {
                 if ($newName === '') $this->fail('Enter the new building name.');
                 $building = Building::firstOrCreate(['name' => $newName], ['code' => (string) Str::uuid()]);
                 $attributes['building'] = $building->code;
@@ -110,12 +114,15 @@ class ClassroomSetupService
                 if (! $teacher) $this->fail('Choose an active Japanese class teacher for Monday through Friday.');
                 $otherClasses = SchoolClass::where('program', 'Japan')->where('teacher_id', $teacher->id)
                     ->whereKeyNot($owner->id)->get();
-                if ($otherClasses->contains(fn ($other) => ! $owner->class_group_id || $other->class_group_id !== $owner->class_group_id)) {
+                if (! $studyPeriod && $otherClasses->contains(fn ($other) => ! $owner->class_group_id || $other->class_group_id !== $owner->class_group_id)) {
                     $this->fail('This Japanese teacher is already assigned to another class. Choose a teacher who can teach this class Monday through Friday.');
                 }
-                if ($owner->schedules()->where('teacher_id', '!=', $teacher->id)->exists()) $this->fail('This class already has lessons with another teacher. Update those lessons before changing its class teacher.');
-                $owner->update(['teacher_id' => $teacher->id]);
-                $owner->classGroup?->update(['teacher_id' => $teacher->id]);
+                $otherTeacherLessons = $owner->schedules()->where('teacher_id', '!=', $teacher->id)
+                    ->where(fn ($query) => $query->where('academic_year', $plan['academic_year'])->orWhereNull('academic_year'));
+                if ($studyPeriod) $otherTeacherLessons->where('starts_at', '<', $studyPeriod->ends_at)->where('ends_at', '>', $studyPeriod->starts_at);
+                if ($otherTeacherLessons->exists()) $this->fail('This class already has lessons with another teacher in the selected study time. Update those lessons before changing its teacher.');
+                if (! $studyPeriod || ! $owner->teacher_id) $owner->update(['teacher_id' => $teacher->id]);
+                if (! $studyPeriod || ! $owner->classGroup?->teacher_id) $owner->classGroup?->update(['teacher_id' => $teacher->id]);
             }
             $selected = collect($plan['slots'] ?? [])->filter(fn ($slot) => ! empty($slot['subject_id']) || ! empty($slot['teacher_id']));
             if ($selected->isEmpty()) $this->fail('Choose a subject and teacher for at least one period, or turn off lesson setup.');
@@ -129,6 +136,16 @@ class ClassroomSetupService
                 $endMinute = TeacherManagementService::minute($slot['starts_at']) + $minutes;
                 if ($studyPeriod && ($slot['starts_at'] < substr($studyPeriod->starts_at, 0, 5) || $endMinute > TeacherManagementService::minute($studyPeriod->ends_at))) $this->fail('Lesson must fit within the selected evening period.');
                 $end = sprintf('%02d:%02d', intdiv($endMinute, 60), $endMinute % 60);
+                if ($class->program === 'Japan' && $studyPeriod) {
+                    $rules = app(TeacherManagementService::class);
+                    $weekday = $slot['day'] ?? $plan['day'];
+                    if (! $rules->onDuty($teacher, $weekday, $slot['starts_at'], $end) && $rules->canAddEveningWork($teacher, $class, $weekday, $slot['starts_at'], $end)) {
+                        \Illuminate\Support\Facades\DB::table('teacher_working_periods')->insert([
+                            'teacher_id' => $teacher->id, 'weekday' => $weekday,
+                            'start_time' => $slot['starts_at'], 'end_time' => $end, 'unavailable' => false,
+                        ]);
+                    }
+                }
                 try {
                     $existing = $editing ? \App\Models\Schedule::where('classroom_id', $classroom->id)->where('school_class_id', $owner->id)
                         ->where('academic_year', $plan['academic_year'])->where('day', $slot['day'] ?? $plan['day'])

@@ -294,6 +294,12 @@ class ClassroomController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        if ($request->filled('existing_classroom_id')) {
+            $request->validate(['existing_classroom_id' => 'required|integer|exists:classrooms,id']);
+            $classroom = Classroom::findOrFail($request->integer('existing_classroom_id'));
+            app(\App\Services\ClassroomSetupService::class)->save([], $request, $classroom);
+            return redirect()->route('classrooms.show', $classroom)->with('success', 'Lessons saved to room '.$classroom->room_number.'.');
+        }
         $attributes = $this->validatedClassroom($request);
         $classroom = app(\App\Services\ClassroomSetupService::class)->save($attributes, $request);
 
@@ -320,6 +326,9 @@ class ClassroomController extends Controller
 
     public function update(Request $request, Classroom $classroom): RedirectResponse
     {
+        if ($request->filled('existing_classroom_id')) {
+            return $this->store($request);
+        }
         $attributes = $this->validatedClassroom($request, $classroom);
         app(\App\Services\ClassroomSetupService::class)->save($attributes, $request, $classroom);
 
