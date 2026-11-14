@@ -97,6 +97,25 @@ class TeacherScanAttendanceTest extends TestCase
             ->assertSee('mark-excused')->assertDontSee('Out <span>Not scanned</span>', false);
     }
 
+    public function test_manual_present_and_late_marks_show_scan_out_ticks_without_scan_times(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = User::factory()->create(['role' => 'teacher', 'program' => 'English']);
+        $mark = \App\Models\TeacherAttendance::create(['teacher_id' => $teacher->id, 'date' => today(),
+            'program' => 'English', 'status' => 'present', 'recorded_by' => $admin->id]);
+        foreach (['present', 'late', 'absent', 'excused'] as $status) {
+            $mark->update(['status' => $status]);
+            $response = $this->actingAs($admin)->get(route('teacher-attendance.monthly'))->assertOk();
+            if (in_array($status, ['present', 'late'])) {
+                $response->assertSee('scan-out-complete')->assertSee('no scan time recorded')
+                    ->assertSee('<span class="attendance-out-symbol" aria-hidden="true">✓</span>', false);
+            } else {
+                $response->assertDontSee('scan-out-complete');
+            }
+        }
+        $this->assertDatabaseCount('teacher_session_attendances', 0);
+    }
+
     public function test_monthly_scan_out_changes_from_pending_to_missing_and_complete(): void
     {
         $this->travelTo(now()->setDate(2026, 11, 11)->setTime(7, 0));

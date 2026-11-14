@@ -48,8 +48,11 @@ $arrival = $arrivals->min('scanned_at');
 $missingCheckout = $arrivals->contains(fn ($item) => ! $item->checked_out_at && now()->gt($item->scheduled_end ?? $month->copy()->day($day)->endOfDay()));
 $allCheckedOut = $arrivals->isNotEmpty() && $arrivals->every(fn ($item) => (bool) $item->checked_out_at);
 $departure = $allCheckedOut ? $arrivals->max('checked_out_at') : null;
-$outState = $missingCheckout ? 'missing' : ($allCheckedOut ? 'complete' : 'pending');
+$manualCompletion = $arrivals->isEmpty() && in_array($status, ['present', 'late'], true);
+$outComplete = $allCheckedOut || $manualCompletion;
+$outState = $missingCheckout ? 'missing' : ($outComplete ? 'complete' : 'pending');
 $outLabel = ['missing' => 'Missing scan-out', 'complete' => 'Scanned out', 'pending' => 'No scan-out yet'][$outState];
+if ($manualCompletion) $outLabel = 'Administrator-marked attendance: departure treated as complete; no scan time recorded';
 $lateMinutes = $scan?->status === 'late' && $arrival && $scan->scheduled_start
     ? max(0, (int) floor($scan->scheduled_start->diffInMinutes($arrival, false))) : null;
 $timingDescription = $arrival ? ' | In '.$arrival->format('H:i').($lateMinutes !== null ? ' | '.$lateMinutes.' min late' : '') : '';
@@ -73,7 +76,7 @@ $description = $month->copy()->day($day)->format('d M Y').' · '.($row['session'
 </div>
 <div class="attendance-scan-half attendance-scan-out scan-out-{{ $outState }}" title="{{ $outLabel }}" aria-label="{{ $outLabel }}{{ $departure ? ' at '.$departure->format('H:i') : '' }}">
 <span class="attendance-scan-label">Scan out</span>
-<span class="attendance-out-symbol" aria-hidden="true">{{ $missingCheckout ? 'X' : ($allCheckedOut ? "\u{2713}" : "\u{2014}") }}</span>
+<span class="attendance-out-symbol" aria-hidden="true">{{ $missingCheckout ? 'X' : ($outComplete ? "\u{2713}" : "\u{2014}") }}</span>
 @if($departure)<div class="attendance-detail">Out {{ $departure->format('H:i') }}</div>@endif
 </div>
 </td>
