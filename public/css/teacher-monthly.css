@@ -16,3 +16,62 @@
 .teacher-monthly-grid .attendance-detail{font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
 
 .teacher-monthly-grid .attendance-times span{display:block}
+
+/* Highlight the full Saturday and Sunday columns in every theme. */
+.teacher-monthly-grid thead th.is-weekend{background:#dc2626;color:#fff;border-color:#ef7777}
+@media print{.teacher-monthly-grid .is-weekend{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+/* Attendance overview uses shared palette tokens across all themes. */
+.teacher-attendance-page{color:var(--text-primary)}
+.teacher-attendance-hero{display:flex;align-items:center;gap:18px;padding:24px 12px 30px;position:relative;overflow:hidden;border-radius:26px;background:linear-gradient(120deg,var(--surface),var(--surface-tint));margin-bottom:18px}
+.teacher-attendance-hero-icon{display:grid;place-items:center;flex:0 0 76px;height:76px;border-radius:24px;background:linear-gradient(140deg,color-mix(in srgb,var(--primary) 65%,var(--surface)),var(--primary));color:#fff;font-size:38px;box-shadow:0 8px 20px color-mix(in srgb,var(--primary) 20%,transparent)}
+.teacher-attendance-hero h1{font-size:clamp(23px,2.4vw,34px);font-weight:800;letter-spacing:-.8px;margin:4px 0 6px}
+.teacher-attendance-hero a{color:var(--primary);font-size:12px;font-weight:700;text-decoration:none}
+.teacher-attendance-hero p{margin:0;color:var(--text-secondary)}
+.teacher-attendance-campus{margin-left:auto;font-size:92px;color:var(--primary);opacity:.2;padding:0 24px}
+.teacher-attendance-page>.panel{border-radius:24px;border:1px solid var(--border-color);box-shadow:0 5px 16px color-mix(in srgb,var(--primary) 8%,transparent)}
+.teacher-attendance-page .form-control,.teacher-attendance-page .form-select,.teacher-attendance-page .btn{border-radius:14px}
+.teacher-attendance-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:20px 0 16px}
+.teacher-summary-card{--status-color:var(--success);position:relative;isolation:isolate;overflow:hidden;display:flex;align-items:center;gap:16px;border:1px solid color-mix(in srgb,var(--status-color) 24%,var(--border-color));border-radius:24px;padding:20px;background:linear-gradient(125deg,var(--surface),color-mix(in srgb,var(--status-color) 14%,var(--surface)));box-shadow:0 5px 12px color-mix(in srgb,var(--status-color) 10%,transparent);color:var(--status-color)}
+.teacher-summary-card:after{content:'';position:absolute;z-index:-1;width:160px;height:90px;border-radius:60% 40% 0 0;right:-25px;bottom:-42px;transform:rotate(-20deg);background:color-mix(in srgb,var(--status-color) 14%,transparent);box-shadow:-55px 5px 0 color-mix(in srgb,var(--status-color) 7%,transparent)}
+.teacher-summary-late{--status-color:var(--warning)}.teacher-summary-absent{--status-color:var(--danger)}.teacher-summary-excused{--status-color:var(--action,var(--primary))}
+.teacher-summary-icon{display:grid;place-items:center;width:64px;height:64px;flex-shrink:0;border-radius:22px;font-size:32px;background:color-mix(in srgb,var(--status-color) 15%,var(--surface));border:1px solid color-mix(in srgb,var(--status-color) 20%,transparent)}
+.teacher-summary-card h2{font-size:16px;font-weight:750;margin:0 0 3px}.teacher-summary-card strong{font-size:32px;line-height:1.2}.teacher-summary-card span{font-variant-numeric:tabular-nums}
+.teacher-attendance-legend{display:flex;align-items:center;flex-wrap:wrap;gap:8px;font-size:14px;color:var(--text-primary);padding:0 8px}
+.teacher-attendance-panel{overflow:hidden;padding:0 16px 18px}.teacher-attendance-panel .panel-header{padding:20px 2px;display:flex;align-items:center;justify-content:space-between;gap:12px}.teacher-attendance-panel h2{font-size:21px;font-weight:800;margin:0}.teacher-attendance-panel h2>i{color:var(--primary);margin-right:8px}
+.teacher-monthly-grid{border-collapse:separate;border-spacing:0;font-size:13px;border-radius:14px;overflow:hidden;border:1px solid var(--border-color)}
+.teacher-monthly-grid th,.teacher-monthly-grid td{height:60px;padding:8px 12px;border-width:0 1px 1px 0}
+.teacher-monthly-grid thead th{background:var(--primary);color:#fff;text-transform:none;font-size:12px;height:46px;white-space:nowrap}
+.teacher-monthly-grid tbody th,.teacher-monthly-grid tbody td{background:var(--surface)}
+.teacher-monthly-grid tbody tr:nth-child(even)>th,.teacher-monthly-grid tbody tr:nth-child(even)>td:not(.attendance-mark){background:var(--surface-tint)}
+.teacher-monthly-grid td:nth-child(4){min-width:150px}.teacher-monthly-grid td:nth-child(5){min-width:110px}
+.teacher-grid-person{display:flex;align-items:center;gap:12px;min-width:190px}.teacher-grid-person img,.teacher-grid-avatar{width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0}.teacher-grid-avatar{display:grid;place-items:center;background:var(--surface-tint);color:var(--primary);font-weight:800}
+.teacher-monthly-grid .attendance-mark{--mark-color:var(--text-secondary);min-width:65px;padding:5px;background:var(--surface);color:var(--mark-color)}
+.teacher-monthly-grid .mark-present{--mark-color:var(--success)}.teacher-monthly-grid .mark-late{--mark-color:var(--warning)}.teacher-monthly-grid .mark-absent{--mark-color:var(--danger)}.teacher-monthly-grid .mark-excused{--mark-color:var(--action,var(--primary))}
+.teacher-monthly-grid .attendance-mark .attendance-status{display:grid;place-items:center;min-height:42px;border-radius:11px;background:color-mix(in srgb,var(--mark-color) 13%,var(--surface));color:var(--mark-color);font-size:27px;font-weight:800;margin:0}
+.teacher-monthly-grid .attendance-detail{font-size:10px;margin-top:3px}
+.teacher-monthly-grid thead th.is-weekend{background:#dc2626;color:#fff;border-color:#ef7777}
+@media(max-width:1150px){.teacher-attendance-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.teacher-attendance-campus{display:none}}
+@media(max-width:600px){.teacher-attendance-hero{padding:18px 12px;gap:12px}.teacher-attendance-hero-icon{flex-basis:52px;height:52px;border-radius:18px;font-size:28px}.teacher-attendance-hero p{font-size:13px}.teacher-summary-card{padding:14px;gap:10px;border-radius:18px}.teacher-summary-icon{width:42px;height:42px;font-size:24px;border-radius:15px}.teacher-summary-card strong{font-size:26px}.teacher-summary-card h2{font-size:14px}.teacher-summary-card div>span{font-size:12px}.teacher-attendance-summary{gap:10px}.teacher-attendance-panel{padding:0 8px 12px}}
+@media print{.teacher-attendance-hero,.teacher-attendance-page>section>form,.teacher-attendance-panel .btn{display:none}.teacher-attendance-summary{grid-template-columns:repeat(4,1fr)}.teacher-summary-card{padding:8px}.teacher-summary-icon{display:none}.teacher-attendance-panel .table-responsive{overflow:visible}.teacher-monthly-grid .attendance-mark{min-width:0}.teacher-monthly-grid th,.teacher-monthly-grid td{padding:3px;font-size:9px}.teacher-grid-person{min-width:0}.teacher-grid-person img,.teacher-grid-avatar{display:none}}
+
+/* Match the dashboard tile palette, with surface-aware colors for other themes. */
+.teacher-summary-card{--tile:#2386ed;--tile-start:#f1faff;--tile-end:#b9dfff;--tile-border:#b2d9ff;min-height:145px;align-items:flex-start;padding:23px;border-radius:24px;background:linear-gradient(125deg,color-mix(in srgb,var(--tile) 5%,var(--surface)),color-mix(in srgb,var(--tile) 25%,var(--surface)));border-color:color-mix(in srgb,var(--tile) 35%,var(--border-color));box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--surface) 65%,transparent),0 4px 9px color-mix(in srgb,var(--tile) 10%,transparent);color:var(--text-primary)}
+.teacher-summary-late{--tile:#864bde;--tile-start:#faf5ff;--tile-end:#dbceff;--tile-border:#dac6ff}
+.teacher-summary-absent{--tile:#df8a13;--tile-start:#fffaf0;--tile-end:#ffe0ae;--tile-border:#ffd69b}
+.teacher-summary-excused{--tile:#dc4b9e;--tile-start:#fff5fc;--tile-end:#f8c9ee;--tile-border:#f6c4e9}
+.teacher-summary-icon{width:50px;height:50px;border-radius:50%;background:var(--tile);color:#fff;font-size:26px;border:1px solid #ffffff70;box-shadow:0 4px 10px color-mix(in srgb,var(--tile) 25%,transparent)}
+.teacher-summary-card h2{font-size:14px;font-weight:500;margin:6px 0 14px;color:var(--text-primary)}
+.teacher-summary-card strong{font-size:38px;font-weight:800;color:var(--text-primary)}
+.teacher-summary-card:after{content:'\F26B';font-family:bootstrap-icons;right:16px;bottom:15px;width:auto;height:auto;font-size:72px;line-height:1;color:var(--tile);opacity:.16;background:none;box-shadow:none;transform:none}
+.teacher-summary-late:after{content:'\F293'}.teacher-summary-absent:after{content:'\F659'}.teacher-summary-excused:after{content:'\F38B'}
+:root[data-theme=light] .teacher-summary-card{background:linear-gradient(125deg,var(--tile-start),var(--tile-end));border-color:var(--tile-border)}
+@media(max-width:600px){.teacher-summary-card{padding:14px;min-height:120px;gap:10px}.teacher-summary-icon{width:36px;height:36px;font-size:21px}.teacher-summary-card h2{font-size:13px;margin:4px 0 10px}.teacher-summary-card strong{font-size:30px}.teacher-summary-card:after{font-size:48px;right:10px;bottom:10px}}
+/* Campus banner retains readable theme colors over the shared school artwork. */
+.teacher-attendance-hero{isolation:isolate;min-height:200px;padding:30px;gap:20px;border:1px solid var(--border-color);background:var(--surface);box-shadow:0 6px 18px color-mix(in srgb,var(--primary) 10%,transparent)}
+.teacher-attendance-hero:before{content:'';position:absolute;inset:0;z-index:-2;background:url('../images/school-hero.png') right center/cover no-repeat}
+.teacher-attendance-hero:after{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,var(--surface) 0%,color-mix(in srgb,var(--surface) 96%,transparent) 32%,color-mix(in srgb,var(--surface) 65%,transparent) 58%,color-mix(in srgb,var(--surface) 10%,transparent) 100%)}
+.teacher-attendance-hero>div{max-width:650px}
+.teacher-gender{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:12px;background:var(--surface-tint);color:var(--primary);font-size:21px}
+@media(max-width:600px){.teacher-attendance-hero{min-height:180px;padding:20px 14px;gap:12px}.teacher-attendance-hero:after{background:linear-gradient(90deg,var(--surface),color-mix(in srgb,var(--surface) 85%,transparent))}.teacher-attendance-hero h1{font-size:23px}}
+.teacher-gender-male{color:#087bff;background:color-mix(in srgb,#087bff 12%,var(--surface))}
+.teacher-gender-female{color:#ed3298;background:color-mix(in srgb,#ed3298 12%,var(--surface))}

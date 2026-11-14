@@ -55,7 +55,27 @@ class TeacherAttendanceController extends Controller
                 : $row['marks']->contains('status', $filters['status']));
         }
         $groups = $rows->groupBy(fn ($row) => $row['teacher']->program ?: 'Unassigned program');
-        return view('school.attendance.teacher-monthly', compact('groups', 'month', 'filters'));
+        $summaryDate = $selectedDate ?? today();
+        $summaryMarks = collect();
+        if ($summaryDate->format('Y-m') === $month->format('Y-m')) {
+            foreach ($rows->groupBy(fn ($row) => $row['teacher']->id) as $teacherRows) {
+                $dailyRow = $teacherRows->firstWhere('session', 'Daily summary');
+                $dailyMark = $dailyRow ? $dailyRow['marks']->get($summaryDate->day) : null;
+                if ($dailyMark) {
+                    $summaryMarks->push($dailyMark);
+                    continue;
+                }
+                $dayMarks = $teacherRows->map(fn ($row) => $row['marks']->get($summaryDate->day))->filter();
+                // A teacher belongs to one card, even when several sessions are recorded.
+                foreach (['late', 'present', 'excused', 'absent'] as $status) {
+                    if ($mark = $dayMarks->firstWhere('status', $status)) {
+                        $summaryMarks->push($mark);
+                        break;
+                    }
+                }
+            }
+        }
+        return view('school.attendance.teacher-monthly', compact('groups', 'month', 'filters', 'summaryMarks', 'summaryDate'));
     }
 
     public function bulk(Request $request, string $action) {
