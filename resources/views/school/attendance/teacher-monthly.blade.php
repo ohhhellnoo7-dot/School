@@ -67,7 +67,7 @@ $description = $month->copy()->day($day)->format('d M Y').' · '.($row['session'
 </div>
 <div class="attendance-scan-half attendance-scan-out scan-out-{{ $outState }}" title="{{ $outLabel }}" aria-label="{{ $outLabel }}{{ $departure ? ' at '.$departure->format('H:i') : '' }}">
 <span class="attendance-scan-label">Scan out</span>
-<span class="attendance-out-symbol" aria-hidden="true">@if($missingCheckout)X@elseif($allCheckedOut)&#10003;@else&mdash;@endif</span>
+<span class="attendance-out-symbol" aria-hidden="true">{{ $missingCheckout ? 'X' : ($allCheckedOut ? "\u{2713}" : "\u{2014}") }}</span>
 @if($departure)<div class="attendance-detail">Out {{ $departure->format('H:i') }}</div>@endif
 </div>
 </td>

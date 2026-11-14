@@ -92,7 +92,9 @@ class TeacherScanAttendanceTest extends TestCase
         $admin = User::factory()->create(['role' => 'administrator']);
         $url = route('teacher-attendance.monthly', ['month' => '2026-11']);
         $this->actingAs($admin)->get($url)->assertOk()->assertSee('Scan in')->assertSee('Scan out')
-            ->assertDontSee('scan-out-missing')->assertDontSee('scan-out-complete');
+            ->assertDontSee('scan-out-missing')->assertDontSee('scan-out-complete')
+            ->assertDontSee('$allCheckedOut')->assertDontSee('@else')
+            ->assertSee('<span class="attendance-out-symbol" aria-hidden="true">—</span>', false);
         $this->travelTo(now()->setTime(11, 31));
         $this->get($url)->assertOk()->assertSee('scan-out-missing')->assertSee('Missing scan-out');
         $service->checkout($teacher, []);
