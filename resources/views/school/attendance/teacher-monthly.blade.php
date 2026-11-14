@@ -36,6 +36,14 @@ $status = $record?->status;
 $scan = ($row['scan_marks'] ?? collect())->get($day);
 $arrival = $scan?->scanned_at;
 $departure = $scan?->checked_out_at;
+$dayScans = isset($row['daily_scans']) ? $row['daily_scans']->get($day, collect()) : collect([$scan])->filter();
+$arrivals = $dayScans->filter(fn ($item) => $item->scanned_at);
+$arrival = $arrivals->min('scanned_at');
+$missingCheckout = $arrivals->contains(fn ($item) => ! $item->checked_out_at && now()->gt($item->scheduled_end ?? $month->copy()->day($day)->endOfDay()));
+$allCheckedOut = $arrivals->isNotEmpty() && $arrivals->every(fn ($item) => (bool) $item->checked_out_at);
+$departure = $allCheckedOut ? $arrivals->max('checked_out_at') : null;
+$outState = $missingCheckout ? 'missing' : ($allCheckedOut ? 'complete' : 'pending');
+$outLabel = ['missing' => 'Missing scan-out', 'complete' => 'Scanned out', 'pending' => 'No scan-out yet'][$outState];
 $lateMinutes = $scan?->status === 'late' && $arrival && $scan->scheduled_start
     ? max(0, (int) floor($scan->scheduled_start->diffInMinutes($arrival, false))) : null;
 $timingDescription = $arrival ? ' | In '.$arrival->format('H:i').($lateMinutes !== null ? ' | '.$lateMinutes.' min late' : '') : '';
@@ -45,17 +53,23 @@ $adminMark = $record instanceof \App\Models\TeacherAttendance && $record->record
 $description = $month->copy()->day($day)->format('d M Y').' · '.($row['session'] ?: 'Unassigned').' · '.($status ?: 'Not recorded').($record?->scanned_at ? ' · Scanned '.$record->scanned_at->format('H:i') : '');
 @endphp
 <td class="attendance-mark mark-{{ $status ?: 'empty' }}" title="{{ $description }}{{ $timingDescription }}{{ $checkoutDescription }}{{ $adminMark ? ' · Administrator daily mark' : '' }}" aria-label="{{ $description }}{{ $timingDescription }}{{ $checkoutDescription }}{{ $adminMark ? ' · Administrator daily mark' : '' }}">
+<div class="attendance-scan-half attendance-scan-in">
+<span class="attendance-scan-label">Scan in</span>
 @if($status)
 <div class="attendance-status"><span aria-hidden="true">{{ $symbol }}</span><span class="visually-hidden">{{ ucfirst($status) }}</span></div>
-@if($arrival || $departure)
-<div class="attendance-detail attendance-times">@if($arrival)<span>In {{ $arrival->format('H:i') }}</span>@endif @if($departure)<span>Out {{ $departure->format('H:i') }}</span>@elseif($arrival)<span>Out &mdash;</span>@endif</div>
-@endif
+@if($arrival)<div class="attendance-detail">In {{ $arrival->format('H:i') }}</div>@endif
 @if($lateMinutes !== null)
 <div class="attendance-detail">{{ $lateMinutes }} min late</div>
 @endif
 @else
 <span aria-hidden="true">&mdash;</span>
 @endif
+</div>
+<div class="attendance-scan-half attendance-scan-out scan-out-{{ $outState }}" title="{{ $outLabel }}" aria-label="{{ $outLabel }}{{ $departure ? ' at '.$departure->format('H:i') : '' }}">
+<span class="attendance-scan-label">Scan out</span>
+<span class="attendance-out-symbol" aria-hidden="true">@if($missingCheckout)X@elseif($allCheckedOut)&#10003;@else&mdash;@endif</span>
+@if($departure)<div class="attendance-detail">Out {{ $departure->format('H:i') }}</div>@endif
+</div>
 </td>
 @endfor</tr>
 @endforeach

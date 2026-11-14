@@ -75,3 +75,15 @@
 @media(max-width:600px){.teacher-attendance-hero{min-height:180px;padding:20px 14px;gap:12px}.teacher-attendance-hero:after{background:linear-gradient(90deg,var(--surface),color-mix(in srgb,var(--surface) 85%,transparent))}.teacher-attendance-hero h1{font-size:23px}}
 .teacher-gender-male{color:#087bff;background:color-mix(in srgb,#087bff 12%,var(--surface))}
 .teacher-gender-female{color:#ed3298;background:color-mix(in srgb,#ed3298 12%,var(--surface))}
+
+/* Each day keeps arrival and departure in separate, theme-aware halves. */
+.teacher-monthly-grid .attendance-mark { padding:0; min-width:76px; }
+.teacher-monthly-grid .attendance-scan-half { padding:5px; min-height:59px; }
+.teacher-monthly-grid .attendance-scan-label { display:block; font-size:9px; font-weight:700; line-height:1.4; color:var(--text-secondary); }
+.teacher-monthly-grid .attendance-scan-in .attendance-status { min-height:29px; font-size:23px; }
+.teacher-monthly-grid .attendance-scan-out { border-top:1px solid var(--border-color); color:var(--text-secondary); }
+.teacher-monthly-grid .scan-out-complete { color:var(--success); }
+.teacher-monthly-grid .scan-out-missing { color:var(--danger); }
+.teacher-monthly-grid .attendance-out-symbol { display:grid; place-items:center; min-height:29px; border-radius:9px; font-size:23px; font-weight:800; }
+.teacher-monthly-grid :is(.scan-out-complete,.scan-out-missing) .attendance-out-symbol { background:color-mix(in srgb,currentColor 13%,var(--surface)); }
+@media print { .teacher-monthly-grid .attendance-scan-half { padding:2px; min-height:35px; } .teacher-monthly-grid .attendance-scan-label { font-size:7px; } .teacher-monthly-grid .attendance-out-symbol,.teacher-monthly-grid .attendance-scan-in .attendance-status { min-height:18px; font-size:15px; } }

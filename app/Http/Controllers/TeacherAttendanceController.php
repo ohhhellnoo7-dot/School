@@ -36,6 +36,7 @@ class TeacherAttendanceController extends Controller
             $sessions = $assigned->merge($records->where('teacher_id', $teacher->id)->pluck('session'))->unique();
             if (empty($filters['session'])) {
                 $rows->push(['teacher' => $teacher, 'session' => 'Daily summary', 'assigned' => $assigned,
+                    'daily_scans' => $records->where('teacher_id', $teacher->id)->groupBy(fn ($record) => $record->date->day),
                     'marks' => ($dailyRecords[$teacher->id] ?? collect())->keyBy(fn ($record) => $record->date->day)]);
             }
             foreach ($sessions as $session) {

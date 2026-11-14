@@ -83,6 +83,23 @@ class TeacherScanAttendanceTest extends TestCase
             ->assertSee('mark-excused')->assertDontSee('Out <span>Not scanned</span>', false);
     }
 
+    public function test_monthly_scan_out_changes_from_pending_to_missing_and_complete(): void
+    {
+        $this->travelTo(now()->setDate(2026, 11, 11)->setTime(7, 0));
+        $teacher = $this->teacher();
+        $service = app(TeacherScanAttendance::class);
+        $service->scan($teacher);
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $url = route('teacher-attendance.monthly', ['month' => '2026-11']);
+        $this->actingAs($admin)->get($url)->assertOk()->assertSee('Scan in')->assertSee('Scan out')
+            ->assertDontSee('scan-out-missing')->assertDontSee('scan-out-complete');
+        $this->travelTo(now()->setTime(11, 31));
+        $this->get($url)->assertOk()->assertSee('scan-out-missing')->assertSee('Missing scan-out');
+        $service->checkout($teacher, []);
+        $this->get($url)->assertOk()->assertSee('scan-out-complete')->assertSee('Out 11:31')
+            ->assertDontSee('scan-out-missing');
+    }
+
     public function test_monthly_status_buttons_filter_effective_session_marks(): void
     {
         $this->travelTo(now()->setDate(2026, 11, 11)->setTime(7, 0));
