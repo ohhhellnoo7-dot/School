@@ -98,3 +98,26 @@
 .teacher-monthly-grid tbody tr > th:nth-child(2),.teacher-monthly-grid thead th:nth-child(2) { position:sticky; left:0; z-index:2; min-width:215px; width:215px; box-shadow:1px 0 0 var(--border-color); }
 .teacher-monthly-grid thead th:nth-child(2) { z-index:3; }
 @media print { .teacher-monthly-grid tbody tr > th:nth-child(2),.teacher-monthly-grid thead th:nth-child(2) { position:static; min-width:0; width:auto; box-shadow:none; } }
+
+/* Keep dates visible while browsing a long attendance roster. */
+.teacher-attendance-panel .table-responsive {
+    max-height:calc(100dvh - 180px);
+    min-height:200px;
+    overflow:auto;
+    isolation:isolate;
+}
+.teacher-monthly-grid thead th {
+    position:sticky;
+    top:0;
+    z-index:4;
+    box-shadow:0 1px 0 var(--border-color);
+}
+.teacher-monthly-grid thead th:nth-child(2) {
+    top:0;
+    z-index:5;
+    box-shadow:1px 0 0 var(--border-color),0 1px 0 var(--border-color);
+}
+@media print {
+    .teacher-attendance-panel .table-responsive { max-height:none; min-height:0; overflow:visible; }
+    .teacher-monthly-grid thead th { position:static; box-shadow:none; }
+}
