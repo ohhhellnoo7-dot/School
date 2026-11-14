@@ -12,10 +12,10 @@ $summaryCount = $summaryMarks->where('status', $summaryStatus)->count();
 <div class="teacher-summary-card teacher-summary-{{ $summaryStatus }}"><span class="teacher-summary-icon"><i class="bi bi-{{ $summaryIcon }}" aria-hidden="true"></i></span><div><h2>{{ $summaryLabel }}</h2><strong>{{ $summaryCount }}</strong></div></div>
 @endforeach
 </div>
-<section class="panel p-4 mb-4"><form method="get" class="row g-3 align-items-end">
-<div class="col-md-3"><label class="form-label" for="grid-month">Month</label><input id="grid-month" class="form-control" type="month" name="month" value="{{ $month->format('Y-m') }}" required></div>
-<div class="col-md-3"><label class="form-label" for="grid-program">Program</label><select id="grid-program" name="program" class="form-select"><option value="">All programs</option>@foreach(\App\Models\Program::names() as $program)<option @selected(($filters['program'] ?? '') === $program)>{{ $program }}</option>@endforeach</select></div>
-<div class="col-md-3"><label class="form-label" for="grid-session">Session</label><select id="grid-session" name="session" class="form-select"><option value="">All sessions</option>@foreach(\App\Support\AttendanceSession::OPTIONS as $session)<option @selected(($filters['session'] ?? '') === $session)>{{ $session }}</option>@endforeach</select></div><div class="col-md-3"><button class="btn btn-primary" name="status" value="{{ $filters['status'] ?? '' }}">View attendance</button></div>
+<section class="panel p-4 mb-4"><form method="get" class="row g-3 align-items-end" id="teacher-monthly-filters" data-status="{{ $filters['status'] ?? '' }}">
+<div class="col-md-4"><label class="form-label" for="grid-month">Month</label><input id="grid-month" class="form-control" type="month" name="month" value="{{ $month->format('Y-m') }}" required></div>
+<div class="col-md-4"><label class="form-label" for="grid-program">Program</label><select id="grid-program" name="program" class="form-select"><option value="">All programs</option>@foreach(\App\Models\Program::names() as $program)<option @selected(($filters['program'] ?? '') === $program)>{{ $program }}</option>@endforeach</select></div>
+<div class="col-md-4"><label class="form-label" for="grid-session">Session</label><select id="grid-session" name="session" class="form-select"><option value="">All sessions</option>@foreach(\App\Support\AttendanceSession::OPTIONS as $session)<option @selected(($filters['session'] ?? '') === $session)>{{ $session }}</option>@endforeach</select></div>
 <div class="col-12"><label class="form-label d-block">Attendance status</label><div class="d-flex flex-wrap gap-2" role="group" aria-label="Filter attendance by status">
 @foreach(['' => 'All statuses', 'present' => 'Present', 'absent' => 'Absent', 'late' => 'Late', 'excused' => 'Excused'] as $value => $label)
 <button type="submit" name="status" value="{{ $value }}" @class(['btn', 'btn-primary' => ($filters['status'] ?? '') === $value, 'btn-outline-primary' => ($filters['status'] ?? '') !== $value]) aria-pressed="{{ ($filters['status'] ?? '') === $value ? 'true' : 'false' }}">{{ $label }}</button>
@@ -82,4 +82,5 @@ $description = $month->copy()->day($day)->format('d M Y').' · '.($row['session'
 </tbody></table></div></section>
 @empty<section class="panel p-4">No teachers match these filters.</section>@endforelse
 </div>
+<script src="{{ asset('js/teacher-monthly-filters.js') }}?v={{ filemtime(public_path('js/teacher-monthly-filters.js')) }}" defer></script>
 @endsection
