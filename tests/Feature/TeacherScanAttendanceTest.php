@@ -29,6 +29,20 @@ class TeacherScanAttendanceTest extends TestCase
         $this->getJson(route('teacher-attendance.monthly', ['date' => 'invalid']))->assertUnprocessable();
     }
 
+    public function test_monthly_single_session_teacher_has_one_row(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = User::factory()->create(['role' => 'teacher', 'program' => 'Chinese', 'name' => 'Chan Sothea']);
+        \App\Models\SchoolClass::create(['name' => 'Chinese evening', 'section' => 'A', 'session' => 'Evening', 'teacher_id' => $teacher->id]);
+        $this->actingAs($admin)->get(route('teacher-attendance.monthly', ['month' => '2026-11']))
+            ->assertOk()->assertDontSee('Daily summary')
+            ->assertViewHas('groups', function ($groups) use ($teacher) {
+                $rows = $groups->get('Chinese');
+                return $rows->count() === 1 && $rows->first()['teacher']->id === $teacher->id
+                    && $rows->first()['session'] === 'Evening';
+            });
+    }
+
     public function test_monthly_grid_shows_program_and_three_separate_sessions(): void
     {
         $this->travelTo(now()->setDate(2026, 11, 11)->setTime(7, 10));
@@ -141,6 +155,37 @@ class TeacherScanAttendanceTest extends TestCase
         $this->actingAs($admin)->get(route('teacher-attendance.monthly', ['month' => '2026-11', 'session' => 'Evening']))
             ->assertOk()->assertSee('Evening · present · Administrator daily mark')->assertDontSee('>Admin</small>', false);
         $this->assertDatabaseHas('teacher_session_attendances', ['teacher_id' => $teacher->id, 'session' => 'Evening', 'status' => 'absent', 'scanned_at' => null]);
+    }
+
+    public function test_dashboard_administrator_can_record_in_and_out_without_overwriting_times(): void
+    {
+        $this->travelTo(now()->setDate(2026, 11, 11)->setTime(7, 0));
+        $teacher = $this->teacher();
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $in = route('dashboard.teacher-attendance.bulk', 'scan-in');
+        $out = route('dashboard.teacher-attendance.bulk', 'scan-out');
+        $this->actingAs($teacher)->post($in)->assertForbidden();
+        $this->post($out)->assertForbidden();
+        $this->actingAs($admin)->post($out, ['session' => 'Morning'])->assertRedirect();
+        $this->assertDatabaseCount('teacher_session_attendances', 0);
+        $this->post($in, ['session' => 'Morning'])->assertRedirect();
+        $record = \App\Models\TeacherSessionAttendance::where('teacher_id', $teacher->id)->firstOrFail();
+        $this->assertSame('07:00', $record->scanned_at->format('H:i'));
+        $this->assertSame('present', $record->status);
+        $this->assertNull($record->checked_out_at);
+        $this->travelTo(now()->setTime(7, 30));
+        $this->post($in, ['session' => 'Morning'])->assertRedirect();
+        $this->post($out, ['session' => 'Morning'])->assertRedirect();
+        $this->assertSame('07:00', $record->fresh()->scanned_at->format('H:i'));
+        $this->assertNull($record->fresh()->checked_out_at);
+        $this->travelTo(now()->setTime(11, 31));
+        $this->post($out, ['session' => 'Afternoon'])->assertRedirect();
+        $this->assertNull($record->fresh()->checked_out_at);
+        $this->post($out, ['session' => 'Morning'])->assertRedirect();
+        $this->assertSame('11:31', $record->fresh()->checked_out_at->format('H:i'));
+        $this->travelTo(now()->setTime(11, 45));
+        $this->post($out, ['session' => 'Morning'])->assertRedirect();
+        $this->assertSame('11:31', $record->fresh()->checked_out_at->format('H:i'));
     }
 
     private function teacher(): User

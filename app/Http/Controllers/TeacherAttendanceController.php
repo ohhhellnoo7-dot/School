@@ -34,7 +34,8 @@ class TeacherAttendanceController extends Controller
                 ->merge(($lessons[$teacher->id] ?? collect())->map(fn ($lesson) => $lesson->schoolClass?->session))
                 ->filter()->unique()->values();
             $sessions = $assigned->merge($records->where('teacher_id', $teacher->id)->pluck('session'))->unique();
-            if (empty($filters['session'])) {
+            // A single session already represents the whole day; avoid a duplicate row.
+            if (empty($filters['session']) && $sessions->count() !== 1) {
                 $rows->push(['teacher' => $teacher, 'session' => 'Daily summary', 'assigned' => $assigned,
                     'daily_scans' => $records->where('teacher_id', $teacher->id)->groupBy(fn ($record) => $record->date->day),
                     'marks' => ($dailyRecords[$teacher->id] ?? collect())->keyBy(fn ($record) => $record->date->day)]);
@@ -81,8 +82,11 @@ class TeacherAttendanceController extends Controller
 
     public function bulk(Request $request, string $action) {
         abort_unless($request->user()->role === 'administrator', 403);
-        abort_unless(in_array($action, ['all-present', 'random'], true), 404);
+        abort_unless(in_array($action, ['all-present', 'random', 'scan-in', 'scan-out'], true), 404);
         $session = AttendanceSession::selected($request);
+        if (in_array($action, ['scan-in', 'scan-out'], true)) {
+            return $this->bulkScan($request, $action, $session);
+        }
         $count = DB::transaction(function () use ($request, $action, $session) {
             $teachers = AttendanceSession::teachers(User::where('role', 'teacher'), $session)
                 ->where(fn ($q) => $q->where('status', 'active')->orWhereNull('status'))
@@ -130,6 +134,48 @@ class TeacherAttendanceController extends Controller
             return $saved;
         });
         return redirect()->route('dashboard', array_filter(['session' => $session]))->with('success', $count.' teacher attendance records saved for today.');
+    }
+
+    private function bulkScan(Request $request, string $action, ?string $session)
+    {
+        $count = DB::transaction(function () use ($action, $session, $request) {
+            $service = app(\App\Services\TeacherScanAttendance::class);
+            $teachers = AttendanceSession::teachers(User::where('role', 'teacher'), $session)
+                ->where(fn ($q) => $q->where('status', 'active')->orWhereNull('status'))
+                ->lockForUpdate()->get();
+            $saved = 0;
+            foreach ($teachers as $teacher) {
+                if ($action === 'scan-in') {
+                    foreach ($service->sessions($teacher, today()->toDateString()) as $name => $times) {
+                        if (($session && $session !== $name) || now()->lt($times['start']) || now()->gt($times['end'])) continue;
+                        $record = \App\Models\TeacherSessionAttendance::firstOrNew([
+                            'teacher_id' => $teacher->id, 'date' => today()->toDateString(), 'session' => $name,
+                        ]);
+                        if ($record->scanned_at) continue;
+                        $record->fill(['scanned_at' => now(), 'scheduled_start' => $times['start'], 'scheduled_end' => $times['end'],
+                            'status' => now()->gt($times['start']->copy()->addMinutes($times['grace_minutes'])) ? 'late' : 'present'])->save();
+                        $saved++;
+                        $service->refresh($teacher, today()->toDateString());
+                    }
+                } else {
+                    $records = \App\Models\TeacherSessionAttendance::where('teacher_id', $teacher->id)->whereDate('date', today())
+                        ->when($session, fn ($q) => $q->where('session', $session))
+                        ->whereNotNull('scanned_at')->whereNull('checked_out_at')->lockForUpdate()->get();
+                    foreach ($records as $record) {
+                        $end = $record->scheduled_end ?? ($service->sessions($teacher, today()->toDateString())->get($record->session)['end'] ?? null);
+                        if (! $end || now()->lt($end)) continue;
+                        $record->fill(['checked_out_at' => now(), 'scheduled_end' => $end])->save();
+                        $saved++;
+                    }
+                }
+            }
+            \Illuminate\Support\Facades\Log::info('Administrator bulk attendance scan', [
+                'administrator_id' => $request->user()->id, 'action' => $action, 'session' => $session, 'records_saved' => $saved,
+            ]);
+            return $saved;
+        });
+        return redirect()->route('dashboard', array_filter(['session' => $session]))
+            ->with('success', $count.' teacher '.($action === 'scan-in' ? 'scan-in' : 'scan-out').' records saved. Existing times were preserved.');
     }
 
     public function index(Request $request) {

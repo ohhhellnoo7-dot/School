@@ -27,8 +27,14 @@ $summaryCount = $summaryMarks->where('status', $summaryStatus)->count();
 @forelse($groups as $program => $rows)
 <section class="panel mb-4 teacher-attendance-panel"><div class="panel-header"><h2><i class="bi bi-people-fill" aria-hidden="true"></i> {{ $program }} <small class="text-secondary">&middot; {{ $rows->pluck('teacher.id')->unique()->count() }} teachers</small></h2><button type="button" class="btn btn-outline-primary" onclick="window.print()"><i class="bi bi-printer" aria-hidden="true"></i> Print</button></div>
 <div class="table-responsive"><table class="teacher-monthly-grid"><thead><tr><th>No.</th><th>Teacher's name</th><th>Sex</th><th>Assigned sessions</th><th>Session</th>@for($day = 1; $day <= $month->daysInMonth; $day++)<th @class(['is-weekend' => $month->copy()->day($day)->isWeekend()])>{{ $day }}</th>@endfor</tr></thead><tbody>
+@php
+$teacherIds = $rows->pluck('teacher.id')->unique()->values();
+@endphp
 @foreach($rows as $row)
-<tr><td>{{ $loop->iteration }}</td><th scope="row"><div class="teacher-grid-person">@if($row['teacher']->profile_photo_url)<img src="{{ $row['teacher']->profile_photo_url }}" alt="" loading="lazy">@else<span class="teacher-grid-avatar" aria-hidden="true">{{ mb_substr($row['teacher']->name, 0, 1) }}</span>@endif<span>{{ $row['teacher']->name }}</span></div></th><td><span class="teacher-gender teacher-gender-{{ strtolower($row['teacher']->gender ?? 'unspecified') }}" title="{{ ucfirst($row['teacher']->gender ?: 'Not specified') }}"><i class="bi bi-{{ match (strtolower($row['teacher']->gender ?? '')) { 'female' => 'gender-female', 'male' => 'gender-male', default => 'person' } }}" aria-hidden="true"></i><span class="visually-hidden">{{ ucfirst($row['teacher']->gender ?: 'Not specified') }}</span></span></td><td>{{ $row['assigned']->count() }}<small class="d-block">{{ $row['assigned']->implode(', ') ?: 'No sessions assigned' }}</small></td><td>{{ $row['session'] ?: 'Unassigned' }}</td>
+@php
+$teacherBand = $teacherIds->search($row['teacher']->id) % 2;
+@endphp
+<tr class="teacher-attendance-band-{{ $teacherBand }}"><td>{{ $loop->iteration }}</td><th scope="row"><div class="teacher-grid-person">@if($row['teacher']->profile_photo_url)<img src="{{ $row['teacher']->profile_photo_url }}" alt="" loading="lazy">@else<span class="teacher-grid-avatar" aria-hidden="true">{{ mb_substr($row['teacher']->name, 0, 1) }}</span>@endif<span>{{ $row['teacher']->name }}</span></div></th><td><span class="teacher-gender teacher-gender-{{ strtolower($row['teacher']->gender ?? 'unspecified') }}" title="{{ ucfirst($row['teacher']->gender ?: 'Not specified') }}"><i class="bi bi-{{ match (strtolower($row['teacher']->gender ?? '')) { 'female' => 'gender-female', 'male' => 'gender-male', default => 'person' } }}" aria-hidden="true"></i><span class="visually-hidden">{{ ucfirst($row['teacher']->gender ?: 'Not specified') }}</span></span></td><td>{{ $row['assigned']->count() }}<small class="d-block">{{ $row['assigned']->implode(', ') ?: 'No sessions assigned' }}</small></td><td>{{ $row['session'] ?: 'Unassigned' }}</td>
 @for($day = 1; $day <= $month->daysInMonth; $day++)
 @php
 $record = $row['marks']->get($day);

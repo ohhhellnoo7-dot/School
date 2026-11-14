@@ -87,3 +87,14 @@
 .teacher-monthly-grid .attendance-out-symbol { display:grid; place-items:center; min-height:29px; border-radius:9px; font-size:23px; font-weight:800; }
 .teacher-monthly-grid :is(.scan-out-complete,.scan-out-missing) .attendance-out-symbol { background:color-mix(in srgb,currentColor 13%,var(--surface)); }
 @media print { .teacher-monthly-grid .attendance-scan-half { padding:2px; min-height:35px; } .teacher-monthly-grid .attendance-scan-label { font-size:7px; } .teacher-monthly-grid .attendance-out-symbol,.teacher-monthly-grid .attendance-scan-in .attendance-status { min-height:18px; font-size:15px; } }
+
+/* Keep identity visible throughout horizontal scrolling; group all sessions by teacher. */
+.teacher-monthly-grid { overflow:visible; }
+.teacher-monthly-grid tbody tr { --teacher-row-bg:var(--surface); }
+.teacher-monthly-grid tbody tr.teacher-attendance-band-1 { --teacher-row-bg:color-mix(in srgb,var(--primary) 9%,var(--surface)); }
+.teacher-monthly-grid tbody tr:hover { --teacher-row-bg:color-mix(in srgb,var(--primary) 17%,var(--surface)); }
+.teacher-monthly-grid tbody tr > :is(th,td),
+.teacher-monthly-grid tbody tr:nth-child(even) > :is(th,td):not(.attendance-mark) { background:var(--teacher-row-bg); }
+.teacher-monthly-grid tbody tr > th:nth-child(2),.teacher-monthly-grid thead th:nth-child(2) { position:sticky; left:0; z-index:2; min-width:215px; width:215px; box-shadow:1px 0 0 var(--border-color); }
+.teacher-monthly-grid thead th:nth-child(2) { z-index:3; }
+@media print { .teacher-monthly-grid tbody tr > th:nth-child(2),.teacher-monthly-grid thead th:nth-child(2) { position:static; min-width:0; width:auto; box-shadow:none; } }

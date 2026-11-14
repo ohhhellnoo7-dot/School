@@ -35,6 +35,21 @@
                     <button type="submit" class="btn btn-primary w-100"><i class="bi bi-check2-all me-2" aria-hidden="true"></i>Mark all present today</button>
                 </form>
                 <small class="attendance-action-note">Marks active teachers in the selected session. Existing scans keep their present or late status.</small>
+                <form method="post" action="{{ route('dashboard.teacher-attendance.bulk', 'scan-in') }}" class="mt-3">
+                    @csrf
+                    <label for="teacher-scan-session" class="form-label">Scan in / out session</label>
+                    <select id="teacher-scan-session" name="session" class="form-select mb-2">
+                        <option value="">All eligible sessions</option>
+                        @foreach(\App\Support\AttendanceSession::OPTIONS as $sessionOption)
+                        <option value="{{ $sessionOption }}" @selected($attendanceSession === $sessionOption)>{{ $sessionOption }}</option>
+                        @endforeach
+                    </select>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-fill">Record scan in</button>
+                        <button type="submit" formaction="{{ route('dashboard.teacher-attendance.bulk', 'scan-out') }}" class="btn btn-outline-primary flex-fill">Record scan out</button>
+                    </div>
+                    <small class="attendance-action-note">Administrator entry for active teachers: scan in records the current time during a scheduled session. Scan out records the current time after a checked-in session ends. Existing times are kept. These entries do not verify location.</small>
+                </form>
                 <form method="post" action="{{ route('dashboard.teacher-attendance.bulk', 'random') }}" class="attendance-random-form">
                     @csrf
                     <input type="hidden" name="session" value="{{ $attendanceSession }}">
