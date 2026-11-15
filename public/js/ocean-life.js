@@ -67,7 +67,7 @@
             return {offset:t,transform:`translate3d(${x}px,${y}px,0) rotate(${Math.max(-18,Math.min(18,heading))*(end.x<start.x?-1:1)}deg)`};
         });
         record.animation=element.animate(frames,{duration,easing:'linear',fill:'forwards'});
-        if(initial) record.animation.currentTime=duration*(record.schoolIndex !== undefined?.25:.18+Math.random()*.18);
+        if(initial) record.animation.currentTime=duration*(record.schoolIndex !== undefined ? .25 : .18+Math.random()*.18);
         record.animation.onfinish=()=>{
             if(!scene || record.status!=='swimming') return;
             record.animation.onfinish=null;record.animation.cancel();record.animation=null;
