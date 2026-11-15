@@ -3,7 +3,7 @@
         const localPart = name.normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '')
             .replace(/[^a-zA-Z0-9]/g, '')
-            .slice(0, 64);
+            .slice(0, 64).toLowerCase();
         return localPart ? `${localPart}@gmail.com` : '';
     };
 
@@ -24,6 +24,7 @@
         };
 
         email.addEventListener('input', () => {
+            email.value = email.value.toLowerCase();
             automatic = !email.value || email.value === emailFromName(name.value);
         });
         name.addEventListener('input', update);

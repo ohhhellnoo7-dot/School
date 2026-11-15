@@ -29,5 +29,5 @@
     @error('school_class_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
 </div>
 @push('scripts')
-<script src="{{ asset('js/class-picker.js') }}"></script>
+<script src="{{ asset('js/class-picker.js') }}?v={{ filemtime(public_path('js/class-picker.js')) }}"></script>
 @endpush

@@ -180,10 +180,10 @@ class StudentController extends Controller
         $this->saveParentPhoto($request, $student);
 
         if ($request->boolean('create_test_fee')) {
-            return redirect()->route('fees.pay', $student->fees()->latest('id')->first()->id)->with('success', 'Student enrolled. Test fee created: $0.10 USD, awaiting payment.')->with('enrollment_accounts', $credentials);
+            return redirect()->route('fees.pay', $student->fees()->latest('id')->first()->id)->with('success', 'Student enrolled. Test fee created: $0.10 USD, awaiting payment.')->with('enrollment_accounts', $credentials)->with('student_draft_clear', 'new');
         }
 
-        return redirect()->route('students.show', $student)->with('success', 'Student enrolled successfully.')->with('enrollment_accounts', $credentials);
+        return redirect()->route('students.show', $student)->with('success', 'Student enrolled successfully.')->with('enrollment_accounts', $credentials)->with('student_draft_clear', 'new');
     }
 
     private function saveParentDetails(?int $parentId, string $phone, array $details): void
@@ -264,7 +264,7 @@ class StudentController extends Controller
         });
         $this->saveParentPhoto($request, $student);
 
-        return redirect()->route('students.show', $student)->with('success', 'Student updated.');
+        return redirect()->route('students.show', $student)->with('success', 'Student updated.')->with('student_draft_clear', (string) $student->id);
     }
 
     public function destroy(Student $student)
@@ -283,11 +283,16 @@ class StudentController extends Controller
 
     private function validated(Request $request, ?Student $student = null): array
     {
+        foreach (['email', 'guardian_email'] as $field) {
+            if ($request->filled($field)) {
+                $request->merge([$field => strtolower(trim($request->input($field)))]);
+            }
+        }
         $data = $request->validate([
             'name' => 'required|string|max:255', 'gender' => 'required|in:male,female,other',
             'date_of_birth' => 'required|date|before:today',
             'email' => ['required', 'email', 'max:255', Rule::unique('students')->ignore($student)],
-            'phone' => 'nullable|string|max:30', 'address' => 'nullable|string|max:2000',
+            'phone' => ['nullable', 'string', 'max:30', Rule::unique('students', 'phone')->ignore($student)], 'address' => 'nullable|string|max:2000',
             'school_class_id' => 'required|exists:school_classes,id',
             'parent_id' => ['nullable', Rule::exists('users', 'id')->where('role', 'parent')],
             'user_id' => ['nullable', Rule::exists('users', 'id')->where('role', 'student'), Rule::unique('students')->ignore($student)],

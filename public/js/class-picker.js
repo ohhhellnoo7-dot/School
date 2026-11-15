@@ -26,6 +26,7 @@ document.querySelectorAll('[data-class-picker]').forEach(picker => {
 
     function selectProgram(value, selectedGrade = '', selectedId = '') {
         program = value;
+        picker.dataset.draftProgram = value;
         trigger.textContent = value === 'Unassigned' ? 'Other classes' : `${value} classes`;
         const grades = [...new Set(classes.filter(item => item.program === value).map(item => item.grade))]
             .sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
@@ -67,6 +68,9 @@ document.querySelectorAll('[data-class-picker]').forEach(picker => {
         else trigger.focus();
     }));
     gradeSelect.addEventListener('change', () => showClasses());
+    picker.addEventListener('restore-class-draft', event => {
+        selectProgram(event.detail.program, event.detail.grade, event.detail.classId);
+    });
     picker.querySelector('[data-program-controls]').hidden = false;
     picker.querySelector('[data-class-label]').textContent = 'Section and session *';
     if (original) selectProgram(original.program, original.grade, original.id);

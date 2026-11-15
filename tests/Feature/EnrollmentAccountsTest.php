@@ -35,6 +35,18 @@ class EnrollmentAccountsTest extends TestCase
         return $admin;
     }
 
+    public function test_enrollment_lowercases_email_and_rejects_duplicate_student_phone(): void
+    {
+        $this->administrator();
+        $this->post('/students', $this->enrollment(['email' => 'Bopha@gmail.com', 'phone' => '123']))
+            ->assertSessionHasNoErrors();
+        $student = Student::where('email', 'bopha@gmail.com')->firstOrFail();
+        $this->post('/students', $this->enrollment(['email' => 'jakya@gmail.com', 'phone' => '123']))
+            ->assertSessionHasErrors('phone');
+        $data = $this->enrollment(['email' => 'bopha@gmail.com', 'phone' => '123']);
+        $this->put(route('students.update', $student), $data)->assertSessionHasNoErrors();
+    }
+
     public function test_enrollment_creates_both_accounts_displays_credentials_once_and_allows_login(): void
     {
         $this->administrator();

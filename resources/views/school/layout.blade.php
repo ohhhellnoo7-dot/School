@@ -104,4 +104,7 @@ a.attendance-status-tile:hover, a.attendance-status-tile:focus-visible { outline
 <script src="{{ asset('vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
 
 @stack('scripts')
+@if(session()->has('student_draft_clear'))
+<script>try { sessionStorage.removeItem(@json('student-draft-'.auth()->id().'-'.session('student_draft_clear'))); } catch (_) {}</script>
+@endif
 </body></html>

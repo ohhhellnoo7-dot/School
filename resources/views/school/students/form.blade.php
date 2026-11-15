@@ -2,7 +2,7 @@
 @section('title', $student->exists ? 'Edit student' : 'Enroll student')
 @section('content')
 <div class="page-heading"><div><div class="eyebrow">STUDENT MANAGEMENT</div><h1>{{ $student->exists ? 'Edit student' : 'A new beginning.' }}</h1><p>Keep student details accurate, connected, and up to date.</p></div><a class="btn btn-outline-secondary" href="{{ route('students.index') }}"><i class="bi bi-arrow-left me-2"></i>Back to students</a></div>
-<form method="post" enctype="multipart/form-data" action="{{ $student->exists ? route('students.update', $student) : route('students.store') }}">@csrf @if($student->exists) @method('PUT') @endif
+<form data-student-draft="student-draft-{{ auth()->id() }}-{{ $student->id ?? 'new' }}" data-has-errors="{{ $errors->any() ? '1' : '0' }}" method="post" enctype="multipart/form-data" action="{{ $student->exists ? route('students.update', $student) : route('students.store') }}">@csrf @if($student->exists) @method('PUT') @endif
 @unless($student->exists)
 <input type="hidden" name="create_accounts" value="1">
 @endunless
@@ -41,4 +41,5 @@
 
 @push('scripts')
 <script src="{{ asset('js/address-options.js') }}?v={{ filemtime(public_path('js/address-options.js')) }}" defer></script>
+<script src="{{ asset('js/student-form-draft.js') }}?v={{ filemtime(public_path('js/student-form-draft.js')) }}"></script>
 @endpush
