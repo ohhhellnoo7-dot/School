@@ -103,20 +103,45 @@
             };
         });
     });
+    const showBiteReaction=record=>{
+        const svg=record.element.querySelector('svg');
+        const faces={fish:[89,28,94,39,'#ffb244'],turtle:[116,36,119,44,'#8eae51'],dolphin:[119,40,136,52,'#4c9ac6'],jelly:[43,34,43,46,'#74e9f5']};
+        const [x,y,mx,my,color]=faces[record.type];
+        const face=document.createElementNS('http://www.w3.org/2000/svg','g');
+        face.setAttribute('class','ocean-hurt-face');
+        face.innerHTML=`<ellipse cx="${x}" cy="${y}" rx="7" ry="8" fill="${color}"/><ellipse cx="${mx}" cy="${my}" rx="6" ry="4" fill="${color}"/>
+            <path d="M${x-4} ${y-4}l5 4-5 4" fill="none" stroke="#253e50" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <ellipse cx="${mx}" cy="${my}" rx="3" ry="4" fill="#354052"/>
+            <path d="M${x+5} ${y+3}q-5 7 0 7t0-7" fill="#c4f7ff"/>`;
+        svg.append(face);
+        record.element.classList.add('is-hurt');
+        const rect=record.element.getBoundingClientRect();
+        const puff=document.createElement('span');puff.className='ocean-bite-blood';
+        puff.style.left=`${rect.left+rect.width*.5}px`;puff.style.top=`${rect.top+rect.height*.5}px`;
+        scene.append(puff);
+        const animation=puff.animate([
+            {opacity:0,transform:'translate(-50%,-50%) scale(.25)'},
+            {opacity:.75,transform:'translate(-50%,-50%) scale(.8)',offset:.2},
+            {opacity:0,transform:'translate(-50%,calc(-50% - 18px)) scale(1.6)'},
+        ],{duration:950,easing:'ease-out',fill:'forwards'});
+        animation.onfinish=()=>{animation.cancel();puff.remove();};
+    };
     document.addEventListener('ocean:consume',event=>{
         const detail=event.detail;
         const record=swimmers.get(detail?.creature);
         if(!record || record.status!=='swimming' || !scene || document.hidden || motion.matches) return;
         detail.accepted=true;
         record.status='eating';record.element.dataset.oceanState='eating';
+        showBiteReaction(record);
         const rect=record.element.getBoundingClientRect();
         if(record.animation) { record.animation.onfinish=null;record.animation.cancel(); }
         const endX=detail.mouth.x-rect.width/2,endY=detail.mouth.y-rect.height/2;
         record.animation=record.element.animate([
             {transform:`translate3d(${rect.left}px,${rect.top}px,0) scale(1)`,opacity:1},
-            {transform:`translate3d(${endX}px,${endY}px,0) scale(.42)`,opacity:.85,offset:.65},
+            {transform:`translate3d(${rect.left}px,${rect.top}px,0) scale(1)`,opacity:1,offset:.35},
+            {transform:`translate3d(${endX}px,${endY}px,0) scale(.42)`,opacity:.85,offset:.78},
             {transform:`translate3d(${endX}px,${endY}px,0) scale(0)`,opacity:0},
-        ],{duration:480,easing:'ease-in',fill:'forwards'});
+        ],{duration:780,easing:'ease-in',fill:'forwards'});
         record.animation.onfinish=()=>{
             record.element.remove();swimmers.delete(record.element);
             if(!record.spilled)later(()=>spawn(record.type,false,record.variant),1400+Math.random()*1400);

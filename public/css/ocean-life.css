@@ -206,3 +206,7 @@
     & .portal-search input::placeholder { color:#C8E7F2; opacity:1; }
     & :is(.btn,.profile-link,summary):focus-visible { outline:2px solid #B6FFFF; outline-offset:3px; }
 }
+
+/* Brief cartoon bite effects stay inside the ocean layer. */
+.ocean-bite-blood { position:absolute; width:36px; height:26px; pointer-events:none; border-radius:50%; background:radial-gradient(ellipse,#c9364bc9 0%,#df506a80 45%,#dc455b00 72%); box-shadow:12px -6px 0 -8px #bf304b99,-13px 5px 0 -8px #d13c5399,5px 14px 0 -9px #b82e4699; }
+.ocean-creature.is-hurt .ocean-creature-art { animation:none; }

@@ -217,7 +217,7 @@
     const hunt = (spilledOnly=false) => {
         if(!canSwim()||flightPhase!=='water')return;
         const mouth=mouthPoint();
-        const candidates=[...document.querySelectorAll(spilledOnly?'.ocean-spilled-fish[data-ocean-state="swimming"]':'.ocean-creature-fish[data-ocean-state="swimming"]')]
+        const candidates=[...document.querySelectorAll(spilledOnly?'.ocean-spilled-fish[data-ocean-state="swimming"]':'.ocean-managed-creature[data-ocean-state="swimming"]')]
             .map(element=>({element,rect:element.getBoundingClientRect()}))
             .filter(({rect})=>rect.width>0&&rect.height>0&&rect.right>0&&rect.left<innerWidth&&rect.bottom>90&&rect.top<innerHeight)
             .map(candidate=>({...candidate,distance:Math.hypot(candidate.rect.left+candidate.rect.width/2-mouth.x,candidate.rect.top+candidate.rect.height/2-mouth.y)}))
