@@ -183,7 +183,7 @@ class StudentController extends Controller
             return redirect()->route('fees.pay', $student->fees()->latest('id')->first()->id)->with('success', 'Student enrolled. Test fee created: $0.10 USD, awaiting payment.')->with('enrollment_accounts', $credentials)->with('student_draft_clear', 'new');
         }
 
-        return redirect()->route('students.show', $student)->with('success', 'Student enrolled successfully.')->with('enrollment_accounts', $credentials)->with('student_draft_clear', 'new');
+        return redirect()->route('students.enrollment-payment', $student)->with('success', 'Student enrolled successfully. Choose how to pay the enrollment fee.')->with('enrollment_accounts', $credentials)->with('student_draft_clear', 'new');
     }
 
     private function saveParentDetails(?int $parentId, string $phone, array $details): void

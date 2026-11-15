@@ -71,6 +71,11 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
     Route::get('/fees/qr', [\App\Http\Controllers\FeePaymentController::class, 'qr'])->name('fees.qr');
     Route::post('/fees/qr', [\App\Http\Controllers\FeePaymentController::class, 'uploadQr'])->name('fees.qr.upload');
     Route::get('/fees/{fee}/pay', [\App\Http\Controllers\FeePaymentController::class, 'show'])->whereNumber('fee')->name('fees.pay');
+    Route::post('/fees/{fee}/checkout', [\App\Http\Controllers\FeePaymentController::class, 'checkout'])->whereNumber('fee')->name('fees.checkout');
+    Route::post('/fees/{fee}/confirm', [\App\Http\Controllers\FeePaymentController::class, 'confirm'])->whereNumber('fee')->name('fees.confirm');
+    Route::get('/fees/{fee}/status', [\App\Http\Controllers\FeePaymentController::class, 'status'])->whereNumber('fee')->name('fees.status');
+    Route::get('/students/{student}/enrollment-payment', [\App\Http\Controllers\EnrollmentPaymentController::class, 'show'])->name('students.enrollment-payment');
+    Route::post('/students/{student}/enrollment-payment', [\App\Http\Controllers\EnrollmentPaymentController::class, 'store'])->name('students.enrollment-payment.store');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');

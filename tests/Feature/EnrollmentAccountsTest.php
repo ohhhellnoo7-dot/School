@@ -50,8 +50,9 @@ class EnrollmentAccountsTest extends TestCase
     public function test_enrollment_creates_both_accounts_displays_credentials_once_and_allows_login(): void
     {
         $this->administrator();
-        $this->post('/students', $this->enrollment())->assertSessionHasNoErrors()->assertSessionHas('enrollment_accounts');
+        $response = $this->post('/students', $this->enrollment())->assertSessionHasNoErrors()->assertSessionHas('enrollment_accounts');
         $student = Student::firstOrFail();
+        $response->assertRedirect(route('students.enrollment-payment', $student));
         $this->assertSame('student', $student->user->role);
         $this->assertSame('parent', $student->parent->role);
         $this->assertTrue(Hash::check('123', $student->user->password));
