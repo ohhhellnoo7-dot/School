@@ -270,7 +270,7 @@
         svg.setAttribute('aria-hidden','true');
         svg.classList.add('ocean-shark-rig');
         svg.innerHTML=`<defs>
-            <linearGradient id="shark-skin" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#C4EDF8"/><stop offset=".4" stop-color="#659CB5"/><stop offset="1" stop-color="#2F698C"/></linearGradient>
+            <linearGradient id="shark-skin" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#8FB9CA"/><stop offset=".4" stop-color="#47778F"/><stop offset="1" stop-color="#234B67"/></linearGradient>
             <linearGradient id="shark-belly" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#F5FCFF"/><stop offset="1" stop-color="#BEDFEA"/></linearGradient>
             <linearGradient id="shark-fin" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#7BB3C9"/><stop offset="1" stop-color="#356B8C"/></linearGradient>
         </defs>
@@ -282,13 +282,15 @@
         <path d="M73 59Q119 37 165 52" fill="none" stroke="#E5FAFF" stroke-width="3" stroke-linecap="round" opacity=".65"/>
         <g class="ocean-shark-fin"><path d="M126 84Q120 111 94 119L105 86Z" fill="url(#shark-fin)" stroke="#326781" stroke-width="1.6"/><path d="m111 91-10 19" stroke="#A9DAEA" stroke-width="1.5"/></g>
         <g fill="none" stroke="#37687E" stroke-width="2" stroke-linecap="round"><path d="m153 67-3 12m-5-14-3 12m-5-14-3 12"/></g>
-        <ellipse cx="187" cy="65" rx="8" ry="9" fill="#F4FCFF"/><ellipse cx="190" cy="66" rx="4.8" ry="6.3" fill="#143C57"/><circle cx="191" cy="63" r="2" fill="#FFF"/>
-        <path d="M178 53q8-5 15 0" fill="none" stroke="#386B84" stroke-width="2" stroke-linecap="round"/>
+        <path d="M178 60 197 65Q193 74 185 72q-7-2-7-12Z" fill="#F4F0DB" stroke="#23485E" stroke-width="1.3"/>
+        <path d="M189 63 195 65 193 71 189 71Z" fill="#102C40"/><circle cx="192" cy="66" r=".9" fill="#FFF"/>
+        <path d="m176 57 22 7" fill="none" stroke="#23485E" stroke-width="4" stroke-linecap="round"/>
         <ellipse cx="219" cy="72" rx="2" ry="1.4" fill="#32617B"/>
-        <path class="ocean-shark-neutral-mouth" d="M195 82q11 4 21-3" fill="none" stroke="#31566E" stroke-width="2" stroke-linecap="round"/>
+        <g class="ocean-shark-neutral-mouth"><path d="M185 81Q202 86 223 77L219 88Q202 99 188 88Z" fill="#172F43" stroke="#23485E" stroke-width="1.7" stroke-linejoin="round"/>
+        <path d="m189 83 6 1-2 7Zm8 2 6-1-2 8Zm8-1 6-2-2 8Zm9-3 6-2-3 7ZM195 92l3-5 3 6Zm10 0 3-6 3 5Zm9-4 3-5 1 4Z" fill="#F5F4E8"/></g>
         <g class="ocean-shark-chomp-mouth"><path d="M188 78Q204 87 223 76 221 103 198 99Z" fill="#243E58" stroke="#31566E" stroke-width="1.5"/><path d="m193 81 7 2-4 7Zm11 3 7-1-3 7Zm12-3 5-3-1 8ZM201 97l4-5 3 6Zm11-1 3-5 2 3Z" fill="#F3FCFF"/></g>
-        <g class="ocean-shark-happy-face"><path d="M190 80Q207 88 220 78 210 103 190 80Z" fill="#354F69" stroke="#2D5169" stroke-width="1"/><path d="m195 83 5 1-2 5Zm9 2 5-1-2 5Zm9-2 4-2-1 5Z" fill="#F3FFFF"/><path d="M201 91q5-3 9-1" fill="none" stroke="#EC9BA5" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="180" cy="79" rx="6" ry="2.5" fill="#EDACBD" opacity=".6"/></g>
-        <g class="ocean-shark-eyelids"><ellipse cx="187" cy="65" rx="8.5" ry="9.5" fill="#70A6BD"/><path d="M181 65q6 4 13-1" fill="none" stroke="#376A84" stroke-width="1.5" stroke-linecap="round"/></g>
+        <g class="ocean-shark-happy-face"><path d="M185 81Q202 86 223 77L219 88Q202 99 188 88Z" fill="#172F43" stroke="#23485E" stroke-width="1.7"/><path d="m189 83 6 1-2 7Zm8 2 6-1-2 8Zm8-1 6-2-2 8Zm9-3 6-2-3 7ZM195 92l3-5 3 6Zm10 0 3-6 3 5Z" fill="#F5F4E8"/></g>
+        <g class="ocean-shark-eyelids"><ellipse cx="187" cy="65" rx="8.5" ry="9.5" fill="#70A6BD"/><path d="m178 61 19 5" fill="none" stroke="#23485E" stroke-width="2.5" stroke-linecap="round"/></g>
         <path class="ocean-shark-hit" d="M7 18 43 51Q73 29 95 38L101 13 127 5 141 40Q184 42 223 66 240 78 220 89L184 99 132 105 94 124 98 101 60 89Q32 109 5 102L18 62Z"/>`;
         return svg;
     };

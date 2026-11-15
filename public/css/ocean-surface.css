@@ -46,8 +46,8 @@
 .ocean-surface-scene[data-fishing-state="hiding"] :is(.ocean-fisher-arm,.ocean-fisher-back-arm) { animation:ocean-fisher-paddle .85s ease-in-out infinite alternate; }
 .ocean-surface-scene[data-fishing-state="hiding"] :is(.ocean-fisher-forearm,.ocean-fisher-back-forearm) { animation:ocean-fisher-elbow .8s ease-in-out infinite alternate; }
 .ocean-surface-scene[data-fishing-state="hiding"] .ocean-fisher-torso { animation:ocean-fisher-breathe .7s ease-in-out infinite alternate; }
-.ocean-surface-scene[data-fishing-state="climbing"] :is(.ocean-fisher-arm,.ocean-fisher-back-arm) { animation:ocean-fisher-reach .8s ease-in-out infinite; }
-.ocean-surface-scene[data-fishing-state="climbing"] :is(.ocean-fisher-forearm,.ocean-fisher-back-forearm) { animation:ocean-fisher-pull .8s ease-in-out infinite; }
+.ocean-surface-scene[data-fishing-state="climbing"] :is(.ocean-fisher-arm,.ocean-fisher-back-arm) { animation:none; transform:rotate(-25deg); }
+.ocean-surface-scene[data-fishing-state="climbing"] :is(.ocean-fisher-forearm,.ocean-fisher-back-forearm) { animation:none; transform:rotate(-15deg); }
 .ocean-surface-scene[data-fishing-state="climbing"] .ocean-fisher-torso { animation:ocean-fisher-heave .8s ease-in-out infinite; }
 .ocean-surface-scene:is([data-fishing-state="climbing"],[data-fishing-state="hiding"],[data-fishing-state="jumping"]) .ocean-fisher-shin { animation:ocean-fisher-knee .6s ease-in-out infinite alternate; }
 .ocean-fishing-boat.is-panicking :is(.ocean-fisher-back-arm,.ocean-fisher-back-forearm,.ocean-fisher-shin-right) { animation-delay:-.2s; }

@@ -31,6 +31,12 @@
         }
         return 0;
     };
+    // Grow with the crest's visible journey, keeping its base at the waterline.
+    const waveGrowth=(record,progress)=>{
+        const crestX=record.start+(record.end-record.start)*progress+record.width*.65;
+        const travel=Math.max(0,Math.min(1,crestX/innerWidth));
+        return .22+.98*travel*travel*(3-2*travel);
+    };
     const finishWaveRide=()=>{
         if(boatImpact){boatImpact.onfinish=null;boatImpact.cancel();boatImpact=null;}
         boat?.classList.remove('is-riding-wave');
@@ -41,8 +47,9 @@
         const frames=Array.from({length:181},(_,index)=>{
             const offset=index/180,waveX=record.start+(record.end-record.start)*offset;
             const local=(center-waveX)/record.width;
-            const lift=swellHeight(local);
-            const stern=swellHeight(local-hull.width*.3/record.width),bow=swellHeight(local+hull.width*.3/record.width);
+            const growth=waveGrowth(record,offset);
+            const lift=swellHeight(local)*growth;
+            const stern=swellHeight(local-hull.width*.3/record.width)*growth,bow=swellHeight(local+hull.width*.3/record.width)*growth;
             const tilt=Math.max(-18,Math.min(18,Math.atan2(stern-bow,hull.width*.6)*180/Math.PI));
             return {transform:`translateY(${-lift}px) rotate(${tilt}deg)`,offset};
         });
@@ -68,11 +75,12 @@
         scene.append(crest);
         document.dispatchEvent(new CustomEvent('ocean:wave-approaching'));
         const record={element:crest,width,start:-width,end:innerWidth+width,duration:6500,hit:false,animation:null};
-        record.animation=crest.animate([
-            {transform:`translate3d(${-width}px,0,0)`,opacity:0},
-            {transform:`translate3d(${-width+(innerWidth+width*2)*.08}px,0,0)`,opacity:1,offset:.08},
-            {transform:`translate3d(${innerWidth+width}px,0,0)`,opacity:.85},
-        ],{duration:record.duration,easing:'linear',fill:'forwards'});
+        crest.style.transformOrigin='0 90px';
+        const frames=Array.from({length:181},(_,index)=>{
+            const offset=index/180,x=record.start+(record.end-record.start)*offset;
+            return {transform:`translate3d(${x}px,0,0) scaleY(${waveGrowth(record,offset)})`,opacity:Math.min(1,offset/.08),offset};
+        });
+        record.animation=crest.animate(frames,{duration:record.duration,easing:'linear',fill:'forwards'});
         activeWaves.add(record);
         record.animation.onfinish=()=>{record.animation.onfinish=null;record.animation.cancel();crest.remove();activeWaves.delete(record);};
     };
@@ -145,9 +153,12 @@
         try{sessionStorage.setItem('scholar-ocean-fisher-reaction',String(reactionIndex));}catch(_){}
         scene.dataset.fisherReaction=name;
         const direction=boat.getBoundingClientRect().right+100>innerWidth?-1:1;
-        const pose=(x,y,rotation)=>`translate(${x*direction}px,${y}px) rotate(${rotation*direction}deg)`;
+        const pose=(x,y,rotation,facing=1)=>`translate(${x*direction}px,${y}px) rotate(${rotation*direction}deg) scaleX(${facing})`;
+        // Face the hull from either side, with hands within reach of its rim.
+        const edge=direction>0?84:64;
+        const waterPose=(lift=0)=>pose(edge,32+lift,0,-direction);
         const fisher=boat.querySelector('.ocean-fisher-person');
-        panicSequence={fisher,pose,safeSince:0};
+        panicSequence={fisher,pose,waterPose,edge,direction,safeSince:0};
         const caption=document.createElement('span');caption.className='ocean-fisher-panic';caption.textContent=event.type==='ocean:big-wave'?['Whoa! BIG WAVE!','My boat just sneezed!','Man overboard! Again!','Not the boots!'][reactionIndex%4]:message;boat.append(caption);
         const splash=document.createElement('span');splash.className='ocean-fisher-splash';boat.append(splash);
         if(direction<0){splash.style.left='auto';splash.style.right='78%';caption.style.left='auto';caption.style.right='0';}
@@ -165,14 +176,14 @@
             {transform:pose(x1*.6,y1*.5,r1*.5),offset:.12},
             {transform:pose(x2*.7,y2*.6,r2*.6),offset:.24},
             {transform:pose(48,-18,event.type==='ocean:big-wave'?38:24),offset:.44},
-            {transform:pose(100,50,15),offset:1},
+            {transform:waterPose(),offset:1},
         ],{duration:1050,easing:'cubic-bezier(.35,0,.65,1)',fill:'forwards'});
         panicAnimation.onfinish=()=>{
             if(!panicSequence)return;
             panicAnimation.onfinish=null;panicAnimation.cancel();
             scene.dataset.fishingState='hiding';
             caption.textContent='Stay quiet... is it gone yet?';
-            panicAnimation=fisher.animate([{transform:pose(100,50,15)},{transform:pose(98,48,11)},{transform:pose(100,50,15)}],{duration:1700,easing:'ease-in-out',iterations:Infinity});
+            panicAnimation=fisher.animate([{transform:waterPose()},{transform:waterPose(-2)},{transform:waterPose()}],{duration:1700,easing:'ease-in-out',iterations:Infinity});
         };
     };
     document.addEventListener('ocean:shark-splash',startPanic);
@@ -199,14 +210,14 @@
             if(state==='climbing'){
                 const current=getComputedStyle(panicSequence.fisher).transform;
                 panicAnimation.onfinish=null;panicAnimation.cancel();
-                const {fisher,pose,caption}=panicSequence;
+                const {fisher,pose,waterPose,caption}=panicSequence;
                 caption.textContent='Nope! Back in the water!';
                 scene.dataset.fishingState='hiding';
-                panicAnimation=fisher.animate([{transform:current},{transform:pose(100,50,15)}],{duration:450,easing:'ease-in',fill:'forwards'});
+                panicAnimation=fisher.animate([{transform:current},{transform:waterPose()}],{duration:450,easing:'ease-in',fill:'forwards'});
                 panicAnimation.onfinish=()=>{
                     if(!panicSequence)return;
                     panicAnimation.onfinish=null;panicAnimation.cancel();
-                    panicAnimation=fisher.animate([{transform:pose(100,50,15)},{transform:pose(98,48,11)},{transform:pose(100,50,15)}],{duration:1700,easing:'ease-in-out',iterations:Infinity});
+                    panicAnimation=fisher.animate([{transform:waterPose()},{transform:waterPose(-2)},{transform:waterPose()}],{duration:1700,easing:'ease-in-out',iterations:Infinity});
                 };
             }
             return;
@@ -218,7 +229,7 @@
     };
     const beginClimb=(urgent=false)=>{
         if(!panicSequence||scene.dataset.fishingState!=='hiding')return;
-        const {fisher,pose,caption}=panicSequence;
+        const {fisher,pose,waterPose,edge,direction,caption}=panicSequence;
         const current=getComputedStyle(fisher).transform;
         panicSequence.escaping=urgent;
         panicAnimation.onfinish=null;
@@ -227,12 +238,13 @@
         caption.textContent=urgent?'TEETH! Climb, legs, CLIMB!':'Heave! Oops... HEAVE! Slippery boat!';
         panicAnimation=fisher.animate([
             {transform:current},
-            {transform:pose(78,32,-10),offset:.16},
-            {transform:pose(82,39,5),offset:.27},
-            {transform:pose(60,16,-16),offset:.46},
-            {transform:pose(65,23,-5),offset:.57},
-            {transform:pose(39,0,-14),offset:.76},
-            {transform:pose(20,-4,-7),offset:.90},
+            {transform:waterPose(),offset:.12},
+            {transform:pose(edge-4,20,8,-direction),offset:.28},
+            {transform:pose(edge-6,23,5,-direction),offset:.38},
+            {transform:pose(edge-16,4,18,-direction),offset:.58},
+            {transform:pose(edge-30,-10,30,-direction),offset:.74},
+            {transform:pose(24,-12,12,-direction),offset:.88},
+            {transform:pose(8,-4,0,-direction),offset:.96},
             {transform:pose(0,0,0)},
         ].map(frame=>({...frame,easing:'cubic-bezier(.35,0,.3,1)'})),{duration:urgent?2900:3900,easing:'linear',fill:'forwards'});
         panicAnimation.onfinish=()=>{
