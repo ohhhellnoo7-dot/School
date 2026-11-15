@@ -40,6 +40,7 @@
     const sendAcross = (record,initial=false) => {
         if(!scene || record.status!=='swimming') return;
         const {element}=record;
+        element.classList.remove('is-fleeing');
         if(!element.getClientRects().length) return;
         const width=element.offsetWidth,height=element.offsetHeight;
         const edge=entryIndex++%8;
@@ -66,7 +67,7 @@
             return {offset:t,transform:`translate3d(${x}px,${y}px,0) rotate(${Math.max(-18,Math.min(18,heading))*(end.x<start.x?-1:1)}deg)`};
         });
         record.animation=element.animate(frames,{duration,easing:'linear',fill:'forwards'});
-        if(initial) record.animation.currentTime=duration*(.18+Math.random()*.18);
+        if(initial) record.animation.currentTime=duration*(record.schoolIndex !== undefined?.25:.18+Math.random()*.18);
         record.animation.onfinish=()=>{
             if(!scene || record.status!=='swimming') return;
             record.animation.onfinish=null;record.animation.cancel();record.animation=null;
@@ -178,6 +179,7 @@
         if(!record || record.status!=='swimming' || !scene || document.hidden || motion.matches) return;
         detail.accepted=true;
         record.status='eating';record.element.dataset.oceanState='eating';
+        record.element.classList.remove('is-fleeing');
         showBiteReaction(record);
         const rect=record.element.getBoundingClientRect();
         if(record.animation) { record.animation.onfinish=null;record.animation.cancel(); }
@@ -199,6 +201,7 @@
         const record=[...swimmers.values()].find(item=>item.type==='fish'&&item.status==='swimming');
         if(!record)return;
         detail.accepted=true;record.status='fishing';record.hookId=detail.id;
+        record.element.classList.remove('is-fleeing');
         // Rotate reservations so every fish gets a turn at the bait.
         swimmers.delete(record.element);swimmers.set(record.element,record);
         // Only the reserved, reeled fish may cross the waterline into the boat.
