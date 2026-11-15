@@ -1,0 +1,127 @@
+/* Daylight is composited behind content; labels and controls never darken. */
+.ocean-day-night-water { position:fixed; inset:0; z-index:-1; pointer-events:none; background:#000C24; animation:ocean-water-night 32s linear infinite; animation-delay:var(--ocean-day-phase,0s); }
+/* The opaque sky occludes scrolling page content above the fixed waterline. */
+.ocean-surface-sky { position:fixed; inset:0 0 auto; height:var(--ocean-surface-y,205px); z-index:1034; overflow:hidden; pointer-events:none; contain:strict; background:linear-gradient(#7C8CCC,#FFD0A0 75%,#FFDBA2); }
+.ocean-sky-day,.ocean-sky-sunset,.ocean-sky-night,.ocean-sky-stars { position:absolute; inset:0; animation-duration:32s; animation-timing-function:linear; animation-iteration-count:infinite; animation-delay:var(--ocean-day-phase,0s); }
+.ocean-sky-day { background:linear-gradient(#47BEE8,#B3EFFE); animation-name:ocean-daylight; }
+.ocean-sky-sunset { background:linear-gradient(#565598,#F18C7B 60%,#FFD39A); animation-name:ocean-sunset; }
+.ocean-sky-night { background:linear-gradient(#080F34,#183F6C); animation-name:ocean-night; }
+.ocean-sky-stars { background:radial-gradient(circle at 15% 32%,#FFF 0 1px,transparent 2px),radial-gradient(circle at 33% 46%,#E9F6FF 0 1px,transparent 2px),radial-gradient(circle at 53% 20%,#FFF 0 1px,transparent 2px),radial-gradient(circle at 71% 38%,#FFF 0 1px,transparent 2px),radial-gradient(circle at 89% 24%,#DFF3FF 0 1px,transparent 2px); background-size:280px 120px; animation-name:ocean-night; }
+.ocean-surface-sun { position:absolute; left:0; top:0; width:46px; height:46px; border-radius:50%; background:radial-gradient(circle at 35% 30%,#FFFFDA,#FFD174 75%); box-shadow:0 0 25px 8px #FFDF8A60; animation:ocean-sun-travel 32s linear infinite; animation-delay:var(--ocean-day-phase,0s); }
+.ocean-surface-moon { position:absolute; left:78%; top:32%; width:32px; height:32px; border-radius:50%; background:radial-gradient(circle at 30% 30%,#FFFDEA,#CAE3F4); box-shadow:0 0 18px #D9EEFF66; animation:ocean-moon-rise 32s linear infinite; animation-delay:var(--ocean-day-phase,0s); }
+.ocean-sky-cloud { position:absolute; top:var(--cloud-y); left:-150px; width:110px; height:24px; border-radius:60%; background:#FFFFFF85; box-shadow:25px -10px 0 -3px #FFFFFF80,-22px 1px 0 -4px #FFFFFF70; animation:ocean-cloud-drift 75s linear infinite; animation-delay:var(--cloud-delay); }
+.ocean-surface-scene { position:fixed; inset:0; z-index:1044; overflow:hidden; contain:strict; pointer-events:none; }
+.ocean-surface-wave { position:absolute; left:0; right:0; top:calc(var(--ocean-surface-y,205px) - 12px); height:32px; }
+.ocean-surface-wave::before,.ocean-surface-wave::after { content:''; position:absolute; left:-600px; top:0; width:calc(100% + 1200px); height:25px; background:url('../images/ocean-wave.svg') left center/600px 25px repeat-x; animation:ocean-wave-roll 4s linear infinite; }
+.ocean-surface-wave::after { top:5px; opacity:.35; animation-duration:6s; }
+.ocean-fishing-boat { position:absolute; left:var(--ocean-surface-left,0px); top:calc(var(--ocean-surface-y,205px) - 92px); width:168px; height:105px; animation:ocean-boat-cross 40s linear infinite alternate; animation-delay:var(--ocean-boat-phase,0s); }
+.ocean-fishing-boat > svg { display:block; width:100%; height:100%; overflow:visible; transform-origin:50% 80%; animation:ocean-boat-bob 4s ease-in-out infinite; }
+.ocean-fishing-boat.is-casting { animation-play-state:paused; }
+.ocean-fishing-boat.is-panicking { animation-play-state:paused; }
+.ocean-fishing-boat.is-riding-wave { animation-play-state:paused; }
+.ocean-fishing-boat { z-index:2; }
+.ocean-big-wave { z-index:3; }
+.ocean-surface-wave { z-index:4; }
+.ocean-big-wave { position:absolute; left:0; top:calc(var(--ocean-surface-y,260px) - 90px); width:360px; height:115px; pointer-events:none; will-change:transform; }
+.ocean-big-wave svg { width:100%; height:100%; }
+.ocean-breaker-spray { animation:ocean-breaker-spray 1.1s ease-out infinite; transform-origin:302px 20px; }
+@keyframes ocean-breaker-spray { from { opacity:.85; transform:translate(0,0) scale(.8); } to { opacity:0; transform:translate(16px,-10px) scale(1.15); } }
+.ocean-fisher-person { transform-origin:72px 60px; }
+.ocean-fisher-rod { transform-origin:87px 45px; }
+.ocean-fishing-boat.is-panicking .ocean-fisher-panic { animation:none; }
+.ocean-fishing-boat.is-panicking .ocean-fisher-splash { animation-duration:1.8s; }
+.ocean-fisher-leg { transform-origin:70px 63px; }
+.ocean-surface-scene[data-fishing-state="hiding"] .ocean-fisher-leg { animation:ocean-fisher-kick .7s ease-in-out infinite alternate; }
+.ocean-surface-scene[data-fishing-state="climbing"] .ocean-fisher-leg { animation:ocean-fisher-kick .48s ease-in-out infinite alternate; }
+.ocean-surface-scene:is([data-fishing-state="hiding"],[data-fishing-state="climbing"]) .ocean-fisher-leg-right { animation-direction:alternate-reverse; }
+@keyframes ocean-fisher-kick { from { transform:rotate(-18deg); } to { transform:rotate(22deg); } }
+.ocean-fisher-torso { transform-origin:72px 59px; }
+.ocean-fisher-back-arm { transform-origin:64px 44px; }
+.ocean-fisher-forearm { transform-origin:82px 52px; }
+.ocean-fisher-back-forearm { transform-origin:57px 54px; }
+.ocean-fisher-shin-left { transform-origin:62px 73px; }
+.ocean-fisher-shin-right { transform-origin:80px 73px; }
+.ocean-surface-scene[data-fishing-state="jumping"] :is(.ocean-fisher-arm,.ocean-fisher-back-arm) { animation:ocean-fisher-flail .4s ease-in-out infinite alternate; }
+.ocean-surface-scene[data-fishing-state="jumping"] .ocean-fisher-leg { animation:ocean-fisher-kick .4s ease-in-out infinite alternate; }
+.ocean-surface-scene[data-fishing-state="hiding"] :is(.ocean-fisher-arm,.ocean-fisher-back-arm) { animation:ocean-fisher-paddle .85s ease-in-out infinite alternate; }
+.ocean-surface-scene[data-fishing-state="hiding"] :is(.ocean-fisher-forearm,.ocean-fisher-back-forearm) { animation:ocean-fisher-elbow .8s ease-in-out infinite alternate; }
+.ocean-surface-scene[data-fishing-state="hiding"] .ocean-fisher-torso { animation:ocean-fisher-breathe .7s ease-in-out infinite alternate; }
+.ocean-surface-scene[data-fishing-state="climbing"] :is(.ocean-fisher-arm,.ocean-fisher-back-arm) { animation:ocean-fisher-reach .8s ease-in-out infinite; }
+.ocean-surface-scene[data-fishing-state="climbing"] :is(.ocean-fisher-forearm,.ocean-fisher-back-forearm) { animation:ocean-fisher-pull .8s ease-in-out infinite; }
+.ocean-surface-scene[data-fishing-state="climbing"] .ocean-fisher-torso { animation:ocean-fisher-heave .8s ease-in-out infinite; }
+.ocean-surface-scene:is([data-fishing-state="climbing"],[data-fishing-state="hiding"],[data-fishing-state="jumping"]) .ocean-fisher-shin { animation:ocean-fisher-knee .6s ease-in-out infinite alternate; }
+.ocean-fishing-boat.is-panicking :is(.ocean-fisher-back-arm,.ocean-fisher-back-forearm,.ocean-fisher-shin-right) { animation-delay:-.2s; }
+.ocean-fishing-boat.is-escaping .ocean-fisher-leg { animation-duration:.3s; }
+.ocean-surface-scene[data-fishing-state="retrieving"] .ocean-fisher-arm { animation:ocean-fisher-retrieve 1.1s ease-in-out; }
+.ocean-surface-scene[data-fishing-state="retrieving"] .ocean-fisher-torso { animation:ocean-fisher-catch-breath .5s ease-in-out infinite alternate; }
+.ocean-surface-scene[data-fishing-state="recovering"] .ocean-fisher-arm { animation:ocean-fisher-fix-hat 1.2s ease-in-out; }
+.ocean-surface-scene[data-fishing-state="recovering"] .ocean-fisher-forearm { animation:ocean-fisher-wipe-face .4s ease-in-out 3 alternate; }
+.ocean-surface-scene[data-fishing-state="recovering"] .ocean-fisher-back-arm { animation:ocean-fisher-flail .15s ease-in-out 6 alternate; }
+.ocean-surface-scene[data-fishing-state="recovering"] .ocean-fisher-shin { animation:ocean-fisher-knee .18s ease-in-out 6 alternate; }
+@keyframes ocean-fisher-fix-hat { 0%,100% { transform:rotate(0); } 30%,65% { transform:rotate(-95deg); } }
+@keyframes ocean-fisher-wipe-face { from { transform:rotate(-30deg); } to { transform:rotate(-85deg); } }
+@keyframes ocean-fisher-flail { from { transform:rotate(-30deg); } to { transform:rotate(30deg); } }
+@keyframes ocean-fisher-paddle { from { transform:rotate(-25deg); } to { transform:rotate(40deg); } }
+@keyframes ocean-fisher-elbow { from { transform:rotate(-45deg); } to { transform:rotate(35deg); } }
+@keyframes ocean-fisher-breathe { from { transform:rotate(-5deg) translateY(0); } to { transform:rotate(5deg) translateY(-2px); } }
+@keyframes ocean-fisher-reach { 0%,100% { transform:rotate(-55deg); } 40% { transform:rotate(-110deg); } 75% { transform:rotate(-30deg); } }
+@keyframes ocean-fisher-pull { 0%,100% { transform:rotate(-15deg); } 45% { transform:rotate(-65deg); } 75% { transform:rotate(30deg); } }
+@keyframes ocean-fisher-heave { 0%,100% { transform:rotate(8deg); } 50% { transform:rotate(-15deg) translateY(-3px); } }
+@keyframes ocean-fisher-knee { from { transform:rotate(-20deg); } to { transform:rotate(30deg); } }
+@keyframes ocean-fisher-retrieve { 0%,100% { transform:rotate(0); } 50% { transform:rotate(40deg); } }
+@keyframes ocean-fisher-catch-breath { from { transform:translateY(0); } to { transform:translateY(2px) rotate(3deg); } }
+.ocean-fisher-panic { position:absolute; top:-28px; left:5px; width:max-content; max-width:min(210px,calc(100vw - 32px)); white-space:normal; padding:6px 10px; border:2px solid #ffd15a; border-radius:14px 14px 3px 14px; background:#fff9df; color:#894524; font:800 12px/1.3 system-ui,sans-serif; animation:ocean-panic-caption 3.2s both; }
+.ocean-fisher-splash { position:absolute; left:78%; top:86%; width:85px; height:20px; border:3px solid #b3faff; border-radius:50%; opacity:0; animation:ocean-panic-splash 3.2s both; }
+@keyframes ocean-panic-caption { 0% { opacity:1; transform:scale(.85); } 5%,75% { opacity:1; transform:scale(1); } 100% { opacity:0; transform:translateY(-12px); } }
+@keyframes ocean-panic-splash { 0%,24% { opacity:0; transform:scale(.3); } 30% { opacity:1; transform:scale(1); box-shadow:0 -12px 0 -5px #c9ffff; } 48%,100% { opacity:0; transform:scale(1.8); } }
+.ocean-fisher-arm { transform-origin:68px 47px; }
+.ocean-fishing-boat.is-reeling .ocean-fisher-arm { animation:ocean-fisher-reel .3s ease-in-out infinite alternate; }
+.ocean-fishing-boat.is-casting:not(.is-reeling) .ocean-fisher-arm { animation:ocean-fisher-cast .6s ease-out; }
+.ocean-fishing-line { position:absolute; inset:0; width:100%; height:100%; overflow:visible; opacity:0; }
+.ocean-fishing-line.is-visible { opacity:1; }
+.ocean-fishing-line path { vector-effect:non-scaling-stroke; }
+.ocean-surface-paused * { animation-play-state:paused!important; }
+.ocean-surface-paused .ocean-surface-wave::before,.ocean-surface-paused .ocean-surface-wave::after { animation-play-state:paused!important; }
+.ocean-surface-reduced .ocean-surface-wave::before,.ocean-surface-reduced .ocean-surface-wave::after { animation:none!important; }
+.ocean-surface-paused.ocean-day-night-water { animation-play-state:paused!important; }
+.ocean-surface-reduced * { animation:none!important; }
+.ocean-surface-reduced .ocean-fishing-boat { left:20px; }
+.ocean-surface-reduced .ocean-fishing-line { display:none; }
+.ocean-surface-reduced.ocean-day-night-water { animation:none!important; opacity:0; }
+.ocean-surface-reduced .ocean-sky-day { opacity:1; }
+.ocean-surface-reduced :is(.ocean-sky-night,.ocean-sky-stars,.ocean-sky-sunset,.ocean-surface-moon) { opacity:0; }
+.ocean-surface-reduced .ocean-surface-sun { transform:translate(55vw,25px); }
+@keyframes ocean-daylight { 0% { opacity:0; } 12.5%,43.75% { opacity:1; } 62.5%,93.75% { opacity:0; } 100% { opacity:0; } }
+@keyframes ocean-sunset { 0%,43.75% { opacity:0; } 56.25%,62.5% { opacity:1; } 71.875%,93.75% { opacity:0; } 100% { opacity:.15; } }
+@keyframes ocean-night { 0%,59.375% { opacity:0; } 71.875%,87.5% { opacity:1; } 100% { opacity:0; } }
+@keyframes ocean-water-night { 0% { opacity:.12; } 12.5%,43.75% { opacity:0; } 62.5% { opacity:.26; } 71.875%,87.5% { opacity:.72; } 100% { opacity:.12; } }
+@keyframes ocean-sun-travel { 0% { opacity:.5; transform:translate(4vw,calc(var(--ocean-surface-y,205px) - 18px)); } 12.5% { opacity:1; transform:translate(23vw,55px); } 31.25% { opacity:1; transform:translate(48vw,22px); } 50% { opacity:1; transform:translate(76vw,65px); } 62.5% { opacity:0; transform:translate(96vw,var(--ocean-surface-y,205px)); } 100% { opacity:0; transform:translate(4vw,var(--ocean-surface-y,205px)); } }
+@keyframes ocean-moon-rise { 0%,62.5% { opacity:0; transform:translateY(35px); } 75%,87.5% { opacity:1; transform:translateY(0); } 100% { opacity:0; transform:translateY(35px); } }
+@keyframes ocean-cloud-drift { to { transform:translateX(calc(100vw + 270px)); } }
+@keyframes ocean-boat-cross { from { transform:translateX(14px); } to { transform:translateX(calc(100vw - var(--ocean-surface-left,0px) - 182px)); } }
+@keyframes ocean-wave-roll { from { transform:translate3d(0,0,0); } to { transform:translate3d(300px,0,0); } }
+@keyframes ocean-boat-bob { 0%,100% { transform:translateY(0) rotate(2.5deg); } 25% { transform:translateY(3px) rotate(0); } 50% { transform:translateY(0) rotate(-2.5deg); } 75% { transform:translateY(-5px) rotate(0); } }
+@keyframes ocean-fisher-reel { from { transform:rotate(-6deg); } to { transform:rotate(4deg); } }
+@keyframes ocean-fisher-cast { from { transform:rotate(-20deg); } to { transform:rotate(0); } }
+/* Tint just the banner artwork at night, leaving its title and actions bright. */
+:root[data-theme="ocean"]:root:root:root:root:root:root:root:root:root:root:root:root .scholar-workspace .main-content { padding-top:max(22px,calc(var(--ocean-surface-y,205px) - var(--ocean-surface-bar-y,64px) + 18px)); }
+:root[data-theme="ocean"]:root:root:root:root:root:root:root:root:root:root:root:root .scholar-workspace .main-content :is(.scholar-hero,.page-heading,.teacher-attendance-hero,.match-page-heading)::after { content:''; position:absolute; inset:0; height:auto; z-index:0; border-radius:inherit; background:#00152C; pointer-events:none; animation:ocean-water-night 32s linear infinite; animation-delay:var(--ocean-day-phase,0s); }
+:root[data-theme="ocean"]:root:root:root:root:root:root:root:root:root:root:root:root .scholar-workspace .main-content :is(.scholar-hero,.page-heading,.teacher-attendance-hero,.match-page-heading) > :not(img) { position:relative; z-index:1; }
+@media (max-width:600px) { .ocean-fishing-boat { width:126px; height:79px; top:calc(var(--ocean-surface-y,205px) - 70px); } @keyframes ocean-boat-cross { from { transform:translateX(10px); } to { transform:translateX(calc(100vw - 136px)); } } }
+@media (prefers-reduced-motion:reduce) { .ocean-surface-scene *,.ocean-surface-sky *,.ocean-day-night-water { animation:none!important; } .ocean-day-night-water { opacity:0; } .ocean-sky-day { opacity:1; } .ocean-sky-night,.ocean-sky-stars,.ocean-sky-sunset,.ocean-surface-moon { opacity:0; } .ocean-surface-sun { transform:translate(55vw,25px); } .ocean-fishing-line { display:none; } :root[data-theme="ocean"] .scholar-workspace .main-content :is(.scholar-hero,.page-heading,.teacher-attendance-hero,.match-page-heading)::after { animation:none!important; opacity:0; } }
+@media print { .ocean-surface-scene,.ocean-surface-sky,.ocean-day-night-water { display:none; } }
+
+/* A migrating flock crosses only during the 16–20 second sunset window. */
+.ocean-sunset-birds { position:absolute; left:0; top:38%; width:150px; height:75px; overflow:visible; opacity:0; visibility:hidden; animation:ocean-sunset-flight 32s linear infinite; animation-delay:var(--ocean-day-phase,0s); }
+.ocean-bird-wing { fill:none; stroke:#173C4C; stroke-width:2; stroke-linecap:round; transform-origin:0 0; animation:ocean-bird-flap .65s ease-in-out infinite alternate; animation-delay:var(--bird-delay,0s); }
+.ocean-bird-wing-right { animation-direction:alternate-reverse; }
+@keyframes ocean-bird-flap { from { transform:rotate(-17deg); } to { transform:rotate(17deg); } }
+@keyframes ocean-sunset-flight {
+    0%,50% { opacity:0; visibility:hidden; transform:translateX(-180px); }
+    51% { opacity:1; visibility:visible; transform:translateX(3vw); }
+    60.5% { opacity:1; visibility:visible; transform:translateX(94vw); }
+    62.5%,100% { opacity:0; visibility:hidden; transform:translateX(calc(100vw + 180px)); }
+}
+.ocean-surface-reduced .ocean-sunset-birds { display:none; }
+@media (prefers-reduced-motion:reduce) { .ocean-sunset-birds { display:none; } }
+

@@ -10,11 +10,11 @@ class ThemeRegistryTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_all_twenty_one_themes_render_on_login_and_dashboard(): void
+    public function test_all_twenty_three_themes_render_on_login_and_dashboard(): void
     {
         $themes = config('scholar-themes');
-        $this->assertCount(21, $themes);
-        $this->assertCount(6, array_unique(array_column($themes, 'group')));
+        $this->assertCount(23, $themes);
+        $this->assertCount(7, array_unique(array_column($themes, 'group')));
         $login = $this->get('/login')->assertOk();
         $dashboard = $this->actingAs(User::factory()->create(['role'=>'administrator']))->get('/dashboard')->assertOk();
         foreach ($themes as $id => $theme) {
@@ -22,14 +22,21 @@ class ThemeRegistryTest extends TestCase
                 $page->assertSee('data-theme-choice="'.$id.'"', false)->assertSee($theme['name']);
             }
         }
-        $login->assertSee('scholar-theme-registry')->assertSee('theme-components.css');
-        $dashboard->assertSee('data-theme-search')->assertSee('school-hero');
+        $login->assertSee('scholar-theme-registry')->assertSee('theme-components.css')->assertSee('christmas.js')->assertSee('christmas.css');
+        $dashboard->assertSee('data-theme-search')->assertSee('school-hero')->assertSee('christmas.js')->assertSee('christmas.css');
+        foreach ([$login, $dashboard] as $page) {
+            $page->assertSee('khmer-apsara.css')->assertSee('khmer-apsara.js')->assertSee('data-apsara-image=', false);
+            $page->assertSee('ocean-life.css')->assertSee('ocean-life.js');
+            $page->assertSee('ocean-shark.css')->assertSee('ocean-shark.js')->assertDontSee('js/ocean-mermaid.js');
+            $page->assertSee('ocean-surface.css')->assertSee('ocean-surface.js');
+            $page->assertSee('autumn.css')->assertSee('autumn.js');
+        }
     }
 
     public function test_new_palettes_have_complete_tokens_and_readable_body_and_button_text(): void
     {
         $newThemes = array_filter(config('scholar-themes'), fn ($theme) => isset($theme['palette']));
-        $this->assertCount(13, $newThemes);
+        $this->assertCount(15, $newThemes);
         foreach ($newThemes as $id => $theme) {
             $this->assertCount(8, $theme['palette']);
             foreach ($theme['palette'] as $color) $this->assertMatchesRegularExpression('/^#[0-9A-F]{6}$/i', $color);

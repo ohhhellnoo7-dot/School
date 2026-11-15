@@ -1,0 +1,25 @@
+.ocean-parachutist { position:fixed; left:0; top:0; width:176px; height:137px; z-index:1066; pointer-events:none; will-change:transform; }
+.ocean-parachutist svg { display:block; width:100%; height:100%; overflow:visible; transform:rotate(var(--parachute-bank,0deg)); transform-origin:50% 25%; }
+.parachute-canopy { transform-origin:90px 50px; animation:parachute-inflate 3s ease-in-out infinite alternate; }
+.parachute-person { transform-origin:90px 65px; animation:parachute-harness-swing 2.8s ease-in-out infinite alternate; }
+.parachute-leg-left { transform-origin:84px 140px; animation:parachute-kick 1.7s ease-in-out infinite alternate; }
+.parachute-leg-right { transform-origin:98px 140px; animation:parachute-kick 1.7s ease-in-out infinite alternate-reverse; }
+.parachute-caption { position:absolute; bottom:22px; left:50%; transform:translateX(-50%); box-sizing:border-box; width:90px; padding:4px 6px; border-radius:10px; background:#fff4d7; color:#8d4327; font:800 10px/1.3 system-ui,sans-serif; opacity:0; }
+.ocean-parachutist[data-flight="escaping"] .parachute-caption { opacity:1; }
+.ocean-parachutist[data-flight="escaping"] .parachute-arm-left { transform-origin:83px 120px; animation:parachute-pull 1.5s ease-in-out both; }
+.ocean-parachutist[data-flight="escaping"] .parachute-arm-right { transform-origin:99px 120px; animation:parachute-pull 1.5s ease-in-out both; }
+.ocean-parachutist[data-flight="escaping"] .parachute-leg-left { animation:parachute-tuck-left 1.5s ease-in-out both; }
+.ocean-parachutist[data-flight="escaping"] .parachute-leg-right { animation:parachute-tuck-right 1.5s ease-in-out both; }
+.ocean-parachutist.is-paused * { animation-play-state:paused!important; }
+.ocean-parachutist.is-reduced * { animation:none!important; }
+.ocean-shark.is-breaching .ocean-shark-facing { transition:none; }
+.ocean-shark.is-breaching .ocean-shark-hit { pointer-events:none; }
+@keyframes parachute-inflate { from { transform:scale(1,.99); } to { transform:scale(1.015,1.015); } }
+@keyframes parachute-harness-swing { from { transform:rotate(-2deg); } to { transform:rotate(2deg); } }
+@keyframes parachute-kick { from { transform:rotate(-5deg); } to { transform:rotate(6deg); } }
+@keyframes parachute-pull { 0%,100% { transform:translateY(0); } 25%,70% { transform:translateY(5px); } }
+@keyframes parachute-tuck-left { 0%,100% { transform:rotate(0); } 30%,70% { transform:rotate(22deg); } }
+@keyframes parachute-tuck-right { 0%,100% { transform:rotate(0); } 30%,70% { transform:rotate(-18deg); } }
+@media (max-width:600px) { .ocean-parachutist { width:132px; height:103px; } .parachute-caption { width:78px; font-size:9px; } }
+@media (prefers-reduced-motion:reduce) { .ocean-parachutist * { animation:none!important; } }
+@media print { .ocean-parachutist { display:none; } }

@@ -1,0 +1,4 @@
+2026/11/14-18:36:47.183 3148 Reusing MANIFEST D:\laravel_projects\com3ms1ms2\.tmp\monthly-browser\Default\Session Storage/MANIFEST-000001
+2026/11/14-18:36:47.184 3148 Recovering log #3
+2026/11/14-18:36:47.184 3148 (ignoring error) D:\laravel_projects\com3ms1ms2\.tmp\monthly-browser\Default\Session Storage/000003.log: dropping 18340 bytes; Corruption: checksum mismatch
+2026/11/14-18:36:47.186 3148 Reusing old log D:\laravel_projects\com3ms1ms2\.tmp\monthly-browser\Default\Session Storage/000003.log 

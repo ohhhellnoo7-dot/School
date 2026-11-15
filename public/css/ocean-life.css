@@ -1,0 +1,208 @@
+/* Marine life stays in a clipped decorative layer, never in the document's scroll area. */
+.ocean-life-scene { position:fixed; inset:0; z-index:1045; overflow:hidden; contain:strict; pointer-events:none; }
+.ocean-seabed { position:absolute; inset:auto 0 0; height:108px; background:url('../images/ocean-coral-seabed.png') center bottom/100% 145px no-repeat; }
+.ocean-creature { --trip:44s; --round-trip:88s; --rest-left:30%; position:absolute; left:-160px; bottom:48px; width:86px; animation:ocean-swim var(--trip) linear infinite alternate; animation-delay:var(--ocean-phase,0s); }
+.ocean-creature-facing { animation:ocean-turn var(--round-trip) steps(1,end) infinite; animation-delay:var(--ocean-phase,0s); }
+.ocean-creature-art { animation:ocean-bob 3.5s ease-in-out infinite alternate; }
+.ocean-creature svg { display:block; width:100%; height:auto; }
+.ocean-creature-turtle { --trip:67s; --round-trip:134s; --rest-left:55%; bottom:100px; width:112px; }
+.ocean-creature-dolphin { --trip:39s; --round-trip:78s; --rest-left:74%; bottom:150px; width:135px; opacity:.92; }
+.ocean-creature-jelly { left:83%; bottom:95px; width:57px; animation:ocean-jelly-drift 9s ease-in-out infinite alternate; }
+.ocean-creature-jelly .ocean-creature-facing { animation:none; }
+.ocean-tail,.ocean-fin,.ocean-flipper { transform-box:fill-box; transform-origin:center; animation:ocean-fin 1s ease-in-out infinite alternate; }
+.ocean-flipper-back { animation-direction:alternate-reverse; }
+.ocean-jelly-tentacles { transform-origin:50% 40%; animation:ocean-tentacles 3s ease-in-out infinite alternate; }
+.ocean-bubble { position:absolute; bottom:-20px; left:var(--bubble-x); width:var(--bubble-size); height:var(--bubble-size); border:1px solid #c3faff85; border-radius:50%; background:radial-gradient(circle at 28% 25%,#e0ffffb0,transparent 45%); opacity:0; animation:ocean-bubbles var(--bubble-duration) var(--bubble-delay) linear infinite; }
+@keyframes ocean-swim { from { transform:translate3d(0,0,0); } to { transform:translate3d(calc(100vw + 160px),0,0); } }
+@keyframes ocean-turn { 0% { transform:scaleX(1); } 50% { transform:scaleX(-1); } 100% { transform:scaleX(1); } }
+@keyframes ocean-bob { from { transform:translateY(0) rotate(-2deg); } to { transform:translateY(-10px) rotate(2deg); } }
+@keyframes ocean-fin { from { transform:rotate(-10deg) scaleX(.9); } to { transform:rotate(10deg) scaleX(1); } }
+@keyframes ocean-jelly-drift { from { transform:translate3d(0,0,0); } to { transform:translate3d(-35px,-30px,0); } }
+@keyframes ocean-tentacles { from { transform:skewX(-5deg); } to { transform:skewX(5deg); } }
+@keyframes ocean-bubbles { 0% { opacity:0; transform:translate3d(0,0,0); } 10%,85% { opacity:.55; } 100% { opacity:0; transform:translate3d(24px,-105dvh,0); } }
+.ocean-life-paused * { animation-play-state:paused!important; }
+.ocean-managed-creature { left:0; top:0; bottom:auto; animation:none!important; }
+.ocean-creature.ocean-spilled-fish { width:44px; }
+.ocean-managed-creature .ocean-creature-facing { animation:none!important; }
+.ocean-life-reduced * { animation:none!important; }
+.ocean-life-reduced .ocean-bubble { display:none; }
+.ocean-life-reduced .ocean-creature:not(.ocean-creature-jelly) { left:var(--rest-left); }
+@media (prefers-reduced-motion:reduce) { .ocean-life-scene * { animation:none!important; } .ocean-bubble { display:none; } .ocean-creature:not(.ocean-creature-jelly) { left:var(--rest-left); } }
+@media (max-width:600px) { .ocean-seabed { height:70px; background-size:auto 90px; } .ocean-creature { width:64px; bottom:35px; } .ocean-creature-turtle { width:85px; bottom:75px; } .ocean-creature-dolphin { display:none; } .ocean-creature-jelly { width:42px; bottom:100px; } .ocean-bubble:nth-child(even) { display:none; } }
+@media print { .ocean-life-scene { display:none; } }
+
+/* Luminous ocean palette: light reading surfaces over deep blue water. */
+:root[data-theme="ocean"] {
+    --app-bg:#066294; --surface:#ECFAFF; --surface-raised:#F7FDFF;
+    --text-primary:#083B5D; --text-secondary:#416C82;
+    --primary:#007CA8; --action:#006587; --accent:#22E4EC; --on-action:#FFF;
+    --surface-tint:#C6F5FD; --border-color:#9BD9E8; --shadow-color:#003C6925;
+    --theme-nav-start:#00669E; --theme-nav-end:#063D75; --theme-nav-muted:#97EAF6;
+    --theme-nav-active:#00B7D3; --theme-nav-active-ink:#FFF;
+    --theme-tile-1:#028AE6; --theme-tile-2:#00A78F; --theme-tile-3:#E9A11A; --theme-tile-4:#7661DC;
+}
+:root[data-theme="ocean"]:root:root:root:root:root:root:root:root:root:root:root .scholar-workspace {
+    background:radial-gradient(ellipse at 80% 0,#30DAEF90,transparent 46%),linear-gradient(180deg,#008BB4,#075B96 45%,#053F78);
+    & .main-content { background:transparent; padding-bottom:105px; }
+    & .sidebar { background-image:url('../images/ocean-wave.svg'),radial-gradient(ellipse at 20% 70%,#0071A7,transparent 65%),linear-gradient(170deg,#07518A,#073C72); background-position:center 97px,center,center; background-size:100% 36px,cover,cover; background-repeat:no-repeat; background-color:#074374!important; border-right:1px solid #5FE6F570; box-shadow:4px 0 18px #002E5C20; }
+    & .brand { border:0; padding-bottom:24px; }
+    & .brand-mark { background:linear-gradient(145deg,#00C3FF,#0071EF); border-color:#6DF9FF; color:#FFF; box-shadow:0 0 15px #00C3FF50; }
+    & :is(.nav-caption,.nav-group-caption) { color:#A3F6FC; font-weight:800; }
+    & .school-nav a { color:#F2FCFF; }
+    & .school-nav a i { color:#D7FBFF; }
+    & .school-nav a.active { background:linear-gradient(110deg,#00C9DF,#009AC1); border:1px solid #8CFFFF; color:#FFF; border-radius:22px; box-shadow:inset 0 1px 2px #DAFFFFB0,0 0 14px #00DFF43D; }
+    & .school-nav a:hover { background:#24D5E82A; }
+    & .school-switch { background:linear-gradient(145deg,#00B5D06B,#0476AB80); border-color:#43E9F0; }
+    & .school-switch strong { color:#FFF; } & .school-switch small { color:#BDEFF8; }
+    & .topbar { background:linear-gradient(105deg,#42D9EF,#1CAFE1 65%,#35C8E7); border-bottom:1px solid #B1FFFFB0; }
+    & :is(.portal-search,.theme-switcher > summary,.language-switcher > summary,.profile-link,.topbar .icon-button,.topbar .btn-outline-primary) { background:linear-gradient(145deg,#EDFFFFF2,#C3F4FCED); border:1px solid #D9FFFF; color:#06466A; border-radius:28px; }
+    & :is(.btn-primary,.teacher-scan-shortcut) { background:linear-gradient(180deg,#007EAA,#00516F); border:1px solid #63E4F0; color:#FFF; box-shadow:inset 0 1px 1px #B4FBFF70,0 4px 10px #00426825; }
+    & .btn-primary:hover { background:linear-gradient(#00688C,#003D59); }
+    & :is(.btn-outline-primary,.btn-outline-secondary) { background:#E8FAFF; border-color:#75CDDF; color:#075274; border-radius:23px; }
+    & :is(.form-control,.form-select) { background-color:#F4FDFF; border-color:#94D7E5; color:#073E60; }
+    & :is(.panel,.mini-stats,.teacher-card,.parent-card,.class-summary-card) { background:linear-gradient(140deg,#F2FCFF,#DCF4FC); border:1px solid #A9F5FE; box-shadow:inset 0 1px 0 #FFFFFFC0,0 6px 20px #003C6826; }
+    & :is(.school-hero,.teacher-attendance-hero) { color:#FFF; border:1px solid #47F3FF; box-shadow:0 0 17px #00DDFF55,inset 0 -2px 0 #A0FFFF80; }
+    & .school-hero { background-image:url('../images/ocean-school-hero.png'); background-size:cover; background-position:center; }
+    & .school-hero::before { background:linear-gradient(90deg,#014778D9,#005D8390 42%,transparent 78%); }
+    & .teacher-attendance-hero { background:#035280; }
+    & .teacher-attendance-hero::before { background-image:url('../images/ocean-school-hero.png'); }
+    & .teacher-attendance-hero::after { background:linear-gradient(90deg,#014778D9,#005D8380 42%,transparent 78%); }
+    & :is(.school-hero,.teacher-attendance-hero) :is(h1,p,a,.eyebrow) { color:#F7FFFF; }
+    & .school-hero .eyebrow { color:#FFE567; }
+    & .hero-school { background:#D1F9FFF0; color:#06436A; border-color:#B6FBFF; }
+    & .teacher-attendance-hero-icon { background:linear-gradient(145deg,#00D1EB,#006ECC); border:1px solid #BBFFFF; color:#FFF; }
+    & :is(.dashboard-stat-grid .stat-card,.teacher-summary-card) { --ocean-card:#008ACB; background:radial-gradient(ellipse at 90% 100%,#00E1E8A0,transparent 65%),linear-gradient(130deg,color-mix(in srgb,var(--ocean-card) 72%,#02E8EF),var(--ocean-card)); border:1px solid #B5FFFF; box-shadow:inset 0 1px 2px #D8FFFF,0 0 14px #00DFFF38,0 5px 16px #003B7033; }
+    & .dashboard-stat-grid > div:nth-child(2) .stat-card { --ocean-card:#008DA5; }
+    & .dashboard-stat-grid > div:nth-child(3) .stat-card { --ocean-card:#086EA5; }
+    & .dashboard-stat-grid > div:nth-child(4) .stat-card { --ocean-card:#246DD4; }
+    & .teacher-summary-late { --ocean-card:#947010; }
+    & .teacher-summary-absent { --ocean-card:#9A4461; }
+    & .teacher-summary-excused { --ocean-card:#4F60BD; }
+    & :is(.dashboard-stat-grid .stat-card,.teacher-summary-card) :is(h2,strong,.stat-top,.stat-value,.stat-note) { color:#FFF; text-shadow:0 1px 2px #003B7030; }
+    & .dashboard-stat-grid .stat-watermark { color:#BCFFFF; opacity:.28; }
+    & .teacher-summary-card::after { color:#BEFFFF; opacity:.28; }
+    & :is(.teacher-monthly-grid,.student-monthly-grid,.table) thead th { background:linear-gradient(#007EAF,#035A87); color:#F2FFFF; border-color:#74C5DD; }
+    & :is(.teacher-monthly-grid,.student-monthly-grid) thead th.is-weekend { background:linear-gradient(#1765A3,#16467F); color:#FFDEB4; }
+    & .teacher-monthly-grid tbody tr { --teacher-row-bg:#F0FCFF; --teacher-divider:#7DD0E3; }
+    & .teacher-monthly-grid tbody tr.teacher-attendance-band-1 { --teacher-row-bg:#E1F6FC; --teacher-divider:#7DD0E3; }
+    & .teacher-monthly-grid tbody tr:hover { --teacher-row-bg:#CFF4FB; }
+    & :is(.page-heading:not(.school-hero),.page-footer,.dashboard-sync) { color:#D2F8FF; }
+    & .page-footer { border-top:1px solid #76D9E580; }
+    & .dashboard-stat-grid + p { color:#C7F4FF!important; }
+}
+
+/* One Ocean banner across every page heading, including the shared hero component. */
+:root[data-theme="ocean"]:root:root:root:root:root:root:root:root:root:root:root .scholar-workspace .main-content :is(.scholar-hero,.page-heading,.teacher-attendance-hero,.match-page-heading) {
+    --hero-background-image:url('../images/ocean-school-hero.png');
+    --hero-overlay-start:#014778D9; --hero-overlay-middle:#005D8380; --hero-overlay-end:transparent;
+    --hero-heading:#F7FFFF; --hero-subtitle:#D6F9FF; --hero-accent:#FFE567;
+    --hero-border:#47E9F4; --hero-button-bg:#006587; --hero-button-text:#FFF;
+    --hero-badge-bg:#D1F9FF; --hero-badge-text:#06436A;
+    position:relative; isolation:isolate; min-width:0; min-height:220px;
+    padding:clamp(22px,2.5vw,36px); margin-bottom:22px; border-radius:24px;
+    background-color:#035280;
+    background-image:linear-gradient(90deg,#014778D9,#005D8380 42%,transparent 78%),url('../images/ocean-school-hero.png');
+    background-size:cover; background-position:right center; background-repeat:no-repeat;
+    border:1px solid #47E9F4; box-shadow:0 0 17px #00DDFF45,inset 0 -2px 0 #A0FFFF80;
+    color:#F7FFFF;
+    &::before,&::after { content:none; }
+    & :is(h1,h2,h1 span,h2 span,p) { color:#F7FFFF; }
+    & :is(.eyebrow,.timetable-eyebrow,.match-eyebrow) { color:#FFE567; }
+    & .text-secondary { color:#D6F9FF!important; }
+    & > div { min-width:0; }
+    & :is(.hero-school,.subject-hero-features span) { background:#D1F9FF; color:#06436A; border-color:#8DEDF6; }
+    & :is(.btn-outline-primary,.btn-outline-secondary,.btn-light) { background:#E8FAFF; color:#075274; border-color:#8DEDF6; }
+    &.room-banner { margin:0 0 22px; padding:clamp(22px,2.5vw,36px); }
+}
+:root[data-theme="ocean"] .auth-story { background:linear-gradient(90deg,#014778D9,#005D8380),url('../images/ocean-school-hero.png') center/cover; }
+@media (max-width:767px) {
+    :root[data-theme="ocean"]:root:root:root:root:root:root:root:root:root:root:root .scholar-workspace .main-content :is(.scholar-hero,.page-heading,.teacher-attendance-hero,.match-page-heading) {
+        min-height:190px; flex-wrap:wrap; gap:16px; background-position:65% center;
+        background-image:linear-gradient(90deg,#014778ED,#005D83B0),url('../images/ocean-school-hero.png');
+        & > div,& > div:first-child { max-width:100%; }
+    }
+}
+@media (max-width:767px) {
+    :root[data-theme="ocean"] .reports-chart-grid { grid-template-columns:minmax(0,1fr); }
+    :root[data-theme="ocean"] .reports-chart-grid > .panel { min-width:0; }
+    :root[data-theme="ocean"] .reports-legend > div { min-width:0; overflow-wrap:anywhere; }
+}
+
+/* Clear water-glass surfaces, without expensive backdrop blurs while scrolling. */
+:root[data-theme="ocean"]:root {
+    --surface:#073F615C; --surface-raised:#064669; --surface-tint:#45D9F51C;
+    --text-primary:#F1FCFF; --text-secondary:#C1E5F2;
+    --primary:#80E6FC; --action:#006587; --accent:#5CF1F2;
+    --border-color:#B2F2FF5C; --success:#83ECC0; --warning:#FFE18B; --danger:#FFADB8; --violet:#D0C1FF;
+}
+:root[data-theme="ocean"]:root:root:root:root:root:root:root:root:root:root:root .scholar-workspace {
+    isolation:isolate; background:#064F80;
+    &::before { content:''; position:fixed; inset:0; z-index:-1; pointer-events:none; background:linear-gradient(#002E4D20,#002E4D48),url('../images/ocean-water-backdrop.png') center/cover no-repeat; }
+    & :is(.workspace,.main-content) { background:transparent; }
+    & .sidebar { background-image:linear-gradient(160deg,#003D6E99,#002B5166); background-position:0 0; background-size:100% 100%; background-repeat:no-repeat; background-color:transparent!important; }
+    & .topbar { background:linear-gradient(100deg,#0B8CB14D,#014E7999); }
+    & :is(.panel,.mini-stats,.teacher-card,.parent-card,.class-summary-card,.parent-stat,.teacher-stat,.directory-stat,.reports-metric,.stat-card,.teacher-summary-card,.directory-panel,.student-directory,.attendance-toolbar,.program-selector,.room-overview,.room-context-panel) {
+        background:linear-gradient(135deg,#6AE6FC18,#002F594A); color:#F1FCFF;
+        border-color:#B0F5FF70; box-shadow:inset 0 1px 0 #E9FFFF35,0 5px 16px #002E4D1A;
+    }
+    & :is(.panel-header,.directory-workspace,.attendance-filters,.filter-grid,.reports-donut-layout,.room-overview-facts > div) { background:transparent; }
+    & :is(.dashboard-stat-grid .stat-card,.teacher-summary-card) { background:linear-gradient(130deg,#5AF4FF26,#00466F4D); }
+    & :is(.class-summary-card,.parent-stat,.teacher-stat,.directory-stat,.reports-metric) :is(h2,h3,strong) { color:#F1FCFF; }
+    & :is(.portal-search,.theme-switcher > summary,.language-switcher > summary,.profile-link,.topbar .icon-button,.topbar .btn-outline-primary,.btn-outline-primary,.btn-outline-secondary,.btn-light,.form-control,.form-select,.input-group-text) { background:linear-gradient(130deg,#D1FCFF1F,#034C754F); color:#EFFCFF; border-color:#B6F2FF6B; }
+    & :is(.form-control,.portal-search input)::placeholder { color:#BDE3F1; opacity:1; }
+    & :is(.form-control,.form-select):focus { background-color:#06456A80; color:#FFF; box-shadow:0 0 0 3px #82EEFF26; }
+    & option { background:#064669; color:#F1FCFF; }
+    & .hero-school { background:#D4FCFF24; color:#EFFCFF; border-color:#B1F6FF6B; }
+    & :is(.mini-stat strong,.mini-stat small,.mini-stat i,.profile-link strong,.profile-link small) { color:#D7F6FF; }
+    & :is(.text-muted,.text-secondary) { color:#C1E5F2!important; }
+    & .table { --bs-table-bg:transparent; --bs-table-color:#F1FCFF; --bs-table-border-color:#B2F2FF33; --bs-table-striped-bg:#B8F6FF0C; --bs-table-striped-color:#F1FCFF; --bs-table-hover-bg:#BAF5FF17; --bs-table-hover-color:#FFF; }
+    & :is(.table,.teacher-monthly-grid,.student-monthly-grid) { background:transparent; color:#F1FCFF; }
+    & :is(.table,.teacher-monthly-grid,.student-monthly-grid) tbody tr > :is(th,td) { background-color:transparent; color:#F1FCFF; }
+    & :is(.table,.teacher-monthly-grid,.student-monthly-grid) tbody tr:nth-child(even) > :is(th,td) { background-color:#AAEEFF0A; }
+    & :is(.table,.teacher-monthly-grid,.student-monthly-grid) tbody tr:hover > :is(th,td) { background-color:#B2F5FF18; }
+    & :is(.teacher-monthly-grid,.student-monthly-grid,.table) thead th { background:#03496EC9; color:#F2FFFF; border-color:#9FE3F54D; }
+    & .teacher-monthly-grid tbody tr { --teacher-row-bg:transparent; --teacher-divider:#A5EDFF59; }
+    & .teacher-monthly-grid tbody tr.teacher-attendance-band-1 { --teacher-row-bg:#A8F0FF0A; --teacher-divider:#A5EDFF59; }
+    /* Frozen identity cells must be opaque: day marks slide underneath them. */
+    & :is(.teacher-monthly-grid,.student-monthly-grid) tbody tr > th:nth-child(2) { background:#034565; box-shadow:2px 0 0 #71BDD1; }
+    & :is(.teacher-monthly-grid,.student-monthly-grid) tbody tr:nth-child(even) > th:nth-child(2) { background:#075174; }
+    & :is(.teacher-monthly-grid,.student-monthly-grid) thead tr > th:nth-child(2) { background:#03496E; box-shadow:2px 0 0 #71BDD1; }
+    & .attendance-sticky-dates .teacher-monthly-grid thead th { background:#03496E; }
+    & .attendance-sticky-dates .teacher-monthly-grid thead th.is-weekend { background:#8B304D; }
+    & :is(.theme-options,.language-options,.hover-select-menu,.dropdown-menu,.attendance-action-menu,.program-options,.building-options,.popover,.modal-content) { background:#073F60F5; color:#F1FCFF; border-color:#95E8F66B; }
+    & :is(.theme-option,.hover-select-option,.dropdown-item) { color:#E7F8FF; }
+    & :is(.theme-option,.hover-select-option,.dropdown-item):hover { background:#9CEAFF26; }
+    & .page-footer { color:#C1E5F2; }
+}
+@media print {
+    :root[data-theme="ocean"] .scholar-workspace::before { display:none; }
+}
+:root[data-theme="ocean"]:root:root:root:root:root:root:root:root:root:root:root .scholar-workspace {
+    & :is(.stat-icon,.teacher-summary-icon,.directory-stat-icon,.teacher-stat-icon,.parent-stat-icon,.attendance-toolbar-icon,.user-avatar) { color:#EFFFFF; }
+    & :is(.attendance-shortcuts a,.attendance-date-badge) { color:#DCF8FF; background:#D5FAFF15; border-color:#A5EAFF4D; }
+    & .main-content .scholar-hero .hero-school { background:#D4FCFF24; color:#EFFCFF; border-color:#B1F6FF6B; }
+    & .main-content .scholar-hero :is(.btn-outline-primary,.btn-outline-secondary,.btn-light) { background:#D4FCFF24; color:#EFFCFF; border-color:#B1F6FF6B; }
+}
+.ocean-life-reduced .ocean-managed-creature { left:var(--rest-left,30%); top:auto; bottom:70px; transform:none!important; }
+@media (prefers-reduced-motion:reduce) { .ocean-managed-creature { left:var(--rest-left,30%); top:auto; bottom:70px; transform:none!important; } }
+.ocean-creature.is-on-line .ocean-creature-art { animation:none; }
+
+/* The waterline is a hard boundary for free-swimming marine life. */
+.ocean-life-scene { clip-path:inset(var(--ocean-surface-y,205px) 0 0 0); }
+
+/* Top navigation is clearer than the stronger action buttons in page content. */
+:root[data-theme="ocean"]:root:root:root:root:root:root:root:root:root:root:root:root .scholar-workspace .topbar {
+    background:linear-gradient(100deg,#0B8CB112,#014E7930);
+    & :is(.portal-search,.theme-switcher > summary,.language-switcher > summary,.profile-link,.btn,.icon-button,.teacher-scan-shortcut) {
+        background:linear-gradient(135deg,#D1FCFF0D,#034C751A);
+        border:1px solid #C3F4FF59; color:#F2FCFF;
+        box-shadow:inset 0 1px 0 #EAFFFF17;
+    }
+    & :is(.btn,.icon-button,.teacher-scan-shortcut,.theme-switcher > summary,.language-switcher > summary):hover {
+        background:#B9F5FF20; border-color:#C9FBFF99; color:#FFF;
+    }
+    & .portal-search:focus-within { background:#B9F5FF17; border-color:#A2F1FF; }
+    & .portal-search input { background:transparent; color:#F2FCFF; }
+    & .portal-search input::placeholder { color:#C8E7F2; opacity:1; }
+    & :is(.btn,.profile-link,summary):focus-visible { outline:2px solid #B6FFFF; outline-offset:3px; }
+}

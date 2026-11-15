@@ -1,0 +1,1344 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="">
+    <title>Room 7A · Scholar School</title>
+    <link href="file:///D:/laravel_projects/com3ms1ms2/public/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link href="file:///D:/laravel_projects/com3ms1ms2/public/vendor/bootstrap-icons/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="file:///D:/laravel_projects/com3ms1ms2/public/css/school.css" rel="stylesheet">
+    <link href="file:///D:/laravel_projects/com3ms1ms2/public/css/dashboard-breakdowns.css" rel="stylesheet">
+<script type="application/json" id="scholar-theme-registry">{"light":{"name":"Light","group":"Classic","dark":false},"night":{"name":"Night","group":"Classic","dark":true},"relax":{"name":"Relax","group":"Classic","dark":false},"cute":{"name":"Cute","group":"Classic","dark":false},"ocean":{"name":"Ocean","group":"Signature","dark":false},"sunset":{"name":"Sunset","group":"Signature","dark":false},"luxury":{"name":"Luxury","group":"Signature","dark":true},"galaxy":{"name":"Galaxy","group":"Signature","dark":true},"christmas":{"name":"Christmas","group":"Seasonal","dark":false,"radius":22,"palette":["#F1F7F4","#720A13","#09622D","#D6AB43","#FFFCF4","#4C1519","#765C4E","#A80C1B"]},"autumn":{"name":"Autumn","group":"Seasonal","dark":false,"radius":24,"palette":["#FFF3E7","#713414","#B44913","#F6B541","#FFFCF6","#54240F","#80573F","#AE3E0B"]},"khmer-heritage":{"name":"Khmer Heritage","group":"Culture","dark":false,"radius":18,"palette":["#FFF5E2","#650B15","#850F1B","#C79532","#FFFCF5","#4B1418","#795D48","#950F1D"]},"emerald-forest":{"name":"Emerald Forest","group":"Nature","dark":false,"radius":22,"palette":["#F4F8F2","#123D32","#25856C","#9BC9A8","#FFFFFF","#203B31","#526E60","#20745D"]},"desert-sand":{"name":"Desert Sand","group":"Nature","dark":false,"radius":18,"palette":["#FFF9F1","#76513F","#A65C42","#D7A67A","#FFFFFF","#49382F","#7E6656","#A65C42"]},"mint-fresh":{"name":"Mint Fresh","group":"Nature","dark":false,"radius":26,"palette":["#EFFBF8","#0F766E","#14998C","#75D5C3","#FFFFFF","#164D46","#4D756E","#08786D"]},"olive-garden":{"name":"Olive Garden","group":"Nature","dark":false,"radius":22,"palette":["#F2F5EB","#506C3D","#718F55","#B5C99A","#FFFFFF","#34442C","#647657","#4F6D37"]},"lavender-dream":{"name":"Lavender Dream","group":"Soft","dark":false,"radius":26,"palette":["#F8F5FF","#5A438E","#7055B5","#B6A2E8","#FFFFFF","#382B58","#78658D","#7055B5"]},"peach-blossom":{"name":"Peach Blossom","group":"Soft","dark":false,"radius":26,"palette":["#FFF6F0","#A95349","#D97662","#F2A37A","#FFFFFF","#603C40","#886468","#A44738"]},"arctic-glass":{"name":"Arctic Glass","group":"Soft","dark":false,"radius":22,"palette":["#EAF6FF","#164A75","#256DAB","#8BD5EF","#FFFFFF","#163C5B","#52748C","#256DAB"]},"monochrome":{"name":"Monochrome","group":"Bold","dark":false,"radius":8,"palette":["#F5F5F5","#171717","#333333","#777777","#FFFFFF","#171717","#626262","#333333"]},"cyberpunk":{"name":"Cyberpunk","group":"Bold","dark":true,"radius":10,"palette":["#0B1020","#10172B","#00D9E8","#E956C9","#18213A","#F1F5FF","#AFBCD7","#00D9E8"]},"retro-campus":{"name":"Retro Campus","group":"Bold","dark":false,"radius":12,"palette":["#F9F1DF","#433B35","#A84B2A","#D5A441","#FFF9EC","#392D27","#796755","#A84B2A"]},"royal-violet":{"name":"Royal Violet","group":"Bold","dark":false,"radius":18,"palette":["#F8F5FC","#35205D","#7954B0","#D7B66D","#FFFFFF","#302045","#746084","#7954B0"]},"midnight-blue":{"name":"Midnight Blue","group":"Bold","dark":true,"radius":18,"palette":["#101827","#0C1525","#4779B6","#8DAFE0","#1A2940","#F1F5FA","#ADBED6","#8DAFE0"]}}</script>
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/theme.js"></script>
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/scholar-design.css" rel="stylesheet">
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/theme-motion.css" rel="stylesheet">
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/sidebar-light.css" rel="stylesheet">
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/workspace-themes.css" rel="stylesheet">
+<style id="scholar-theme-palettes">
+:root[data-theme="christmas"] {
+    color-scheme: light;
+    --app-bg:#F1F7F4; --surface:#FFFCF4; --surface-raised:#FFFCF4;
+    --text-primary:#4C1519; --text-secondary:#765C4E;
+    --primary:#09622D; --accent:#D6AB43; --action:#A80C1B;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#720A13; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#09622D;
+    --surface-tint:color-mix(in srgb,#09622D 10%,#FFFCF4);
+    --border-color:color-mix(in srgb,#4C1519 18%,#FFFCF4);
+    --shadow-color:color-mix(in srgb,#720A13 12%,transparent);
+    --hero-veil:#F1F7F4; --hero-opacity:.95;
+    --auth-shade:#720A13; --auth-tint:#09622D; --auth-highlight:#D6AB43;
+    --auth-button-start:#A80C1B; --auth-button-end:#A80C1B;
+    --card-radius:22px; --control-radius:14px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#720A13 88%,#D6AB43);
+    --theme-nav-end:#720A13; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#D6AB43 35%,#FFFFFF);
+    --theme-nav-active:#A80C1B; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#09622D; --theme-tile-2:#D6AB43;
+    --theme-tile-3:color-mix(in srgb,#09622D 55%,#D6AB43);
+    --theme-tile-4:color-mix(in srgb,#09622D 25%,#D6AB43);
+}
+.swatch-christmas { background:linear-gradient(135deg,#720A13 50%,#D6AB43 50%); }
+:root[data-theme="autumn"] {
+    color-scheme: light;
+    --app-bg:#FFF3E7; --surface:#FFFCF6; --surface-raised:#FFFCF6;
+    --text-primary:#54240F; --text-secondary:#80573F;
+    --primary:#B44913; --accent:#F6B541; --action:#AE3E0B;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#713414; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#B44913;
+    --surface-tint:color-mix(in srgb,#B44913 10%,#FFFCF6);
+    --border-color:color-mix(in srgb,#54240F 18%,#FFFCF6);
+    --shadow-color:color-mix(in srgb,#713414 12%,transparent);
+    --hero-veil:#FFF3E7; --hero-opacity:.95;
+    --auth-shade:#713414; --auth-tint:#B44913; --auth-highlight:#F6B541;
+    --auth-button-start:#AE3E0B; --auth-button-end:#AE3E0B;
+    --card-radius:24px; --control-radius:14px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#713414 88%,#F6B541);
+    --theme-nav-end:#713414; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#F6B541 35%,#FFFFFF);
+    --theme-nav-active:#AE3E0B; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#B44913; --theme-tile-2:#F6B541;
+    --theme-tile-3:color-mix(in srgb,#B44913 55%,#F6B541);
+    --theme-tile-4:color-mix(in srgb,#B44913 25%,#F6B541);
+}
+.swatch-autumn { background:linear-gradient(135deg,#713414 50%,#F6B541 50%); }
+:root[data-theme="khmer-heritage"] {
+    color-scheme: light;
+    --app-bg:#FFF5E2; --surface:#FFFCF5; --surface-raised:#FFFCF5;
+    --text-primary:#4B1418; --text-secondary:#795D48;
+    --primary:#850F1B; --accent:#C79532; --action:#950F1D;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#650B15; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#850F1B;
+    --surface-tint:color-mix(in srgb,#850F1B 10%,#FFFCF5);
+    --border-color:color-mix(in srgb,#4B1418 18%,#FFFCF5);
+    --shadow-color:color-mix(in srgb,#650B15 12%,transparent);
+    --hero-veil:#FFF5E2; --hero-opacity:.95;
+    --auth-shade:#650B15; --auth-tint:#850F1B; --auth-highlight:#C79532;
+    --auth-button-start:#950F1D; --auth-button-end:#950F1D;
+    --card-radius:18px; --control-radius:14px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#650B15 88%,#C79532);
+    --theme-nav-end:#650B15; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#C79532 35%,#FFFFFF);
+    --theme-nav-active:#950F1D; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#850F1B; --theme-tile-2:#C79532;
+    --theme-tile-3:color-mix(in srgb,#850F1B 55%,#C79532);
+    --theme-tile-4:color-mix(in srgb,#850F1B 25%,#C79532);
+}
+.swatch-khmer-heritage { background:linear-gradient(135deg,#650B15 50%,#C79532 50%); }
+:root[data-theme="emerald-forest"] {
+    color-scheme: light;
+    --app-bg:#F4F8F2; --surface:#FFFFFF; --surface-raised:#FFFFFF;
+    --text-primary:#203B31; --text-secondary:#526E60;
+    --primary:#25856C; --accent:#9BC9A8; --action:#20745D;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#123D32; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#25856C;
+    --surface-tint:color-mix(in srgb,#25856C 10%,#FFFFFF);
+    --border-color:color-mix(in srgb,#203B31 18%,#FFFFFF);
+    --shadow-color:color-mix(in srgb,#123D32 12%,transparent);
+    --hero-veil:#F4F8F2; --hero-opacity:.95;
+    --auth-shade:#123D32; --auth-tint:#25856C; --auth-highlight:#9BC9A8;
+    --auth-button-start:#20745D; --auth-button-end:#20745D;
+    --card-radius:22px; --control-radius:14px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#123D32 88%,#9BC9A8);
+    --theme-nav-end:#123D32; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#9BC9A8 35%,#FFFFFF);
+    --theme-nav-active:#20745D; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#25856C; --theme-tile-2:#9BC9A8;
+    --theme-tile-3:color-mix(in srgb,#25856C 55%,#9BC9A8);
+    --theme-tile-4:color-mix(in srgb,#25856C 25%,#9BC9A8);
+}
+.swatch-emerald-forest { background:linear-gradient(135deg,#123D32 50%,#9BC9A8 50%); }
+:root[data-theme="desert-sand"] {
+    color-scheme: light;
+    --app-bg:#FFF9F1; --surface:#FFFFFF; --surface-raised:#FFFFFF;
+    --text-primary:#49382F; --text-secondary:#7E6656;
+    --primary:#A65C42; --accent:#D7A67A; --action:#A65C42;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#76513F; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#A65C42;
+    --surface-tint:color-mix(in srgb,#A65C42 10%,#FFFFFF);
+    --border-color:color-mix(in srgb,#49382F 18%,#FFFFFF);
+    --shadow-color:color-mix(in srgb,#76513F 12%,transparent);
+    --hero-veil:#FFF9F1; --hero-opacity:.95;
+    --auth-shade:#76513F; --auth-tint:#A65C42; --auth-highlight:#D7A67A;
+    --auth-button-start:#A65C42; --auth-button-end:#A65C42;
+    --card-radius:18px; --control-radius:14px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#76513F 88%,#D7A67A);
+    --theme-nav-end:#76513F; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#D7A67A 35%,#FFFFFF);
+    --theme-nav-active:#A65C42; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#A65C42; --theme-tile-2:#D7A67A;
+    --theme-tile-3:color-mix(in srgb,#A65C42 55%,#D7A67A);
+    --theme-tile-4:color-mix(in srgb,#A65C42 25%,#D7A67A);
+}
+.swatch-desert-sand { background:linear-gradient(135deg,#76513F 50%,#D7A67A 50%); }
+:root[data-theme="mint-fresh"] {
+    color-scheme: light;
+    --app-bg:#EFFBF8; --surface:#FFFFFF; --surface-raised:#FFFFFF;
+    --text-primary:#164D46; --text-secondary:#4D756E;
+    --primary:#14998C; --accent:#75D5C3; --action:#08786D;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#0F766E; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#14998C;
+    --surface-tint:color-mix(in srgb,#14998C 10%,#FFFFFF);
+    --border-color:color-mix(in srgb,#164D46 18%,#FFFFFF);
+    --shadow-color:color-mix(in srgb,#0F766E 12%,transparent);
+    --hero-veil:#EFFBF8; --hero-opacity:.95;
+    --auth-shade:#0F766E; --auth-tint:#14998C; --auth-highlight:#75D5C3;
+    --auth-button-start:#08786D; --auth-button-end:#08786D;
+    --card-radius:26px; --control-radius:14px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#0F766E 88%,#75D5C3);
+    --theme-nav-end:#0F766E; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#75D5C3 35%,#FFFFFF);
+    --theme-nav-active:#08786D; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#14998C; --theme-tile-2:#75D5C3;
+    --theme-tile-3:color-mix(in srgb,#14998C 55%,#75D5C3);
+    --theme-tile-4:color-mix(in srgb,#14998C 25%,#75D5C3);
+}
+.swatch-mint-fresh { background:linear-gradient(135deg,#0F766E 50%,#75D5C3 50%); }
+:root[data-theme="olive-garden"] {
+    color-scheme: light;
+    --app-bg:#F2F5EB; --surface:#FFFFFF; --surface-raised:#FFFFFF;
+    --text-primary:#34442C; --text-secondary:#647657;
+    --primary:#718F55; --accent:#B5C99A; --action:#4F6D37;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#506C3D; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#718F55;
+    --surface-tint:color-mix(in srgb,#718F55 10%,#FFFFFF);
+    --border-color:color-mix(in srgb,#34442C 18%,#FFFFFF);
+    --shadow-color:color-mix(in srgb,#506C3D 12%,transparent);
+    --hero-veil:#F2F5EB; --hero-opacity:.95;
+    --auth-shade:#506C3D; --auth-tint:#718F55; --auth-highlight:#B5C99A;
+    --auth-button-start:#4F6D37; --auth-button-end:#4F6D37;
+    --card-radius:22px; --control-radius:14px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#506C3D 88%,#B5C99A);
+    --theme-nav-end:#506C3D; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#B5C99A 35%,#FFFFFF);
+    --theme-nav-active:#4F6D37; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#718F55; --theme-tile-2:#B5C99A;
+    --theme-tile-3:color-mix(in srgb,#718F55 55%,#B5C99A);
+    --theme-tile-4:color-mix(in srgb,#718F55 25%,#B5C99A);
+}
+.swatch-olive-garden { background:linear-gradient(135deg,#506C3D 50%,#B5C99A 50%); }
+:root[data-theme="lavender-dream"] {
+    color-scheme: light;
+    --app-bg:#F8F5FF; --surface:#FFFFFF; --surface-raised:#FFFFFF;
+    --text-primary:#382B58; --text-secondary:#78658D;
+    --primary:#7055B5; --accent:#B6A2E8; --action:#7055B5;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#5A438E; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#7055B5;
+    --surface-tint:color-mix(in srgb,#7055B5 10%,#FFFFFF);
+    --border-color:color-mix(in srgb,#382B58 18%,#FFFFFF);
+    --shadow-color:color-mix(in srgb,#5A438E 12%,transparent);
+    --hero-veil:#F8F5FF; --hero-opacity:.95;
+    --auth-shade:#5A438E; --auth-tint:#7055B5; --auth-highlight:#B6A2E8;
+    --auth-button-start:#7055B5; --auth-button-end:#7055B5;
+    --card-radius:26px; --control-radius:14px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#5A438E 88%,#B6A2E8);
+    --theme-nav-end:#5A438E; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#B6A2E8 35%,#FFFFFF);
+    --theme-nav-active:#7055B5; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#7055B5; --theme-tile-2:#B6A2E8;
+    --theme-tile-3:color-mix(in srgb,#7055B5 55%,#B6A2E8);
+    --theme-tile-4:color-mix(in srgb,#7055B5 25%,#B6A2E8);
+}
+.swatch-lavender-dream { background:linear-gradient(135deg,#5A438E 50%,#B6A2E8 50%); }
+:root[data-theme="peach-blossom"] {
+    color-scheme: light;
+    --app-bg:#FFF6F0; --surface:#FFFFFF; --surface-raised:#FFFFFF;
+    --text-primary:#603C40; --text-secondary:#886468;
+    --primary:#D97662; --accent:#F2A37A; --action:#A44738;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#A95349; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#D97662;
+    --surface-tint:color-mix(in srgb,#D97662 10%,#FFFFFF);
+    --border-color:color-mix(in srgb,#603C40 18%,#FFFFFF);
+    --shadow-color:color-mix(in srgb,#A95349 12%,transparent);
+    --hero-veil:#FFF6F0; --hero-opacity:.95;
+    --auth-shade:#A95349; --auth-tint:#D97662; --auth-highlight:#F2A37A;
+    --auth-button-start:#A44738; --auth-button-end:#A44738;
+    --card-radius:26px; --control-radius:14px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#A95349 88%,#F2A37A);
+    --theme-nav-end:#A95349; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#F2A37A 35%,#FFFFFF);
+    --theme-nav-active:#A44738; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#D97662; --theme-tile-2:#F2A37A;
+    --theme-tile-3:color-mix(in srgb,#D97662 55%,#F2A37A);
+    --theme-tile-4:color-mix(in srgb,#D97662 25%,#F2A37A);
+}
+.swatch-peach-blossom { background:linear-gradient(135deg,#A95349 50%,#F2A37A 50%); }
+:root[data-theme="arctic-glass"] {
+    color-scheme: light;
+    --app-bg:#EAF6FF; --surface:#FFFFFF; --surface-raised:#FFFFFF;
+    --text-primary:#163C5B; --text-secondary:#52748C;
+    --primary:#256DAB; --accent:#8BD5EF; --action:#256DAB;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#164A75; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#256DAB;
+    --surface-tint:color-mix(in srgb,#256DAB 10%,#FFFFFF);
+    --border-color:color-mix(in srgb,#163C5B 18%,#FFFFFF);
+    --shadow-color:color-mix(in srgb,#164A75 12%,transparent);
+    --hero-veil:#EAF6FF; --hero-opacity:.95;
+    --auth-shade:#164A75; --auth-tint:#256DAB; --auth-highlight:#8BD5EF;
+    --auth-button-start:#256DAB; --auth-button-end:#256DAB;
+    --card-radius:22px; --control-radius:14px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#164A75 88%,#8BD5EF);
+    --theme-nav-end:#164A75; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#8BD5EF 35%,#FFFFFF);
+    --theme-nav-active:#256DAB; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#256DAB; --theme-tile-2:#8BD5EF;
+    --theme-tile-3:color-mix(in srgb,#256DAB 55%,#8BD5EF);
+    --theme-tile-4:color-mix(in srgb,#256DAB 25%,#8BD5EF);
+}
+.swatch-arctic-glass { background:linear-gradient(135deg,#164A75 50%,#8BD5EF 50%); }
+:root[data-theme="monochrome"] {
+    color-scheme: light;
+    --app-bg:#F5F5F5; --surface:#FFFFFF; --surface-raised:#FFFFFF;
+    --text-primary:#171717; --text-secondary:#626262;
+    --primary:#333333; --accent:#777777; --action:#333333;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#171717; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#333333;
+    --surface-tint:color-mix(in srgb,#333333 10%,#FFFFFF);
+    --border-color:color-mix(in srgb,#171717 18%,#FFFFFF);
+    --shadow-color:color-mix(in srgb,#171717 12%,transparent);
+    --hero-veil:#F5F5F5; --hero-opacity:.95;
+    --auth-shade:#171717; --auth-tint:#333333; --auth-highlight:#777777;
+    --auth-button-start:#333333; --auth-button-end:#333333;
+    --card-radius:8px; --control-radius:8px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#171717 88%,#777777);
+    --theme-nav-end:#171717; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#777777 35%,#FFFFFF);
+    --theme-nav-active:#333333; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#333333; --theme-tile-2:#777777;
+    --theme-tile-3:color-mix(in srgb,#333333 55%,#777777);
+    --theme-tile-4:color-mix(in srgb,#333333 25%,#777777);
+}
+.swatch-monochrome { background:linear-gradient(135deg,#171717 50%,#777777 50%); }
+:root[data-theme="cyberpunk"] {
+    color-scheme: dark;
+    --app-bg:#0B1020; --surface:#18213A; --surface-raised:#18213A;
+    --text-primary:#F1F5FF; --text-secondary:#AFBCD7;
+    --primary:#00D9E8; --accent:#E956C9; --action:#00D9E8;
+    --on-action:#0B1020;
+    --sidebar-bg:#10172B; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#00D9E8;
+    --surface-tint:color-mix(in srgb,#00D9E8 10%,#18213A);
+    --border-color:color-mix(in srgb,#F1F5FF 18%,#18213A);
+    --shadow-color:color-mix(in srgb,#10172B 12%,transparent);
+    --hero-veil:#0B1020; --hero-opacity:.95;
+    --auth-shade:#10172B; --auth-tint:#00D9E8; --auth-highlight:#E956C9;
+    --auth-button-start:#00D9E8; --auth-button-end:#00D9E8;
+    --card-radius:10px; --control-radius:10px;
+    --success:#7DE1B3;
+    --warning:#F3CD83;
+    --danger:#FFA3B7;
+    --violet:#C9B0FF;
+    --theme-nav-start:color-mix(in srgb,#10172B 88%,#E956C9);
+    --theme-nav-end:#10172B; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#E956C9 35%,#FFFFFF);
+    --theme-nav-active:#00D9E8; --theme-nav-active-ink:#0B1020;
+    --theme-tile-1:#00D9E8; --theme-tile-2:#E956C9;
+    --theme-tile-3:color-mix(in srgb,#00D9E8 55%,#E956C9);
+    --theme-tile-4:color-mix(in srgb,#00D9E8 25%,#E956C9);
+}
+.swatch-cyberpunk { background:linear-gradient(135deg,#10172B 50%,#E956C9 50%); }
+:root[data-theme="retro-campus"] {
+    color-scheme: light;
+    --app-bg:#F9F1DF; --surface:#FFF9EC; --surface-raised:#FFF9EC;
+    --text-primary:#392D27; --text-secondary:#796755;
+    --primary:#A84B2A; --accent:#D5A441; --action:#A84B2A;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#433B35; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#A84B2A;
+    --surface-tint:color-mix(in srgb,#A84B2A 10%,#FFF9EC);
+    --border-color:color-mix(in srgb,#392D27 18%,#FFF9EC);
+    --shadow-color:color-mix(in srgb,#433B35 12%,transparent);
+    --hero-veil:#F9F1DF; --hero-opacity:.95;
+    --auth-shade:#433B35; --auth-tint:#A84B2A; --auth-highlight:#D5A441;
+    --auth-button-start:#A84B2A; --auth-button-end:#A84B2A;
+    --card-radius:12px; --control-radius:12px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#433B35 88%,#D5A441);
+    --theme-nav-end:#433B35; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#D5A441 35%,#FFFFFF);
+    --theme-nav-active:#A84B2A; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#A84B2A; --theme-tile-2:#D5A441;
+    --theme-tile-3:color-mix(in srgb,#A84B2A 55%,#D5A441);
+    --theme-tile-4:color-mix(in srgb,#A84B2A 25%,#D5A441);
+}
+.swatch-retro-campus { background:linear-gradient(135deg,#433B35 50%,#D5A441 50%); }
+:root[data-theme="royal-violet"] {
+    color-scheme: light;
+    --app-bg:#F8F5FC; --surface:#FFFFFF; --surface-raised:#FFFFFF;
+    --text-primary:#302045; --text-secondary:#746084;
+    --primary:#7954B0; --accent:#D7B66D; --action:#7954B0;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#35205D; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#7954B0;
+    --surface-tint:color-mix(in srgb,#7954B0 10%,#FFFFFF);
+    --border-color:color-mix(in srgb,#302045 18%,#FFFFFF);
+    --shadow-color:color-mix(in srgb,#35205D 12%,transparent);
+    --hero-veil:#F8F5FC; --hero-opacity:.95;
+    --auth-shade:#35205D; --auth-tint:#7954B0; --auth-highlight:#D7B66D;
+    --auth-button-start:#7954B0; --auth-button-end:#7954B0;
+    --card-radius:18px; --control-radius:14px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#35205D 88%,#D7B66D);
+    --theme-nav-end:#35205D; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#D7B66D 35%,#FFFFFF);
+    --theme-nav-active:#7954B0; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#7954B0; --theme-tile-2:#D7B66D;
+    --theme-tile-3:color-mix(in srgb,#7954B0 55%,#D7B66D);
+    --theme-tile-4:color-mix(in srgb,#7954B0 25%,#D7B66D);
+}
+.swatch-royal-violet { background:linear-gradient(135deg,#35205D 50%,#D7B66D 50%); }
+:root[data-theme="midnight-blue"] {
+    color-scheme: dark;
+    --app-bg:#101827; --surface:#1A2940; --surface-raised:#1A2940;
+    --text-primary:#F1F5FA; --text-secondary:#ADBED6;
+    --primary:#4779B6; --accent:#8DAFE0; --action:#8DAFE0;
+    --on-action:#101827;
+    --sidebar-bg:#0C1525; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#4779B6;
+    --surface-tint:color-mix(in srgb,#4779B6 10%,#1A2940);
+    --border-color:color-mix(in srgb,#F1F5FA 18%,#1A2940);
+    --shadow-color:color-mix(in srgb,#0C1525 12%,transparent);
+    --hero-veil:#101827; --hero-opacity:.95;
+    --auth-shade:#0C1525; --auth-tint:#4779B6; --auth-highlight:#8DAFE0;
+    --auth-button-start:#8DAFE0; --auth-button-end:#8DAFE0;
+    --card-radius:18px; --control-radius:14px;
+    --success:#7DE1B3;
+    --warning:#F3CD83;
+    --danger:#FFA3B7;
+    --violet:#C9B0FF;
+    --theme-nav-start:color-mix(in srgb,#0C1525 88%,#8DAFE0);
+    --theme-nav-end:#0C1525; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#8DAFE0 35%,#FFFFFF);
+    --theme-nav-active:#8DAFE0; --theme-nav-active-ink:#101827;
+    --theme-tile-1:#4779B6; --theme-tile-2:#8DAFE0;
+    --theme-tile-3:color-mix(in srgb,#4779B6 55%,#8DAFE0);
+    --theme-tile-4:color-mix(in srgb,#4779B6 25%,#8DAFE0);
+}
+.swatch-midnight-blue { background:linear-gradient(135deg,#0C1525 50%,#8DAFE0 50%); }
+</style>
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/khmer-heritage.css" rel="stylesheet">
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/theme-components.css" rel="stylesheet">
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/scholar-ui.js" defer></script>
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/hover-select.js" defer></script>
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/workspace-motion.js" defer></script>
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/christmas.css" rel="stylesheet">
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/christmas.js" defer></script>
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/autumn.css" rel="stylesheet">
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/autumn.js" defer></script>
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/ocean-life.css" rel="stylesheet">
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/ocean-life.js" defer></script>
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/ocean-shark.css" rel="stylesheet">
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/ocean-shark.js" defer></script>
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/ocean-surface.css" rel="stylesheet">
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/ocean-surface.js" defer></script>
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/khmer-apsara.css" rel="stylesheet">
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/khmer-apsara.js" data-apsara-image="http://localhost/images/khmer-apsara-smooth-cycle.png" defer></script>
+            <link href="file:///D:/laravel_projects/com3ms1ms2/public/css/classrooms.css" rel="stylesheet">
+    <link href="file:///D:/laravel_projects/com3ms1ms2/public/css/workspace-polish.css" rel="stylesheet">
+            <link href="file:///D:/laravel_projects/com3ms1ms2/public/css/workspace-refresh.css" rel="stylesheet">
+        <link href="file:///D:/laravel_projects/com3ms1ms2/public/css/scholar-hero.css" rel="stylesheet">
+    <link href="file:///D:/laravel_projects/com3ms1ms2/public/css/room-detail-refresh.css" rel="stylesheet">    <script src="file:///D:/laravel_projects/com3ms1ms2/public/js/hover-menus.js"></script>
+<style>
+html[data-hover-menus=off] .stat-breakdown:not(.is-open) .stat-breakdown-menu,
+html[data-hover-menus=off] .building-picker:not(.is-open) .building-options,
+html[data-hover-menus=off] .program-picker:not(.is-open) .program-options { display:none!important; }
+.stat-card .stat-breakdown.is-open .stat-breakdown-menu { display:block; }
+a.attendance-status-tile { text-decoration:none; color:inherit; }
+a.attendance-status-tile:hover, a.attendance-status-tile:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
+.topbar .teacher-scan-shortcut { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-width:42px; min-height:42px; flex-shrink:0; padding:9px 12px; border:1px solid var(--border-color); border-radius:12px; background:var(--primary); color:#fff; font-size:12px; font-weight:700; text-decoration:none; }
+.topbar .teacher-scan-shortcut i { font-size:20px; }
+.topbar .teacher-scan-shortcut:hover { background:var(--primary); color:#fff; filter:brightness(.92); border-color:var(--primary); }
+.topbar .teacher-scan-shortcut:focus-visible { outline:3px solid var(--primary); outline-offset:3px; }
+#attendance-check-in { scroll-margin-top:100px; }
+</style>
+</head>
+<body class="scholar-workspace   classrooms-page   ">
+<a href="#main-content" class="skip-link">Skip to content</a>
+<aside class="sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="sidebar" aria-label="Main navigation">
+    <button class="btn sidebar-close d-lg-none" type="button" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Close navigation"><i class="bi bi-x-lg"></i></button>
+    <a class="brand" href="http://localhost/dashboard"><span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span><span class="brand-name">scholar<small>School Portal</small></span><span class="brand-dot">.</span></a>
+
+    <div class="nav-caption">Main menu</div>
+    <nav class="school-nav">
+        <a class="" href="http://localhost/dashboard"><i class="bi bi-grid-1x2"></i><span class="nav-label"> Overview</span></a>
+        <a class="" href="http://localhost/school/timetables"><i class="bi bi-calendar-week"></i><span class="nav-label"> School Timetables</span></a>
+        <a class="" href="http://localhost/students"><i class="bi bi-people"></i><span class="nav-label"> Students</span></a>
+        <div class="nav-group-caption">Academics</div>
+                                    <a class="" href="http://localhost/school/parents"><i class="bi bi-people"></i><span class="nav-label">Parents &amp; guardians</span></a>
+                                                <a class="" href="http://localhost/school/teachers"><i class="bi bi-person-workspace"></i><span class="nav-label">Teachers</span></a>
+                                                <a class="" href="http://localhost/school/classes"><i class="bi bi-building"></i><span class="nav-label">Classes</span></a>
+                                                <a class="" href="http://localhost/school/subjects"><i class="bi bi-book"></i><span class="nav-label">Subjects</span></a>
+                                                <a class="" href="http://localhost/school/attendance"><i class="bi bi-calendar-check"></i><span class="nav-label">Attendance</span></a>
+                                                <a class="" href="http://localhost/school/examinations"><i class="bi bi-journal-text"></i><span class="nav-label">Examinations</span></a>
+                                                <a class="" href="http://localhost/school/grades"><i class="bi bi-award"></i><span class="nav-label">Results &amp; grades</span></a>
+                                                <a class="" href="http://localhost/school/fees"><i class="bi bi-wallet2"></i><span class="nav-label">School fees</span></a>
+                                                <a class="" href="http://localhost/school/assignments"><i class="bi bi-clipboard-check"></i><span class="nav-label">Assignments</span></a>
+                                                <a class="" href="http://localhost/school/schedules"><i class="bi bi-clock"></i><span class="nav-label">Timetable</span></a>
+                                                <a class="" href="http://localhost/school/announcements"><i class="bi bi-megaphone"></i><span class="nav-label">Announcements</span></a>
+                                                <a class="" href="http://localhost/school/users"><i class="bi bi-people"></i><span class="nav-label">User accounts</span></a>
+                            <div class="nav-group-caption">Workspace</div>
+        <a class="active" href="http://localhost/school/classrooms"><i class="bi bi-door-open"></i><span class="nav-label">Classroom availability</span></a>
+        <a class="" href="http://localhost/school/map"><i class="bi bi-geo-alt" aria-hidden="true"></i><span class="nav-label">School map</span></a>
+        <a class="" href="http://localhost/reports"><i class="bi bi-bar-chart-line"></i><span class="nav-label"> Reports</span></a>    </nav>
+    <div class="school-switch"><span class="school-icon"><i class="bi bi-buildings"></i></span><div><strong>Greenfield Academy</strong><small>School management portal</small></div></div>
+    <div class="sidebar-footer"><span class="live-dot"></span> Academic year 2026–27<small>Building brighter futures, together.</small></div>
+</aside>
+<div class="workspace">
+    <header class="topbar">
+        <div class="d-flex align-items-center gap-3"><button type="button" class="btn sidebar-toggle sidebar-toggle-desktop d-none d-lg-inline-flex" data-sidebar-toggle aria-controls="sidebar" aria-expanded="true" aria-label="Collapse navigation" title="Collapse navigation"><i class="bi bi-layout-sidebar-inset" aria-hidden="true"></i></button><button type="button" class="btn btn-light d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-label="Open navigation"><i class="bi bi-list"></i></button><form class="portal-search" action="http://localhost/students" method="get" role="search"><i class="bi bi-search" aria-hidden="true"></i><input type="search" name="search" aria-label="Search students" placeholder="Search students..." value=""></form><span class="breadcrumb-label">Workspace <i class="bi bi-chevron-right"></i> <strong>Room 7A</strong></span></div>
+        <div class="d-flex align-items-center gap-3"><button type="button" id="hover-menus-toggle" class="btn btn-outline-secondary" aria-pressed="true" title="Turn automatic menu opening on or off"><i class="bi bi-mouse me-1" aria-hidden="true"></i><span>Hover menus: On</span></button><details class="theme-switcher language-switcher" data-language-menu>
+    <summary aria-label="Choose language"><img src="file:///D:/laravel_projects/com3ms1ms2/public/images/flags/en.svg" width="24" height="16" alt="" aria-hidden="true"><span lang="en">English</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+    <form action="http://localhost/language" method="post" class="language-options" aria-label="Language">
+        <input type="hidden" name="_token" value="" autocomplete="off">                <button type="submit" name="locale" value="en" class="language-option" data-language-choice aria-pressed="true"><span class="d-inline-flex align-items-center gap-2"><img src="file:///D:/laravel_projects/com3ms1ms2/public/images/flags/en.svg" width="24" height="16" alt="" aria-hidden="true"><span lang="en">English</span></span><i class="bi bi-check2" aria-hidden="true"></i></button>
+                <button type="submit" name="locale" value="km" class="language-option" data-language-choice aria-pressed="false"><span class="d-inline-flex align-items-center gap-2"><img src="file:///D:/laravel_projects/com3ms1ms2/public/images/flags/km.svg" width="24" height="16" alt="" aria-hidden="true"><span lang="km">ខ្មែរ</span></span><i class="bi bi-check2" aria-hidden="true"></i></button>
+                <button type="submit" name="locale" value="zh" class="language-option" data-language-choice aria-pressed="false"><span class="d-inline-flex align-items-center gap-2"><img src="file:///D:/laravel_projects/com3ms1ms2/public/images/flags/zh.svg" width="24" height="16" alt="" aria-hidden="true"><span lang="zh">中文</span></span><i class="bi bi-check2" aria-hidden="true"></i></button>
+            </form>
+</details>
+<details class="theme-switcher" data-theme-menu>
+    <summary aria-label="Choose color theme"><span class="theme-preview" aria-hidden="true"></span><span data-current-theme>Light</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+    <div class="theme-options" role="group" aria-label="Color theme">
+        <div class="theme-options-heading"><strong>Make yourself at home</strong><small>Preview on hover. Click to keep your favorite.</small></div>
+        <label class="theme-search-label" for="theme-search">Find a theme</label>
+        <input id="theme-search" type="search" class="form-control theme-search" data-theme-search placeholder="Search 23 themes..." autocomplete="off">
+                <section class="theme-group" data-theme-group aria-label="Classic">
+            <h3>Classic</h3>
+            <div class="theme-group-options">
+                            <button type="button" class="theme-option" data-theme-choice="light" aria-pressed="false">
+                    <span class="theme-swatch swatch-light" aria-hidden="true"></span><span><strong>Light</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="night" aria-pressed="false">
+                    <span class="theme-swatch swatch-night" aria-hidden="true"></span><span><strong>Night</strong><small>Dark palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="relax" aria-pressed="false">
+                    <span class="theme-swatch swatch-relax" aria-hidden="true"></span><span><strong>Relax</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="cute" aria-pressed="false">
+                    <span class="theme-swatch swatch-cute" aria-hidden="true"></span><span><strong>Cute</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                        </div>
+        </section>
+                <section class="theme-group" data-theme-group aria-label="Signature">
+            <h3>Signature</h3>
+            <div class="theme-group-options">
+                            <button type="button" class="theme-option" data-theme-choice="ocean" aria-pressed="false">
+                    <span class="theme-swatch swatch-ocean" aria-hidden="true"></span><span><strong>Ocean</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="sunset" aria-pressed="false">
+                    <span class="theme-swatch swatch-sunset" aria-hidden="true"></span><span><strong>Sunset</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="luxury" aria-pressed="false">
+                    <span class="theme-swatch swatch-luxury" aria-hidden="true"></span><span><strong>Luxury</strong><small>Dark palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="galaxy" aria-pressed="false">
+                    <span class="theme-swatch swatch-galaxy" aria-hidden="true"></span><span><strong>Galaxy</strong><small>Dark palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                        </div>
+        </section>
+                <section class="theme-group" data-theme-group aria-label="Seasonal">
+            <h3>Seasonal</h3>
+            <div class="theme-group-options">
+                            <button type="button" class="theme-option" data-theme-choice="christmas" aria-pressed="false">
+                    <span class="theme-swatch swatch-christmas" aria-hidden="true"></span><span><strong>Christmas</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="autumn" aria-pressed="false">
+                    <span class="theme-swatch swatch-autumn" aria-hidden="true"></span><span><strong>Autumn</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                        </div>
+        </section>
+                <section class="theme-group" data-theme-group aria-label="Culture">
+            <h3>Culture</h3>
+            <div class="theme-group-options">
+                            <button type="button" class="theme-option" data-theme-choice="khmer-heritage" aria-pressed="false">
+                    <span class="theme-swatch swatch-khmer-heritage" aria-hidden="true"></span><span><strong>Khmer Heritage</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                        </div>
+        </section>
+                <section class="theme-group" data-theme-group aria-label="Nature">
+            <h3>Nature</h3>
+            <div class="theme-group-options">
+                            <button type="button" class="theme-option" data-theme-choice="emerald-forest" aria-pressed="false">
+                    <span class="theme-swatch swatch-emerald-forest" aria-hidden="true"></span><span><strong>Emerald Forest</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="desert-sand" aria-pressed="false">
+                    <span class="theme-swatch swatch-desert-sand" aria-hidden="true"></span><span><strong>Desert Sand</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="mint-fresh" aria-pressed="false">
+                    <span class="theme-swatch swatch-mint-fresh" aria-hidden="true"></span><span><strong>Mint Fresh</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="olive-garden" aria-pressed="false">
+                    <span class="theme-swatch swatch-olive-garden" aria-hidden="true"></span><span><strong>Olive Garden</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                        </div>
+        </section>
+                <section class="theme-group" data-theme-group aria-label="Soft">
+            <h3>Soft</h3>
+            <div class="theme-group-options">
+                            <button type="button" class="theme-option" data-theme-choice="lavender-dream" aria-pressed="false">
+                    <span class="theme-swatch swatch-lavender-dream" aria-hidden="true"></span><span><strong>Lavender Dream</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="peach-blossom" aria-pressed="false">
+                    <span class="theme-swatch swatch-peach-blossom" aria-hidden="true"></span><span><strong>Peach Blossom</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="arctic-glass" aria-pressed="false">
+                    <span class="theme-swatch swatch-arctic-glass" aria-hidden="true"></span><span><strong>Arctic Glass</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                        </div>
+        </section>
+                <section class="theme-group" data-theme-group aria-label="Bold">
+            <h3>Bold</h3>
+            <div class="theme-group-options">
+                            <button type="button" class="theme-option" data-theme-choice="monochrome" aria-pressed="false">
+                    <span class="theme-swatch swatch-monochrome" aria-hidden="true"></span><span><strong>Monochrome</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="cyberpunk" aria-pressed="false">
+                    <span class="theme-swatch swatch-cyberpunk" aria-hidden="true"></span><span><strong>Cyberpunk</strong><small>Dark palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="retro-campus" aria-pressed="false">
+                    <span class="theme-swatch swatch-retro-campus" aria-hidden="true"></span><span><strong>Retro Campus</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="royal-violet" aria-pressed="false">
+                    <span class="theme-swatch swatch-royal-violet" aria-hidden="true"></span><span><strong>Royal Violet</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="midnight-blue" aria-pressed="false">
+                    <span class="theme-swatch swatch-midnight-blue" aria-hidden="true"></span><span><strong>Midnight Blue</strong><small>Dark palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                        </div>
+        </section>
+                <p class="theme-search-empty" data-theme-empty hidden role="status">No matching themes.</p>
+    </div>
+</details>
+<noscript><p class="small text-secondary">Enable JavaScript to change the workspace theme.</p></noscript>
+<a class="btn btn-outline-primary" href="http://localhost/attendance-settings" title="Edit check-in session times" aria-label="Edit check-in session times"><i class="bi bi-clock" aria-hidden="true"></i><span class="d-none d-xl-inline ms-1">Session times</span></a><a class="btn btn-primary teacher-scan-shortcut" href="http://localhost/school/map?scan=1#attendance-check-in" data-scan-action="check_in"  aria-label="Start scan location" title="Start scan location"><i class="bi bi-crosshair" aria-hidden="true"></i><span class="d-none d-xl-inline">Start scan location</span></a>
+<span class="term-badge d-none d-md-inline"><span class="live-dot"></span> School portal</span><a href="http://localhost/profile" class="profile-link d-flex align-items-center gap-3" aria-label="Edit your profile" title="Edit profile"><img class="user-avatar" src="http://localhost/profile/photo" alt="Your profile photo"><div class="user-info d-none d-sm-block"><strong>Alex Morgan</strong><small>Administrator</small></div></a><form action="http://localhost/logout" method="post"><input type="hidden" name="_token" value="" autocomplete="off"><button class="btn icon-button" aria-label="Sign out" title="Sign out"><i class="bi bi-box-arrow-right"></i></button></form></div>
+    </header>
+    <main class="main-content" id="main-content" tabindex="-1">
+                                        <div class="room-detail-page">
+<div class="page-heading room-banner">
+    <div><div class="eyebrow">Physical classroom</div><h1>Room <em>7A</em> <span class="fs-5 fw-normal text-secondary">&middot; Building A</span></h1><p>Room 7A · Live status for Fri, Nov 13, 2026 · 18:32</p></div>
+    <div class="d-flex flex-wrap gap-2"><a class="btn btn-outline-secondary" href="http://localhost/school/classrooms">Back to availability</a><a class="btn btn-outline-secondary" href="http://localhost/school/classrooms/1/edit"><i class="bi bi-pencil me-1" aria-hidden="true"></i> Edit room</a><a class="btn btn-primary" href="http://localhost/classroom-bookings/create?classroom_id=1"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i> Add booking</a></div>
+</div>
+
+<section class="room-overview" aria-label="Room overview">
+    <div class="room-overview-intro">
+        <span class="room-overview-kicker"><i class="bi bi-buildings" aria-hidden="true"></i> Building A</span>
+        <div class="room-overview-title"><span class="room-overview-door"><small>ROOM</small><strong>7A</strong></span><div><h2>Room 7A</h2><p>Room information, class schedules and attendance.</p></div></div>
+        <span class="room-maintenance"><i class="bi bi-info-circle" aria-hidden="true"></i> Maintenance: Active</span>
+    </div>
+    <dl class="room-overview-facts">
+        <div><dt><i class="bi bi-people" aria-hidden="true"></i> Room capacity</dt><dd>40 <span>students</span></dd></div>
+        <div><dt><i class="bi bi-door-closed" aria-hidden="true"></i> Room number</dt><dd>7A</dd></div>
+        <div><dt><i class="bi bi-journals" aria-hidden="true"></i> Programs</dt><dd>2 <span>assigned</span></dd></div>
+        <div><dt><i class="bi bi-calendar3" aria-hidden="true"></i> Viewing date</dt><dd class="room-overview-date">Nov 13, 2026 <span>18:32</span></dd></div>
+    </dl>
+</section>
+<nav class="room-section-nav" aria-label="Room sections">
+    <a aria-current="location" href="#room-programs"><i class="bi bi-grid" aria-hidden="true"></i> Overview</a>
+    <a href="#room-classes"><i class="bi bi-mortarboard" aria-hidden="true"></i> Classes &amp; attendance</a>
+    <a href="#room-lessons"><i class="bi bi-clock" aria-hidden="true"></i> Lessons</a>
+    <a href="#weekly-lessons"><i class="bi bi-calendar-week" aria-hidden="true"></i> Reservations</a>
+</nav>
+
+<section id="room-programs" class="panel room-context-panel my-4" aria-label="Program and session">
+    <div class="room-context-heading"><div><span class="eyebrow">Explore this room</span><h2 class="h5">Choose program and session</h2></div><span class="room-context-selection"><i class="bi bi-funnel" aria-hidden="true"></i> Chinese &middot; Evening</span></div>
+    <div class="room-context-grid"><div><h3 class="room-filter-label">01 <span>Academic program</span></h3>
+    <div class="d-flex flex-wrap gap-2 mb-3" role="group" aria-label="Program">
+                                <a class="btn btn-primary" aria-current="true" href="http://localhost/school/classrooms/1?date=2026-11-13&amp;program=Chinese&amp;session=Evening"><img class="room-program-flag" src="file:///D:/laravel_projects/com3ms1ms2/public/images/flags/zh.svg" width="32" height="22" alt="" aria-hidden="true"><span>Chinese</span><i class="bi bi-check-circle-fill room-choice-check" aria-hidden="true"></i></a>
+                                <a class="btn btn-outline-primary" aria-current="false" href="http://localhost/school/classrooms/1?date=2026-11-13&amp;program=Khmer&amp;session=Morning"><img class="room-program-flag" src="file:///D:/laravel_projects/com3ms1ms2/public/images/flags/km.svg" width="32" height="22" alt="" aria-hidden="true"><span>Khmer</span></a>
+            </div>
+    </div><div><h3 class="room-filter-label">02 <span>Study session</span></h3>
+    <div class="d-flex flex-wrap gap-2" role="group" aria-label="Session">
+                    <a class="btn btn-primary" aria-current="true" href="http://localhost/school/classrooms/1?date=2026-11-13&amp;program=Chinese&amp;session=Evening"><i class="bi bi-moon-stars" aria-hidden="true"></i><span>Evening</span><i class="bi bi-check-circle-fill room-choice-check" aria-hidden="true"></i></a>
+            </div>
+    </div></div>
+            <div class="mt-3" role="group" aria-label="Evening study period">
+            <p class="small mb-2">Choose evening study period</p>
+            <div class="d-flex flex-wrap gap-2">
+                                    <a class="btn btn-primary" aria-current="true" href="http://localhost/school/classrooms/1?date=2026-11-13&amp;attendance_month=2026-11&amp;program=Chinese&amp;session=Evening&amp;evening_period=1">Evening 1 <span class="small">(17:30&ndash;18:30)</span></a>
+                                    <a class="btn btn-outline-primary" aria-current="false" href="http://localhost/school/classrooms/1?date=2026-11-13&amp;attendance_month=2026-11&amp;program=Chinese&amp;session=Evening&amp;evening_period=2">Evening 2 <span class="small">(18:30&ndash;19:30)</span></a>
+                            </div>
+        </div>
+        <p class="small text-secondary mt-3 mb-0">Showing Chinese &middot; Evening schedules, students and teachers. Showing Evening 1 (17:30&ndash;18:30).</p>
+</section>
+
+<div id="room-classes">
+<section class="panel p-4 my-4" aria-labelledby="class-levels-heading">
+    <h2 class="h5" id="class-levels-heading">Class grades / levels</h2>
+    <p class="text-secondary">Edit the grade / level of a class using this room. Changes apply wherever that class studies.</p>
+    <div class="table-responsive"><table class="table">
+        <thead><tr><th>Class</th><th>Program</th><th>Grade / Level</th><th>Actions</th></tr></thead>
+        <tbody>            <tr><td>Chinese Grade 1</td><td>Chinese</td><td>1</td><td><a class="btn btn-sm btn-outline-primary" href="http://localhost/class-groups/43/edit#grade">Edit grade / level<span class="visually-hidden"> for Chinese Grade 1</span></a></td></tr>
+        </tbody>
+    </table></div>
+</section>
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/student-monthly.css" rel="stylesheet">
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/attendance-table-headers.js" defer></script>
+<section class="panel p-4 my-4" id="class-attendance" aria-label="Monthly student attendance">
+    <h2 class="h5">Student attendance · Chinese · Evening</h2>
+    <p class="mb-3"><span class="badge bg-primary">Evening 1</span> <strong>Study time: 5:30 PM &ndash; 6:30 PM</strong> <span class="small text-secondary">(17:30&ndash;18:30)</span></p>
+    <form method="get" class="d-flex flex-wrap align-items-end gap-2 mb-3">
+                    <input type="hidden" name="date" value="2026-11-13">
+                <input type="hidden" name="program" value="Chinese">
+        <input type="hidden" name="session" value="Evening">
+        <input type="hidden" name="evening_period" value="1">
+        <label>Month<input class="form-control" type="month" name="attendance_month" value="2026-11" required></label>
+        <button class="btn btn-outline-primary">Show attendance</button>
+    </form>
+                    <h3 class="h6 mt-4">Grade 1 · A · Chinese · Evening · November 2026</h3>
+        <p class="mb-3"><span class="badge bg-primary">Evening 1</span> <strong>Study time: 5:30 PM &ndash; 6:30 PM</strong> <span class="small text-secondary">(17:30&ndash;18:30)</span></p>
+        <p class="small">Class teacher: Sok Sothea</p>
+        <div class="table-responsive mb-3" tabindex="0" aria-label="Grade 1 · A · Chinese · Evening attendance sheet">
+            <table class="table table-bordered table-sm align-middle text-center student-monthly-grid" data-attendance-grid>
+                <thead><tr><th scope="col">No.</th><th scope="col" class="text-start text-nowrap">Student's name</th><th scope="col">Sex</th>
+                                                                    <th scope="col" class="is-weekend" title="Sunday, November 1, 2026">1</th>
+                                                                    <th scope="col" class="" title="Monday, November 2, 2026">2</th>
+                                                                    <th scope="col" class="" title="Tuesday, November 3, 2026">3</th>
+                                                                    <th scope="col" class="" title="Wednesday, November 4, 2026">4</th>
+                                                                    <th scope="col" class="" title="Thursday, November 5, 2026">5</th>
+                                                                    <th scope="col" class="" title="Friday, November 6, 2026">6</th>
+                                                                    <th scope="col" class="is-weekend" title="Saturday, November 7, 2026">7</th>
+                                                                    <th scope="col" class="is-weekend" title="Sunday, November 8, 2026">8</th>
+                                                                    <th scope="col" class="" title="Monday, November 9, 2026">9</th>
+                                                                    <th scope="col" class="" title="Tuesday, November 10, 2026">10</th>
+                                                                    <th scope="col" class="" title="Wednesday, November 11, 2026">11</th>
+                                                                    <th scope="col" class="" title="Thursday, November 12, 2026">12</th>
+                                                                    <th scope="col" class="" title="Friday, November 13, 2026">13</th>
+                                                                    <th scope="col" class="is-weekend" title="Saturday, November 14, 2026">14</th>
+                                                                    <th scope="col" class="is-weekend" title="Sunday, November 15, 2026">15</th>
+                                                                    <th scope="col" class="" title="Monday, November 16, 2026">16</th>
+                                                                    <th scope="col" class="" title="Tuesday, November 17, 2026">17</th>
+                                                                    <th scope="col" class="" title="Wednesday, November 18, 2026">18</th>
+                                                                    <th scope="col" class="" title="Thursday, November 19, 2026">19</th>
+                                                                    <th scope="col" class="" title="Friday, November 20, 2026">20</th>
+                                                                    <th scope="col" class="is-weekend" title="Saturday, November 21, 2026">21</th>
+                                                                    <th scope="col" class="is-weekend" title="Sunday, November 22, 2026">22</th>
+                                                                    <th scope="col" class="" title="Monday, November 23, 2026">23</th>
+                                                                    <th scope="col" class="" title="Tuesday, November 24, 2026">24</th>
+                                                                    <th scope="col" class="" title="Wednesday, November 25, 2026">25</th>
+                                                                    <th scope="col" class="" title="Thursday, November 26, 2026">26</th>
+                                                                    <th scope="col" class="" title="Friday, November 27, 2026">27</th>
+                                                                    <th scope="col" class="is-weekend" title="Saturday, November 28, 2026">28</th>
+                                                                    <th scope="col" class="is-weekend" title="Sunday, November 29, 2026">29</th>
+                                                                    <th scope="col" class="" title="Monday, November 30, 2026">30</th>
+                                        <th scope="col">Present</th><th scope="col">Absent</th><th scope="col">Late</th><th scope="col">Excused</th>
+                </tr></thead>
+                <tbody>
+                                                        <tr><td>1</td><th scope="row" class="text-start"><div class="student-attendance-person"><span class="student-avatar" aria-label="Kim Sophea" style="width:38px;height:38px;flex-shrink:0">K</span>
+<span>Kim Sophea</span></div></th><td>
+                                                <span class="student-gender student-gender-female" title="Female">
+                            <i class="bi bi-gender-female" aria-hidden="true"></i>
+                            <span class="visually-hidden">Female</span>
+                        </span>
+                    </td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                <td>9</td><td>0</td><td>0</td><td>0</td>
+                    </tr>
+                                                        <tr><td>2</td><th scope="row" class="text-start"><div class="student-attendance-person"><span class="student-avatar" aria-label="Lim Sreypov" style="width:38px;height:38px;flex-shrink:0">L</span>
+<span>Lim Sreypov</span></div></th><td>
+                                                <span class="student-gender student-gender-female" title="Female">
+                            <i class="bi bi-gender-female" aria-hidden="true"></i>
+                            <span class="visually-hidden">Female</span>
+                        </span>
+                    </td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-absent" aria-label="Absent" title="Absent"><span class="fs-5 fw-bold">✗</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-absent" aria-label="Absent" title="Absent"><span class="fs-5 fw-bold">✗</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                <td>7</td><td>2</td><td>0</td><td>0</td>
+                    </tr>
+                                                        <tr><td>3</td><th scope="row" class="text-start"><div class="student-attendance-person"><span class="student-avatar" aria-label="Phan Rithy" style="width:38px;height:38px;flex-shrink:0">P</span>
+<span>Phan Rithy</span></div></th><td>
+                                                <span class="student-gender student-gender-male" title="Male">
+                            <i class="bi bi-gender-male" aria-hidden="true"></i>
+                            <span class="visually-hidden">Male</span>
+                        </span>
+                    </td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                <td>9</td><td>0</td><td>0</td><td>0</td>
+                    </tr>
+                                                        <tr><td>4</td><th scope="row" class="text-start"><div class="student-attendance-person"><span class="student-avatar" aria-label="Phan Sophea" style="width:38px;height:38px;flex-shrink:0">P</span>
+<span>Phan Sophea</span></div></th><td>
+                                                <span class="student-gender student-gender-female" title="Female">
+                            <i class="bi bi-gender-female" aria-hidden="true"></i>
+                            <span class="visually-hidden">Female</span>
+                        </span>
+                    </td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-late" aria-label="Late" title="Late"><span class="fs-5 fw-bold">L</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                <td>8</td><td>0</td><td>1</td><td>0</td>
+                    </tr>
+                                                        <tr><td>5</td><th scope="row" class="text-start"><div class="student-attendance-person"><img class="student-avatar" src="http://localhost/students/224/photo" alt="Somnange" loading="lazy" style="width:38px;height:38px;object-fit:cover;flex-shrink:0">
+<span>Somnange</span></div></th><td>
+                                                <span class="student-gender student-gender-female" title="Female">
+                            <i class="bi bi-gender-female" aria-hidden="true"></i>
+                            <span class="visually-hidden">Female</span>
+                        </span>
+                    </td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-late" aria-label="Late" title="Late"><span class="fs-5 fw-bold">L</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                <td>8</td><td>0</td><td>1</td><td>0</td>
+                    </tr>
+                                                        <tr><td>6</td><th scope="row" class="text-start"><div class="student-attendance-person"><span class="student-avatar" aria-label="Vann Sreyneang" style="width:38px;height:38px;flex-shrink:0">V</span>
+<span>Vann Sreyneang</span></div></th><td>
+                                                <span class="student-gender student-gender-female" title="Female">
+                            <i class="bi bi-gender-female" aria-hidden="true"></i>
+                            <span class="visually-hidden">Female</span>
+                        </span>
+                    </td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-late" aria-label="Late" title="Late"><span class="fs-5 fw-bold">L</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell attendance-cell-late" aria-label="Late" title="Late"><span class="fs-5 fw-bold">L</span></td>
+                                                    <td class="attendance-cell attendance-cell-excused" aria-label="Excused" title="Excused"><span class="">E</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell attendance-cell-present" aria-label="Present" title="Present"><span class="fs-5 fw-bold">✓</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                    <td class="attendance-cell" aria-label="Not recorded" title="Not recorded"><span class="">—</span></td>
+                                                <td>6</td><td>0</td><td>2</td><td>1</td>
+                    </tr>
+                                </tbody>
+            </table>
+        </div>
+                <details class="mb-4" >
+            <summary class="btn btn-outline-primary">Record daily attendance · Grade 1 A &middot; Evening 1 (17:30&ndash;18:30)</summary>
+            <form method="get" class="d-flex flex-wrap align-items-end gap-2 mt-3 mb-3">
+                                    <input type="hidden" name="evening_period" value="1">
+                                    <input type="hidden" name="program" value="Chinese">
+                                    <input type="hidden" name="session" value="Evening">
+                                    <input type="hidden" name="academic_year" value="2026-2027">
+                                <label>Attendance date<input class="form-control" type="date" name="attendance_date" value="2026-11-13" required></label>
+                <button class="btn btn-outline-primary">Open date</button>
+            </form>
+            <form method="post" action="http://localhost/school/classrooms/1/attendance" class="mt-3">
+                <input type="hidden" name="_token" value="" autocomplete="off">                <input type="hidden" name="evening_period" value="1">
+                <input type="hidden" name="school_class_id" value="91">
+                <input type="hidden" name="academic_year" value="2026-2027">
+                <input type="hidden" name="attendance_date" value="2026-11-13">
+                <p>Recording attendance for <strong>2026-11-13</strong></p>
+                <p class="small text-secondary">Choose “Use daily attendance” to remove a class mark and use the saved dashboard status.</p>
+                                    <label class="d-flex align-items-center justify-content-between gap-3 mb-2">Kim Sophea
+                        <select class="form-select w-auto" name="statuses[128]">
+                                                                                        <option value="" selected>Use daily attendance (Present)</option>
+                                                            <option value="present" >Present</option>
+                                                            <option value="absent" >Absent</option>
+                                                            <option value="late" >Late</option>
+                                                            <option value="excused" >Excused</option>
+                                                    </select>
+                    </label>
+                                    <label class="d-flex align-items-center justify-content-between gap-3 mb-2">Lim Sreypov
+                        <select class="form-select w-auto" name="statuses[172]">
+                                                                                        <option value="" selected>Use daily attendance (Absent)</option>
+                                                            <option value="present" >Present</option>
+                                                            <option value="absent" >Absent</option>
+                                                            <option value="late" >Late</option>
+                                                            <option value="excused" >Excused</option>
+                                                    </select>
+                    </label>
+                                    <label class="d-flex align-items-center justify-content-between gap-3 mb-2">Phan Rithy
+                        <select class="form-select w-auto" name="statuses[173]">
+                                                                                        <option value="" selected>Use daily attendance (Present)</option>
+                                                            <option value="present" >Present</option>
+                                                            <option value="absent" >Absent</option>
+                                                            <option value="late" >Late</option>
+                                                            <option value="excused" >Excused</option>
+                                                    </select>
+                    </label>
+                                    <label class="d-flex align-items-center justify-content-between gap-3 mb-2">Phan Sophea
+                        <select class="form-select w-auto" name="statuses[134]">
+                                                                                        <option value="" selected>Use daily attendance (Present)</option>
+                                                            <option value="present" >Present</option>
+                                                            <option value="absent" >Absent</option>
+                                                            <option value="late" >Late</option>
+                                                            <option value="excused" >Excused</option>
+                                                    </select>
+                    </label>
+                                    <label class="d-flex align-items-center justify-content-between gap-3 mb-2">Somnange
+                        <select class="form-select w-auto" name="statuses[224]">
+                                                                                        <option value="" selected>Use daily attendance (Present)</option>
+                                                            <option value="present" >Present</option>
+                                                            <option value="absent" >Absent</option>
+                                                            <option value="late" >Late</option>
+                                                            <option value="excused" >Excused</option>
+                                                    </select>
+                    </label>
+                                    <label class="d-flex align-items-center justify-content-between gap-3 mb-2">Vann Sreyneang
+                        <select class="form-select w-auto" name="statuses[200]">
+                                                                                        <option value="" selected>Use daily attendance (Present)</option>
+                                                            <option value="present" >Present</option>
+                                                            <option value="absent" >Absent</option>
+                                                            <option value="late" >Late</option>
+                                                            <option value="excused" >Excused</option>
+                                                    </select>
+                    </label>
+                                <button class="btn btn-primary mt-2">Save attendance</button>
+            </form>
+        </details>
+            </section>
+</div>
+<section class="panel p-4 my-4" aria-label="Room program details">
+    <h2 class="h5">Programs and classes</h2>
+            <article class="mb-4">
+            <h3 class="h6">Chinese</h3>
+            <p class="small text-secondary">6 enrolled students &middot; 40 seats &middot; Evening</p>
+            <div class="room-detail-group"><h3>Classes <span>1</span></h3><ul><li>Grade 1 · A · Chinese · Evening</li></ul></div>
+            <div class="room-detail-group">
+                <h3>Teachers and subjects <span>1</span></h3>
+                <ul class="room-teacher-assignments">
+                                            <li>
+                            <details>
+    <summary class="btn btn-sm btn-outline-primary text-start">
+         Sok Sothea
+    </summary>
+    <div class="mt-3">
+                                        <h4 class="h6">Chinese Vocabulary</h4>
+            <p class="small">Grade 1 · A · Chinese · Evening · Enrollment in the class studying this subject</p>
+            <div class="table-responsive"><table class="table table-sm">
+                <thead><tr><th>Student</th><th>Studies this subject with Sok Sothea</th></tr></thead>
+                <tbody>                                        <tr><td>Kim Sophea</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Lim Sreypov</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Phan Rithy</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Phan Sophea</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Somnange</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Vann Sreyneang</td><td>Yes — enrolled</td></tr>
+                </tbody>
+            </table></div>
+                                <h4 class="h6">Chinese Reading</h4>
+            <p class="small">Grade 1 · A · Chinese · Evening · Enrollment in the class studying this subject</p>
+            <div class="table-responsive"><table class="table table-sm">
+                <thead><tr><th>Student</th><th>Studies this subject with Sok Sothea</th></tr></thead>
+                <tbody>                                        <tr><td>Kim Sophea</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Lim Sreypov</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Phan Rithy</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Phan Sophea</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Somnange</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Vann Sreyneang</td><td>Yes — enrolled</td></tr>
+                </tbody>
+            </table></div>
+                                <h4 class="h6">Chinese Writing</h4>
+            <p class="small">Grade 1 · A · Chinese · Evening · Enrollment in the class studying this subject</p>
+            <div class="table-responsive"><table class="table table-sm">
+                <thead><tr><th>Student</th><th>Studies this subject with Sok Sothea</th></tr></thead>
+                <tbody>                                        <tr><td>Kim Sophea</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Lim Sreypov</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Phan Rithy</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Phan Sophea</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Somnange</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Vann Sreyneang</td><td>Yes — enrolled</td></tr>
+                </tbody>
+            </table></div>
+                                <h4 class="h6">Chinese Listening</h4>
+            <p class="small">Grade 1 · A · Chinese · Evening · Enrollment in the class studying this subject</p>
+            <div class="table-responsive"><table class="table table-sm">
+                <thead><tr><th>Student</th><th>Studies this subject with Sok Sothea</th></tr></thead>
+                <tbody>                                        <tr><td>Kim Sophea</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Lim Sreypov</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Phan Rithy</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Phan Sophea</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Somnange</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Vann Sreyneang</td><td>Yes — enrolled</td></tr>
+                </tbody>
+            </table></div>
+                                <h4 class="h6">Chinese Speaking</h4>
+            <p class="small">Grade 1 · A · Chinese · Evening · Enrollment in the class studying this subject</p>
+            <div class="table-responsive"><table class="table table-sm">
+                <thead><tr><th>Student</th><th>Studies this subject with Sok Sothea</th></tr></thead>
+                <tbody>                                        <tr><td>Kim Sophea</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Lim Sreypov</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Phan Rithy</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Phan Sophea</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Somnange</td><td>Yes — enrolled</td></tr>
+                                                        <tr><td>Vann Sreyneang</td><td>Yes — enrolled</td></tr>
+                </tbody>
+            </table></div>
+            </div>
+</details>
+                            <span>Chinese Vocabulary, Chinese Reading, Chinese Writing, Chinese Listening, Chinese Speaking</span>
+                            <small>Booking supervisor</small>                        </li>
+                                    </ul>
+            </div>
+                            <div class="room-detail-group"><h3>Subjects <span>5</span></h3><ul><li>Chinese Vocabulary</li><li>Chinese Reading</li><li>Chinese Writing</li><li>Chinese Listening</li><li>Chinese Speaking</li></ul></div>
+                        <div class="mt-4">
+    <h4 class="h6"><i class="bi bi-people me-2" aria-hidden="true"></i>Enrolled students <span class="badge text-bg-light">6</span></h4>
+    <p class="small text-secondary">Active students in this room's Chinese classes. Open a student profile for full details, study sessions, attendance and results.</p>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>Student</th><th>Student ID</th><th>Gender</th><th>Class / session</th><th>Parent / guardian</th><th>Contact</th><th>Enrolled</th><th>Profile</th></tr></thead>
+            <tbody>
+                            <tr>
+                    <td><div class="d-flex align-items-center gap-2"><span class="student-avatar" aria-label="Kim Sophea" style="width:36px;height:36px;flex-shrink:0">K</span>
+<strong>Kim Sophea</strong></div></td>
+                    <td>STU008</td>
+                    <td>Female</td>
+                    <td><a class="d-block" href="http://localhost/classes/91/timetable">Grade 1 · A · Chinese · Evening</a></td>
+                    <td><div class="d-flex align-items-center gap-2"><span class="student-avatar" aria-label="Kim Sokun" style="width:30px;height:30px;flex-shrink:0">K</span>
+<div>
+                        <a href="http://localhost/school/parents/183">Kim Sokun</a>                        <small class="d-block text-secondary">PAR004</small>                        <small class="d-block text-secondary">Mother</small>                    </div></div></td>
+                    <td><small class="d-block">Student: 012400008</small><small class="d-block">stu008@sample.school.test</small><small class="d-block">Guardian: 015300004</small></td>
+                    <td class="text-nowrap">Aug 09, 2026</td>
+                    <td><a class="btn btn-sm btn-outline-primary" href="http://localhost/students/128" aria-label="View profile for Kim Sophea">View profile</a></td>
+                </tr>
+                            <tr>
+                    <td><div class="d-flex align-items-center gap-2"><span class="student-avatar" aria-label="Lim Sreypov" style="width:36px;height:36px;flex-shrink:0">L</span>
+<strong>Lim Sreypov</strong></div></td>
+                    <td>STU052</td>
+                    <td>Female</td>
+                    <td><a class="d-block" href="http://localhost/classes/91/timetable">Grade 1 · A · Chinese · Evening</a></td>
+                    <td><div class="d-flex align-items-center gap-2"><span class="student-avatar" aria-label="Lim Bunna" style="width:30px;height:30px;flex-shrink:0">L</span>
+<div>
+                        <a href="http://localhost/school/parents/205">Lim Bunna</a>                        <small class="d-block text-secondary">PAR026</small>                        <small class="d-block text-secondary">Mother</small>                    </div></div></td>
+                    <td><small class="d-block">Student: 012400052</small><small class="d-block">stu052@sample.school.test</small><small class="d-block">Guardian: 015300026</small></td>
+                    <td class="text-nowrap">Aug 13, 2026</td>
+                    <td><a class="btn btn-sm btn-outline-primary" href="http://localhost/students/172" aria-label="View profile for Lim Sreypov">View profile</a></td>
+                </tr>
+                            <tr>
+                    <td><div class="d-flex align-items-center gap-2"><span class="student-avatar" aria-label="Phan Rithy" style="width:36px;height:36px;flex-shrink:0">P</span>
+<strong>Phan Rithy</strong></div></td>
+                    <td>STU053</td>
+                    <td>Male</td>
+                    <td><a class="d-block" href="http://localhost/classes/91/timetable">Grade 1 · A · Chinese · Evening</a></td>
+                    <td><div class="d-flex align-items-center gap-2"><span class="student-avatar" aria-label="Phan Bunna" style="width:30px;height:30px;flex-shrink:0">P</span>
+<div>
+                        <a href="http://localhost/school/parents/206">Phan Bunna</a>                        <small class="d-block text-secondary">PAR027</small>                        <small class="d-block text-secondary">Father</small>                    </div></div></td>
+                    <td><small class="d-block">Student: 012400053</small><small class="d-block">stu053@sample.school.test</small><small class="d-block">Guardian: 015300027</small></td>
+                    <td class="text-nowrap">Jul 14, 2026</td>
+                    <td><a class="btn btn-sm btn-outline-primary" href="http://localhost/students/173" aria-label="View profile for Phan Rithy">View profile</a></td>
+                </tr>
+                            <tr>
+                    <td><div class="d-flex align-items-center gap-2"><span class="student-avatar" aria-label="Phan Sophea" style="width:36px;height:36px;flex-shrink:0">P</span>
+<strong>Phan Sophea</strong></div></td>
+                    <td>STU014</td>
+                    <td>Female</td>
+                    <td><a class="d-block" href="http://localhost/classes/91/timetable">Grade 1 · A · Chinese · Evening</a></td>
+                    <td><div class="d-flex align-items-center gap-2"><span class="student-avatar" aria-label="Phan Sokun" style="width:30px;height:30px;flex-shrink:0">P</span>
+<div>
+                        <a href="http://localhost/school/parents/186">Phan Sokun</a>                        <small class="d-block text-secondary">PAR007</small>                        <small class="d-block text-secondary">Father</small>                    </div></div></td>
+                    <td><small class="d-block">Student: 012400014</small><small class="d-block">stu014@sample.school.test</small><small class="d-block">Guardian: 015300007</small></td>
+                    <td class="text-nowrap">Jun 15, 2026</td>
+                    <td><a class="btn btn-sm btn-outline-primary" href="http://localhost/students/134" aria-label="View profile for Phan Sophea">View profile</a></td>
+                </tr>
+                            <tr>
+                    <td><div class="d-flex align-items-center gap-2"><img class="student-avatar" src="http://localhost/students/224/photo" alt="Somnange" loading="lazy" style="width:36px;height:36px;object-fit:cover;flex-shrink:0">
+<strong>Somnange</strong></div></td>
+                    <td>STU102</td>
+                    <td>Female</td>
+                    <td><a class="d-block" href="http://localhost/classes/91/timetable">Grade 1 · A · Chinese · Evening</a></td>
+                    <td><div class="d-flex align-items-center gap-2"><span class="student-avatar" aria-label="Soy" style="width:30px;height:30px;flex-shrink:0">S</span>
+<div>
+                        <a href="http://localhost/school/parents/257">Soy</a>                        <small class="d-block text-secondary">PAR257</small>                        <small class="d-block text-secondary">Father</small>                    </div></div></td>
+                    <td><small class="d-block">Student: 10222432565</small><small class="d-block">somnage@gmail.com</small><small class="d-block">Guardian: 14536457</small></td>
+                    <td class="text-nowrap">Oct 27, 2026</td>
+                    <td><a class="btn btn-sm btn-outline-primary" href="http://localhost/students/224" aria-label="View profile for Somnange">View profile</a></td>
+                </tr>
+                            <tr>
+                    <td><div class="d-flex align-items-center gap-2"><span class="student-avatar" aria-label="Vann Sreyneang" style="width:36px;height:36px;flex-shrink:0">V</span>
+<strong>Vann Sreyneang</strong></div></td>
+                    <td>STU080</td>
+                    <td>Female</td>
+                    <td><a class="d-block" href="http://localhost/classes/91/timetable">Grade 1 · A · Chinese · Evening</a></td>
+                    <td><div class="d-flex align-items-center gap-2"><span class="student-avatar" aria-label="Vann Srey Leak" style="width:30px;height:30px;flex-shrink:0">V</span>
+<div>
+                        <a href="http://localhost/school/parents/219">Vann Srey Leak</a>                        <small class="d-block text-secondary">PAR040</small>                        <small class="d-block text-secondary">Mother</small>                    </div></div></td>
+                    <td><small class="d-block">Student: 012400080</small><small class="d-block">stu080@sample.school.test</small><small class="d-block">Guardian: 015300040</small></td>
+                    <td class="text-nowrap">Aug 01, 2026</td>
+                    <td><a class="btn btn-sm btn-outline-primary" href="http://localhost/students/200" aria-label="View profile for Vann Sreyneang">View profile</a></td>
+                </tr>
+                        </tbody>
+        </table>
+    </div>
+</div>
+        </article>
+        </section>
+
+<section id="room-lessons" class="panel p-4 my-4" data-room-live data-evening-period="1" data-program="Chinese" data-session="Evening" data-academic-year="2026-2027" data-endpoint="http://localhost/school/classrooms/1/lesson-status" data-live="0" data-date="2026-11-13" data-time="18:32">
+<div class="d-flex justify-content-between gap-3"><h2 class="h5">Current and next lesson</h2><a class="btn btn-outline-secondary" href="http://localhost/school/classrooms/1?live=1&amp;evening_period=1&amp;program=Chinese&amp;session=Evening">Follow current time</a></div>
+<p class="small text-secondary" data-room-live-label aria-live="polite">Fri, Nov 13, 2026 18:32</p><div data-room-live-content><dl class="room-facts">
+    <div><dt>Room occupancy</dt><dd>Occupied</dd></div>
+    <div><dt>Lesson status</dt><dd>ROOM RESERVED</dd></div>
+    <div><dt>Current activity</dt><dd>Free Period</dd></div>
+    <div><dt>Current teacher</dt><dd> No teacher</dd></div>
+        </dl>
+
+
+</div>
+</section>
+<section class="panel p-4 mb-4"><h2 class="h5">Daily lessons &middot; Friday</h2>
+<article class="schedule-cell"><strong>17:30&ndash;18:30 &middot; Chinese Speaking</strong><span>Grade 1 · A · Chinese · Evening</span><small>Sok Sothea</small></article>
+</section>
+<section class="panel p-4 mb-4"><h2 class="h5">Weekly lesson rotation</h2><div class="table-responsive"><table class="table"><thead><tr><th>Monday</th><th>Tuesday</th><th>Wednesday</th><th>Thursday</th><th>Friday</th></tr></thead><tbody><tr><td><article class="schedule-cell"><strong>Chinese Vocabulary</strong><span>Grade 1 · A · Chinese · Evening</span><small>17:30&ndash;18:30 &middot; Sok Sothea</small></article></td><td><article class="schedule-cell"><strong>Chinese Reading</strong><span>Grade 1 · A · Chinese · Evening</span><small>17:30&ndash;18:30 &middot; Sok Sothea</small></article></td><td><article class="schedule-cell"><strong>Chinese Writing</strong><span>Grade 1 · A · Chinese · Evening</span><small>17:30&ndash;18:30 &middot; Sok Sothea</small></article></td><td><article class="schedule-cell"><strong>Chinese Listening</strong><span>Grade 1 · A · Chinese · Evening</span><small>17:30&ndash;18:30 &middot; Sok Sothea</small></article></td><td><article class="schedule-cell"><strong>Chinese Speaking</strong><span>Grade 1 · A · Chinese · Evening</span><small>17:30&ndash;18:30 &middot; Sok Sothea</small></article></td></tr></tbody></table></div></section>
+<section class="panel weekly-room-panel" id="weekly-lessons">
+    <div class="panel-header"><div><h2>Room reservations</h2><p>Recurring classroom bookings from Monday to Friday.</p></div><form class="detail-moment-form" method="get"><input type="hidden" name="program" value="Chinese"><input type="hidden" name="session" value="Evening"><input type="hidden" name="evening_period" value="1"><input type="hidden" name="academic_year" value="2026-2027"><label class="visually-hidden" for="detail-date">Date</label><input class="form-control" id="detail-date" type="date" name="date" value="2026-11-13"><label class="visually-hidden" for="detail-time">Time</label><input class="form-control" id="detail-time" type="time" name="time" value="18:32"><button class="btn btn-outline-secondary">Check time</button></form></div>
+    <div class="table-responsive"><table class="table weekly-room-table"><thead><tr><th>Session</th><th>Monday</th><th>Tuesday</th><th>Wednesday</th><th>Thursday</th><th>Friday</th></tr></thead><tbody>
+                    <tr><th><span class="session-row-title">Evening</span></th>
+                                    <td>
+                                                    <div class="schedule-cell"><strong>Chinese Grade 1</strong><span>Chinese · 17:30-19:30</span><small>Session reservation</small><details class="reservation-lessons mt-2" id="reservation-481"><summary>View Lessons</summary>
+<article class="border rounded p-2 mt-2" data-reservation-lesson-id="6176"><strong>17:30–18:30 — Chinese Vocabulary</strong><span class="d-block">Grade 1 · A · Chinese · Evening</span><small class="d-block">Sok Sothea · Room 7A</small></article>
+</details>
+<a href="http://localhost/classroom-bookings/481/edit" aria-label="Edit Chinese Grade 1 booking"><i class="bi bi-pencil" aria-hidden="true"></i></a></div>
+                                            </td>
+                                    <td>
+                                                    <div class="schedule-cell"><strong>Chinese Grade 1</strong><span>Chinese · 17:30-19:30</span><small>Session reservation</small><details class="reservation-lessons mt-2" id="reservation-482"><summary>View Lessons</summary>
+<article class="border rounded p-2 mt-2" data-reservation-lesson-id="6178"><strong>17:30–18:30 — Chinese Reading</strong><span class="d-block">Grade 1 · A · Chinese · Evening</span><small class="d-block">Sok Sothea · Room 7A</small></article>
+</details>
+<a href="http://localhost/classroom-bookings/482/edit" aria-label="Edit Chinese Grade 1 booking"><i class="bi bi-pencil" aria-hidden="true"></i></a></div>
+                                            </td>
+                                    <td>
+                                                    <div class="schedule-cell"><strong>Chinese Grade 1</strong><span>Chinese · 17:30-19:30</span><small>Session reservation</small><details class="reservation-lessons mt-2" id="reservation-483"><summary>View Lessons</summary>
+<article class="border rounded p-2 mt-2" data-reservation-lesson-id="6180"><strong>17:30–18:30 — Chinese Writing</strong><span class="d-block">Grade 1 · A · Chinese · Evening</span><small class="d-block">Sok Sothea · Room 7A</small></article>
+</details>
+<a href="http://localhost/classroom-bookings/483/edit" aria-label="Edit Chinese Grade 1 booking"><i class="bi bi-pencil" aria-hidden="true"></i></a></div>
+                                            </td>
+                                    <td>
+                                                    <div class="schedule-cell"><strong>Chinese Grade 1</strong><span>Chinese · 17:30-19:30</span><small>Session reservation</small><details class="reservation-lessons mt-2" id="reservation-484"><summary>View Lessons</summary>
+<article class="border rounded p-2 mt-2" data-reservation-lesson-id="6182"><strong>17:30–18:30 — Chinese Listening</strong><span class="d-block">Grade 1 · A · Chinese · Evening</span><small class="d-block">Sok Sothea · Room 7A</small></article>
+</details>
+<a href="http://localhost/classroom-bookings/484/edit" aria-label="Edit Chinese Grade 1 booking"><i class="bi bi-pencil" aria-hidden="true"></i></a></div>
+                                            </td>
+                                    <td>
+                                                    <div class="schedule-cell"><strong>Chinese Grade 1</strong><span>Chinese · 17:30-19:30</span><small>Session reservation</small><details class="reservation-lessons mt-2" id="reservation-485"><summary>View Lessons</summary>
+<article class="border rounded p-2 mt-2" data-reservation-lesson-id="6184"><strong>17:30–18:30 — Chinese Speaking</strong><span class="d-block">Grade 1 · A · Chinese · Evening</span><small class="d-block">Sok Sothea · Room 7A</small></article>
+</details>
+<a href="http://localhost/classroom-bookings/485/edit" aria-label="Edit Chinese Grade 1 booking"><i class="bi bi-pencil" aria-hidden="true"></i></a></div>
+                                            </td>
+                            </tr>
+            </tbody></table></div>
+</section>
+
+<section class="panel booking-list-panel">
+    <div class="panel-header"><div><h2>All recurring bookings</h2><p>5 scheduled entries</p></div></div>
+    <div class="table-responsive"><table class="table"><thead><tr><th>Day</th><th>Class</th><th>Program</th><th>Session</th><th>Time</th><th>Teacher</th><th>Actions</th></tr></thead><tbody>
+                    <tr><td>Monday</td><td><a href="http://localhost/class-groups/43">Chinese Grade 1</a></td><td><span class="program-badge program-chinese">Chinese</span></td><td>Evening</td><td>17:30-19:30</td><td>See lesson rotation</td><td><div class="table-actions"><a class="btn btn-sm btn-light" href="http://localhost/classroom-bookings/481/edit" aria-label="Edit booking"><i class="bi bi-pencil" aria-hidden="true"></i></a><form method="post" action="http://localhost/classroom-bookings/481" data-confirm="Remove this classroom booking?"><input type="hidden" name="_token" value="" autocomplete="off"> <input type="hidden" name="_method" value="DELETE"><button class="btn btn-sm btn-light text-danger" aria-label="Remove booking"><i class="bi bi-trash" aria-hidden="true"></i></button></form></div></td></tr>
+                    <tr><td>Tuesday</td><td><a href="http://localhost/class-groups/43">Chinese Grade 1</a></td><td><span class="program-badge program-chinese">Chinese</span></td><td>Evening</td><td>17:30-19:30</td><td>See lesson rotation</td><td><div class="table-actions"><a class="btn btn-sm btn-light" href="http://localhost/classroom-bookings/482/edit" aria-label="Edit booking"><i class="bi bi-pencil" aria-hidden="true"></i></a><form method="post" action="http://localhost/classroom-bookings/482" data-confirm="Remove this classroom booking?"><input type="hidden" name="_token" value="" autocomplete="off"> <input type="hidden" name="_method" value="DELETE"><button class="btn btn-sm btn-light text-danger" aria-label="Remove booking"><i class="bi bi-trash" aria-hidden="true"></i></button></form></div></td></tr>
+                    <tr><td>Wednesday</td><td><a href="http://localhost/class-groups/43">Chinese Grade 1</a></td><td><span class="program-badge program-chinese">Chinese</span></td><td>Evening</td><td>17:30-19:30</td><td>See lesson rotation</td><td><div class="table-actions"><a class="btn btn-sm btn-light" href="http://localhost/classroom-bookings/483/edit" aria-label="Edit booking"><i class="bi bi-pencil" aria-hidden="true"></i></a><form method="post" action="http://localhost/classroom-bookings/483" data-confirm="Remove this classroom booking?"><input type="hidden" name="_token" value="" autocomplete="off"> <input type="hidden" name="_method" value="DELETE"><button class="btn btn-sm btn-light text-danger" aria-label="Remove booking"><i class="bi bi-trash" aria-hidden="true"></i></button></form></div></td></tr>
+                    <tr><td>Thursday</td><td><a href="http://localhost/class-groups/43">Chinese Grade 1</a></td><td><span class="program-badge program-chinese">Chinese</span></td><td>Evening</td><td>17:30-19:30</td><td>See lesson rotation</td><td><div class="table-actions"><a class="btn btn-sm btn-light" href="http://localhost/classroom-bookings/484/edit" aria-label="Edit booking"><i class="bi bi-pencil" aria-hidden="true"></i></a><form method="post" action="http://localhost/classroom-bookings/484" data-confirm="Remove this classroom booking?"><input type="hidden" name="_token" value="" autocomplete="off"> <input type="hidden" name="_method" value="DELETE"><button class="btn btn-sm btn-light text-danger" aria-label="Remove booking"><i class="bi bi-trash" aria-hidden="true"></i></button></form></div></td></tr>
+                    <tr><td>Friday</td><td><a href="http://localhost/class-groups/43">Chinese Grade 1</a></td><td><span class="program-badge program-chinese">Chinese</span></td><td>Evening</td><td>17:30-19:30</td><td>See lesson rotation</td><td><div class="table-actions"><a class="btn btn-sm btn-light" href="http://localhost/classroom-bookings/485/edit" aria-label="Edit booking"><i class="bi bi-pencil" aria-hidden="true"></i></a><form method="post" action="http://localhost/classroom-bookings/485" data-confirm="Remove this classroom booking?"><input type="hidden" name="_token" value="" autocomplete="off"> <input type="hidden" name="_method" value="DELETE"><button class="btn btn-sm btn-light text-danger" aria-label="Remove booking"><i class="bi bi-trash" aria-hidden="true"></i></button></form></div></td></tr>
+            </tbody></table></div>
+</section>
+
+<div class="danger-zone"><div><strong>Delete physical classroom</strong><span>Rooms with timetable bookings are protected.</span></div><form method="post" action="http://localhost/school/classrooms/1" data-confirm="Delete this physical classroom?"><input type="hidden" name="_token" value="" autocomplete="off"> <input type="hidden" name="_method" value="DELETE"><button class="btn btn-outline-danger">Delete room</button></form></div>
+</div>
+        <footer class="page-footer"><span>© 2026 Scholar. Made for better school days.</span><span>Greenfield Academy <i class="bi bi-heart-fill text-success ms-1"></i></span></footer>
+    </main>
+</div>
+<div class="modal fade" id="scholar-confirm-dialog" tabindex="-1" aria-labelledby="scholar-confirm-title" aria-describedby="scholar-confirm-message" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header"><h2 class="modal-title fs-6" id="scholar-confirm-title">Confirm action</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+            <div class="modal-body"><p class="mb-0" id="scholar-confirm-message"></p></div>
+            <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-danger" data-confirm-accept>Confirm</button></div>
+        </div>
+    </div>
+</div>
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/checkin-receipt.css" rel="stylesheet">
+<dialog class="scan-dialog" data-scan-dialog data-timetable-url="http://localhost/school/timetables" aria-label="Attendance check-in">
+    <button type="button" class="scan-dialog-close" data-close-scan aria-label="Close attendance result" autofocus>&times;</button>
+    <button type="button" data-global-scan data-endpoint="http://localhost/school/map/scan" hidden></button>
+    <div data-scan-dialog-result role="status" aria-live="polite"></div>
+</dialog>
+<template id="scan-loading-template">
+    <section class="scan-loading" aria-labelledby="scan-loading-heading">
+        <div class="scan-loading-brand"><span><i class="bi bi-mortarboard-fill" aria-hidden="true"></i></span><div><strong>Scholar</strong><small>School Portal</small></div></div>
+        <div class="scan-loading-art" aria-hidden="true">
+            <span class="scan-cloud scan-cloud--one"></span><span class="scan-cloud scan-cloud--two"></span>
+            <div class="scan-map-paper"><span></span><span></span><span></span></div>
+            <div class="scan-map-rings"></div>
+            <i class="bi bi-geo-alt-fill scan-map-pin"></i>
+            <i class="bi bi-building-fill scan-map-school"></i>
+            <i class="bi bi-tree-fill scan-map-tree"></i>
+        </div>
+        <h2 id="scan-loading-heading" data-loading-heading>Finding Your <span>Current Location<span class="scan-loading-dots" aria-hidden="true"><span>....</span></span></span></h2>
+        <p data-loading-description>Please allow location access and wait a moment.</p>
+        <div class="scan-loading-progress-row">
+            <div class="scan-loading-progress" role="progressbar" aria-label="Estimated location scan progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="1" aria-valuetext="Waiting for device location"><span></span></div>
+            <strong data-loading-percent aria-hidden="true">1%</strong>
+        </div>
+        <ol class="scan-loading-steps">
+            <li class="is-active"><i class="bi bi-send" aria-hidden="true"></i><span>Accessing<br>location</span></li>
+            <li><i class="bi bi-crosshair" aria-hidden="true"></i><span>Getting<br>coordinates</span></li>
+            <li><i class="bi bi-check-lg" aria-hidden="true"></i><span>Preparing<br>check-in</span></li>
+        </ol>
+    </section>
+</template>
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/school-map.js" defer></script>
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/room-lesson-status.js" defer></script><script>function showReservationLessons(){ document.querySelectorAll('.room-section-nav a').forEach(function(link){ if(link.hash === (location.hash || '#room-programs')) link.setAttribute('aria-current', 'location'); else link.removeAttribute('aria-current'); }); const target = document.getElementById(location.hash.slice(1)); if(target && target.matches('details.reservation-lessons')) target.open = true; } showReservationLessons(); addEventListener('hashchange', showReservationLessons);</script></body></html>

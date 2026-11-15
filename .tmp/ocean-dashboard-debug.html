@@ -1,0 +1,1055 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="">
+    <title>Overview · Scholar School</title>
+    <link href="file:///D:/laravel_projects/com3ms1ms2/public/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link href="file:///D:/laravel_projects/com3ms1ms2/public/vendor/bootstrap-icons/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="file:///D:/laravel_projects/com3ms1ms2/public/css/school.css" rel="stylesheet">
+    <link href="file:///D:/laravel_projects/com3ms1ms2/public/css/dashboard-breakdowns.css" rel="stylesheet">
+<script type="application/json" id="scholar-theme-registry">{"light":{"name":"Light","group":"Classic","dark":false},"night":{"name":"Night","group":"Classic","dark":true},"relax":{"name":"Relax","group":"Classic","dark":false},"cute":{"name":"Cute","group":"Classic","dark":false},"ocean":{"name":"Ocean","group":"Signature","dark":false},"sunset":{"name":"Sunset","group":"Signature","dark":false},"luxury":{"name":"Luxury","group":"Signature","dark":true},"galaxy":{"name":"Galaxy","group":"Signature","dark":true},"christmas":{"name":"Christmas","group":"Seasonal","dark":false,"radius":22,"palette":["#F1F7F4","#720A13","#09622D","#D6AB43","#FFFCF4","#4C1519","#765C4E","#A80C1B"]},"autumn":{"name":"Autumn","group":"Seasonal","dark":false,"radius":24,"palette":["#FFF3E7","#713414","#B44913","#F6B541","#FFFCF6","#54240F","#80573F","#AE3E0B"]},"khmer-heritage":{"name":"Khmer Heritage","group":"Culture","dark":false,"radius":18,"palette":["#FFF5E2","#650B15","#850F1B","#C79532","#FFFCF5","#4B1418","#795D48","#950F1D"]},"emerald-forest":{"name":"Emerald Forest","group":"Nature","dark":false,"radius":22,"palette":["#F4F8F2","#123D32","#25856C","#9BC9A8","#FFFFFF","#203B31","#526E60","#20745D"]},"desert-sand":{"name":"Desert Sand","group":"Nature","dark":false,"radius":18,"palette":["#FFF9F1","#76513F","#A65C42","#D7A67A","#FFFFFF","#49382F","#7E6656","#A65C42"]},"mint-fresh":{"name":"Mint Fresh","group":"Nature","dark":false,"radius":26,"palette":["#EFFBF8","#0F766E","#14998C","#75D5C3","#FFFFFF","#164D46","#4D756E","#08786D"]},"olive-garden":{"name":"Olive Garden","group":"Nature","dark":false,"radius":22,"palette":["#F2F5EB","#506C3D","#718F55","#B5C99A","#FFFFFF","#34442C","#647657","#4F6D37"]},"lavender-dream":{"name":"Lavender Dream","group":"Soft","dark":false,"radius":26,"palette":["#F8F5FF","#5A438E","#7055B5","#B6A2E8","#FFFFFF","#382B58","#78658D","#7055B5"]},"peach-blossom":{"name":"Peach Blossom","group":"Soft","dark":false,"radius":26,"palette":["#FFF6F0","#A95349","#D97662","#F2A37A","#FFFFFF","#603C40","#886468","#A44738"]},"arctic-glass":{"name":"Arctic Glass","group":"Soft","dark":false,"radius":22,"palette":["#EAF6FF","#164A75","#256DAB","#8BD5EF","#FFFFFF","#163C5B","#52748C","#256DAB"]},"monochrome":{"name":"Monochrome","group":"Bold","dark":false,"radius":8,"palette":["#F5F5F5","#171717","#333333","#777777","#FFFFFF","#171717","#626262","#333333"]},"cyberpunk":{"name":"Cyberpunk","group":"Bold","dark":true,"radius":10,"palette":["#0B1020","#10172B","#00D9E8","#E956C9","#18213A","#F1F5FF","#AFBCD7","#00D9E8"]},"retro-campus":{"name":"Retro Campus","group":"Bold","dark":false,"radius":12,"palette":["#F9F1DF","#433B35","#A84B2A","#D5A441","#FFF9EC","#392D27","#796755","#A84B2A"]},"royal-violet":{"name":"Royal Violet","group":"Bold","dark":false,"radius":18,"palette":["#F8F5FC","#35205D","#7954B0","#D7B66D","#FFFFFF","#302045","#746084","#7954B0"]},"midnight-blue":{"name":"Midnight Blue","group":"Bold","dark":true,"radius":18,"palette":["#101827","#0C1525","#4779B6","#8DAFE0","#1A2940","#F1F5FA","#ADBED6","#8DAFE0"]}}</script>
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/theme.js"></script>
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/scholar-design.css" rel="stylesheet">
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/theme-motion.css" rel="stylesheet">
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/sidebar-light.css" rel="stylesheet">
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/workspace-themes.css" rel="stylesheet">
+<style id="scholar-theme-palettes">
+:root[data-theme="christmas"] {
+    color-scheme: light;
+    --app-bg:#F1F7F4; --surface:#FFFCF4; --surface-raised:#FFFCF4;
+    --text-primary:#4C1519; --text-secondary:#765C4E;
+    --primary:#09622D; --accent:#D6AB43; --action:#A80C1B;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#720A13; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#09622D;
+    --surface-tint:color-mix(in srgb,#09622D 10%,#FFFCF4);
+    --border-color:color-mix(in srgb,#4C1519 18%,#FFFCF4);
+    --shadow-color:color-mix(in srgb,#720A13 12%,transparent);
+    --hero-veil:#F1F7F4; --hero-opacity:.95;
+    --auth-shade:#720A13; --auth-tint:#09622D; --auth-highlight:#D6AB43;
+    --auth-button-start:#A80C1B; --auth-button-end:#A80C1B;
+    --card-radius:22px; --control-radius:14px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#720A13 88%,#D6AB43);
+    --theme-nav-end:#720A13; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#D6AB43 35%,#FFFFFF);
+    --theme-nav-active:#A80C1B; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#09622D; --theme-tile-2:#D6AB43;
+    --theme-tile-3:color-mix(in srgb,#09622D 55%,#D6AB43);
+    --theme-tile-4:color-mix(in srgb,#09622D 25%,#D6AB43);
+}
+.swatch-christmas { background:linear-gradient(135deg,#720A13 50%,#D6AB43 50%); }
+:root[data-theme="autumn"] {
+    color-scheme: light;
+    --app-bg:#FFF3E7; --surface:#FFFCF6; --surface-raised:#FFFCF6;
+    --text-primary:#54240F; --text-secondary:#80573F;
+    --primary:#B44913; --accent:#F6B541; --action:#AE3E0B;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#713414; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#B44913;
+    --surface-tint:color-mix(in srgb,#B44913 10%,#FFFCF6);
+    --border-color:color-mix(in srgb,#54240F 18%,#FFFCF6);
+    --shadow-color:color-mix(in srgb,#713414 12%,transparent);
+    --hero-veil:#FFF3E7; --hero-opacity:.95;
+    --auth-shade:#713414; --auth-tint:#B44913; --auth-highlight:#F6B541;
+    --auth-button-start:#AE3E0B; --auth-button-end:#AE3E0B;
+    --card-radius:24px; --control-radius:14px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#713414 88%,#F6B541);
+    --theme-nav-end:#713414; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#F6B541 35%,#FFFFFF);
+    --theme-nav-active:#AE3E0B; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#B44913; --theme-tile-2:#F6B541;
+    --theme-tile-3:color-mix(in srgb,#B44913 55%,#F6B541);
+    --theme-tile-4:color-mix(in srgb,#B44913 25%,#F6B541);
+}
+.swatch-autumn { background:linear-gradient(135deg,#713414 50%,#F6B541 50%); }
+:root[data-theme="khmer-heritage"] {
+    color-scheme: light;
+    --app-bg:#FFF5E2; --surface:#FFFCF5; --surface-raised:#FFFCF5;
+    --text-primary:#4B1418; --text-secondary:#795D48;
+    --primary:#850F1B; --accent:#C79532; --action:#950F1D;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#650B15; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#850F1B;
+    --surface-tint:color-mix(in srgb,#850F1B 10%,#FFFCF5);
+    --border-color:color-mix(in srgb,#4B1418 18%,#FFFCF5);
+    --shadow-color:color-mix(in srgb,#650B15 12%,transparent);
+    --hero-veil:#FFF5E2; --hero-opacity:.95;
+    --auth-shade:#650B15; --auth-tint:#850F1B; --auth-highlight:#C79532;
+    --auth-button-start:#950F1D; --auth-button-end:#950F1D;
+    --card-radius:18px; --control-radius:14px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#650B15 88%,#C79532);
+    --theme-nav-end:#650B15; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#C79532 35%,#FFFFFF);
+    --theme-nav-active:#950F1D; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#850F1B; --theme-tile-2:#C79532;
+    --theme-tile-3:color-mix(in srgb,#850F1B 55%,#C79532);
+    --theme-tile-4:color-mix(in srgb,#850F1B 25%,#C79532);
+}
+.swatch-khmer-heritage { background:linear-gradient(135deg,#650B15 50%,#C79532 50%); }
+:root[data-theme="emerald-forest"] {
+    color-scheme: light;
+    --app-bg:#F4F8F2; --surface:#FFFFFF; --surface-raised:#FFFFFF;
+    --text-primary:#203B31; --text-secondary:#526E60;
+    --primary:#25856C; --accent:#9BC9A8; --action:#20745D;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#123D32; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#25856C;
+    --surface-tint:color-mix(in srgb,#25856C 10%,#FFFFFF);
+    --border-color:color-mix(in srgb,#203B31 18%,#FFFFFF);
+    --shadow-color:color-mix(in srgb,#123D32 12%,transparent);
+    --hero-veil:#F4F8F2; --hero-opacity:.95;
+    --auth-shade:#123D32; --auth-tint:#25856C; --auth-highlight:#9BC9A8;
+    --auth-button-start:#20745D; --auth-button-end:#20745D;
+    --card-radius:22px; --control-radius:14px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#123D32 88%,#9BC9A8);
+    --theme-nav-end:#123D32; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#9BC9A8 35%,#FFFFFF);
+    --theme-nav-active:#20745D; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#25856C; --theme-tile-2:#9BC9A8;
+    --theme-tile-3:color-mix(in srgb,#25856C 55%,#9BC9A8);
+    --theme-tile-4:color-mix(in srgb,#25856C 25%,#9BC9A8);
+}
+.swatch-emerald-forest { background:linear-gradient(135deg,#123D32 50%,#9BC9A8 50%); }
+:root[data-theme="desert-sand"] {
+    color-scheme: light;
+    --app-bg:#FFF9F1; --surface:#FFFFFF; --surface-raised:#FFFFFF;
+    --text-primary:#49382F; --text-secondary:#7E6656;
+    --primary:#A65C42; --accent:#D7A67A; --action:#A65C42;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#76513F; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#A65C42;
+    --surface-tint:color-mix(in srgb,#A65C42 10%,#FFFFFF);
+    --border-color:color-mix(in srgb,#49382F 18%,#FFFFFF);
+    --shadow-color:color-mix(in srgb,#76513F 12%,transparent);
+    --hero-veil:#FFF9F1; --hero-opacity:.95;
+    --auth-shade:#76513F; --auth-tint:#A65C42; --auth-highlight:#D7A67A;
+    --auth-button-start:#A65C42; --auth-button-end:#A65C42;
+    --card-radius:18px; --control-radius:14px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#76513F 88%,#D7A67A);
+    --theme-nav-end:#76513F; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#D7A67A 35%,#FFFFFF);
+    --theme-nav-active:#A65C42; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#A65C42; --theme-tile-2:#D7A67A;
+    --theme-tile-3:color-mix(in srgb,#A65C42 55%,#D7A67A);
+    --theme-tile-4:color-mix(in srgb,#A65C42 25%,#D7A67A);
+}
+.swatch-desert-sand { background:linear-gradient(135deg,#76513F 50%,#D7A67A 50%); }
+:root[data-theme="mint-fresh"] {
+    color-scheme: light;
+    --app-bg:#EFFBF8; --surface:#FFFFFF; --surface-raised:#FFFFFF;
+    --text-primary:#164D46; --text-secondary:#4D756E;
+    --primary:#14998C; --accent:#75D5C3; --action:#08786D;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#0F766E; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#14998C;
+    --surface-tint:color-mix(in srgb,#14998C 10%,#FFFFFF);
+    --border-color:color-mix(in srgb,#164D46 18%,#FFFFFF);
+    --shadow-color:color-mix(in srgb,#0F766E 12%,transparent);
+    --hero-veil:#EFFBF8; --hero-opacity:.95;
+    --auth-shade:#0F766E; --auth-tint:#14998C; --auth-highlight:#75D5C3;
+    --auth-button-start:#08786D; --auth-button-end:#08786D;
+    --card-radius:26px; --control-radius:14px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#0F766E 88%,#75D5C3);
+    --theme-nav-end:#0F766E; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#75D5C3 35%,#FFFFFF);
+    --theme-nav-active:#08786D; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#14998C; --theme-tile-2:#75D5C3;
+    --theme-tile-3:color-mix(in srgb,#14998C 55%,#75D5C3);
+    --theme-tile-4:color-mix(in srgb,#14998C 25%,#75D5C3);
+}
+.swatch-mint-fresh { background:linear-gradient(135deg,#0F766E 50%,#75D5C3 50%); }
+:root[data-theme="olive-garden"] {
+    color-scheme: light;
+    --app-bg:#F2F5EB; --surface:#FFFFFF; --surface-raised:#FFFFFF;
+    --text-primary:#34442C; --text-secondary:#647657;
+    --primary:#718F55; --accent:#B5C99A; --action:#4F6D37;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#506C3D; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#718F55;
+    --surface-tint:color-mix(in srgb,#718F55 10%,#FFFFFF);
+    --border-color:color-mix(in srgb,#34442C 18%,#FFFFFF);
+    --shadow-color:color-mix(in srgb,#506C3D 12%,transparent);
+    --hero-veil:#F2F5EB; --hero-opacity:.95;
+    --auth-shade:#506C3D; --auth-tint:#718F55; --auth-highlight:#B5C99A;
+    --auth-button-start:#4F6D37; --auth-button-end:#4F6D37;
+    --card-radius:22px; --control-radius:14px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#506C3D 88%,#B5C99A);
+    --theme-nav-end:#506C3D; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#B5C99A 35%,#FFFFFF);
+    --theme-nav-active:#4F6D37; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#718F55; --theme-tile-2:#B5C99A;
+    --theme-tile-3:color-mix(in srgb,#718F55 55%,#B5C99A);
+    --theme-tile-4:color-mix(in srgb,#718F55 25%,#B5C99A);
+}
+.swatch-olive-garden { background:linear-gradient(135deg,#506C3D 50%,#B5C99A 50%); }
+:root[data-theme="lavender-dream"] {
+    color-scheme: light;
+    --app-bg:#F8F5FF; --surface:#FFFFFF; --surface-raised:#FFFFFF;
+    --text-primary:#382B58; --text-secondary:#78658D;
+    --primary:#7055B5; --accent:#B6A2E8; --action:#7055B5;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#5A438E; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#7055B5;
+    --surface-tint:color-mix(in srgb,#7055B5 10%,#FFFFFF);
+    --border-color:color-mix(in srgb,#382B58 18%,#FFFFFF);
+    --shadow-color:color-mix(in srgb,#5A438E 12%,transparent);
+    --hero-veil:#F8F5FF; --hero-opacity:.95;
+    --auth-shade:#5A438E; --auth-tint:#7055B5; --auth-highlight:#B6A2E8;
+    --auth-button-start:#7055B5; --auth-button-end:#7055B5;
+    --card-radius:26px; --control-radius:14px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#5A438E 88%,#B6A2E8);
+    --theme-nav-end:#5A438E; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#B6A2E8 35%,#FFFFFF);
+    --theme-nav-active:#7055B5; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#7055B5; --theme-tile-2:#B6A2E8;
+    --theme-tile-3:color-mix(in srgb,#7055B5 55%,#B6A2E8);
+    --theme-tile-4:color-mix(in srgb,#7055B5 25%,#B6A2E8);
+}
+.swatch-lavender-dream { background:linear-gradient(135deg,#5A438E 50%,#B6A2E8 50%); }
+:root[data-theme="peach-blossom"] {
+    color-scheme: light;
+    --app-bg:#FFF6F0; --surface:#FFFFFF; --surface-raised:#FFFFFF;
+    --text-primary:#603C40; --text-secondary:#886468;
+    --primary:#D97662; --accent:#F2A37A; --action:#A44738;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#A95349; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#D97662;
+    --surface-tint:color-mix(in srgb,#D97662 10%,#FFFFFF);
+    --border-color:color-mix(in srgb,#603C40 18%,#FFFFFF);
+    --shadow-color:color-mix(in srgb,#A95349 12%,transparent);
+    --hero-veil:#FFF6F0; --hero-opacity:.95;
+    --auth-shade:#A95349; --auth-tint:#D97662; --auth-highlight:#F2A37A;
+    --auth-button-start:#A44738; --auth-button-end:#A44738;
+    --card-radius:26px; --control-radius:14px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#A95349 88%,#F2A37A);
+    --theme-nav-end:#A95349; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#F2A37A 35%,#FFFFFF);
+    --theme-nav-active:#A44738; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#D97662; --theme-tile-2:#F2A37A;
+    --theme-tile-3:color-mix(in srgb,#D97662 55%,#F2A37A);
+    --theme-tile-4:color-mix(in srgb,#D97662 25%,#F2A37A);
+}
+.swatch-peach-blossom { background:linear-gradient(135deg,#A95349 50%,#F2A37A 50%); }
+:root[data-theme="arctic-glass"] {
+    color-scheme: light;
+    --app-bg:#EAF6FF; --surface:#FFFFFF; --surface-raised:#FFFFFF;
+    --text-primary:#163C5B; --text-secondary:#52748C;
+    --primary:#256DAB; --accent:#8BD5EF; --action:#256DAB;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#164A75; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#256DAB;
+    --surface-tint:color-mix(in srgb,#256DAB 10%,#FFFFFF);
+    --border-color:color-mix(in srgb,#163C5B 18%,#FFFFFF);
+    --shadow-color:color-mix(in srgb,#164A75 12%,transparent);
+    --hero-veil:#EAF6FF; --hero-opacity:.95;
+    --auth-shade:#164A75; --auth-tint:#256DAB; --auth-highlight:#8BD5EF;
+    --auth-button-start:#256DAB; --auth-button-end:#256DAB;
+    --card-radius:22px; --control-radius:14px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#164A75 88%,#8BD5EF);
+    --theme-nav-end:#164A75; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#8BD5EF 35%,#FFFFFF);
+    --theme-nav-active:#256DAB; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#256DAB; --theme-tile-2:#8BD5EF;
+    --theme-tile-3:color-mix(in srgb,#256DAB 55%,#8BD5EF);
+    --theme-tile-4:color-mix(in srgb,#256DAB 25%,#8BD5EF);
+}
+.swatch-arctic-glass { background:linear-gradient(135deg,#164A75 50%,#8BD5EF 50%); }
+:root[data-theme="monochrome"] {
+    color-scheme: light;
+    --app-bg:#F5F5F5; --surface:#FFFFFF; --surface-raised:#FFFFFF;
+    --text-primary:#171717; --text-secondary:#626262;
+    --primary:#333333; --accent:#777777; --action:#333333;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#171717; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#333333;
+    --surface-tint:color-mix(in srgb,#333333 10%,#FFFFFF);
+    --border-color:color-mix(in srgb,#171717 18%,#FFFFFF);
+    --shadow-color:color-mix(in srgb,#171717 12%,transparent);
+    --hero-veil:#F5F5F5; --hero-opacity:.95;
+    --auth-shade:#171717; --auth-tint:#333333; --auth-highlight:#777777;
+    --auth-button-start:#333333; --auth-button-end:#333333;
+    --card-radius:8px; --control-radius:8px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#171717 88%,#777777);
+    --theme-nav-end:#171717; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#777777 35%,#FFFFFF);
+    --theme-nav-active:#333333; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#333333; --theme-tile-2:#777777;
+    --theme-tile-3:color-mix(in srgb,#333333 55%,#777777);
+    --theme-tile-4:color-mix(in srgb,#333333 25%,#777777);
+}
+.swatch-monochrome { background:linear-gradient(135deg,#171717 50%,#777777 50%); }
+:root[data-theme="cyberpunk"] {
+    color-scheme: dark;
+    --app-bg:#0B1020; --surface:#18213A; --surface-raised:#18213A;
+    --text-primary:#F1F5FF; --text-secondary:#AFBCD7;
+    --primary:#00D9E8; --accent:#E956C9; --action:#00D9E8;
+    --on-action:#0B1020;
+    --sidebar-bg:#10172B; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#00D9E8;
+    --surface-tint:color-mix(in srgb,#00D9E8 10%,#18213A);
+    --border-color:color-mix(in srgb,#F1F5FF 18%,#18213A);
+    --shadow-color:color-mix(in srgb,#10172B 12%,transparent);
+    --hero-veil:#0B1020; --hero-opacity:.95;
+    --auth-shade:#10172B; --auth-tint:#00D9E8; --auth-highlight:#E956C9;
+    --auth-button-start:#00D9E8; --auth-button-end:#00D9E8;
+    --card-radius:10px; --control-radius:10px;
+    --success:#7DE1B3;
+    --warning:#F3CD83;
+    --danger:#FFA3B7;
+    --violet:#C9B0FF;
+    --theme-nav-start:color-mix(in srgb,#10172B 88%,#E956C9);
+    --theme-nav-end:#10172B; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#E956C9 35%,#FFFFFF);
+    --theme-nav-active:#00D9E8; --theme-nav-active-ink:#0B1020;
+    --theme-tile-1:#00D9E8; --theme-tile-2:#E956C9;
+    --theme-tile-3:color-mix(in srgb,#00D9E8 55%,#E956C9);
+    --theme-tile-4:color-mix(in srgb,#00D9E8 25%,#E956C9);
+}
+.swatch-cyberpunk { background:linear-gradient(135deg,#10172B 50%,#E956C9 50%); }
+:root[data-theme="retro-campus"] {
+    color-scheme: light;
+    --app-bg:#F9F1DF; --surface:#FFF9EC; --surface-raised:#FFF9EC;
+    --text-primary:#392D27; --text-secondary:#796755;
+    --primary:#A84B2A; --accent:#D5A441; --action:#A84B2A;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#433B35; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#A84B2A;
+    --surface-tint:color-mix(in srgb,#A84B2A 10%,#FFF9EC);
+    --border-color:color-mix(in srgb,#392D27 18%,#FFF9EC);
+    --shadow-color:color-mix(in srgb,#433B35 12%,transparent);
+    --hero-veil:#F9F1DF; --hero-opacity:.95;
+    --auth-shade:#433B35; --auth-tint:#A84B2A; --auth-highlight:#D5A441;
+    --auth-button-start:#A84B2A; --auth-button-end:#A84B2A;
+    --card-radius:12px; --control-radius:12px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#433B35 88%,#D5A441);
+    --theme-nav-end:#433B35; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#D5A441 35%,#FFFFFF);
+    --theme-nav-active:#A84B2A; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#A84B2A; --theme-tile-2:#D5A441;
+    --theme-tile-3:color-mix(in srgb,#A84B2A 55%,#D5A441);
+    --theme-tile-4:color-mix(in srgb,#A84B2A 25%,#D5A441);
+}
+.swatch-retro-campus { background:linear-gradient(135deg,#433B35 50%,#D5A441 50%); }
+:root[data-theme="royal-violet"] {
+    color-scheme: light;
+    --app-bg:#F8F5FC; --surface:#FFFFFF; --surface-raised:#FFFFFF;
+    --text-primary:#302045; --text-secondary:#746084;
+    --primary:#7954B0; --accent:#D7B66D; --action:#7954B0;
+    --on-action:#FFFFFF;
+    --sidebar-bg:#35205D; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#7954B0;
+    --surface-tint:color-mix(in srgb,#7954B0 10%,#FFFFFF);
+    --border-color:color-mix(in srgb,#302045 18%,#FFFFFF);
+    --shadow-color:color-mix(in srgb,#35205D 12%,transparent);
+    --hero-veil:#F8F5FC; --hero-opacity:.95;
+    --auth-shade:#35205D; --auth-tint:#7954B0; --auth-highlight:#D7B66D;
+    --auth-button-start:#7954B0; --auth-button-end:#7954B0;
+    --card-radius:18px; --control-radius:14px;
+    --success:#236A49;
+    --warning:#835B12;
+    --danger:#B3344F;
+    --violet:#7051A3;
+    --theme-nav-start:color-mix(in srgb,#35205D 88%,#D7B66D);
+    --theme-nav-end:#35205D; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#D7B66D 35%,#FFFFFF);
+    --theme-nav-active:#7954B0; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#7954B0; --theme-tile-2:#D7B66D;
+    --theme-tile-3:color-mix(in srgb,#7954B0 55%,#D7B66D);
+    --theme-tile-4:color-mix(in srgb,#7954B0 25%,#D7B66D);
+}
+.swatch-royal-violet { background:linear-gradient(135deg,#35205D 50%,#D7B66D 50%); }
+:root[data-theme="midnight-blue"] {
+    color-scheme: dark;
+    --app-bg:#101827; --surface:#1A2940; --surface-raised:#1A2940;
+    --text-primary:#F1F5FA; --text-secondary:#ADBED6;
+    --primary:#4779B6; --accent:#8DAFE0; --action:#8DAFE0;
+    --on-action:#101827;
+    --sidebar-bg:#0C1525; --sidebar-text:#EDF3FA; --sidebar-heading:#FFFFFF;
+    --sidebar-active:#4779B6;
+    --surface-tint:color-mix(in srgb,#4779B6 10%,#1A2940);
+    --border-color:color-mix(in srgb,#F1F5FA 18%,#1A2940);
+    --shadow-color:color-mix(in srgb,#0C1525 12%,transparent);
+    --hero-veil:#101827; --hero-opacity:.95;
+    --auth-shade:#0C1525; --auth-tint:#4779B6; --auth-highlight:#8DAFE0;
+    --auth-button-start:#8DAFE0; --auth-button-end:#8DAFE0;
+    --card-radius:18px; --control-radius:14px;
+    --success:#7DE1B3;
+    --warning:#F3CD83;
+    --danger:#FFA3B7;
+    --violet:#C9B0FF;
+    --theme-nav-start:color-mix(in srgb,#0C1525 88%,#8DAFE0);
+    --theme-nav-end:#0C1525; --theme-nav-text:#EDF3FA;
+    --theme-nav-muted:color-mix(in srgb,#8DAFE0 35%,#FFFFFF);
+    --theme-nav-active:#8DAFE0; --theme-nav-active-ink:#101827;
+    --theme-tile-1:#4779B6; --theme-tile-2:#8DAFE0;
+    --theme-tile-3:color-mix(in srgb,#4779B6 55%,#8DAFE0);
+    --theme-tile-4:color-mix(in srgb,#4779B6 25%,#8DAFE0);
+}
+.swatch-midnight-blue { background:linear-gradient(135deg,#0C1525 50%,#8DAFE0 50%); }
+</style>
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/khmer-heritage.css" rel="stylesheet">
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/theme-components.css" rel="stylesheet">
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/scholar-ui.js" defer></script>
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/hover-select.js" defer></script>
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/workspace-motion.js" defer></script>
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/christmas.css" rel="stylesheet">
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/christmas.js" defer></script>
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/autumn.css" rel="stylesheet">
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/autumn.js" defer></script>
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/ocean-life.css" rel="stylesheet">
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/ocean-life.js" defer></script>
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/ocean-shark.css" rel="stylesheet">
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/ocean-shark.js" defer></script>
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/ocean-surface.css" rel="stylesheet">
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/ocean-surface.js" defer></script>
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/khmer-apsara.css" rel="stylesheet">
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/khmer-apsara.js" data-apsara-image="file:///D:/laravel_projects/com3ms1ms2/public/images/khmer-apsara-smooth-cycle.png" defer></script>
+            
+    <link href="file:///D:/laravel_projects/com3ms1ms2/public/css/workspace-polish.css" rel="stylesheet">
+            <link href="file:///D:/laravel_projects/com3ms1ms2/public/css/workspace-refresh.css" rel="stylesheet">
+        <link href="file:///D:/laravel_projects/com3ms1ms2/public/css/scholar-hero.css" rel="stylesheet">
+        <link href="file:///D:/laravel_projects/com3ms1ms2/public/css/teacher-attendance.css" rel="stylesheet">
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/hover-menus.js"></script>
+<style>
+html[data-hover-menus=off] .stat-breakdown:not(.is-open) .stat-breakdown-menu,
+html[data-hover-menus=off] .building-picker:not(.is-open) .building-options,
+html[data-hover-menus=off] .program-picker:not(.is-open) .program-options { display:none!important; }
+.stat-card .stat-breakdown.is-open .stat-breakdown-menu { display:block; }
+a.attendance-status-tile { text-decoration:none; color:inherit; }
+a.attendance-status-tile:hover, a.attendance-status-tile:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
+.topbar .teacher-scan-shortcut { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-width:42px; min-height:42px; flex-shrink:0; padding:9px 12px; border:1px solid var(--border-color); border-radius:12px; background:var(--primary); color:#fff; font-size:12px; font-weight:700; text-decoration:none; }
+.topbar .teacher-scan-shortcut i { font-size:20px; }
+.topbar .teacher-scan-shortcut:hover { background:var(--primary); color:#fff; filter:brightness(.92); border-color:var(--primary); }
+.topbar .teacher-scan-shortcut:focus-visible { outline:3px solid var(--primary); outline-offset:3px; }
+#attendance-check-in { scroll-margin-top:100px; }
+</style>
+</head>
+<body class="scholar-workspace      ">
+<a href="#main-content" class="skip-link">Skip to content</a>
+<aside class="sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="sidebar" aria-label="Main navigation">
+    <button class="btn sidebar-close d-lg-none" type="button" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Close navigation"><i class="bi bi-x-lg"></i></button>
+    <a class="brand" href="http://localhost/dashboard"><span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span><span class="brand-name">scholar<small>School Portal</small></span><span class="brand-dot">.</span></a>
+
+    <div class="nav-caption">Main menu</div>
+    <nav class="school-nav">
+        <a class="active" href="http://localhost/dashboard"><i class="bi bi-grid-1x2"></i><span class="nav-label"> Overview</span></a>
+        <a class="" href="http://localhost/school/timetables"><i class="bi bi-calendar-week"></i><span class="nav-label"> School Timetables</span></a>
+        <a class="" href="http://localhost/students"><i class="bi bi-people"></i><span class="nav-label"> Students</span></a>
+        <div class="nav-group-caption">Academics</div>
+                                    <a class="" href="http://localhost/school/parents"><i class="bi bi-people"></i><span class="nav-label">Parents &amp; guardians</span></a>
+                                                <a class="" href="http://localhost/school/teachers"><i class="bi bi-person-workspace"></i><span class="nav-label">Teachers</span></a>
+                                                <a class="" href="http://localhost/school/classes"><i class="bi bi-building"></i><span class="nav-label">Classes</span></a>
+                                                <a class="" href="http://localhost/school/subjects"><i class="bi bi-book"></i><span class="nav-label">Subjects</span></a>
+                                                <a class="" href="http://localhost/school/attendance"><i class="bi bi-calendar-check"></i><span class="nav-label">Attendance</span></a>
+                                                <a class="" href="http://localhost/school/examinations"><i class="bi bi-journal-text"></i><span class="nav-label">Examinations</span></a>
+                                                <a class="" href="http://localhost/school/grades"><i class="bi bi-award"></i><span class="nav-label">Results &amp; grades</span></a>
+                                                <a class="" href="http://localhost/school/fees"><i class="bi bi-wallet2"></i><span class="nav-label">School fees</span></a>
+                                                <a class="" href="http://localhost/school/assignments"><i class="bi bi-clipboard-check"></i><span class="nav-label">Assignments</span></a>
+                                                <a class="" href="http://localhost/school/schedules"><i class="bi bi-clock"></i><span class="nav-label">Timetable</span></a>
+                                                <a class="" href="http://localhost/school/announcements"><i class="bi bi-megaphone"></i><span class="nav-label">Announcements</span></a>
+                                                <a class="" href="http://localhost/school/users"><i class="bi bi-people"></i><span class="nav-label">User accounts</span></a>
+                            <div class="nav-group-caption">Workspace</div>
+        <a class="" href="http://localhost/school/classrooms"><i class="bi bi-door-open"></i><span class="nav-label">Classroom availability</span></a>
+        <a class="" href="http://localhost/school/map"><i class="bi bi-geo-alt" aria-hidden="true"></i><span class="nav-label">School map</span></a>
+        <a class="" href="http://localhost/reports"><i class="bi bi-bar-chart-line"></i><span class="nav-label"> Reports</span></a>    </nav>
+    <div class="school-switch"><span class="school-icon"><i class="bi bi-buildings"></i></span><div><strong>Greenfield Academy</strong><small>School management portal</small></div></div>
+    <div class="sidebar-footer"><span class="live-dot"></span> Academic year 2026–27<small>Building brighter futures, together.</small></div>
+</aside>
+<div class="workspace">
+    <header class="topbar">
+        <div class="d-flex align-items-center gap-3"><button type="button" class="btn sidebar-toggle sidebar-toggle-desktop d-none d-lg-inline-flex" data-sidebar-toggle aria-controls="sidebar" aria-expanded="true" aria-label="Collapse navigation" title="Collapse navigation"><i class="bi bi-layout-sidebar-inset" aria-hidden="true"></i></button><button type="button" class="btn btn-light d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-label="Open navigation"><i class="bi bi-list"></i></button><form class="portal-search" action="http://localhost/students" method="get" role="search"><i class="bi bi-search" aria-hidden="true"></i><input type="search" name="search" aria-label="Search students" placeholder="Search students..." value=""></form><span class="breadcrumb-label">Workspace <i class="bi bi-chevron-right"></i> <strong>Overview</strong></span></div>
+        <div class="d-flex align-items-center gap-3"><button type="button" id="hover-menus-toggle" class="btn btn-outline-secondary" aria-pressed="true" title="Turn automatic menu opening on or off"><i class="bi bi-mouse me-1" aria-hidden="true"></i><span>Hover menus: On</span></button><details class="theme-switcher language-switcher" data-language-menu>
+    <summary aria-label="Choose language"><img src="file:///D:/laravel_projects/com3ms1ms2/public/images/flags/en.svg" width="24" height="16" alt="" aria-hidden="true"><span lang="en">English</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+    <form action="http://localhost/language" method="post" class="language-options" aria-label="Language">
+        <input type="hidden" name="_token" value="" autocomplete="off">                <button type="submit" name="locale" value="en" class="language-option" data-language-choice aria-pressed="true"><span class="d-inline-flex align-items-center gap-2"><img src="file:///D:/laravel_projects/com3ms1ms2/public/images/flags/en.svg" width="24" height="16" alt="" aria-hidden="true"><span lang="en">English</span></span><i class="bi bi-check2" aria-hidden="true"></i></button>
+                <button type="submit" name="locale" value="km" class="language-option" data-language-choice aria-pressed="false"><span class="d-inline-flex align-items-center gap-2"><img src="file:///D:/laravel_projects/com3ms1ms2/public/images/flags/km.svg" width="24" height="16" alt="" aria-hidden="true"><span lang="km">ខ្មែរ</span></span><i class="bi bi-check2" aria-hidden="true"></i></button>
+                <button type="submit" name="locale" value="zh" class="language-option" data-language-choice aria-pressed="false"><span class="d-inline-flex align-items-center gap-2"><img src="file:///D:/laravel_projects/com3ms1ms2/public/images/flags/zh.svg" width="24" height="16" alt="" aria-hidden="true"><span lang="zh">中文</span></span><i class="bi bi-check2" aria-hidden="true"></i></button>
+            </form>
+</details>
+<details class="theme-switcher" data-theme-menu>
+    <summary aria-label="Choose color theme"><span class="theme-preview" aria-hidden="true"></span><span data-current-theme>Light</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+    <div class="theme-options" role="group" aria-label="Color theme">
+        <div class="theme-options-heading"><strong>Make yourself at home</strong><small>Preview on hover. Click to keep your favorite.</small></div>
+        <label class="theme-search-label" for="theme-search">Find a theme</label>
+        <input id="theme-search" type="search" class="form-control theme-search" data-theme-search placeholder="Search 23 themes..." autocomplete="off">
+                <section class="theme-group" data-theme-group aria-label="Classic">
+            <h3>Classic</h3>
+            <div class="theme-group-options">
+                            <button type="button" class="theme-option" data-theme-choice="light" aria-pressed="false">
+                    <span class="theme-swatch swatch-light" aria-hidden="true"></span><span><strong>Light</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="night" aria-pressed="false">
+                    <span class="theme-swatch swatch-night" aria-hidden="true"></span><span><strong>Night</strong><small>Dark palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="relax" aria-pressed="false">
+                    <span class="theme-swatch swatch-relax" aria-hidden="true"></span><span><strong>Relax</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="cute" aria-pressed="false">
+                    <span class="theme-swatch swatch-cute" aria-hidden="true"></span><span><strong>Cute</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                        </div>
+        </section>
+                <section class="theme-group" data-theme-group aria-label="Signature">
+            <h3>Signature</h3>
+            <div class="theme-group-options">
+                            <button type="button" class="theme-option" data-theme-choice="ocean" aria-pressed="false">
+                    <span class="theme-swatch swatch-ocean" aria-hidden="true"></span><span><strong>Ocean</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="sunset" aria-pressed="false">
+                    <span class="theme-swatch swatch-sunset" aria-hidden="true"></span><span><strong>Sunset</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="luxury" aria-pressed="false">
+                    <span class="theme-swatch swatch-luxury" aria-hidden="true"></span><span><strong>Luxury</strong><small>Dark palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="galaxy" aria-pressed="false">
+                    <span class="theme-swatch swatch-galaxy" aria-hidden="true"></span><span><strong>Galaxy</strong><small>Dark palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                        </div>
+        </section>
+                <section class="theme-group" data-theme-group aria-label="Seasonal">
+            <h3>Seasonal</h3>
+            <div class="theme-group-options">
+                            <button type="button" class="theme-option" data-theme-choice="christmas" aria-pressed="false">
+                    <span class="theme-swatch swatch-christmas" aria-hidden="true"></span><span><strong>Christmas</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="autumn" aria-pressed="false">
+                    <span class="theme-swatch swatch-autumn" aria-hidden="true"></span><span><strong>Autumn</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                        </div>
+        </section>
+                <section class="theme-group" data-theme-group aria-label="Culture">
+            <h3>Culture</h3>
+            <div class="theme-group-options">
+                            <button type="button" class="theme-option" data-theme-choice="khmer-heritage" aria-pressed="false">
+                    <span class="theme-swatch swatch-khmer-heritage" aria-hidden="true"></span><span><strong>Khmer Heritage</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                        </div>
+        </section>
+                <section class="theme-group" data-theme-group aria-label="Nature">
+            <h3>Nature</h3>
+            <div class="theme-group-options">
+                            <button type="button" class="theme-option" data-theme-choice="emerald-forest" aria-pressed="false">
+                    <span class="theme-swatch swatch-emerald-forest" aria-hidden="true"></span><span><strong>Emerald Forest</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="desert-sand" aria-pressed="false">
+                    <span class="theme-swatch swatch-desert-sand" aria-hidden="true"></span><span><strong>Desert Sand</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="mint-fresh" aria-pressed="false">
+                    <span class="theme-swatch swatch-mint-fresh" aria-hidden="true"></span><span><strong>Mint Fresh</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="olive-garden" aria-pressed="false">
+                    <span class="theme-swatch swatch-olive-garden" aria-hidden="true"></span><span><strong>Olive Garden</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                        </div>
+        </section>
+                <section class="theme-group" data-theme-group aria-label="Soft">
+            <h3>Soft</h3>
+            <div class="theme-group-options">
+                            <button type="button" class="theme-option" data-theme-choice="lavender-dream" aria-pressed="false">
+                    <span class="theme-swatch swatch-lavender-dream" aria-hidden="true"></span><span><strong>Lavender Dream</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="peach-blossom" aria-pressed="false">
+                    <span class="theme-swatch swatch-peach-blossom" aria-hidden="true"></span><span><strong>Peach Blossom</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="arctic-glass" aria-pressed="false">
+                    <span class="theme-swatch swatch-arctic-glass" aria-hidden="true"></span><span><strong>Arctic Glass</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                        </div>
+        </section>
+                <section class="theme-group" data-theme-group aria-label="Bold">
+            <h3>Bold</h3>
+            <div class="theme-group-options">
+                            <button type="button" class="theme-option" data-theme-choice="monochrome" aria-pressed="false">
+                    <span class="theme-swatch swatch-monochrome" aria-hidden="true"></span><span><strong>Monochrome</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="cyberpunk" aria-pressed="false">
+                    <span class="theme-swatch swatch-cyberpunk" aria-hidden="true"></span><span><strong>Cyberpunk</strong><small>Dark palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="retro-campus" aria-pressed="false">
+                    <span class="theme-swatch swatch-retro-campus" aria-hidden="true"></span><span><strong>Retro Campus</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="royal-violet" aria-pressed="false">
+                    <span class="theme-swatch swatch-royal-violet" aria-hidden="true"></span><span><strong>Royal Violet</strong><small>Light palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                            <button type="button" class="theme-option" data-theme-choice="midnight-blue" aria-pressed="false">
+                    <span class="theme-swatch swatch-midnight-blue" aria-hidden="true"></span><span><strong>Midnight Blue</strong><small>Dark palette</small></span><i class="bi bi-check2" aria-hidden="true"></i>
+                </button>
+                        </div>
+        </section>
+                <p class="theme-search-empty" data-theme-empty hidden role="status">No matching themes.</p>
+    </div>
+</details>
+<noscript><p class="small text-secondary">Enable JavaScript to change the workspace theme.</p></noscript>
+<a class="btn btn-outline-primary" href="http://localhost/attendance-settings" title="Edit check-in session times" aria-label="Edit check-in session times"><i class="bi bi-clock" aria-hidden="true"></i><span class="d-none d-xl-inline ms-1">Session times</span></a><a class="btn btn-primary teacher-scan-shortcut" href="http://localhost/school/map?scan=1#attendance-check-in" data-scan-action="check_in"  aria-label="Start scan location" title="Start scan location"><i class="bi bi-crosshair" aria-hidden="true"></i><span class="d-none d-xl-inline">Start scan location</span></a>
+<span class="term-badge d-none d-md-inline"><span class="live-dot"></span> School portal</span><a href="http://localhost/profile" class="profile-link d-flex align-items-center gap-3" aria-label="Edit your profile" title="Edit profile"><img class="user-avatar" src="http://localhost/profile/photo" alt="Your profile photo"><div class="user-info d-none d-sm-block"><strong>Alex Morgan</strong><small>Administrator</small></div></a><form action="http://localhost/logout" method="post"><input type="hidden" name="_token" value="" autocomplete="off"><button class="btn icon-button" aria-label="Sign out" title="Sign out"><i class="bi bi-box-arrow-right"></i></button></form></div>
+    </header>
+    <main class="main-content" id="main-content" tabindex="-1">
+                                        <link href="file:///D:/laravel_projects/com3ms1ms2/public/css/dashboard-report.css" rel="stylesheet">
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/dashboard-light.css" rel="stylesheet">
+<div class="dashboard-sync d-flex flex-wrap align-items-center justify-content-end gap-2 mb-3">
+    <span id="dashboard-sync-status" class="small text-secondary" role="status" aria-live="polite">Live data ? refreshes every 30 seconds</span>
+    <button type="button" id="dashboard-refresh" class="btn btn-outline-secondary"><i class="bi bi-arrow-clockwise me-1"></i>Refresh</button>
+</div>
+<div id="dashboard-content" data-url="http://localhost/dashboard/data" aria-busy="false">
+    <div class="scholar-hero page-heading dashboard-heading school-hero"><div><div class="eyebrow">WELCOME BACK &#128075;</div><h1>Good afternoon, Alex Morgan <i class="bi bi-brightness-high text-warning" aria-hidden="true" style="font-size:22px"></i></h1><p>Here's what's happening at your school today.</p><span class="hero-school"><i class="bi bi-buildings" aria-hidden="true"></i> Greenfield Academy <span aria-hidden="true">&middot;</span> Administrator workspace</span></div>
+            <div class="dashboard-attendance-actions d-flex flex-wrap gap-2">
+        <details class="attendance-actions">
+            <summary class="btn btn-primary"><i class="bi bi-check2-all me-2" aria-hidden="true"></i>Teacher attendance <i class="bi bi-chevron-down ms-2" aria-hidden="true"></i></summary>
+            <div class="attendance-action-menu">
+                <div class="attendance-menu-heading"><strong>Today&#039;s attendance</strong><span>Nov 14, 2026 &middot; 83 active teachers</span></div>
+                <p class="attendance-recorded">0 recorded &middot; 83 unmarked</p>
+                <form method="post" action="http://localhost/dashboard/teacher-attendance/all-present">
+                    <input type="hidden" name="_token" value="" autocomplete="off">                    <label for="teacher-bulk-session" class="form-label">Session to mark present</label>
+                    <select id="teacher-bulk-session" name="session" class="form-select mb-2">
+                        <option value="">All sessions</option>
+                                                <option value="Morning" >Morning</option>
+                                                <option value="Afternoon" >Afternoon</option>
+                                                <option value="Evening" >Evening</option>
+                                            </select>
+                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-check2-all me-2" aria-hidden="true"></i>Mark all present today</button>
+                </form>
+                <small class="attendance-action-note">Marks active teachers in the selected session. Existing scans keep their present or late status.</small>
+                <form method="post" action="http://localhost/dashboard/teacher-attendance/scan-in" class="mt-3">
+                    <input type="hidden" name="_token" value="" autocomplete="off">                    <label for="teacher-scan-session" class="form-label">Scan in / out session</label>
+                    <select id="teacher-scan-session" name="session" class="form-select mb-2">
+                        <option value="">All eligible sessions</option>
+                                                <option value="Morning" >Morning</option>
+                                                <option value="Afternoon" >Afternoon</option>
+                                                <option value="Evening" >Evening</option>
+                                            </select>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-fill">Record scan in</button>
+                        <button type="submit" formaction="http://localhost/dashboard/teacher-attendance/scan-out" class="btn btn-outline-primary flex-fill">Record scan out</button>
+                    </div>
+                    <small class="attendance-action-note">Administrator entry for active teachers: scan in records the current time during a scheduled session. Scan out records the current time after a checked-in session ends. Existing times are kept. These entries do not verify location.</small>
+                </form>
+                <form method="post" action="http://localhost/dashboard/teacher-attendance/random" class="attendance-random-form">
+                    <input type="hidden" name="_token" value="" autocomplete="off">                    <input type="hidden" name="session" value="">
+                    <button type="submit" class="btn attendance-random-button w-100"><i class="bi bi-shuffle me-2" aria-hidden="true"></i>Random attendance</button>
+                    <div class="attendance-ratio"><span>70% present</span><span>15% late</span><span>10% absent</span><span>5% excused</span></div>
+                </form>
+                <small class="attendance-action-note">Mark all present preserves teachers' scan results and marks teachers who have not scanned as present. Random attendance replaces today's statuses for all active teachers. Random totals are rounded to whole teachers.</small>
+            </div>
+        </details>
+        <details class="attendance-actions">
+            <summary class="btn btn-primary"><i class="bi bi-check2-all me-2" aria-hidden="true"></i>Student attendance <i class="bi bi-chevron-down ms-2" aria-hidden="true"></i></summary>
+            <div class="attendance-action-menu">
+                <div class="attendance-menu-heading"><strong>Today&#039;s attendance</strong><span>Nov 14, 2026 &middot; 640 students</span></div>
+                <p class="attendance-recorded">0 recorded &middot; 640 unmarked</p>
+                <form method="post" action="http://localhost/dashboard/attendance/all-present">
+                    <input type="hidden" name="_token" value="" autocomplete="off">                    <label for="student-bulk-session" class="form-label">Session to mark present</label>
+                    <select id="student-bulk-session" name="session" class="form-select mb-2">
+                        <option value="">All sessions</option>
+                                                <option value="Morning" >Morning</option>
+                                                <option value="Afternoon" >Afternoon</option>
+                                                <option value="Evening" >Evening</option>
+                                            </select>
+                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-check2-all me-2" aria-hidden="true"></i>Mark all present today</button>
+                </form>
+                <small class="attendance-action-note">Marks students enrolled in the selected session. Existing present and late records are preserved.</small>
+                <form method="post" action="http://localhost/dashboard/attendance/random" class="attendance-random-form">
+                    <input type="hidden" name="_token" value="" autocomplete="off">                    <input type="hidden" name="session" value="">
+                    <button type="submit" class="btn attendance-random-button w-100"><i class="bi bi-shuffle me-2" aria-hidden="true"></i>Random attendance</button>
+                    <div class="attendance-ratio"><span>70% present</span><span>15% late</span><span>10% absent</span><span>5% excused</span></div>
+                </form>
+                <small class="attendance-action-note">Mark all present preserves existing present and late records. Random attendance replaces today's statuses for all students. Random totals are rounded to whole students.</small>
+            </div>
+        </details>
+        </div></div>
+
+<div class="row g-3 dashboard-stat-grid">
+        <div class="col-6 col-xl-3"><div class="stat-card stat-card-green"><div class="stat-top"><span>Total students</span>
+                    <div class="stat-breakdown">
+                <button type="button" class="stat-icon tint-green stat-breakdown-trigger" aria-label="Total students by program" aria-describedby="breakdown-people"><i class="bi bi-people" aria-hidden="true"></i></button>
+                <div class="stat-breakdown-menu" id="breakdown-people">
+                    <div class="breakdown-heading"><span class="breakdown-eyebrow">PROGRAM BREAKDOWN</span><strong>Total students by program</strong><span class="breakdown-subtitle">Current school data</span></div>
+                    <dl class="mb-0">
+                                                                                <div class="breakdown-program breakdown-program-khmer">
+                                <dt><span class="breakdown-dot" aria-hidden="true"></span>Khmer</dt>
+                                <dd>300</dd>
+                                <div class="breakdown-track" aria-hidden="true"><span style="width: 47%"></span></div>
+                            </div>
+                                                                                <div class="breakdown-program breakdown-program-english">
+                                <dt><span class="breakdown-dot" aria-hidden="true"></span>English</dt>
+                                <dd>180</dd>
+                                <div class="breakdown-track" aria-hidden="true"><span style="width: 28%"></span></div>
+                            </div>
+                                                                                <div class="breakdown-program breakdown-program-chinese">
+                                <dt><span class="breakdown-dot" aria-hidden="true"></span>Chinese</dt>
+                                <dd>121</dd>
+                                <div class="breakdown-track" aria-hidden="true"><span style="width: 19%"></span></div>
+                            </div>
+                                                                                <div class="breakdown-program breakdown-program-japan">
+                                <dt><span class="breakdown-dot" aria-hidden="true"></span>Japan</dt>
+                                <dd>41</dd>
+                                <div class="breakdown-track" aria-hidden="true"><span style="width: 6%"></span></div>
+                            </div>
+                                            </dl>
+                                    </div>
+            </div>
+            </div><div class="stat-value">640</div><div class="stat-note"><i class="bi bi-arrow-up-right"></i>Enrolled in your school community</div><i class="bi bi-people stat-watermark" aria-hidden="true"></i></div></div>
+        <div class="col-6 col-xl-3"><div class="stat-card stat-card-blue"><div class="stat-top"><span>Total teachers</span>
+                    <div class="stat-breakdown">
+                <button type="button" class="stat-icon tint-blue stat-breakdown-trigger" aria-label="Total teachers by program" aria-describedby="breakdown-person-workspace"><i class="bi bi-person-workspace" aria-hidden="true"></i></button>
+                <div class="stat-breakdown-menu" id="breakdown-person-workspace">
+                    <div class="breakdown-heading"><span class="breakdown-eyebrow">PROGRAM BREAKDOWN</span><strong>Total teachers by program</strong><span class="breakdown-subtitle">Current school data</span></div>
+                    <dl class="mb-0">
+                                                                                <div class="breakdown-program breakdown-program-khmer">
+                                <dt><span class="breakdown-dot" aria-hidden="true"></span>Khmer</dt>
+                                <dd>34</dd>
+                                <div class="breakdown-track" aria-hidden="true"><span style="width: 41%"></span></div>
+                            </div>
+                                                                                <div class="breakdown-program breakdown-program-english">
+                                <dt><span class="breakdown-dot" aria-hidden="true"></span>English</dt>
+                                <dd>24</dd>
+                                <div class="breakdown-track" aria-hidden="true"><span style="width: 29%"></span></div>
+                            </div>
+                                                                                <div class="breakdown-program breakdown-program-chinese">
+                                <dt><span class="breakdown-dot" aria-hidden="true"></span>Chinese</dt>
+                                <dd>12</dd>
+                                <div class="breakdown-track" aria-hidden="true"><span style="width: 14%"></span></div>
+                            </div>
+                                                                                <div class="breakdown-program breakdown-program-japan">
+                                <dt><span class="breakdown-dot" aria-hidden="true"></span>Japan</dt>
+                                <dd>13</dd>
+                                <div class="breakdown-track" aria-hidden="true"><span style="width: 16%"></span></div>
+                            </div>
+                                            </dl>
+                                    </div>
+            </div>
+            </div><div class="stat-value">83</div><div class="stat-note"><i class="bi bi-arrow-up-right"></i>Inspiring the next generation</div><i class="bi bi-person-workspace stat-watermark" aria-hidden="true"></i></div></div>
+        <div class="col-6 col-xl-3"><div class="stat-card stat-card-orange"><div class="stat-top"><span>Total classes</span>
+                    <div class="stat-breakdown">
+                <button type="button" class="stat-icon tint-orange stat-breakdown-trigger" aria-label="Total classes by program" aria-describedby="breakdown-building"><i class="bi bi-building" aria-hidden="true"></i></button>
+                <div class="stat-breakdown-menu" id="breakdown-building">
+                    <div class="breakdown-heading"><span class="breakdown-eyebrow">PROGRAM BREAKDOWN</span><strong>Total classes by program</strong><span class="breakdown-subtitle">Current school data</span></div>
+                    <dl class="mb-0">
+                                                                                <div class="breakdown-program breakdown-program-khmer">
+                                <dt><span class="breakdown-dot" aria-hidden="true"></span>Khmer</dt>
+                                <dd>30</dd>
+                                <div class="breakdown-track" aria-hidden="true"><span style="width: 48%"></span></div>
+                            </div>
+                                                                                <div class="breakdown-program breakdown-program-english">
+                                <dt><span class="breakdown-dot" aria-hidden="true"></span>English</dt>
+                                <dd>12</dd>
+                                <div class="breakdown-track" aria-hidden="true"><span style="width: 19%"></span></div>
+                            </div>
+                                                                                <div class="breakdown-program breakdown-program-chinese">
+                                <dt><span class="breakdown-dot" aria-hidden="true"></span>Chinese</dt>
+                                <dd>12</dd>
+                                <div class="breakdown-track" aria-hidden="true"><span style="width: 19%"></span></div>
+                            </div>
+                                                                                <div class="breakdown-program breakdown-program-japan">
+                                <dt><span class="breakdown-dot" aria-hidden="true"></span>Japan</dt>
+                                <dd>9</dd>
+                                <div class="breakdown-track" aria-hidden="true"><span style="width: 14%"></span></div>
+                            </div>
+                                            </dl>
+                                            <p class="small text-secondary border-top pt-2 mt-2 mb-0">Unique grades and sections per program. Shared classes count in each program.</p>
+                                    </div>
+            </div>
+            </div><div class="stat-value">63</div><div class="stat-note"><i class="bi bi-arrow-up-right"></i>Spaces for growing minds</div><i class="bi bi-building stat-watermark" aria-hidden="true"></i></div></div>
+        <div class="col-6 col-xl-3"><div class="stat-card stat-card-purple"><div class="stat-top"><span>Total subjects</span>
+                    <div class="stat-breakdown">
+                <button type="button" class="stat-icon tint-purple stat-breakdown-trigger" aria-label="Total subjects by program" aria-describedby="breakdown-book"><i class="bi bi-book" aria-hidden="true"></i></button>
+                <div class="stat-breakdown-menu" id="breakdown-book">
+                    <div class="breakdown-heading"><span class="breakdown-eyebrow">PROGRAM BREAKDOWN</span><strong>Total subjects by program</strong><span class="breakdown-subtitle">Current school data</span></div>
+                    <dl class="mb-0">
+                                                                                <div class="breakdown-program breakdown-program-khmer">
+                                <dt><span class="breakdown-dot" aria-hidden="true"></span>Khmer</dt>
+                                <dd>14</dd>
+                                <div class="breakdown-track" aria-hidden="true"><span style="width: 42%"></span></div>
+                            </div>
+                                                                                <div class="breakdown-program breakdown-program-english">
+                                <dt><span class="breakdown-dot" aria-hidden="true"></span>English</dt>
+                                <dd>6</dd>
+                                <div class="breakdown-track" aria-hidden="true"><span style="width: 18%"></span></div>
+                            </div>
+                                                                                <div class="breakdown-program breakdown-program-chinese">
+                                <dt><span class="breakdown-dot" aria-hidden="true"></span>Chinese</dt>
+                                <dd>8</dd>
+                                <div class="breakdown-track" aria-hidden="true"><span style="width: 24%"></span></div>
+                            </div>
+                                                                                <div class="breakdown-program breakdown-program-japan">
+                                <dt><span class="breakdown-dot" aria-hidden="true"></span>Japan</dt>
+                                <dd>5</dd>
+                                <div class="breakdown-track" aria-hidden="true"><span style="width: 15%"></span></div>
+                            </div>
+                                            </dl>
+                                            <p class="small text-secondary border-top pt-2 mt-2 mb-0">Unique subject names per program. Shared subjects count in each program.</p>
+                                    </div>
+            </div>
+            </div><div class="stat-value">33</div><div class="stat-note"><i class="bi bi-arrow-up-right"></i>A world of learning opportunities</div><i class="bi bi-book stat-watermark" aria-hidden="true"></i></div></div>
+    </div>
+<p class="dashboard-scope">School-wide totals from the current database.</p>
+<div class="mini-stats">
+    <div class="mini-stat"><i class="bi bi-calendar2-check"></i><div><small>Present students</small><strong>0 <span class="fw-normal text-secondary" style="font-size:10px">/ 0 recorded</span></strong></div></div>
+        <div class="mini-stat"><i class="bi bi-cash-stack"></i><div><small>Fees collected · USD</small><strong>$16,390.00</strong></div></div>
+    <div class="mini-stat"><i class="bi bi-hourglass-split"></i><div><small>Pending payments · USD</small><strong>$0.00</strong></div></div>
+        <div class="mini-stat"><i class="bi bi-person-dash"></i><div><small>Absent students</small><strong>0</strong></div></div>
+</div>
+<section class="attendance-toolbar" aria-label="Daily attendance report filters">
+    <div class="attendance-toolbar-title">
+        <span class="attendance-toolbar-icon"><i class="bi bi-calendar2-week" aria-hidden="true"></i></span>
+        <div><h2>Daily attendance</h2><p>Saturday, November 14, 2026 <span class="attendance-date-badge">Today</span></p></div>
+    </div>
+    <form method="get" action="http://localhost/dashboard" class="attendance-filters">
+        <div class="attendance-shortcuts" aria-label="Quick report dates">
+            <a class="" href="http://localhost/dashboard?date=2026-11-13" >Yesterday</a>
+            <a class="is-selected" href="http://localhost/dashboard"  aria-current="date" >Today</a>
+        </div>
+        <div class="attendance-session-field">
+            <label for="attendance-report-session">Session</label>
+            <select id="attendance-report-session" name="session" class="form-select">
+                <option value="">All sessions</option>
+                                <option value="Morning" >Morning</option>
+                                <option value="Afternoon" >Afternoon</option>
+                                <option value="Evening" >Evening</option>
+                            </select>
+        </div>
+        <div class="attendance-date-field">
+            <label for="attendance-report-date">Choose a date</label>
+            <input type="date" id="attendance-report-date" name="date" value="2026-11-14" required>
+        </div>
+        <button type="submit" class="btn btn-primary attendance-view-button">View report <i class="bi bi-arrow-right ms-2" aria-hidden="true"></i></button>
+    </form>
+</section>
+<div class="mb-4">
+<div class="teacher-attendance-dashboard">
+    <div class="teacher-attendance-main-grid">
+        <div class="teacher-attendance-compact">
+            <section class="panel attendance-insight mb-4" aria-labelledby="attendance-insight-title">
+    <header class="attendance-insight-header">
+        <div><span class="attendance-eyebrow"><i class="bi bi-activity" aria-hidden="true"></i> Daily overview</span><h2 id="attendance-insight-title">Teacher attendance report</h2><p>Saturday, 14 November 2026 &middot; All programs &middot; All sessions</p></div>
+        <span class="attendance-date-badge"><i class="bi bi-calendar-check" aria-hidden="true"></i> 0 / 83 recorded</span>
+    </header>
+    <div class="attendance-insight-grid">
+        <div class="attendance-ring-area">
+            <div class="attendance-ring">
+                <canvas id="teacherAttendanceChart" data-teacher-values='[0,0,0,0]' role="img" aria-label="0 percent present among 0 recorded teachers"></canvas>
+                <div class="attendance-ring-label"><strong>Pending</strong><span>Awaiting attendance</span></div>
+            </div>
+            <small>Based on recorded attendance</small>
+        </div>
+        <div class="attendance-status-grid">
+                        <a href="http://localhost/attendance/people/teachers/present?date=2026-11-14" aria-label="View present teachers" class="attendance-status-tile attendance-status-present"><span class="attendance-status-icon"><i class="bi bi-check-circle" aria-hidden="true"></i></span><div><span>Present</span><strong>0</strong></div><small>0%</small></a>
+                        <a href="http://localhost/attendance/people/teachers/absent?date=2026-11-14" aria-label="View absent teachers" class="attendance-status-tile attendance-status-absent"><span class="attendance-status-icon"><i class="bi bi-x-circle" aria-hidden="true"></i></span><div><span>Absent</span><strong>0</strong></div><small>0%</small></a>
+                        <a href="http://localhost/attendance/people/teachers/late?date=2026-11-14" aria-label="View late teachers" class="attendance-status-tile attendance-status-late"><span class="attendance-status-icon"><i class="bi bi-clock" aria-hidden="true"></i></span><div><span>Late</span><strong>0</strong></div><small>0%</small></a>
+                        <a href="http://localhost/attendance/people/teachers/excused?date=2026-11-14" aria-label="View excused teachers" class="attendance-status-tile attendance-status-excused"><span class="attendance-status-icon"><i class="bi bi-shield-check" aria-hidden="true"></i></span><div><span>Excused</span><strong>0</strong></div><small>0%</small></a>
+                    </div>
+        <aside class="attendance-progress-card">
+            <span class="attendance-eyebrow">Recording progress</span>
+            <strong class="attendance-completion">0<small>%</small></strong>
+            <div class="attendance-progress-track" role="progressbar" aria-label="Attendance recording progress" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"><span style="width:0%"></span></div>
+            <p><strong>83</strong> teachers still unmarked</p>
+            <small>Complete the daily picture by recording the remaining teachers.</small>
+            <a href="http://localhost/school/teachers?attendance_date=2026-11-14#teacher-attendance-records" class="btn btn-primary">Mark attendance <i class="bi bi-arrow-down" aria-hidden="true"></i></a>        </aside>
+    </div>
+    <footer class="attendance-insight-footer d-flex align-items-center gap-2"><i class="bi bi-info-circle" aria-hidden="true"></i> No attendance recorded yet. Unmarked teachers are not counted as absent. All sessions across all programs for the selected report date.<a href="http://localhost/teacher-attendance/monthly?month=2026-11" class="btn btn-sm btn-outline-primary ms-auto" aria-label="View monthly teacher attendance" title="View monthly teacher attendance"><i class="bi bi-eye" aria-hidden="true"></i></a></footer>
+</section>
+        </div>
+        <section class="panel teacher-insight-card teacher-trend-card" aria-labelledby="teacher-trend-title">
+            <header><h2 id="teacher-trend-title"><i class="bi bi-bar-chart" aria-hidden="true"></i>Attendance trend</h2><span class="teacher-period-pill">Last 7 days</span></header>
+            <p class="teacher-card-caption">Present rate among recorded teachers</p>
+            <div class="teacher-trend-plot" role="list" aria-label="Daily attendance rates for the last seven days">
+                                <div class="teacher-trend-day" role="listitem" aria-label="2026-11-08: No records">
+                    <span class="teacher-trend-value">N/A</span>
+                    <div class="teacher-trend-track"><span class="" style="height:0%"></span></div>
+                    <span class="teacher-trend-label">Sun</span>
+                </div>
+                                <div class="teacher-trend-day" role="listitem" aria-label="2026-11-09: 70% present">
+                    <span class="teacher-trend-value">70%</span>
+                    <div class="teacher-trend-track"><span class="" style="height:70%"></span></div>
+                    <span class="teacher-trend-label">Mon</span>
+                </div>
+                                <div class="teacher-trend-day" role="listitem" aria-label="2026-11-10: 100% present">
+                    <span class="teacher-trend-value">100%</span>
+                    <div class="teacher-trend-track"><span class="" style="height:100%"></span></div>
+                    <span class="teacher-trend-label">Tue</span>
+                </div>
+                                <div class="teacher-trend-day" role="listitem" aria-label="2026-11-11: 100% present">
+                    <span class="teacher-trend-value">100%</span>
+                    <div class="teacher-trend-track"><span class="" style="height:100%"></span></div>
+                    <span class="teacher-trend-label">Wed</span>
+                </div>
+                                <div class="teacher-trend-day" role="listitem" aria-label="2026-11-12: 100% present">
+                    <span class="teacher-trend-value">100%</span>
+                    <div class="teacher-trend-track"><span class="" style="height:100%"></span></div>
+                    <span class="teacher-trend-label">Thu</span>
+                </div>
+                                <div class="teacher-trend-day" role="listitem" aria-label="2026-11-13: 89% present">
+                    <span class="teacher-trend-value">89%</span>
+                    <div class="teacher-trend-track"><span class="" style="height:89%"></span></div>
+                    <span class="teacher-trend-label">Fri</span>
+                </div>
+                                <div class="teacher-trend-day" role="listitem" aria-label="2026-11-14: No records">
+                    <span class="teacher-trend-value">N/A</span>
+                    <div class="teacher-trend-track"><span class="is-selected" style="height:0%"></span></div>
+                    <span class="teacher-trend-label">Sat</span>
+                </div>
+                            </div>
+            <footer><i class="bi bi-info-circle" aria-hidden="true"></i> Empty days have no recorded attendance.</footer>
+        </section>
+    </div>
+    <div class="teacher-attendance-detail-grid">
+        <section class="panel teacher-insight-card" aria-labelledby="teacher-program-attendance-title">
+            <header><h2 id="teacher-program-attendance-title"><i class="bi bi-layers" aria-hidden="true"></i>Attendance by program</h2></header>
+            <div class="teacher-program-list">
+                                <div class="teacher-program-item">
+                    <span class="teacher-program-icon"><i class="bi bi-mortarboard" aria-hidden="true"></i></span>
+                    <div><div class="teacher-program-label"><strong>Khmer</strong><span>Pending</span></div>
+                    <div class="teacher-program-track"><span style="width:0%"></span></div><small>0 / 34 recorded</small></div>
+                </div>
+                                <div class="teacher-program-item">
+                    <span class="teacher-program-icon"><i class="bi bi-mortarboard" aria-hidden="true"></i></span>
+                    <div><div class="teacher-program-label"><strong>Japanese</strong><span>Pending</span></div>
+                    <div class="teacher-program-track"><span style="width:0%"></span></div><small>0 / 13 recorded</small></div>
+                </div>
+                                <div class="teacher-program-item">
+                    <span class="teacher-program-icon"><i class="bi bi-mortarboard" aria-hidden="true"></i></span>
+                    <div><div class="teacher-program-label"><strong>Chinese</strong><span>Pending</span></div>
+                    <div class="teacher-program-track"><span style="width:0%"></span></div><small>0 / 12 recorded</small></div>
+                </div>
+                                <div class="teacher-program-item">
+                    <span class="teacher-program-icon"><i class="bi bi-mortarboard" aria-hidden="true"></i></span>
+                    <div><div class="teacher-program-label"><strong>English</strong><span>Pending</span></div>
+                    <div class="teacher-program-track"><span style="width:0%"></span></div><small>0 / 24 recorded</small></div>
+                </div>
+                            </div>
+        </section>
+        <section class="panel teacher-insight-card" aria-labelledby="teacher-recent-title">
+            <header><h2 id="teacher-recent-title"><i class="bi bi-clock-history" aria-hidden="true"></i>Recent attendance</h2><a href="http://localhost/school/teachers?attendance_date=2026-11-14#teacher-attendance-records">View teachers <i class="bi bi-arrow-right" aria-hidden="true"></i></a></header>
+            <p class="teacher-card-caption">Latest updates for the selected date</p>
+            <div class="teacher-recent-list">
+                <div class="teacher-attendance-empty"><i class="bi bi-calendar2-check" aria-hidden="true"></i><strong>A fresh start for this day</strong><p>Mark a teacher's attendance to see updates here.</p><a href="http://localhost/school/teachers?attendance_date=2026-11-14#teacher-attendance-records">Mark attendance <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>            </div>
+        </section>
+        <section class="panel teacher-insight-card" aria-labelledby="teacher-attendance-actions-title">
+            <header><h2 id="teacher-attendance-actions-title"><i class="bi bi-lightning-charge" aria-hidden="true"></i>Quick actions</h2></header>
+            <div class="teacher-attendance-actions">
+                <a href="http://localhost/school/teachers?attendance_date=2026-11-14#teacher-attendance-records"><i class="bi bi-calendar2-check" aria-hidden="true"></i><span>Mark<br>attendance</span></a>
+                <a href="http://localhost/teacher-management/create"><i class="bi bi-person-plus" aria-hidden="true"></i><span>Add<br>teacher</span></a>
+                <a href="http://localhost/teacher-management/reports"><i class="bi bi-bar-chart-line" aria-hidden="true"></i><span>Teacher<br>reports</span></a>
+                <a href="http://localhost/teacher-attendance?date=2026-11-14"><i class="bi bi-journal-check" aria-hidden="true"></i><span>Attendance<br>records</span></a>
+            </div>
+        </section>
+    </div>
+</div>
+</div>
+<div class="row g-3 mb-3">
+    <div class="col-lg-8"><section class="panel h-100"><div class="panel-header"><div><h2>Student enrollment</h2><p>A growing community of bright minds</p></div><span class="date-pill py-1">Last 6 months <i class="bi bi-chevron-down ms-2"></i></span></div><div class="chart-wrap"><canvas id="enrollmentChart" role="img" aria-label="Monthly student enrollment chart"></canvas></div></section></div>
+    <div class="col-lg-4"><section class="panel h-100"><div class="panel-header"><div><h2>Student attendance report</h2><p>Saturday, Nov 14, 2026 &middot; All sessions</p></div><span class="stat-icon tint-green"><i class="bi bi-check2-circle"></i></span></div><div class="chart-wrap small attendance-donut"><div class="donut-label"><strong>0%</strong><span>Present</span></div><canvas id="attendanceChart" role="img" aria-label="Attendance by status for Nov 14, 2026"></canvas></div><div class="chart-legend"><a class="text-reset" href="http://localhost/attendance/people/students/present?date=2026-11-14"><span><b>0</b> Present</span></a><a class="text-reset" href="http://localhost/attendance/people/students/absent?date=2026-11-14"><span><b>0</b> Absent</span></a><a class="text-reset" href="http://localhost/attendance/people/students/late?date=2026-11-14"><span><b>0</b> Late</span></a><a class="text-reset" href="http://localhost/attendance/people/students/excused?date=2026-11-14"><span><b>0</b> Excused</span></a></div><p class="text-secondary text-center small mt-2">No attendance recorded for this date.</p></section></div>
+</div>
+<div class="row g-3 mb-3">
+    <div class="col-lg-8"><section class="panel h-100"><div class="panel-header"><div><h2>Monthly revenue</h2><p>Recorded fee payments · USD</p></div><div class="chart-key"><span>Collected fees</span></div></div><div class="chart-wrap"><canvas id="revenueChart" role="img" aria-label="Monthly trend chart"></canvas></div></section></div>
+    <div class="col-lg-4"><section class="panel h-100"><div class="panel-header"><div><h2>Students by gender</h2><p>Different perspectives. Shared possibilities.</p></div></div><div class="chart-wrap small"><canvas id="genderChart" role="img" aria-label="Student distribution by gender"></canvas></div><div class="chart-legend"><span><b>327</b> Female</span><span><b>313</b> Male</span><span><b>0</b> Other</span></div></section></div>
+</div>
+<div class="row g-3">
+    <div class="col-lg-8"><section class="panel h-100"><div class="panel-header"><div><h2>Recent registrations</h2><p>The newest faces in our community</p></div><a class="text-link" href="http://localhost/students">View all students <i class="bi bi-arrow-right ms-1"></i></a></div><div class="table-responsive"><table class="table"><thead><tr><th>Student name</th><th>Student ID</th><th>Class</th><th>Enrolled</th><th>Status</th></tr></thead><tbody><tr><td><a href="http://localhost/students/678"><span class="student-avatar" aria-label="Mao Sreymom" style="width:36px;height:36px;flex-shrink:0">M</span>
+<strong>Mao Sreymom</strong></a></td><td>FIVE-261-B2RIZQU0V2</td><td>Japan/level 8 · </td><td>Nov 11, 2026</td><td><span class="status-badge active">Active</span></td></tr><tr><td><a href="http://localhost/students/677"><span class="student-avatar" aria-label="Mao Sopheak" style="width:36px;height:36px;flex-shrink:0">M</span>
+<strong>Mao Sopheak</strong></a></td><td>FIVE-261-YZUKBEATPS</td><td>Japan/level 8 · </td><td>Nov 11, 2026</td><td><span class="status-badge active">Active</span></td></tr><tr><td><a href="http://localhost/students/676"><span class="student-avatar" aria-label="Mao Chantha" style="width:36px;height:36px;flex-shrink:0">M</span>
+<strong>Mao Chantha</strong></a></td><td>FIVE-261-QF8238NMBU</td><td>Japan/level 8 · </td><td>Nov 11, 2026</td><td><span class="status-badge active">Active</span></td></tr><tr><td><a href="http://localhost/students/675"><span class="student-avatar" aria-label="Mao Sokha" style="width:36px;height:36px;flex-shrink:0">M</span>
+<strong>Mao Sokha</strong></a></td><td>FIVE-261-OV4QDFWKZY</td><td>Japan/level 8 · </td><td>Nov 11, 2026</td><td><span class="status-badge active">Active</span></td></tr><tr><td><a href="http://localhost/students/674"><span class="student-avatar" aria-label="Mao Vuthy" style="width:36px;height:36px;flex-shrink:0">M</span>
+<strong>Mao Vuthy</strong></a></td><td>FIVE-261-HWGLV1VGYD</td><td>Japan/level 8 · </td><td>Nov 11, 2026</td><td><span class="status-badge active">Active</span></td></tr></tbody></table></div>
+    <div class="p-3 border-top"><a href="http://localhost/students/create" class="text-link"><i class="bi bi-plus-lg me-1"></i> Enroll a new student</a></div></section></div>
+    <div class="col-lg-4"><section class="panel h-100"><div class="panel-header"><div><h2>School announcements</h2><p>Stay in the loop</p></div><a href="http://localhost/school/announcements" aria-label="View announcements"><i class="bi bi-arrow-up-right"></i></a></div><div class="panel-body pt-0"><article class="announcement"><span class="announcement-icon"><i class="bi bi-megaphone"></i></span><div><h3>A new term, a fresh start</h3><p>Welcome back to Greenfield Academy! Please review your class timetable and make sure your contact details are...</p><small><i class="bi bi-clock me-1"></i>Oct 26, 2026</small></div></article><article class="announcement"><span class="announcement-icon"><i class="bi bi-megaphone"></i></span><div><h3>Science exhibition</h3><p>Our science exhibition celebrates creative projects from every class. Families are welcome to attend.</p><small><i class="bi bi-clock me-1"></i>Oct 26, 2026</small></div></article><article class="announcement"><span class="announcement-icon"><i class="bi bi-megaphone"></i></span><div><h3>Sports day registration is open</h3><p>Students can register with their class teacher for athletics, football, basketball, and team activities.</p><small><i class="bi bi-clock me-1"></i>Oct 26, 2026</small></div></article><article class="announcement"><span class="announcement-icon"><i class="bi bi-megaphone"></i></span><div><h3>Welcome Back to School</h3><p>Welcome to a new term. Please confirm your class and contact details with the school office.</p><small><i class="bi bi-clock me-1"></i>Oct 26, 2026</small></div></article></div></section></div>
+</div>
+
+</div>
+<script type="application/json" id="dashboard-initial-data">{"charts":{"labels":["Jun","Jul","Aug","Sep","Oct","Nov"],"enrollment":[33,35,41,22,40,436],"revenue":[0,0,0,0,0,16390],"gender":[327,313,0],"teacherAttendance":[0,0,0,0],"attendance":[0,0,0,0]},"showRevenue":true}</script>
+        <footer class="page-footer"><span>© 2026 Scholar. Made for better school days.</span><span>Greenfield Academy <i class="bi bi-heart-fill text-success ms-1"></i></span></footer>
+    </main>
+</div>
+<div class="modal fade" id="scholar-confirm-dialog" tabindex="-1" aria-labelledby="scholar-confirm-title" aria-describedby="scholar-confirm-message" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header"><h2 class="modal-title fs-6" id="scholar-confirm-title">Confirm action</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+            <div class="modal-body"><p class="mb-0" id="scholar-confirm-message"></p></div>
+            <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-danger" data-confirm-accept>Confirm</button></div>
+        </div>
+    </div>
+</div>
+<link href="file:///D:/laravel_projects/com3ms1ms2/public/css/checkin-receipt.css" rel="stylesheet">
+<dialog class="scan-dialog" data-scan-dialog data-timetable-url="http://localhost/school/timetables" aria-label="Attendance check-in">
+    <button type="button" class="scan-dialog-close" data-close-scan aria-label="Close attendance result" autofocus>&times;</button>
+    <button type="button" data-global-scan data-endpoint="http://localhost/school/map/scan" hidden></button>
+    <div data-scan-dialog-result role="status" aria-live="polite"></div>
+</dialog>
+<template id="scan-loading-template">
+    <section class="scan-loading" aria-labelledby="scan-loading-heading">
+        <div class="scan-loading-brand"><span><i class="bi bi-mortarboard-fill" aria-hidden="true"></i></span><div><strong>Scholar</strong><small>School Portal</small></div></div>
+        <div class="scan-loading-art" aria-hidden="true">
+            <span class="scan-cloud scan-cloud--one"></span><span class="scan-cloud scan-cloud--two"></span>
+            <div class="scan-map-paper"><span></span><span></span><span></span></div>
+            <div class="scan-map-rings"></div>
+            <i class="bi bi-geo-alt-fill scan-map-pin"></i>
+            <i class="bi bi-building-fill scan-map-school"></i>
+            <i class="bi bi-tree-fill scan-map-tree"></i>
+        </div>
+        <h2 id="scan-loading-heading" data-loading-heading>Finding Your <span>Current Location<span class="scan-loading-dots" aria-hidden="true"><span>....</span></span></span></h2>
+        <p data-loading-description>Please allow location access and wait a moment.</p>
+        <div class="scan-loading-progress-row">
+            <div class="scan-loading-progress" role="progressbar" aria-label="Estimated location scan progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="1" aria-valuetext="Waiting for device location"><span></span></div>
+            <strong data-loading-percent aria-hidden="true">1%</strong>
+        </div>
+        <ol class="scan-loading-steps">
+            <li class="is-active"><i class="bi bi-send" aria-hidden="true"></i><span>Accessing<br>location</span></li>
+            <li><i class="bi bi-crosshair" aria-hidden="true"></i><span>Getting<br>coordinates</span></li>
+            <li><i class="bi bi-check-lg" aria-hidden="true"></i><span>Preparing<br>check-in</span></li>
+        </ol>
+    </section>
+</template>
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/school-map.js" defer></script>
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/vendor/chart/chart.umd.min.js"></script>
+<script src="file:///D:/laravel_projects/com3ms1ms2/public/js/dashboard.js" defer></script>
+</body></html>

@@ -1,0 +1,135 @@
+/* Amber leaves, cream surfaces and chestnut navigation, scoped to Autumn. */
+:root[data-theme="autumn"] {
+    --theme-nav-start:#964518; --theme-nav-end:#62290F; --theme-nav-muted:#FFD39A;
+    --theme-nav-active:#AF410D; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#E97A53; --theme-tile-2:#9870C4; --theme-tile-3:#DB930F; --theme-tile-4:#CD6082;
+}
+:root[data-theme="autumn"]:root:root:root:root:root:root:root:root:root:root:root .scholar-workspace {
+    background:radial-gradient(ellipse at 80% 0,#FFE0B5,transparent 65%),#FFF3E7;
+    & .main-content { background:transparent; padding-bottom:75px; }
+    & .sidebar { background:radial-gradient(ellipse at 10% 65%,#A34C1C80,transparent 70%),linear-gradient(160deg,#713414,#8A3813 70%,#59260F)!important; border-right:1px solid #E3A369; overflow:hidden; }
+    & .brand { border-bottom:1px solid #E3A36970; }
+    & .brand-mark { color:#71300D; background:linear-gradient(145deg,#FFD573,#FF9D27); border-color:#FFCB69; }
+    & :is(.nav-caption,.nav-group-caption) { color:#FFE1B8; }
+    & .school-nav a { color:#FFF7E7; }
+    & .school-nav a i { color:#FFD9A6; }
+    & .school-nav a.active { background:linear-gradient(120deg,#C8520A,#AB3803); border:1px solid #FFD379; border-radius:25px; box-shadow:inset 0 2px 0 #FFDD8A80,0 0 14px #FF9E3460; color:white; }
+    & .school-nav a.active i { color:#FFF4D6; }
+    & .school-switch { background:#713414D9; border-color:#FFBE7470; }
+    & .school-switch strong { color:#FFF6E5; } & .school-switch small { color:#FFD6B5; }
+    & .topbar { background:linear-gradient(110deg,#FFE8CF,#FFFCF6 65%,#FFE1BD); border-bottom:1px solid #EDBC91; }
+    & :is(.portal-search,.theme-switcher > summary,.language-switcher > summary,.profile-link,.topbar .icon-button,.topbar .btn-outline-primary) { background:#FFFCF7; color:#743315; border:1px solid #EBBA92; border-radius:26px; box-shadow:inset 0 1px #FFF,0 2px 4px #9348150B; }
+    & :is(.btn-primary,.teacher-scan-shortcut) { background:linear-gradient(180deg,#BF4C0C,#A73606); color:#FFF; border:1px solid #D06822; box-shadow:inset 0 1px #FFBD6D,0 3px 8px #A8441320; }
+    & .btn-primary:hover { background:#923208; color:white; }
+    & :is(.btn-outline-primary,.btn-outline-secondary) { background:#FFFAF0; color:#9A390E; border-color:#E7AA71; border-radius:22px; }
+    & :is(.form-control,.form-select) { color:#54240F; background-color:#FFFEFA; border-color:#DFB99A; }
+    & :is(.panel,.mini-stats,.teacher-card,.parent-card,.class-summary-card,.attendance-toolbar) { background:#FFFCF6; border-color:#EBBC97; box-shadow:inset 0 1px white,0 4px 12px #9A4C1712; }
+    & :is(.school-hero,.teacher-attendance-hero) { background-image:url('../images/autumn-school-hero.png'); background-color:#FFF0DB; background-position:center; background-size:cover; border:1px solid #EBA563; box-shadow:0 4px 14px #9A4C1719; }
+    & .school-hero::before { background:linear-gradient(90deg,#FFF7E9E8,#FFF4E3A8 48%,transparent 78%); }
+    & .teacher-attendance-hero::before { background-image:url('../images/autumn-school-hero.png'); }
+    & .teacher-attendance-hero::after { background:linear-gradient(90deg,#FFF7E9EE,#FFF4E3B0 48%,transparent 78%); }
+    & :is(.school-hero,.teacher-attendance-hero) :is(h1,p) { color:#54240F; text-shadow:0 1px #FFF9; }
+    & .school-hero .eyebrow { color:#A33A09; }
+    & .hero-school-pill { background:#FFFCF4; color:#713414; border-color:#EDB88F; }
+    & :is(.stat-card,.teacher-summary-card) { border:1px solid #EDB896; box-shadow:inset 0 0 0 2px #FFF9,0 3px 9px #9E4D171C; background:linear-gradient(135deg,#FFF7F1,#FFDCD0); }
+    & :is(.dashboard-stat-grid > div:nth-child(2) .stat-card,.teacher-summary-card:nth-child(2)) { background:linear-gradient(135deg,#FAF6FF,#E9DCF6); }
+    & :is(.dashboard-stat-grid > div:nth-child(3) .stat-card,.teacher-summary-card:nth-child(3)) { background:linear-gradient(135deg,#FFFAEB,#FFE4AF); }
+    & :is(.dashboard-stat-grid > div:nth-child(4) .stat-card,.teacher-summary-card:nth-child(4)) { background:linear-gradient(135deg,#FFF7F9,#FADBE4); }
+    & .stat-value { color:#54240F; }
+    & :is(.teacher-monthly-grid,.student-monthly-grid,.table) thead th { background:#8C3D17; color:#FFF8E8; border-color:#C58958; }
+    & :is(.teacher-monthly-grid,.student-monthly-grid) thead th.is-weekend { background:#B74B19; }
+    & .teacher-monthly-grid tbody tr { --teacher-row-bg:#FFFCF6; --teacher-divider:#DFA774; }
+    & .teacher-monthly-grid tbody tr.teacher-attendance-band-1 { --teacher-row-bg:#FFF0DD; }
+    & .page-footer { color:#80573F; border-color:#E6B58B; }
+    & .school-nav { margin-top:0; margin-bottom:86px; }
+    & .sidebar > :not(.autumn-trees,.autumn-garden) { position:relative; z-index:3; }
+    & .school-nav a:not(.active) { background:#71341455; text-shadow:0 1px 3px #3E1A0F,0 0 5px #3E1A0F; }
+}
+.autumn-garden { position:fixed; left:0; bottom:34px; width:var(--shell-width,228px); height:190px; overflow:hidden; isolation:isolate; pointer-events:none; z-index:1043; contain:layout paint; }
+.autumn-ground { position:absolute; bottom:0; left:0; width:100%; height:62px; background:url('../images/autumn-forest-ground.png') center bottom/auto 135px repeat-x; }
+.autumn-ground > * { display:none; }
+.autumn-land { position:fixed; inset:auto 0 0; height:78px; overflow:hidden; contain:strict; pointer-events:none; z-index:1042; }
+.autumn-land .autumn-ground { height:100%; background-size:auto 170px; }
+.autumn-wind-field { position:fixed; inset:0; overflow:hidden; contain:strict; pointer-events:none; z-index:1044; }
+.autumn-air-particle { position:absolute; left:-18px; top:var(--wind-y); width:calc(var(--wind-size) * 2); height:var(--wind-size); border-radius:60% 30%; background:#D89D42; opacity:0; animation:autumn-airflow 12s calc(var(--autumn-phase,0s) + var(--wind-offset)) cubic-bezier(.35,0,.7,1) infinite; }
+.autumn-air-particle:nth-child(3n) { background:#FFF0B8; }
+.autumn-ground-leaf { position:absolute; bottom:30px; left:var(--ground-x); width:16px; height:18px; color:#B65A20; opacity:0; animation:autumn-ground-tumble 12s calc(var(--autumn-phase,0s) + var(--wind-offset)) ease-in-out infinite; }
+.autumn-ground-leaf svg { width:100%; height:100%; }
+@keyframes autumn-airflow {
+    0%,6% { opacity:0; transform:translate3d(0,0,0) scaleX(1); }
+    10% { opacity:.55; }
+    19% { opacity:.5; transform:translate3d(35vw,var(--wind-lift),0) scaleX(1.6); }
+    29% { opacity:.35; transform:translate3d(75vw,14px,0) scaleX(1.3); }
+    38%,100% { opacity:0; transform:translate3d(calc(100vw + 40px),var(--wind-lift),0) scaleX(1); }
+}
+@keyframes autumn-ground-tumble {
+    0%,14% { opacity:0; transform:translate3d(0,0,0) rotate(0); }
+    18% { opacity:.8; }
+    25% { opacity:.85; transform:translate3d(65px,var(--wind-lift),0) rotate(120deg); }
+    36% { opacity:.7; transform:translate3d(170px,-8px,0) rotate(280deg); }
+    44%,100% { opacity:0; transform:translate3d(210px,6px,0) rotate(330deg); }
+}
+.autumn-grass { transform-origin:center bottom; animation:autumn-grass 4s ease-in-out infinite alternate; }
+.autumn-picnic { position:absolute; width:210px; max-width:96%; height:auto; left:50%; bottom:-3px; transform:translateX(-50%); z-index:2; }
+.autumn-trees { position:absolute; top:0; bottom:25px; left:-62px; width:calc(100% + 124px); overflow:hidden; contain:strict; pointer-events:none; z-index:2; mask-image:linear-gradient(to bottom,transparent,#000 32px); }
+.autumn-tree { position:absolute; inset:8px 8px 0; width:auto; height:auto; }
+.autumn-tree-right { top:15px; left:190px; width:195px; height:209px; }
+.autumn-tree-crown { position:absolute; inset:0; background:url('../images/autumn-maple-tree.png') center bottom/100% 100% no-repeat; transform-origin:50% 95%; animation:autumn-tree-gust 12s var(--autumn-phase,0s) ease-in-out infinite; }
+.autumn-tree-right .autumn-tree-crown { animation-name:autumn-tree-gust-right; transform:scaleX(-1); }
+.autumn-branch-leaves { position:absolute; inset:0; overflow:visible; }
+.autumn-shed-leaf { position:absolute; left:var(--leaf-x); top:var(--leaf-y); width:13px; height:14px; opacity:0; animation:autumn-branch-fall 12s calc(var(--autumn-phase,0s) + var(--release)) linear infinite; }
+.autumn-tree-right .autumn-shed-leaf { animation-name:autumn-branch-fall-right; }
+.autumn-shed-leaf svg { width:100%; height:100%; animation:autumn-leaf-flutter 3.8s var(--autumn-phase,0s) ease-in-out infinite alternate; }
+.autumn-person { transform-origin:var(--origin); animation:autumn-breathe 4s ease-in-out infinite alternate; }
+.autumn-person-right { animation-delay:-2s; }
+.autumn-head { transform-origin:var(--head-origin); animation:autumn-snuggle 9s ease-in-out infinite; }
+.autumn-hair { transform-origin:180px 75px; animation:autumn-hair 4s ease-in-out infinite alternate; }
+.autumn-offer { transform-origin:107px 112px; animation:autumn-offer 12s var(--autumn-phase,0s) ease-in-out infinite; }
+.autumn-eat-right { transform-origin:188px 105px; animation:autumn-eat-right 12s var(--autumn-phase,0s) ease-in-out infinite; }
+.autumn-chew { transform-box:fill-box; transform-origin:center; animation:autumn-chew 12s var(--autumn-phase,0s) linear infinite; }
+.autumn-chew-right { animation-name:autumn-chew-right; }
+.autumn-eyes { transform-box:fill-box; transform-origin:center; animation:autumn-blink 6s linear infinite; }
+.autumn-person-right .autumn-eyes { animation-delay:-2.8s; }
+.autumn-heart { transform-box:fill-box; transform-origin:center; animation:autumn-hearts 6s var(--heart-delay) ease-out infinite; }
+.autumn-steam { stroke:#B2774970; fill:none; stroke-width:2; animation:autumn-steam 3s ease-out infinite; }
+.autumn-steam:nth-of-type(2) { animation-delay:-1.5s; }
+.autumn-paused * { animation-play-state:paused!important; }
+@keyframes autumn-leaf-flutter { 0% { transform:translateX(-22px) rotate(-35deg) rotateY(0); } 50% { transform:translateX(12px) rotate(20deg) rotateY(65deg); } 100% { transform:translateX(30px) rotate(75deg) rotateY(-25deg); } }
+@keyframes autumn-tree-gust { 0%,8%,42%,100% { transform:rotate(0); } 18%,25% { transform:rotate(.65deg) skewX(.25deg); } }
+@keyframes autumn-tree-gust-right { 0%,22%,76%,100% { transform:scaleX(-1) rotate(0); } 30% { transform:scaleX(-1) rotate(-3deg); } 40% { transform:scaleX(-1) rotate(1.2deg); } 50% { transform:scaleX(-1) rotate(-1.5deg); } 61% { transform:scaleX(-1) rotate(.4deg); } }
+@keyframes autumn-branch-fall {
+    0%,12% { opacity:0; transform:translate3d(0,0,0) rotate(var(--leaf-turn)); }
+    15% { opacity:.9; transform:translate3d(12px,var(--leaf-rise),0) rotate(calc(var(--leaf-turn) + 25deg)); }
+    28% { opacity:.9; transform:translate3d(calc(var(--leaf-drift) * .6),26px,0) rotate(calc(var(--leaf-turn) + 115deg)); }
+    45% { opacity:.85; transform:translate3d(var(--leaf-drift),140px,0) rotate(calc(var(--leaf-turn) + 225deg)); }
+    66% { opacity:.75; transform:translate3d(calc(var(--leaf-drift) * 1.12),350px,0) rotate(calc(var(--leaf-turn) + 310deg)); }
+    88%,100% { opacity:0; transform:translate3d(calc(var(--leaf-drift) * 1.4),calc(100dvh + 100px),0) rotate(calc(var(--leaf-turn) + 450deg)); }
+}
+@keyframes autumn-branch-fall-right {
+    0%,28% { opacity:0; transform:translate3d(0,0,0) rotate(var(--leaf-turn)); }
+    31% { opacity:.9; transform:translate3d(12px,var(--leaf-rise),0) rotate(calc(var(--leaf-turn) + 25deg)); }
+    44% { opacity:.9; transform:translate3d(calc(var(--leaf-drift) * .6),26px,0) rotate(calc(var(--leaf-turn) + 115deg)); }
+    61% { opacity:.85; transform:translate3d(var(--leaf-drift),140px,0) rotate(calc(var(--leaf-turn) + 225deg)); }
+    78% { opacity:.75; transform:translate3d(calc(var(--leaf-drift) * 1.12),350px,0) rotate(calc(var(--leaf-turn) + 310deg)); }
+    99%,100% { opacity:0; transform:translate3d(calc(var(--leaf-drift) * 1.4),calc(100dvh + 100px),0) rotate(calc(var(--leaf-turn) + 450deg)); }
+}
+@keyframes autumn-breathe { from { transform:translateY(0) rotate(-.5deg); } to { transform:translateY(-1.5px) rotate(.5deg); } }
+@keyframes autumn-snuggle { 0%,20%,100% { transform:rotate(0); } 40%,70% { transform:rotate(var(--lean)); } }
+@keyframes autumn-hair { from { transform:skewX(-1deg); } to { transform:skewX(3deg) translateX(2px); } }
+@keyframes autumn-offer { 0%,8%,100% { transform:rotate(38deg); } 20%,40% { transform:rotate(-86deg); } 52%,80% { transform:rotate(0); } }
+@keyframes autumn-eat-right { 0%,48%,100% { transform:rotate(0); } 58% { transform:rotate(-16deg); } 72%,90% { transform:rotate(130deg); } }
+@keyframes autumn-chew { 0%,23%,46%,100% { transform:scaleY(1); } 26%,32%,38%,44% { transform:scaleY(.35) scaleX(1.1); } 29%,35%,41% { transform:scaleY(1.15); } }
+@keyframes autumn-chew-right { 0%,74%,95%,100% { transform:scaleY(1); } 77%,83%,89%,93% { transform:scaleY(.35) scaleX(1.1); } 80%,86%,91% { transform:scaleY(1.2); } }
+@keyframes autumn-grass { from { transform:skewX(-3deg); } to { transform:skewX(6deg); } }
+@keyframes autumn-blink { 0%,43%,47%,100% { transform:scaleY(1); } 45% { transform:scaleY(.1); } }
+@keyframes autumn-hearts { 0% { transform:translateY(8px) scale(.4); opacity:0; } 25% { opacity:.9; } 100% { transform:translateY(-40px) scale(1.1) rotate(12deg); opacity:0; } }
+@keyframes autumn-steam { from { transform:translateY(2px); opacity:0; } 30% { opacity:.8; } to { transform:translateY(-12px); opacity:0; } }
+:root[data-sidebar="collapsed"] .autumn-garden { display:none; }
+@media (max-width:991px) { .sidebar .autumn-garden { width:260px; } }
+@media (min-width:992px) {
+    .autumn-trees { left:-60px; width:calc(100% + 240px); }
+    .autumn-tree-crown { background-image:url('../images/autumn-curved-maple.png'); }
+}
+@media (max-width:600px) { .autumn-air-particle:nth-child(even),.autumn-ground-leaf:nth-child(even) { display:none; } }
+@media (prefers-reduced-motion:reduce) { .autumn-shed-leaf,.autumn-wind-field { display:none; } :is(.autumn-garden,.autumn-trees,.autumn-land) * { animation:none!important; } .autumn-heart { opacity:0; } }
+@media print { .autumn-garden,.autumn-trees,.autumn-land,.autumn-wind-field { display:none!important; } }

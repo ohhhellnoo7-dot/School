@@ -908,28 +908,6 @@ a.class-summary-card:hover {
 .room-study-arrangement strong{font-size:13px}.room-study-arrangement small{color:var(--muted)}
 .room-study-arrangement.is-combined{border-left-color:var(--success,#329c7c);background:var(--success-soft,var(--soft))}
 
-#class-attendance .table td.attendance-cell-present {
-    --bs-table-bg: #bbf7d0;
-    --bs-table-color: #14532d;
-    background-color: #bbf7d0 !important;
-    color: #14532d !important;
-    box-shadow: none;
-}
-#class-attendance .table td.attendance-cell-late {
-    --bs-table-bg: #fef08a;
-    --bs-table-color: #713f12;
-    background-color: #fef08a !important;
-    color: #713f12 !important;
-    box-shadow: none;
-}
-#class-attendance .table td.attendance-cell-absent {
-    --bs-table-bg: #fecaca;
-    --bs-table-color: #7f1d1d;
-    background-color: #fecaca !important;
-    color: #7f1d1d !important;
-    box-shadow: none;
-}
-
 .section-picker { min-width: 0; border: 0; padding: 0; }
 .section-picker legend { float: none; width: 100%; display: flex; justify-content: space-between; align-items: center; }
 .section-picker-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }

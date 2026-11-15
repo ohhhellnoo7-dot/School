@@ -1,0 +1,25 @@
+# Khmer Heritage Apsara artwork
+
+Generated using the built-in image_gen tool, with the user's attached illustration as the reference and a transparent background.
+
+Project asset: `public/images/khmer-apsara-cloud.png`.
+
+Animated sprite asset: `public/images/khmer-apsara-flower-cycle.png`, generated and then given a transparent background with the built-in image_gen tool. Four poses show reaching into the bowl, lifting blossoms, extending the arm, and opening the hand. Runtime flowers are released only with the fourth pose.
+
+## Animation prompt
+
+Transform this reference into a production animation sprite sheet: exactly FOUR equal square frames arranged horizontally in one row, 4:1 total canvas aspect ratio, transparent background. Same Khmer Apsara, crown, face, red gold blouse, green gold sampot, seated cloud, bowl, scale, cloud location and body position in EVERY frame. Full crown and cloud within each square. Animate ONLY her free arm and hand. Frame 1: free hand reaches into the flower bowl held near right of torso. Frame 2: free hand lifts a small handful of blossoms from bowl in front of chest. Frame 3: free arm extends leftwards carrying blossoms. Frame 4: same extended left arm with fingers opening downward to scatter flowers. NO baked falling flowers below the hand, code will emit them. Keep cloud and head perfectly registered across four square cells, uniform cell widths, no borders, no frame labels, no text, no other objects. Maintain respectful polished traditional Khmer illustration, crisp red gold green detail. Save local output path.
+
+Transparency refinement: Remove ONLY the pale paper background from this four-frame animation sprite sheet, making every background pixel fully transparent. Preserve exactly the four poses, complete clouds, illustration detail, equal spacing and positions; keep one horizontal row with four equal-width frames. Keep all four character figures fully visible. Do not add drop shadows, background texture, white rectangle, checkerboard or text. Genuine alpha transparency around each figure and cloud. Keep original four-frame aspect ratio.
+
+## Final prompt
+
+Create a transparent-background website decoration inspired by the user's attached Khmer traditional illustration. One elegant Cambodian Apsara seated gracefully on a small fluffy ivory cloud, ornate pointed gold crown, red and gold embroidered blouse, emerald green and gold patterned sampot, traditional Khmer hand gesture with one arm extending outward scattering a few tiny pink and gold blossoms. Respectful graceful traditional illustration, clean polished detailed flat ornamental art, rich red gold green like reference, smiling serene face, whole figure and entire cloud visible, no cropped crown or cloud, no background, no halo, no border, no lettering. Compact square composition suitable for a small animated web mascot. The flowers themselves will be animated by code, do not draw a long trail. Save the resulting image to a local file and report the saved path.
+
+## Crisp 24-frame replacement
+
+Active asset: `public/images/khmer-apsara-smooth-cycle.png`. Built-in image_gen generation followed by its transparent-background extraction mode. The runtime shows a single opaque sprite frame at a time, with no opacity blending.
+
+Generation prompt: Create a crisp animation sprite sheet derived from this Khmer Apsara reference. EXACTLY 24 frames arranged as SIX columns by FOUR rows, every cell exactly equal dimensions, total canvas aspect ratio 9:8 (each cell portrait 3:4). Genuine transparent background, NO pale paper or texture. Each cell contains one whole identical seated Apsara on her identical cloud with golden crown red/gold blouse green/gold sampot and same bowl. Body cloud head crown stay ABSOLUTELY REGISTERED SAME PIXEL POSITION ACROSS CELLS. Animate ONLY free arm and hand, with many incremental poses, NO crossfade NO ghosting NO blur. Read frames left to right, row by row. Frames 1-4 scoop blossoms from bowl; frames 5-8 lift a handful; frames 9-12 smoothly extend arm leftward; frames 13-16 gradually open hand downward to scatter flowers; frames 17-24 smoothly bring empty hand back to bowl, returning to frame1 seamlessly. No loose falling flowers, runtime code adds them. Each figure entirely inside its own cell, no overlaps, ample transparent cell margins, no grid lines no labels no text. Sharp small animation asset matching original traditional Cambodian ornamental illustration. All 24 separate frames must be present in the exact 6x4 grid.
+
+Transparency refinement: Background extraction only. Remove all white and pale paper background around the 24 Apsara cloud figures, making that background genuine fully transparent alpha. Preserve the exact SIX COLUMNS and FOUR ROWS grid, 24 poses, positions, equal cell spacing, every crown/cloud/body detail, and entire image aspect ratio. No blur, no ghosts, no overlapping figures, no shadows or background texture. Do not redraw or rearrange poses. Make background fully transparent as in a production sprite sheet.

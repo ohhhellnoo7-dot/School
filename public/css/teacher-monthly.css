@@ -101,11 +101,11 @@
 
 /* Keep dates visible while browsing a long attendance roster. */
 .teacher-attendance-panel .table-responsive {
-    max-height:calc(100dvh - 180px);
-    min-height:200px;
+    max-height:none;
     overflow:auto;
     isolation:isolate;
 }
+.teacher-monthly-grid thead { position:relative; z-index:4; }
 .teacher-monthly-grid thead th {
     position:sticky;
     top:0;
@@ -119,5 +119,48 @@
 }
 @media print {
     .teacher-attendance-panel .table-responsive { max-height:none; min-height:0; overflow:visible; }
-    .teacher-monthly-grid thead th { position:static; box-shadow:none; }
+    .teacher-monthly-grid thead th { position:static; box-shadow:none; transform:none; }
+    .teacher-monthly-grid thead { transform:none!important; }
 }
+
+/* Native page-sticky dates: no JavaScript work during vertical scrolling. */
+/* Avoid invalidating an entire wide row as it moves under the pointer. */
+.teacher-monthly-grid.attendance-is-scrolling { pointer-events:none; }
+.teacher-attendance-panel { overflow:visible; }
+.teacher-monthly-grid.attendance-header-copied > thead { visibility:hidden; }
+.attendance-sticky-dates { position:sticky; z-index:6; overflow:hidden; pointer-events:none; }
+.attendance-sticky-dates .teacher-monthly-grid { table-layout:fixed; margin:0; border-radius:0; }
+.attendance-sticky-dates .teacher-monthly-grid thead { position:static; }
+.attendance-sticky-dates .teacher-monthly-grid th { box-sizing:border-box; }
+@media print {
+    .attendance-sticky-dates { display:none; }
+    .teacher-monthly-grid.attendance-header-copied > thead { visibility:visible; }
+}
+
+/* Wide day columns must scroll inside the roster, never widen the page. */
+.teacher-attendance-page,
+.teacher-attendance-page > .panel { min-width:0; max-width:100%; box-sizing:border-box; }
+.teacher-attendance-panel > .table-responsive,
+.attendance-sticky-dates { width:100%; max-width:100%; min-width:0; contain:inline-size; box-sizing:border-box; }
+@media print { body:has(.teacher-attendance-page) { overflow:visible; } .teacher-attendance-panel > .table-responsive { contain:none; } }
+
+/* Isolate the wide roster's sticky-cell overflow from the document scroll area. */
+.teacher-attendance-panel > .table-responsive { contain:inline-size layout paint; }
+@media print { .teacher-attendance-panel > .table-responsive { contain:none; } }
+
+/* A soft color band and a clear rule separate people, while sessions stay together. */
+.teacher-monthly-grid tbody tr {
+    --teacher-divider:color-mix(in srgb,var(--primary) 42%,var(--border-color));
+    --teacher-row-bg:color-mix(in srgb,var(--primary) 2%,var(--surface));
+}
+.teacher-monthly-grid tbody tr.teacher-attendance-band-1 {
+    --teacher-divider:color-mix(in srgb,var(--accent) 55%,var(--primary));
+    --teacher-row-bg:color-mix(in srgb,var(--primary) 7%,var(--surface));
+}
+.teacher-monthly-grid tbody tr > td.attendance-mark { background:var(--teacher-row-bg); }
+.teacher-monthly-grid tbody tr.teacher-group-start:not(:first-child) > :is(th,td) {
+    border-top:3px solid var(--teacher-divider);
+}
+.teacher-monthly-grid tbody tr:hover { --teacher-row-bg:color-mix(in srgb,var(--primary) 12%,var(--surface)); }
+.teacher-monthly-grid .attendance-scan-out { border-top-color:color-mix(in srgb,var(--primary) 14%,var(--border-color)); }
+.teacher-monthly-grid tbody tr > th:nth-child(2) { border-right-color:var(--teacher-divider); }

@@ -1,0 +1,70 @@
+/* Monthly student marks share the teacher roster's palette and row rhythm. */
+#class-attendance { overflow:visible; }
+#class-attendance > .table-responsive {
+    width:100%; max-width:100%; overflow:auto; contain:inline-size layout paint;
+}
+#class-attendance .student-monthly-grid {
+    width:100%; margin:0; border-collapse:separate; border-spacing:0;
+    color:var(--text-primary); border:1px solid var(--border-color); font-size:13px;
+}
+#class-attendance .student-monthly-grid :is(th,td) {
+    padding:10px 6px; min-width:65px; height:70px; vertical-align:middle;
+    border-width:0 1px 1px 0; border-color:var(--border-color);
+}
+#class-attendance .student-monthly-grid thead th {
+    height:46px; background:var(--primary); color:#fff; font-size:12px;
+    text-transform:none; white-space:nowrap;
+}
+#class-attendance .student-monthly-grid thead th.is-weekend { background:var(--danger); color:#fff; }
+#class-attendance .student-monthly-grid tbody tr {
+    --student-row-bg:var(--surface);
+    --student-divider:color-mix(in srgb,var(--primary) 42%,var(--border-color));
+}
+#class-attendance .student-monthly-grid tbody tr:nth-child(even) {
+    --student-row-bg:var(--surface);
+    --student-divider:color-mix(in srgb,var(--accent) 55%,var(--primary));
+}
+#class-attendance .student-monthly-grid tbody tr > :is(th,td) { background:var(--student-row-bg); color:var(--text-primary); }
+#class-attendance .student-monthly-grid tbody tr + tr > :is(th,td) { border-top:3px solid var(--student-divider); }
+#class-attendance .student-monthly-grid :is(thead,tbody) th:nth-child(2) {
+    position:sticky; left:0; z-index:2; min-width:200px; width:200px;
+    box-shadow:1px 0 0 var(--border-color);
+}
+#class-attendance .student-monthly-grid .attendance-cell { --student-status:var(--text-secondary); }
+#class-attendance .student-monthly-grid .attendance-cell-present { --student-status:var(--success); }
+#class-attendance .student-monthly-grid .attendance-cell-absent { --student-status:var(--danger); }
+#class-attendance .student-monthly-grid .attendance-cell-late { --student-status:var(--warning); }
+#class-attendance .student-monthly-grid .attendance-cell-excused { --student-status:var(--violet,var(--primary)); }
+#class-attendance .student-monthly-grid .attendance-cell > span {
+    display:grid; place-items:center; min-height:38px; border-radius:11px;
+    color:var(--student-status); font-size:24px; font-weight:800;
+}
+#class-attendance .student-monthly-grid :is(.attendance-cell-present,.attendance-cell-absent,.attendance-cell-late,.attendance-cell-excused) > span {
+    background:transparent;
+}
+#class-attendance .attendance-sticky-dates { position:sticky; z-index:6; overflow:hidden; pointer-events:none; width:100%; contain:inline-size; }
+#class-attendance .attendance-sticky-dates table { table-layout:fixed; }
+#class-attendance .student-monthly-grid.attendance-is-scrolling { pointer-events:none; }
+#class-attendance .student-monthly-grid.attendance-header-copied > thead { visibility:hidden; }
+@media print {
+    #class-attendance > .table-responsive { overflow:visible; contain:none; }
+    #class-attendance .attendance-sticky-dates { display:none; }
+    #class-attendance .student-monthly-grid.attendance-header-copied > thead { visibility:visible; }
+    #class-attendance .student-monthly-grid :is(thead,tbody) th:nth-child(2) { position:static; min-width:0; box-shadow:none; }
+}
+
+#class-attendance .student-gender {
+    display:inline-grid; place-items:center; width:36px; height:36px;
+    border-radius:12px; font-size:22px; line-height:1;
+    color:var(--text-secondary); background:var(--surface-tint);
+}
+#class-attendance .student-gender-female { color:#d92c89; background:color-mix(in srgb,#ec4899 13%,var(--surface)); }
+#class-attendance .student-gender-male { color:#2384ed; background:color-mix(in srgb,#2384ed 13%,var(--surface)); }
+
+#class-attendance .student-attendance-person { display:flex; align-items:center; gap:10px; min-width:200px; }
+#class-attendance .student-attendance-person > span:last-child { white-space:normal; line-height:1.5; }
+#class-attendance .student-attendance-person :is(img,.student-avatar) { flex-shrink:0; border-radius:50%; object-fit:cover; margin:0; }
+
+/* Solid date headings remain readable beneath Ocean's bright surface. */
+:root[data-theme="ocean"] #class-attendance .student-monthly-grid thead th { background:#03496E; color:#F2FFFF; }
+:root[data-theme="ocean"] #class-attendance .student-monthly-grid thead th.is-weekend { background:#8B304D; color:#FFFFFF; }

@@ -5,6 +5,16 @@
     const key = 'scholar-theme';
     let timer;
     let selectedTheme = 'light';
+    // Palette changes must paint before decorative scenes measure layout.
+    // Moving across options cancels scene setup for intermediate previews.
+    const effectTimers = new Map();
+    window.scholarScheduleThemeEffect = callback => {
+        clearTimeout(effectTimers.get(callback));
+        effectTimers.set(callback, setTimeout(() => {
+            effectTimers.delete(callback);
+            callback();
+        }, root.classList.contains('theme-previewing') ? 120 : 0));
+    };
     function apply(value, animate = false) {
         const theme = themes.includes(value) ? value : 'light';
         if (animate && root.dataset.theme !== theme && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -12,8 +22,9 @@
             root.classList.add('theme-changing');
             timer = setTimeout(() => root.classList.remove('theme-changing'), 750);
         }
-        root.dataset.theme = theme;
-        root.dataset.bsTheme = registry[theme].dark ? 'dark' : 'light';
+        if (root.dataset.theme !== theme) root.dataset.theme = theme;
+        const bsTheme = registry[theme].dark ? 'dark' : 'light';
+        if (root.dataset.bsTheme !== bsTheme) root.dataset.bsTheme = bsTheme;
         document.querySelectorAll('[data-theme-picker]').forEach(picker => { picker.value = theme; });
         document.querySelectorAll('[data-current-theme]').forEach(label => {
             label.textContent = registry[theme].name;
@@ -73,17 +84,24 @@
                 }, 180);
             });
             const restoreSelection = () => {
-                if (menu.hasAttribute('data-theme-menu')) apply(selectedTheme, true);
+                if (menu.hasAttribute('data-theme-menu')) {
+                    apply(selectedTheme);
+                    root.classList.remove('theme-previewing');
+                }
+            };
+            const preview = value => {
+                clearTimeout(timer);
+                root.classList.remove('theme-changing');
+                root.classList.add('theme-previewing');
+                apply(value);
             };
             menu.querySelectorAll('[data-theme-choice]').forEach(button => {
                 button.addEventListener('pointerenter', event => {
                     if (event.pointerType === 'mouse' && window.matchMedia('(hover: hover)').matches) {
-                        apply(button.dataset.themeChoice, true);
+                        preview(button.dataset.themeChoice);
                     }
                 });
-                button.addEventListener('pointerleave', restoreSelection);
-                button.addEventListener('focus', () => apply(button.dataset.themeChoice, true));
-                button.addEventListener('blur', restoreSelection);
+                button.addEventListener('focus', () => preview(button.dataset.themeChoice));
                 button.addEventListener('click', () => {
                     choose(button.dataset.themeChoice);
                     menu.open = false;

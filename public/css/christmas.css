@@ -1,0 +1,112 @@
+/* Decorations stay in a fixed, clipped layer and never intercept page controls. */
+.christmas-scene { position:fixed; inset:0; z-index:1060; overflow:hidden; pointer-events:none; contain:strict; }
+.christmas-snow { position:absolute; inset:0; }
+.christmas-flake {
+    position:absolute; top:-12px; left:var(--x); width:var(--size); height:var(--size);
+    border-radius:50%; background:#fff; border:1px solid #bad7cb80; opacity:.72;
+    animation:christmas-fall var(--duration) var(--delay) linear infinite;
+}
+.christmas-walker {
+    position:absolute; left:8px; bottom:10px; width:88px; height:142px;
+    padding:0; border:0; background:transparent; pointer-events:auto; cursor:pointer;
+    animation:christmas-stroll 40s ease-in-out infinite alternate;
+}
+.christmas-snowman { position:absolute; bottom:0; width:88px; height:112px; transform-origin:50% 95%; animation:christmas-step 1s ease-in-out infinite alternate; }
+.christmas-greeting {
+    visibility:hidden; opacity:0;
+    position:absolute; top:0; left:0; min-width:88px; padding:6px 8px; text-align:center;
+    font:700 13px/1.3 system-ui,sans-serif; color:#23533f; background:#fffef7;
+    border:1px solid #c69b4780; border-radius:13px 13px 13px 3px;
+    box-shadow:0 3px 10px #123d3215;
+}
+.christmas-walker:focus-visible { outline:2px solid #c69b47; outline-offset:3px; border-radius:16px; }
+.christmas-saying-hello { animation-play-state:paused; }
+.christmas-saying-hello .christmas-greeting { visibility:visible; opacity:1; }
+.christmas-saying-hello .christmas-snowman { animation:christmas-jump .7s ease-in-out; }
+.christmas-saying-hello .christmas-smile { stroke-width:4; }
+@keyframes christmas-jump {
+    0%,100% { transform:translateY(0) rotate(0); }
+    35% { transform:translateY(-24px) rotate(-7deg); }
+    65% { transform:translateY(-12px) rotate(6deg); }
+}
+.christmas-greeting span { display:block; font-size:9px; font-weight:500; white-space:nowrap; }
+@keyframes christmas-fall { from { transform:translate3d(0,-12px,0); } to { transform:translate3d(24px,105dvh,0); } }
+@keyframes christmas-stroll { from { transform:translate3d(0,0,0); } to { transform:translate3d(calc(100vw - 104px),0,0); } }
+@keyframes christmas-step { from { transform:rotate(-4deg) translateY(0); } to { transform:rotate(4deg) translateY(-3px); } }
+.christmas-paused *, .christmas-paused { animation-play-state:paused!important; }
+.christmas-reduced .christmas-snow { display:none; }
+.christmas-reduced .christmas-walker,.christmas-reduced .christmas-snowman { animation:none!important; }
+@media (prefers-reduced-motion:reduce) { .christmas-snow { display:none; } .christmas-walker,.christmas-snowman { animation:none!important; } }
+@media (max-width:600px) { .christmas-walker { bottom:8px; } .christmas-flake:nth-child(even) { display:none; } }
+@media print { .christmas-scene { display:none; } }
+
+/* Winter path and a continuous gait; all movement uses transform animations. */
+/* Powder snow has a transparent, uneven crest instead of a paved grid. */
+.christmas-road {
+    position:absolute; inset:auto 0 0; height:64px;
+    background:url('../images/christmas-snow-path.png') center bottom/100% 140px no-repeat;
+}
+@media (max-width:600px) { .christmas-road { background-size:auto 140px; } }
+.christmas-walker { bottom:12px; animation-timing-function:linear; }
+.christmas-avatar { position:absolute; left:0; bottom:0; width:88px; height:112px; animation:christmas-facing 80s steps(1,end) infinite; }
+.christmas-snowman { left:0; animation:christmas-step .8s ease-in-out infinite alternate; }
+.christmas-boot { transform-box:fill-box; transform-origin:center; animation:christmas-boot .8s ease-in-out infinite alternate; }
+.christmas-boot-right { animation-direction:alternate-reverse; }
+.christmas-saying-hello .christmas-avatar,.christmas-saying-hello .christmas-boot { animation-play-state:paused; }
+@keyframes christmas-facing { 0% { transform:scaleX(1); } 50% { transform:scaleX(-1); } 100% { transform:scaleX(1); } }
+@keyframes christmas-boot { from { transform:translate(-3px,-1px) rotate(-9deg); } to { transform:translate(3px,0) rotate(9deg); } }
+@keyframes christmas-step { from { transform:rotate(-2deg) translateY(0); } to { transform:rotate(2deg) translateY(-2px); } }
+.christmas-reduced .christmas-avatar,.christmas-reduced .christmas-boot { animation:none!important; }
+@media (prefers-reduced-motion:reduce) { .christmas-avatar,.christmas-boot { animation:none!important; } }
+
+/* Christmas palette and finish, scoped independently of all other themes. */
+:root[data-theme="christmas"] {
+    --theme-nav-start:#B4091C; --theme-nav-end:#720A13; --theme-nav-muted:#F8D56B;
+    --theme-nav-active:#0C7937; --theme-nav-active-ink:#FFFFFF;
+    --theme-tile-1:#13832D; --theme-tile-2:#BA7904; --theme-tile-3:#CE1424; --theme-tile-4:#087AB9;
+}
+:root[data-theme="christmas"]:root:root:root:root:root:root:root:root:root:root:root .scholar-workspace {
+    background:radial-gradient(ellipse at 75% 0,#D6E9E0,transparent 60%),#F6F8F3;
+    & .main-content { background:transparent; padding-bottom:64px; }
+    & .sidebar { background-image:url('../images/christmas-snow-cap.svg'),url('../images/christmas-trees-gifts.svg'),radial-gradient(ellipse at 15% 40%,#B40D20,transparent 70%),linear-gradient(160deg,#720A13,#970B1A 70%,#5F0911); background-position:top,center bottom,center,center; background-size:100% 32px,100% auto,cover,cover; background-repeat:no-repeat; background-color:#720A13!important; border-right:1px solid #D9AD42; box-shadow:3px 0 14px #6F13171A; }
+    & .brand { border-bottom:1px solid #EDC75C; padding-top:8px; padding-bottom:24px; }
+    & .brand-mark { background:linear-gradient(145deg,#FF4A43,#B80016); color:#FFF2B5; border:1px solid #F6C34F; }
+    & :is(.nav-caption,.nav-group-caption) { color:#FFE18A; font-weight:800; }
+    & .school-nav a { color:#FFF9ED; }
+    & .school-nav a i { color:#FFE079; }
+    & .school-nav a.active { color:#FFFBE6; background:linear-gradient(120deg,#19924B,#005D2A); border:1px solid #E8DCA4; border-radius:24px; box-shadow:inset 0 3px 0 #F8FFFF,0 3px 12px #3F000C40; }
+    & .school-nav a.active i { color:#FFE487; }
+    & .school-switch { background:#6A0814D9; border-color:#EBC86470; }
+    & .school-switch strong { color:#FFF7E4; } & .school-switch small { color:#E9CEAE; }
+    & .topbar { background:linear-gradient(105deg,#9D0315,#C01824 65%,#85000D); border-bottom:1px solid #E6BB52; }
+    & .topbar::after { content:''; position:absolute; left:0; right:0; bottom:-18px; height:22px; background:url('../images/christmas-lights.svg') left center/240px 22px repeat-x; pointer-events:none; }
+    & :is(.portal-search,.theme-switcher > summary,.language-switcher > summary,.profile-link,.topbar .icon-button,.topbar .btn-outline-primary) { background:#FFFCF2; color:#750F19; border:1px solid #E2C77D; border-radius:26px; }
+    & :is(.btn-primary,.teacher-scan-shortcut) { background:linear-gradient(180deg,#199444,#005C24); border:1px solid #E8C968; color:#FFF9DC; box-shadow:inset 0 1px 0 #C7F5CC,0 3px 9px #2A391C20; }
+    & .btn-primary:hover { background:linear-gradient(180deg,#087134,#00451E); }
+    & :is(.btn-outline-primary,.btn-outline-secondary) { background:#FFFDF5; border-color:#DBBB70; color:#810E1A; border-radius:24px; }
+    & :is(.form-control,.form-select) { background-color:#FFFFFA; border-color:#C6D6CB; color:#5F1820; }
+    & :is(.panel,.mini-stats,.teacher-card,.parent-card,.class-summary-card) { background-color:#FFFCF4; border-color:#D5B772; box-shadow:0 5px 16px #1D56301A; }
+    & :is(.teacher-attendance-panel,#class-attendance) { border:3px solid transparent; background:linear-gradient(#FFFCF4,#FFFCF4) padding-box,repeating-linear-gradient(135deg,#B40B1C 0 7px,#FFFEF4 7px 14px) border-box; }
+    & .teacher-attendance-hero { border-color:#649C7B; background:#073F35; color:#FFF; }
+    & .teacher-attendance-hero::before { background-image:url('../images/christmas-school-hero.png'); }
+    & .teacher-attendance-hero::after { background:linear-gradient(90deg,#043E37EE,#043E37A8 40%,transparent 76%); }
+    & .teacher-attendance-hero :is(h1,p,a) { color:#FFFEF4; }
+    & .teacher-attendance-hero-icon { background:linear-gradient(#E33335,#AA091B); color:#FFE797; border:1px solid #EDC45C; }
+    & .school-hero { background-image:url('../images/christmas-school-hero.png'); background-size:cover; background-position:center; color:#FFF; }
+    & .school-hero::before { background:linear-gradient(90deg,#043E37F0,#043E37A8 40%,transparent 76%); }
+    & .school-hero :is(h1,p,.eyebrow) { color:#FFFDF2; }
+    & .teacher-summary-card { --tile:#15892D; background-image:url('../images/christmas-snow-cap.svg'),linear-gradient(135deg,#168B37,#005C27); background-size:100% 24px,cover; background-repeat:no-repeat; border:1px solid #84BB92; box-shadow:inset 0 0 0 2px #E5F6E04D,0 4px 10px #1E633122; padding-top:27px; }
+    & .teacher-summary-late { --tile:#C48B08; background-image:url('../images/christmas-snow-cap.svg'),linear-gradient(135deg,#B27807,#DE9F19); border-color:#E3BF62; }
+    & .teacher-summary-absent { --tile:#EE3033; background-image:url('../images/christmas-snow-cap.svg'),linear-gradient(135deg,#B90B1E,#870613); border-color:#DD7881; }
+    & .teacher-summary-excused { --tile:#128FDC; background-image:url('../images/christmas-snow-cap.svg'),linear-gradient(135deg,#006FAD,#064477); border-color:#71B8DF; }
+    & .teacher-summary-card :is(h2,strong) { color:#FFFDF1; }
+    & .teacher-summary-card::after { color:#FFF; opacity:.24; }
+    & .teacher-summary-icon { background:linear-gradient(145deg,color-mix(in srgb,var(--tile) 78%,white),var(--tile)); border-color:#FFFFFF80; color:#FFF; }
+    & :is(.teacher-monthly-grid,.student-monthly-grid,.table) thead th { background:linear-gradient(#096835,#004D25); color:#FFFFF2; border-color:#79A572; }
+    & :is(.teacher-monthly-grid,.student-monthly-grid) thead th.is-weekend { background:linear-gradient(#B41425,#860D1A); }
+    & .teacher-monthly-grid tbody tr { --teacher-row-bg:#FFFCF4; --teacher-divider:#BCCCAA; }
+    & .teacher-monthly-grid tbody tr.teacher-attendance-band-1 { --teacher-row-bg:#F0F7EA; --teacher-divider:#BCCCAA; }
+    & .teacher-monthly-grid tbody tr:hover { --teacher-row-bg:#E6F1DD; }
+    & .page-footer { border-top:1px solid #B5CAB2; color:#60785C; }
+}
+@media print { .christmas-road { display:none; } }

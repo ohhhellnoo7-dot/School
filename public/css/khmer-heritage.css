@@ -1,35 +1,53 @@
-/* Sandstone, royal blue, gold and woven checks inspired by Cambodian textiles. */
+/* Burgundy lacquer, ivory and gold; the existing hero photographs stay in place. */
 :root[data-theme="khmer-heritage"] {
-    --theme-nav-start: #244e82;
-    --theme-nav-end: #162e55;
-    --theme-nav-muted: #e3cfaa;
-    --theme-nav-active: #a23d3a;
-    --theme-tile-1: #244e82;
-    --theme-tile-2: #387665;
-    --theme-tile-3: #946923;
-    --theme-tile-4: #a23d3a;
-    --heritage-weave: repeating-linear-gradient(0deg, #c3944509 0 2px, transparent 2px 12px),
-        repeating-linear-gradient(90deg, #c3944509 0 2px, transparent 2px 12px);
+    --theme-nav-start:#9A1421; --theme-nav-end:#650B15;
+    --theme-nav-muted:#F3CF77; --theme-nav-active:#F0C352; --theme-nav-active-ink:#571019;
+    --theme-tile-1:#287932; --theme-tile-2:#C08716; --theme-tile-3:#C72C33; --theme-tile-4:#167BC1;
 }
-
-:root[data-theme="khmer-heritage"] .scholar-workspace {
-    background-image: var(--heritage-weave);
+/* Match the shared theme layers' specificity, scoped to this palette only. */
+:root[data-theme="khmer-heritage"]:root:root:root:root:root:root:root:root:root:root:root .scholar-workspace {
+    background:radial-gradient(ellipse at 75% 0,#F5DA9A80,transparent 55%),#FFF5E2;
+    & .main-content { background:transparent; }
+    & .sidebar {
+        background-image:url('../images/khmer-gold-corner.svg'),url('../images/khmer-temple-gold.svg'),radial-gradient(ellipse at 20% 40%,#A51A26,transparent 70%),linear-gradient(160deg,#650B15,#850E1A 75%,#570A13);
+        background-position:top left,center bottom,center,center;
+        background-size:76px 76px,100% auto,cover,cover; background-repeat:no-repeat;
+        background-color:#650B15!important; border-right:2px solid #D6A53A; box-shadow:3px 0 16px #6D190C18;
+    }
+    & .brand { border-bottom:1px solid #E6BC55; padding-bottom:24px; }
+    & .brand-mark { background:linear-gradient(145deg,#FFE29B,#C49028); color:#750D18; border-color:#F4D885; }
+    & :is(.nav-caption,.nav-group-caption) { color:#F6D575; font-weight:800; letter-spacing:1px; }
+    & .school-nav a { color:#FFF4DD; }
+    & .school-nav a i { color:#EBC75D; }
+    & .school-nav a:hover { background:#FFD97719; }
+    & .school-nav a.active { background:linear-gradient(120deg,#FFE89D,#E7B83D); color:#5A1018; border:1px solid #FFE7A1; border-radius:28px; box-shadow:inset 0 0 0 3px #FFF4CB45,0 4px 10px #39040A35; }
+    & .school-nav a.active i { color:#850F1B; }
+    & .school-switch { background:#600913D9; border-color:#CE9E3B80; }
+    & .school-switch strong { color:#FFF1CF; }
+    & .school-switch small { color:#EACD8B; }
+    & .topbar { background:linear-gradient(100deg,#F5DC9E,#FFFAEF 65%,#F4DEAD); border-bottom:1px solid #D5A23C; }
+    & :is(.portal-search,.theme-switcher > summary,.language-switcher > summary,.profile-link,.topbar .btn-outline-primary) { background:#FFFCF4; border-color:#DDB86B; color:#6F111A; border-radius:24px; }
+    & :is(.btn-primary,.teacher-scan-shortcut) { background:linear-gradient(180deg,#B82631,#830C18); border:1px solid #D5A239; color:#FFF3CD; box-shadow:inset 0 1px 0 #F6C66D80,0 3px 8px #7D1C161C; }
+    & .btn-primary:hover { background:linear-gradient(180deg,#9A1723,#690A14); color:#FFF7E2; }
+    & :is(.btn-outline-primary,.btn-outline-secondary) { background:linear-gradient(180deg,#FFFEF9,#FFF2D5); color:#78101A; border-color:#D9AC53; border-radius:22px; }
+    & :is(.form-control,.form-select) { background-color:#FFFEFA; border-color:#E2C992; color:#57151B; }
+    & :is(.panel,.mini-stats,.teacher-card,.parent-card,.class-summary-card) { background-color:#FFFCF5; border:1px solid #DFB35A; border-radius:23px; box-shadow:inset 0 0 0 3px #FFF3D0,0 5px 15px #8D56101A; }
+    & :is(.teacher-attendance-panel,#class-attendance) { background-image:url('../images/khmer-gold-corner.svg'); background-position:top right; background-size:46px 46px; background-repeat:no-repeat; }
+    & :is(.panel-header h2,#class-attendance > h2) { color:#780E19; }
+    & :is(.teacher-summary-card,.stat-card) { border-color:#D9AB47; box-shadow:inset 0 0 0 2px #FFF5D9,0 3px 9px #93621E1C; }
+    & .teacher-summary-card { --tile:#25822B; background-image:url('../images/khmer-gold-corner.svg'),linear-gradient(120deg,#F8FFF1,#D5EEC1); background-size:36px 36px,cover; background-position:top right,center; background-repeat:no-repeat; }
+    & .teacher-summary-late { --tile:#BE7D08; background-image:url('../images/khmer-gold-corner.svg'),linear-gradient(120deg,#FFFCED,#FFE5A7); }
+    & .teacher-summary-absent { --tile:#C4222C; background-image:url('../images/khmer-gold-corner.svg'),linear-gradient(120deg,#FFF3EF,#FFD3CF); }
+    & .teacher-summary-excused { --tile:#0775BF; background-image:url('../images/khmer-gold-corner.svg'),linear-gradient(120deg,#F3FBFF,#CBE9FC); }
+    & .teacher-summary-icon { background:linear-gradient(145deg,color-mix(in srgb,var(--tile) 75%,white),var(--tile)); color:#FFF; }
+    & .teacher-summary-card :is(h2,strong) { color:color-mix(in srgb,var(--tile) 65%,#25130A); }
+    & :is(.teacher-monthly-grid,.student-monthly-grid,.table) thead th { background:linear-gradient(180deg,#9F1421,#760B16); color:#FFF5DD; border-color:#D1A247; }
+    & :is(.teacher-monthly-grid,.student-monthly-grid) thead th.is-weekend { background:linear-gradient(180deg,#C52B35,#A21927); }
+    & .teacher-monthly-grid { border-color:#D3A449; }
+    & .teacher-monthly-grid tbody tr { --teacher-row-bg:#FFFCF5; --teacher-divider:#D9B660; }
+    & .teacher-monthly-grid tbody tr.teacher-attendance-band-1 { --teacher-row-bg:#FFF6E6; --teacher-divider:#D9B660; }
+    & .teacher-monthly-grid tbody tr:hover { --teacher-row-bg:#FFF0CC; }
+    & .page-footer { border-top:1px solid #DCB86C; color:#84612C; }
 }
-
-:root[data-theme="khmer-heritage"] .topbar {
-    border-bottom: 3px solid #c39445;
-}
-
-/* Keep each page's hero artwork and overlay, with a heritage gold border. */
-:root[data-theme="khmer-heritage"]:root:root:root:root:root :is(.school-hero, .classroom-availability-page .classroom-heading) {
-    border-color: #d8c49d;
-    border-bottom: 5px solid #c39445;
-}
-
-:root[data-theme="khmer-heritage"] .theme-preview {
-    background: linear-gradient(135deg, #162e55 50%, #c39445 50%);
-}
-
-@media print {
-    :root[data-theme="khmer-heritage"] .scholar-workspace { background-image: none; }
-}
+.swatch-khmer-heritage { background:linear-gradient(135deg,#750C18 50%,#EDC465 50%); }
+@media print { :root[data-theme="khmer-heritage"] .scholar-workspace { background:#fff; } }

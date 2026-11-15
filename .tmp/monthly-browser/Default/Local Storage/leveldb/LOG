@@ -1,0 +1,4 @@
+2026/11/14-18:36:46.882 3148 Reusing MANIFEST D:\laravel_projects\com3ms1ms2\.tmp\monthly-browser\Default\Local Storage\leveldb/MANIFEST-000001
+2026/11/14-18:36:46.883 3148 Recovering log #3
+2026/11/14-18:36:46.884 3148 (ignoring error) D:\laravel_projects\com3ms1ms2\.tmp\monthly-browser\Default\Local Storage\leveldb/000003.log: dropping 3664 bytes; Corruption: checksum mismatch
+2026/11/14-18:36:46.885 3148 Reusing old log D:\laravel_projects\com3ms1ms2\.tmp\monthly-browser\Default\Local Storage\leveldb/000003.log 

@@ -1,3 +1,11 @@
+/* Seasonal and cultural previews use distinct colors and recognizable marks. */
+.theme-swatch:is(.swatch-christmas,.swatch-autumn,.swatch-khmer-heritage) { display:inline-grid; place-items:center; }
+.theme-swatch.swatch-christmas { background:linear-gradient(135deg,#BA1027 50%,#0D7138 50%); }
+.theme-swatch.swatch-autumn { background:linear-gradient(135deg,#FFAA35 50%,#82401D 50%); }
+.theme-swatch.swatch-khmer-heritage { background:#750C18; border:1px solid #D7A638; }
+.theme-swatch.swatch-christmas::after { content:'🎄'; font-size:14px; line-height:1; }
+.theme-swatch.swatch-autumn::after { content:'🍁'; font-size:14px; line-height:1; }
+.theme-swatch.swatch-khmer-heritage::after { content:'✦'; font-size:17px; line-height:1; color:#F3CF77; }
 /* Explicit semantic tokens keep shared components consistent on every route. */
 :root[data-theme]:root:root:root:root:root:root {
     --topnav-bg:var(--surface); --card-bg:var(--surface); --button-bg:var(--action);
@@ -73,11 +81,71 @@
 }
 
 /* Keep header disclosures above image-backed page sections in every palette. */
+/* Hover previews change the palette immediately, including table cells. */
+:root.theme-previewing *,
+:root.theme-previewing *::before,
+:root.theme-previewing *::after {
+    transition:none!important;
+}
 :root[data-theme]:root:root:root:root:root:root:root:root:root .scholar-workspace .topbar {
     position:sticky;
-    z-index:1035;
+    z-index:1060;
     overflow:visible;
 }
 :root[data-theme]:root:root:root:root:root:root:root:root:root .theme-switcher[open] {
     z-index:1050;
+}
+
+/* The fixed sidebar and page offset must change together during previews. */
+html:has(body.scholar-workspace),
+body.scholar-workspace {
+    overflow-x:clip;
+}
+/* Keep the complete wordmark inside the 228px navigation rail. */
+:root[data-theme]:root:root:root:root:root:root:root .scholar-workspace .sidebar .brand {
+    margin-inline:18px;
+    gap:10px;
+    min-width:0;
+    font-size:27px;
+}
+:root[data-theme]:root:root:root:root:root:root:root .scholar-workspace .sidebar .brand-mark {
+    width:38px;
+    height:38px;
+    margin-right:0;
+}
+:root[data-theme]:root:root:root:root:root:root:root .scholar-workspace .sidebar .brand-name {
+    min-width:0;
+    letter-spacing:-1px;
+}
+@media (min-width:992px) {
+    :root[data-theme][data-sidebar=collapsed]:root:root:root:root:root:root:root .scholar-workspace .sidebar .brand {
+        margin-inline:auto;
+        gap:0;
+    }
+}
+:root:root:root:root:root .scholar-workspace :is(.workspace,.sidebar) {
+    transition:none;
+}
+/* Header controls wrap inside the available page width instead of making
+   the document scroll sideways underneath the fixed navigation. */
+:root:root:root:root:root .scholar-workspace .topbar {
+    height:auto;
+    flex-wrap:wrap;
+}
+:root:root:root:root:root .scholar-workspace .topbar > div:first-child {
+    flex:1 1 220px;
+}
+:root:root:root:root:root .scholar-workspace .topbar > div:last-child {
+    min-width:0;
+    max-width:100%;
+    flex-wrap:wrap;
+}
+:root:root:root:root:root .scholar-workspace .portal-search {
+    min-width:0;
+    max-width:100%;
+}
+@media (max-width:767px) {
+    :root:root:root:root:root .scholar-workspace .topbar > div:first-child {
+        flex-basis:100%;
+    }
 }

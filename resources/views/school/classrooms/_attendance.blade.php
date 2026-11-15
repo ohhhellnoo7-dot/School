@@ -1,3 +1,7 @@
+@once
+<link href="{{ asset('css/student-monthly.css') }}?v={{ filemtime(public_path('css/student-monthly.css')) }}" rel="stylesheet">
+<script src="{{ asset('js/attendance-table-headers.js') }}?v={{ filemtime(public_path('js/attendance-table-headers.js')) }}" defer></script>
+@endonce
 <section class="panel p-4 my-4" id="class-attendance" aria-label="Monthly student attendance">
     <h2 class="h5">Student attendance · {{ $selectedProgram }} · {{ $selectedSession }}</h2>
     @include('school.classrooms._evening-period-time')
@@ -11,8 +15,6 @@
         <label>Month<input class="form-control" type="month" name="attendance_month" value="{{ $attendanceMonth->format('Y-m') }}" required></label>
         <button class="btn btn-outline-primary">Show attendance</button>
     </form>
-    <p class="small text-secondary">✓ = Present (green) · ✗ = Absent (red) · L = Late (yellow) · E = Excused · — = Not recorded. Red dates are Saturdays and Sundays.</p>
-    <p class="small text-secondary">Saved daily attendance from the dashboard appears automatically in each student's enrolled classes. Marks saved for a specific class and session take priority.</p>
     @forelse($attendanceClasses as $attendanceClass)
         @php
             $classStudents = $roomStudents->filter(fn ($student) => $student->studyClasses->contains('id', $attendanceClass->id));
@@ -26,24 +28,37 @@
         @include('school.classrooms._evening-period-time')
         <p class="small">Class teacher: {{ $attendanceClass->teacher?->name ?? 'Unassigned' }}</p>
         <div class="table-responsive mb-3" tabindex="0" aria-label="{{ $attendanceClass->label }} attendance sheet">
-            <table class="table table-bordered table-sm align-middle text-center">
+            <table class="table table-bordered table-sm align-middle text-center student-monthly-grid" data-attendance-grid>
                 <thead><tr><th scope="col">No.</th><th scope="col" class="text-start text-nowrap">Student's name</th><th scope="col">Sex</th>
                     @foreach(range(1, $attendanceMonth->daysInMonth) as $day)
-                        @php($calendarDate = $attendanceMonth->setDay($day))
-                        <th scope="col" @class(['text-danger' => $calendarDate->isWeekend()]) title="{{ $calendarDate->format('l, F j, Y') }}">{{ $day }}</th>
+                        @php
+$calendarDate = $attendanceMonth->setDay($day);
+@endphp
+                        <th scope="col" @class(['is-weekend' => $calendarDate->isWeekend()]) title="{{ $calendarDate->format('l, F j, Y') }}">{{ $day }}</th>
                     @endforeach
-                    <th scope="col">Present</th><th scope="col">Absent</th>
+                    <th scope="col">Present</th><th scope="col">Absent</th><th scope="col">Late</th><th scope="col">Excused</th>
                 </tr></thead>
                 <tbody>
                 @forelse($classStudents as $student)
-                    @php($records = collect(range(1, $attendanceMonth->daysInMonth))->map(fn ($day) => $classAttendance->get($attendanceClass->id.':'.$student->id.':'.$attendanceMonth->setDay($day)->toDateString())))
-                    <tr><td>{{ $loop->iteration }}</td><th scope="row" class="text-start text-nowrap">{{ $student->name }}</th><td>{{ ucfirst($student->gender) }}</td>
+                    @php
+$records = collect(range(1, $attendanceMonth->daysInMonth))->map(fn ($day) => $classAttendance->get($attendanceClass->id.':'.$student->id.':'.$attendanceMonth->setDay($day)->toDateString()));
+@endphp
+                    <tr><td>{{ $loop->iteration }}</td><th scope="row" class="text-start"><div class="student-attendance-person">@include('school.partials.avatar', ['person' => $student, 'size' => 38])<span>{{ $student->name }}</span></div></th><td>
+                        @php
+                            $gender = strtolower($student->gender ?? '');
+                            $genderLabel = in_array($gender, ['female', 'male'], true) ? ucfirst($gender) : 'Not specified';
+                        @endphp
+                        <span class="student-gender student-gender-{{ in_array($gender, ['female', 'male'], true) ? $gender : 'unspecified' }}" title="{{ $genderLabel }}">
+                            <i class="bi bi-{{ match ($gender) { 'female' => 'gender-female', 'male' => 'gender-male', default => 'person' } }}" aria-hidden="true"></i>
+                            <span class="visually-hidden">{{ $genderLabel }}</span>
+                        </span>
+                    </td>
                         @foreach($records as $record)
-                            <td @class(['attendance-cell', 'attendance-cell-present' => $record?->status === 'present', 'attendance-cell-late' => $record?->status === 'late', 'attendance-cell-absent' => $record?->status === 'absent']) aria-label="{{ ucfirst($record?->status ?? 'Not recorded') }}" title="{{ ucfirst($record?->status ?? 'Not recorded') }}"><span @class(['fs-5 fw-bold' => in_array($record?->status, ['present', 'absent', 'late'], true)])>{{ ['present' => '✓', 'absent' => '✗', 'late' => 'L', 'excused' => 'E'][$record?->status] ?? '—' }}</span></td>
+                            <td @class(['attendance-cell', 'attendance-cell-present' => $record?->status === 'present', 'attendance-cell-late' => $record?->status === 'late', 'attendance-cell-absent' => $record?->status === 'absent', 'attendance-cell-excused' => $record?->status === 'excused']) aria-label="{{ ucfirst($record?->status ?? 'Not recorded') }}" title="{{ ucfirst($record?->status ?? 'Not recorded') }}"><span @class(['fs-5 fw-bold' => in_array($record?->status, ['present', 'absent', 'late'], true)])>{{ ['present' => '✓', 'absent' => '✗', 'late' => 'L', 'excused' => 'E'][$record?->status] ?? '—' }}</span></td>
                         @endforeach
-                        <td>{{ $records->where('status', 'present')->count() }}</td><td>{{ $records->where('status', 'absent')->count() }}</td>
+                        <td>{{ $records->where('status', 'present')->count() }}</td><td>{{ $records->where('status', 'absent')->count() }}</td><td>{{ $records->where('status', 'late')->count() }}</td><td>{{ $records->where('status', 'excused')->count() }}</td>
                     </tr>
-                @empty<tr><td colspan="{{ $attendanceMonth->daysInMonth + 5 }}">No enrolled students visible to your account.</td></tr>@endforelse
+                @empty<tr><td colspan="{{ $attendanceMonth->daysInMonth + 7 }}">No enrolled students visible to your account.</td></tr>@endforelse
                 </tbody>
             </table>
         </div>
@@ -68,7 +83,9 @@
                 @foreach($classStudents as $student)
                     <label class="d-flex align-items-center justify-content-between gap-3 mb-2">{{ $student->name }}
                         <select class="form-select w-auto" name="statuses[{{ $student->id }}]">
-                            @php($currentMark = $classAttendance->get($attendanceClass->id.':'.$student->id.':'.$attendanceDate))
+                            @php
+$currentMark = $classAttendance->get($attendanceClass->id.':'.$student->id.':'.$attendanceDate);
+@endphp
                             @foreach(['' => 'Use daily attendance'.($currentMark?->source === 'daily' ? ' ('.ucfirst($currentMark->status).')' : ''), 'present' => 'Present', 'absent' => 'Absent', 'late' => 'Late', 'excused' => 'Excused'] as $value => $label)
                                 <option value="{{ $value }}" @selected(old('statuses.'.$student->id, $currentMark?->source === 'daily' ? '' : ($currentMark?->status ?? '')) === $value)>{{ $label }}</option>
                             @endforeach
