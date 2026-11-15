@@ -5,7 +5,6 @@
 <form method="post" enctype="multipart/form-data" action="{{ $student->exists ? route('students.update', $student) : route('students.store') }}">@csrf @if($student->exists) @method('PUT') @endif
 @unless($student->exists)
 <input type="hidden" name="create_accounts" value="1">
-<section class="panel p-4 mb-4"><h2 class="h5">Enrollment payment</h2><div class="form-check"><input class="form-check-input" type="checkbox" name="create_test_fee" value="1" id="create-test-fee" @checked(old('create_test_fee'))><label class="form-check-label" for="create-test-fee">Create a $0.10 USD QR payment test fee</label></div><p class="small text-secondary mb-0 mt-2">After enrollment, open the school QR payment page. A bank transfer must be verified by the administrator before the fee is marked paid.</p></section>
 @endunless
 <div class="row g-4"><div class="col-lg-8"><section class="panel p-4 mb-4"><h2 class="section-title"><i class="bi bi-person me-2 text-success"></i>Personal information</h2><div class="row g-3">
 <div class="col-md-6"><label class="form-label" for="student_number">{{ __('Student ID') }}</label><input class="form-control" id="student_number" type="text" value="{{ $student->student_number }}" placeholder="Assigned automatically when enrolled" readonly><small class="text-secondary">{{ $student->exists ? 'Assigned student ID.' : 'A unique Student ID will be generated when you enroll this student.' }}</small></div>
