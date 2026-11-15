@@ -24,6 +24,9 @@
 .ocean-managed-creature { left:0; top:0; bottom:auto; animation:none!important; }
 .ocean-creature.ocean-spilled-fish { width:44px; }
 .ocean-managed-creature .ocean-creature-facing { animation:none!important; }
+.ocean-managed-creature .ocean-creature-facing { transition:transform .45s ease-in-out; }
+.ocean-creature.is-fleeing .ocean-tail,.ocean-creature.is-fleeing .ocean-fin { animation-duration:.16s; }
+.ocean-creature.is-fleeing .ocean-creature-art { animation-duration:.35s; }
 .ocean-life-reduced * { animation:none!important; }
 .ocean-life-reduced .ocean-bubble { display:none; }
 .ocean-life-reduced .ocean-creature:not(.ocean-creature-jelly) { left:var(--rest-left); }

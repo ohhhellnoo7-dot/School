@@ -5,6 +5,9 @@
 .ocean-shark-rig { display:block; width:100%; height:100%; overflow:visible; pointer-events:none; }
 .ocean-shark-hit { fill:transparent; pointer-events:all; }
 .ocean-shark-tail { transform-origin:55px 76px; animation:shark-tail 1.2s ease-in-out infinite alternate; }
+.ocean-shark.is-hunting .ocean-shark-tail { animation-duration:.28s; }
+.ocean-shark.is-hunting .ocean-shark-fin { animation-duration:.55s; }
+.ocean-shark.is-hunting .ocean-shark-wake { animation-duration:.65s; }
 .ocean-shark-fin { transform-origin:114px 86px; animation:shark-fin 2s ease-in-out infinite alternate; }
 .ocean-shark-eyelids { opacity:0; animation:shark-blink 6s linear infinite; }
 .ocean-shark-happy-face { opacity:0; }

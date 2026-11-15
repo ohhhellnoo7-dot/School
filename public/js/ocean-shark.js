@@ -223,6 +223,7 @@
             .map(candidate=>({...candidate,distance:Math.hypot(candidate.rect.left+candidate.rect.width/2-mouth.x,candidate.rect.top+candidate.rect.height/2-mouth.y)}))
             .sort((a,b)=>a.distance-b.distance);
         const target=candidates[0];
+        if(target&&target.distance<240)document.dispatchEvent(new CustomEvent('ocean:predator-near',{detail:{x:mouth.x,y:mouth.y}}));
         if(!target) { hunted=null;shark.classList.remove('is-hunting');if(!travel)swim();return; }
         if(target.distance<Math.max(30,Math.min(52,target.rect.width*.36))) {bite(target.element,mouth);return;}
         if(hunted===target.element&&performance.now()-lastHunt<900)return;

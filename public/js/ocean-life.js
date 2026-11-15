@@ -43,37 +43,83 @@
         if(!element.getClientRects().length) return;
         const width=element.offsetWidth,height=element.offsetHeight;
         const edge=entryIndex++%8;
-        const start=entryPoint(edge,width,height),end=entryPoint([2,3,0,1,5,4,7,6][edge],width,height);
+        let start=record.resumeFrom || entryPoint(edge,width,height);
+        delete record.resumeFrom;
+        const end=entryPoint([2,3,0,1,5,4,7,6][edge],width,height);
+        if(record.schoolIndex !== undefined) {
+            const surface=parseFloat(getComputedStyle(root).getPropertyValue('--ocean-surface-y'))||260;
+            const lane=Math.min(innerHeight-height-20,surface+65+(record.schoolIndex%3)*34);
+            if(!record.hasRoute) start={x:-width-35-record.schoolIndex*55,y:lane};
+            end.x=innerWidth+width+50;end.y=lane;
+        }
+        record.hasRoute=true;
         element.dataset.spawnEdge=String(edge);
         element.querySelector('.ocean-creature-facing').style.transform=end.x<start.x?'scaleX(-1)':'scaleX(1)';
         const distance=Math.hypot(end.x-start.x,end.y-start.y);
         const duration=Math.max(16000,Math.min(42000,distance/(record.type==='turtle'?30:48)*1000));
-        record.animation=element.animate([
-            {transform:`translate3d(${start.x}px,${start.y}px,0)`},
-            {transform:`translate3d(${end.x}px,${end.y}px,0)`},
-        ],{duration,easing:'linear',fill:'forwards'});
+        const sway=record.type==='jelly'?35:record.type==='turtle'?18:28;
+        const frames=Array.from({length:17},(_,index)=>{
+            const t=index/16;
+            const x=start.x+(end.x-start.x)*t;
+            const y=start.y+(end.y-start.y)*t+Math.sin(t*Math.PI*2)*sway;
+            const heading=Math.atan2(end.y-start.y+Math.cos(t*Math.PI*2)*sway*Math.PI*2,Math.max(1,Math.abs(end.x-start.x)))*180/Math.PI;
+            return {offset:t,transform:`translate3d(${x}px,${y}px,0) rotate(${Math.max(-18,Math.min(18,heading))*(end.x<start.x?-1:1)}deg)`};
+        });
+        record.animation=element.animate(frames,{duration,easing:'linear',fill:'forwards'});
         if(initial) record.animation.currentTime=duration*(.18+Math.random()*.18);
         record.animation.onfinish=()=>{
             if(!scene || record.status!=='swimming') return;
             record.animation.onfinish=null;record.animation.cancel();record.animation=null;
+            if(record.schoolIndex !== undefined)record.hasRoute=false;
             sendAcross(record);
         };
         if(document.hidden || motion.matches) record.animation.pause();
     };
-    const spawn = (type,initial=false,variant='clown') => {
+    const spawn = (type,initial=false,variant='clown',schoolIndex) => {
         if(!scene) return;
-        if(document.hidden) { later(()=>spawn(type,initial,variant),1000);return; }
+        if(document.hidden) { later(()=>spawn(type,initial,variant,schoolIndex),1000);return; }
         const element=document.createElement('div');
         element.className=`ocean-creature ocean-creature-${type} ocean-managed-creature`;
         element.dataset.oceanState='swimming';element.dataset.animal=type;
         if(type==='fish')element.dataset.fishVariant=variant;
         element.innerHTML=`<div class="ocean-creature-facing"><div class="ocean-creature-art">${type==='fish'?fishVariants[variant]:animals[type]}</div></div>`;
         scene.append(element);
-        const record={type,variant,element,status:'swimming',animation:null};
+        const record={type,variant,element,status:'swimming',animation:null,schoolIndex};
         swimmers.set(element,record);
         sendAcross(record,initial);
         return record;
     };
+    // Nearby fish scatter in separate directions, then return to their routes.
+    document.addEventListener('ocean:predator-near',event=>{
+        if(!scene||document.hidden||motion.matches)return;
+        const {x,y}=event.detail;
+        const now=performance.now();
+        swimmers.forEach(record=>{
+            if(record.type!=='fish'||record.status!=='swimming'||record.spilled||now-(record.lastEscape||-5000)<4200)return;
+            const rect=record.element.getBoundingClientRect();
+            const dx=rect.left+rect.width/2-x,dy=rect.top+rect.height/2-y;
+            if(Math.hypot(dx,dy)>210||rect.right<0||rect.left>innerWidth)return;
+            record.lastEscape=now;
+            if(record.animation){record.animation.onfinish=null;record.animation.cancel();}
+            const surface=parseFloat(getComputedStyle(root).getPropertyValue('--ocean-surface-y'))||260;
+            const direction=dx<0?-1:1;
+            const end={x:Math.max(4,Math.min(innerWidth-rect.width-4,rect.left+direction*(160+Math.random()*100))),
+                y:Math.max(Math.min(surface+18,innerHeight-rect.height-8),Math.min(innerHeight-rect.height-8,rect.top+(dy<0?-1:1)*(45+Math.random()*65)))};
+            record.element.querySelector('.ocean-creature-facing').style.transform=`scaleX(${direction})`;
+            record.element.classList.add('is-fleeing');
+            record.animation=record.element.animate([
+                {transform:`translate3d(${rect.left}px,${rect.top}px,0)`},
+                {transform:`translate3d(${end.x}px,${end.y}px,0)`},
+            ],{duration:1250,easing:'cubic-bezier(.12,.55,.35,1)',fill:'forwards'});
+            record.animation.onfinish=()=>{
+                record.animation.onfinish=null;record.animation.cancel();record.animation=null;
+                record.element.classList.remove('is-fleeing');
+                record.resumeFrom=end;
+                sendAcross(record);
+            };
+            if(document.hidden||motion.matches)record.animation.pause();
+        });
+    });
     document.addEventListener('ocean:spill-catch',event=>{
         if(!scene||document.hidden||motion.matches)return;
         const {origin,variants}=event.detail;
@@ -144,7 +190,7 @@
         ],{duration:780,easing:'ease-in',fill:'forwards'});
         record.animation.onfinish=()=>{
             record.element.remove();swimmers.delete(record.element);
-            if(!record.spilled)later(()=>spawn(record.type,false,record.variant),1400+Math.random()*1400);
+            if(!record.spilled)later(()=>spawn(record.type,false,record.variant,record.schoolIndex),1400+Math.random()*1400);
         };
     });
     document.addEventListener('ocean:fish-hook',event=>{
@@ -189,7 +235,7 @@
             record.animation.onfinish=()=>{
                 record.element.remove();swimmers.delete(record.element);
                 document.dispatchEvent(new CustomEvent('ocean:fish-caught',{detail:{id:detail.id,variant:record.variant}}));
-                later(()=>spawn('fish',false,record.variant),1400);
+                later(()=>spawn('fish',false,record.variant,record.schoolIndex),1400);
             };
         };
     });
@@ -255,7 +301,10 @@
         scene.classList.toggle('ocean-life-reduced', motion.matches);
         document.body.append(scene);
         Object.keys(animals).forEach(type=>spawn(type,true));
-        ['blue','yellow','purple'].forEach(variant=>spawn('fish',true,variant));
+        ['blue','yellow','purple'].forEach((variant,index)=>{
+            spawn('fish',true,variant,index);
+            if(innerWidth>700)spawn('fish',true,variant,index+3);
+        });
         updateActivity();
     };
     new MutationObserver(() => window.scholarScheduleThemeEffect(sync)).observe(root, { attributes:true, attributeFilter:['data-theme'] });
