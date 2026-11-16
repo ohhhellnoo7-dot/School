@@ -63,6 +63,14 @@
 .period-time span { color: var(--muted); font-size: 10px; margin-top: 4px; }
 .weekly-timetable td { background: var(--surface); height: 150px; padding: 8px; vertical-align: top; }
 .weekly-timetable td.relaxation-cell { background: color-mix(in srgb, var(--tt-relax-bg) 55%, var(--surface)); }
+/* Fill the merged cell, including every period covered by the lesson. */
+.weekly-timetable td[rowspan]:not([rowspan="1"]) { position: relative; }
+.weekly-timetable td[rowspan]:not([rowspan="1"]) > .timetable-entry {
+    position: absolute;
+    inset: 8px;
+    min-height: 0;
+    overflow: auto;
+}
 .timetable-entry { background: var(--tt-academic-bg); border: 1px solid var(--tt-academic-border); border-left: 3px solid var(--tt-academic-accent); border-radius: 9px; min-height: 132px; padding: 11px; position: relative; }
 .timetable-entry h2 { color: var(--ink); font-size: 12px; font-weight: 800; line-height: 1.4; margin: 8px 0; }
 .timetable-entry p { color: var(--muted); font-size: 10px; line-height: 1.45; margin: 4px 0; }
@@ -99,8 +107,8 @@
     .weekly-timetable td { height: 112px; padding: 5px; }
     .timetable-entry, .empty-period { min-height: 100px; }
     .timetable-entry { padding: 7px; }
+    .weekly-timetable td[rowspan]:not([rowspan="1"]) > .timetable-entry { inset: 5px; }
 }
 /* Rotation blocks retain the current theme's surface and readable text. */
 .academic-entry{border-inline-start:4px solid hsl(var(--subject-hue,220) 58% 54%)}
 .rotation-changed{outline:2px solid var(--info,#4b80d6);outline-offset:2px}
-.weekly-timetable td[rowspan="2"] .timetable-entry{min-height:220px}
