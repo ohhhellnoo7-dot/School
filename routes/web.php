@@ -92,6 +92,12 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
     Route::get('/teacher-attendance', [\App\Http\Controllers\TeacherAttendanceController::class, 'index'])->name('teacher-attendance.index');
     Route::post('/teacher-attendance', [\App\Http\Controllers\TeacherAttendanceController::class, 'store'])->middleware('role:administrator')->name('teacher-attendance.store');
     Route::get('/reports', [DashboardController::class, 'reports'])->middleware('role:administrator')->name('reports');
+    Route::middleware('role:administrator')->prefix('employee-salaries')->name('employee-salaries.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\EmployeeSalaryController::class, 'index'])->name('index');
+        Route::get('/{teacher}', [\App\Http\Controllers\EmployeeSalaryController::class, 'show'])->whereNumber('teacher')->name('show');
+        Route::put('/{teacher}', [\App\Http\Controllers\EmployeeSalaryController::class, 'update'])->whereNumber('teacher')->name('update');
+        Route::post('/{teacher}/payments', [\App\Http\Controllers\EmployeeSalaryController::class, 'pay'])->whereNumber('teacher')->name('pay');
+    });
     Route::get('/reports/expenses', [\App\Http\Controllers\SchoolExpenseController::class, 'index'])->middleware('role:administrator')->name('reports.expenses.index');
     Route::get('/reports/expenses/create', [\App\Http\Controllers\SchoolExpenseController::class, 'create'])->middleware('role:administrator')->name('reports.expenses.create');
     Route::post('/reports/expenses', [\App\Http\Controllers\SchoolExpenseController::class, 'store'])->middleware('role:administrator')->name('reports.expenses.store');
