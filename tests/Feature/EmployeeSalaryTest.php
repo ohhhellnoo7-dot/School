@@ -76,6 +76,20 @@ class EmployeeSalaryTest extends TestCase
         $this->get(route('employee-salaries.show', $student))->assertNotFound();
     }
 
+    public function test_current_month_includes_midmonth_hires_and_completed_service_anniversaries(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-16 12:00:00'));
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = $this->employee();
+        $profile = $this->profile($teacher, $admin);
+        $profile->update(['service_started_on' => '2026-11-11', 'day_sessions' => 1, 'evening_sessions' => 0]);
+        $this->actingAs($admin)->get(route('employee-salaries.show', ['teacher' => $teacher, 'month' => '2026-11']))
+            ->assertOk()->assertSee('$125.00')->assertSee('Record salary payment');
+        $profile->update(['service_started_on' => '2026-08-15']);
+        $this->get(route('employee-salaries.show', ['teacher' => $teacher, 'month' => '2026-11']))
+            ->assertOk()->assertSee('$130.00');
+    }
+
     public function test_recorded_salary_is_not_duplicated_and_remains_unchanged_after_profile_edit(): void
     {
         $this->travelTo(Carbon::parse('2026-11-16 12:00:00'));
