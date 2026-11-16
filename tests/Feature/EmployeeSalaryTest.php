@@ -12,6 +12,30 @@ class EmployeeSalaryTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_bulk_setup_uses_duties_and_hire_dates_preserves_existing_profiles_and_is_repeatable(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = $this->employee();
+        $withoutHireDate = $this->employee();
+        $withoutHireDate->update(['hire_date' => null]);
+        $configured = $this->employee();
+        $this->profile($configured, $admin);
+        foreach ([['07:00', '11:00'], ['13:00', '15:00'], ['15:00', '17:00'], ['17:30', '18:30'], ['18:30', '19:30'], ['17:30', '19:30']] as [$start, $end]) {
+            \Illuminate\Support\Facades\DB::table('teacher_working_periods')->insert(['teacher_id' => $teacher->id, 'weekday' => 'Monday', 'start_time' => $start, 'end_time' => $end, 'unavailable' => false]);
+        }
+        \Illuminate\Support\Facades\DB::table('teacher_working_periods')->insert(['teacher_id' => $withoutHireDate->id, 'weekday' => 'Tuesday', 'start_time' => '17:30', 'end_time' => '18:30', 'unavailable' => false]);
+        $service = app(\App\Services\EmployeeSalarySetup::class);
+        $plan = $service->plan(Carbon::parse('2026-11-16'));
+        $this->assertCount(2, $plan);
+        $this->assertSame(2, $service->apply($plan, $admin));
+        $this->assertDatabaseHas('employee_salary_profiles', ['teacher_id' => $teacher->id, 'day_sessions' => 2, 'evening_sessions' => 2, 'service_started_on' => '2026-01-01 00:00:00']);
+        $this->assertDatabaseHas('employee_salary_profiles', ['teacher_id' => $withoutHireDate->id, 'day_sessions' => 0, 'evening_sessions' => 1, 'service_started_on' => '2026-11-16 00:00:00']);
+        $this->assertSame(0, $service->apply($plan, $admin));
+        $this->assertCount(0, $service->plan(Carbon::parse('2026-11-16')));
+        $this->assertSame(3, EmployeeSalaryProfile::count());
+        $this->assertSame(0, EmployeeSalaryPayment::count());
+    }
+
     private function employee(): User
     {
         return User::factory()->create(['role' => 'teacher', 'status' => 'active', 'hire_date' => '2026-01-01']);
