@@ -7,7 +7,7 @@
     <div class="panel salary-rate"><span>{{ $label }}</span><strong>${{ $amount }}<small>/ month</small></strong></div>
     @endforeach
 </div>
-<div class="salary-policy"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i><div><strong>A $5 increase every 3 completed months</strong><span>Added once to the total monthly salary from the service start date. Rates are monthly; attendance is shown without automatic deductions. Service increases are assessed at the start of the selected month.</span></div></div>
+<div class="salary-policy"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i><div><strong>A $5 increase every 3 completed months</strong><span>Added once to the total monthly salary from the service start date. Rates are monthly; attendance is shown without automatic deductions. Salary assessed as of {{ $asOf->format('d M Y') }}{{ $month->isFuture() ? ' (preview)' : '' }}.</span></div></div>
 <section class="panel">
     <div class="panel-header"><h2>Teacher payroll <small class="text-secondary">· {{ $month->format('F Y') }}</small></h2><span class="text-secondary small">{{ $teachers->total() }} teachers</span></div>
     <form class="salary-filters" method="get"><div><label class="form-label" for="salary-month">Salary month</label><input class="form-control" id="salary-month" name="month" type="month" value="{{ $month->format('Y-m') }}"></div><div><label class="form-label" for="salary-search">Find employee</label><input class="form-control" id="salary-search" name="search" placeholder="Name or employee ID" value="{{ request('search') }}"></div><button class="btn btn-primary">View payroll</button></form>

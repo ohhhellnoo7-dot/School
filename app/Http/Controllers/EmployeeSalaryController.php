@@ -23,9 +23,15 @@ class EmployeeSalaryController extends Controller
         abort_unless($teacher->role === 'teacher', 404);
     }
 
+    private function assessmentDate(Carbon $month): Carbon
+    {
+        return $month->isCurrentMonth() ? today() : $month->copy()->endOfMonth()->startOfDay();
+    }
+
     public function index(Request $request, EmployeeSalaryCalculator $calculator)
     {
         $month = $this->month($request);
+        $asOf = $this->assessmentDate($month);
         $request->validate(['search' => 'nullable|string|max:255']);
         $teachers = User::where('role', 'teacher')
             ->when($request->filled('search'), fn ($q) => $q->where(fn ($q) => $q->where('name', 'like', '%'.$request->search.'%')->orWhere('profile_number', 'like', '%'.$request->search.'%')))
@@ -34,32 +40,33 @@ class EmployeeSalaryController extends Controller
         $payments = EmployeeSalaryPayment::whereIn('teacher_id', $teachers->modelKeys())->whereDate('salary_month', $month)->get()->keyBy('teacher_id');
         $attendance = TeacherAttendance::whereIn('teacher_id', $teachers->modelKeys())
             ->whereBetween('date', [$month->toDateString(), $month->copy()->endOfMonth()->toDateString()])->get()->groupBy('teacher_id');
-        $rows = $teachers->getCollection()->map(function ($teacher) use ($profiles, $payments, $attendance, $calculator, $month) {
+        $rows = $teachers->getCollection()->map(function ($teacher) use ($profiles, $payments, $attendance, $calculator, $asOf) {
             $profile = $profiles->get($teacher->id);
             $payment = $payments->get($teacher->id);
 
             return ['teacher' => $teacher, 'profile' => $profile, 'payment' => $payment,
-                'salary' => $payment ? $payment->only(['base_cents', 'raise_cents', 'total_cents']) : ($profile ? $calculator->calculate($profile, $month) : null),
+                'salary' => $payment ? $payment->only(['base_cents', 'raise_cents', 'total_cents']) : ($profile ? $calculator->calculate($profile, $asOf) : null),
                 'attendance' => ($attendance->get($teacher->id) ?? collect())->countBy('status')];
         });
 
-        return view('school.salaries.index', compact('month', 'teachers', 'rows'));
+        return view('school.salaries.index', compact('month', 'teachers', 'rows', 'asOf'));
     }
 
     public function show(Request $request, User $teacher, EmployeeSalaryCalculator $calculator)
     {
         $this->teacher($teacher);
         $month = $this->month($request);
+        $asOf = $this->assessmentDate($month);
         $profile = EmployeeSalaryProfile::where('teacher_id', $teacher->id)->first();
         $payment = EmployeeSalaryPayment::where('teacher_id', $teacher->id)->whereDate('salary_month', $month)->first();
-        $salary = $profile ? $calculator->calculate($profile, $month) : null;
+        $salary = $profile ? $calculator->calculate($profile, $asOf) : null;
         $history = EmployeeSalaryPayment::where('teacher_id', $teacher->id)->latest('salary_month')->limit(12)->get();
         $attendance = TeacherAttendance::where('teacher_id', $teacher->id)
             ->whereBetween('date', [$month->toDateString(), $month->copy()->endOfMonth()->toDateString()])->get()->keyBy(fn ($record) => $record->date->toDateString());
         $scans = TeacherSessionAttendance::where('teacher_id', $teacher->id)
             ->whereBetween('date', [$month->toDateString(), $month->copy()->endOfMonth()->toDateString()])->orderBy('scanned_at')->get()->groupBy(fn ($record) => $record->date->toDateString());
 
-        return view('school.salaries.show', compact('teacher', 'month', 'profile', 'salary', 'payment', 'history', 'attendance', 'scans'));
+        return view('school.salaries.show', compact('teacher', 'month', 'profile', 'salary', 'payment', 'history', 'attendance', 'scans', 'asOf'));
     }
 
     public function update(Request $request, User $teacher)
@@ -91,8 +98,8 @@ class EmployeeSalaryController extends Controller
             if (EmployeeSalaryPayment::where('teacher_id', $teacher->id)->whereDate('salary_month', $month)->exists()) {
                 throw ValidationException::withMessages(['salary' => 'Salary payment has already been recorded for this month.']);
             }
-            $salary = $calculator->calculate($profile, $month);
-            if ($salary['total_cents'] <= 0 || Carbon::parse($data['paid_on'])->lt($month) || $salary['total_cents'] !== (int) $data['expected_total_cents']) {
+            $salary = $calculator->calculate($profile, $this->assessmentDate($month));
+            if ($salary['total_cents'] <= 0 || Carbon::parse($data['paid_on'])->lt($month) || Carbon::parse($data['paid_on'])->lt($profile->service_started_on) || $salary['total_cents'] !== (int) $data['expected_total_cents']) {
                 throw ValidationException::withMessages(['salary' => 'Check the salary amount and payment date, then refresh before recording payment.']);
             }
             EmployeeSalaryPayment::create(['teacher_id' => $teacher->id, 'salary_month' => $month,
