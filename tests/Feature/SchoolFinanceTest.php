@@ -20,6 +20,35 @@ class SchoolFinanceTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_invoice_shows_next_month_due_date_and_skips_prepaid_months(): void
+    {
+        $e = $this->setupEnrollment();
+        $fee = $e['service']->issue($e['student'], $e['class'], $e['structure'], 'monthly', 11, 1, $e['actor'])[0];
+        $schedule = app(\App\Services\InvoicePaymentSchedule::class);
+
+        $this->assertSame('2026-12-10', $schedule->nextDueDate($fee)?->toDateString());
+        $this->actingAs($e['actor'])->get(route('finance.invoice', $fee))
+            ->assertOk()->assertSee('Next payment due')->assertSee('10 December 2026')
+            ->assertSee('Remaining balance')->assertSee('Print / Save as PDF');
+
+        $next = $e['service']->issue($e['student'], $e['class'], $e['structure'], 'monthly', 12, 1, $e['actor'])[0];
+        $next->update(['due_date' => '2026-12-15']);
+        $this->assertSame('2026-12-15', $schedule->nextDueDate($fee)?->toDateString());
+        $next->update(['paid' => $next->amount]);
+        $this->assertNull($schedule->nextDueDate($fee));
+    }
+
+    public function test_invoice_does_not_invent_next_payment_for_annual_or_legacy_fees(): void
+    {
+        $e = $this->setupEnrollment();
+        $fee = $e['service']->issue($e['student'], $e['class'], $e['structure'], 'annual', 1, 1, $e['actor'])[0];
+        $schedule = app(\App\Services\InvoicePaymentSchedule::class);
+        $this->assertNull($schedule->nextDueDate($fee));
+        $this->assertNull($schedule->nextDueDate(new Fee(['due_date' => '2026-11-10'])));
+        $this->actingAs($e['actor'])->get(route('finance.invoice', $fee))
+            ->assertOk()->assertSee('No next date scheduled');
+    }
+
     private function setupEnrollment(string $program = 'Khmer', int $months = 12, string $currency = 'USD'): array
     {
         $actor = User::factory()->create(['role' => 'administrator']);

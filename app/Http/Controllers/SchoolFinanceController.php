@@ -254,7 +254,9 @@ class SchoolFinanceController extends Controller
             return response()->view('school.finance._invoice-preview', compact('fee'))->header('Cache-Control', 'private, no-store');
         }
 
-        return view('school.finance.invoice', compact('fee', 'structures'));
+        $nextPaymentDate = app(\App\Services\InvoicePaymentSchedule::class)->nextDueDate($fee);
+
+        return view('school.finance.invoice', compact('fee', 'structures', 'nextPaymentDate'));
     }
 
     public function receipt(Request $request, int $payment)
