@@ -20,8 +20,8 @@ class EmployeeSalarySetup
             $sessions = $this->sessions($duties->get($teacher->id, collect()));
 
             return ['teacher_id' => $teacher->id, 'day_sessions' => $sessions['day'], 'evening_sessions' => $sessions['evening'],
-                'service_started_on' => ($teacher->hire_date ?? $baseline)->toDateString(),
-                'start_date_source' => $teacher->hire_date ? 'hire_date' : 'baseline_no_hire_date',
+                'service_started_on' => $baseline->copy()->startOfMonth()->toDateString(),
+                'start_date_source' => 'salary_cycle_start',
                 'session_source' => 'teacher_working_periods', 'eligible' => $sessions['day'] + $sessions['evening'] > 0];
         });
     }

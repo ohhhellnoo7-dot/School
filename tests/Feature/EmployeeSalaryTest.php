@@ -28,8 +28,8 @@ class EmployeeSalaryTest extends TestCase
         $plan = $service->plan(Carbon::parse('2026-11-16'));
         $this->assertCount(2, $plan);
         $this->assertSame(2, $service->apply($plan, $admin));
-        $this->assertDatabaseHas('employee_salary_profiles', ['teacher_id' => $teacher->id, 'day_sessions' => 2, 'evening_sessions' => 2, 'service_started_on' => '2026-01-01 00:00:00']);
-        $this->assertDatabaseHas('employee_salary_profiles', ['teacher_id' => $withoutHireDate->id, 'day_sessions' => 0, 'evening_sessions' => 1, 'service_started_on' => '2026-11-16 00:00:00']);
+        $this->assertDatabaseHas('employee_salary_profiles', ['teacher_id' => $teacher->id, 'day_sessions' => 2, 'evening_sessions' => 2, 'service_started_on' => '2026-11-01 00:00:00']);
+        $this->assertDatabaseHas('employee_salary_profiles', ['teacher_id' => $withoutHireDate->id, 'day_sessions' => 0, 'evening_sessions' => 1, 'service_started_on' => '2026-11-01 00:00:00']);
         $this->assertSame(0, $service->apply($plan, $admin));
         $this->assertCount(0, $service->plan(Carbon::parse('2026-11-16')));
         $this->assertSame(3, EmployeeSalaryProfile::count());

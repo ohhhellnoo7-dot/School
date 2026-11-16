@@ -6,7 +6,7 @@
 @php($displaySalary = $payment ? $payment->only(['base_cents', 'raise_cents', 'total_cents']) : $salary)
 <div class="salary-summary-grid">
     <div class="panel salary-metric"><span>Base monthly salary</span><strong>{{ $displaySalary ? '$'.\App\Support\Money::decimal($displaySalary['base_cents']) : 'Not set' }}</strong></div>
-    <div class="panel salary-metric"><span>Service increase</span><strong>{{ $displaySalary ? '+$'.\App\Support\Money::decimal($displaySalary['raise_cents']) : '—' }}</strong><small>$5 every 3 completed months</small></div>
+    <div class="panel salary-metric"><span>Salary increase</span><strong>{{ $displaySalary ? '+$'.\App\Support\Money::decimal($displaySalary['raise_cents']) : '—' }}</strong><small>$5 every 3 completed months</small></div>
     <div class="panel salary-metric salary-metric-total"><span>{{ $month->format('F Y') }} salary</span><strong>{{ $displaySalary ? '$'.\App\Support\Money::decimal($displaySalary['total_cents']) : 'Not set' }}</strong><small>{{ $payment ? 'Paid on '.$payment->paid_on->format('d M Y') : 'Payment not recorded' }}</small></div>
 </div>
 <div class="salary-two-columns">
@@ -14,9 +14,9 @@
         <form method="post" action="{{ route('employee-salaries.update', $teacher) }}">@csrf @method('put')
             <label class="form-label" for="day-sessions">Daytime work hours per day</label><select id="day-sessions" class="form-select mb-3" name="day_sessions">@foreach([0 => 'None — $0 per month', 1 => '4 hours per day — $125 for the whole month', 2 => '8 hours per day — $250 for the whole month'] as $value => $label)<option value="{{ $value }}" @selected((int) old('day_sessions', $profile?->day_sessions ?? 0) === $value)>{{ $label }}</option>@endforeach</select>
             <label class="form-label" for="evening-sessions">Evening work per day</label><select id="evening-sessions" class="form-select mb-3" name="evening_sessions">@foreach([0 => 'None — $0 per month', 1 => '1 evening session per day — $31.25 for the whole month', 2 => '2 evening sessions per day — $62.50 for the whole month'] as $value => $label)<option value="{{ $value }}" @selected((int) old('evening_sessions', $profile?->evening_sessions ?? 0) === $value)>{{ $label }}</option>@endforeach</select>
-            <label class="form-label" for="service-start">Service start date</label><input class="form-control mb-3" id="service-start" name="service_started_on" type="date" value="{{ old('service_started_on', ($profile?->service_started_on ?? $teacher->hire_date)?->toDateString()) }}" required>
-            <p class="form-text">All sessions total $312.50/month before service increases. Each completed 3-month period adds $5 to the total salary, assessed on {{ $asOf->format('d M Y') }}. Attendance does not automatically reduce salary.</p>
-            @if($salary)<p class="small text-secondary">Next service increase: <strong>{{ $salary['next_raise_on']->format('d M Y') }}</strong></p>@endif
+            <label class="form-label" for="service-start">Salary cycle start date</label><input class="form-control mb-3" id="service-start" name="service_started_on" type="date" value="{{ old('service_started_on', ($profile?->service_started_on ?? today()->startOfMonth())->toDateString()) }}" required>
+            <p class="form-text">All sessions total $312.50/month before salary increases. Each completed 3-month period adds $5 to the total salary, assessed on {{ $asOf->format('d M Y') }}. Attendance does not automatically reduce salary.</p>
+            @if($salary)<p class="small text-secondary">Next salary increase: <strong>{{ $salary['next_raise_on']->format('d M Y') }}</strong></p>@endif
             <button class="btn btn-primary">Save salary settings</button>
         </form>
     </section>
@@ -43,5 +43,5 @@
     @endforeach
     </tbody></table></div>
 </section>
-<section class="panel mt-4"><div class="panel-header"><h2>Salary payment history</h2><span class="text-secondary small">Latest 12 payments</span></div><div class="table-responsive"><table class="table salary-table"><thead><tr><th>Salary month</th><th>Paid on</th><th>Base salary</th><th>Service increase</th><th>Total paid (USD)</th><th>Reference</th></tr></thead><tbody>@forelse($history as $paid)<tr><td>{{ $paid->salary_month->format('F Y') }}</td><td>{{ $paid->paid_on->format('d M Y') }}</td><td>${{ \App\Support\Money::decimal($paid->base_cents) }}</td><td>${{ \App\Support\Money::decimal($paid->raise_cents) }}</td><td><strong>${{ \App\Support\Money::decimal($paid->total_cents) }}</strong></td><td>{{ $paid->reference ?: '—' }}</td></tr>@empty<tr><td colspan="6" class="p-4 text-center text-secondary">No salary payments recorded yet.</td></tr>@endforelse</tbody></table></div></section>
+<section class="panel mt-4"><div class="panel-header"><h2>Salary payment history</h2><span class="text-secondary small">Latest 12 payments</span></div><div class="table-responsive"><table class="table salary-table"><thead><tr><th>Salary month</th><th>Paid on</th><th>Base salary</th><th>Salary increase</th><th>Total paid (USD)</th><th>Reference</th></tr></thead><tbody>@forelse($history as $paid)<tr><td>{{ $paid->salary_month->format('F Y') }}</td><td>{{ $paid->paid_on->format('d M Y') }}</td><td>${{ \App\Support\Money::decimal($paid->base_cents) }}</td><td>${{ \App\Support\Money::decimal($paid->raise_cents) }}</td><td><strong>${{ \App\Support\Money::decimal($paid->total_cents) }}</strong></td><td>{{ $paid->reference ?: '—' }}</td></tr>@empty<tr><td colspan="6" class="p-4 text-center text-secondary">No salary payments recorded yet.</td></tr>@endforelse</tbody></table></div></section>
 @endsection
