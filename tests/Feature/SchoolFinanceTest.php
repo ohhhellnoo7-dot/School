@@ -20,6 +20,27 @@ class SchoolFinanceTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_paid_monthly_invoice_renews_one_month_after_payment_without_billing_calendar(): void
+    {
+        $fee = new Fee(['payment_plan' => 'monthly', 'amount' => '25.00', 'paid' => '25.00', 'due_date' => '2026-11-10']);
+        $fee->setRelation('adjustments', collect());
+        $fee->setRelation('payments', collect([
+            new FeePayment(['paid_on' => '2026-11-01']),
+            new FeePayment(['paid_on' => '2026-11-11']),
+        ]));
+
+        $this->assertSame('2026-12-11', app(\App\Services\InvoicePaymentSchedule::class)->nextDueDate($fee)?->toDateString());
+    }
+
+    public function test_monthly_renewal_clamps_to_end_of_short_month_and_supports_historical_payment_date(): void
+    {
+        $fee = new Fee(['payment_plan' => 'monthly', 'amount' => '25.00', 'paid' => '25.00', 'paid_at' => '2027-01-31']);
+        $fee->setRelation('adjustments', collect());
+        $fee->setRelation('payments', collect());
+
+        $this->assertSame('2027-02-28', app(\App\Services\InvoicePaymentSchedule::class)->nextDueDate($fee)?->toDateString());
+    }
+
     public function test_invoice_shows_next_month_due_date_and_skips_prepaid_months(): void
     {
         $e = $this->setupEnrollment();

@@ -11,7 +11,19 @@ class InvoicePaymentSchedule
 {
     public function nextDueDate(Fee $fee): ?Carbon
     {
-        if ($fee->trashed() || ! $fee->fee_structure_id || ! $fee->enrollment_key) {
+        if ($fee->trashed()) {
+            return null;
+        }
+
+        // Monthly renewals follow the day the completed payment was made.
+        if ($fee->payment_plan === 'monthly' && \App\Support\Money::cents($fee->paid) > 0 && $fee->balanceCents() <= 0) {
+            $paidOn = $fee->payments->max('paid_on') ?? $fee->paid_at;
+            if ($paidOn) {
+                return $paidOn->copy()->addMonthNoOverflow();
+            }
+        }
+
+        if (! $fee->fee_structure_id || ! $fee->enrollment_key) {
             return null;
         }
 
