@@ -121,7 +121,6 @@
             const subject = select('Subject', 'Leave this period empty', subjects.filter(s => String(s.school_class_id) === form.elements.school_class_id.value && minute(slot.starts_at) + Number(s.lesson_minutes || 60) <= minute(cohort.hours[1])), slot.subject_id, 'subject_id', slot);
             const teacher = select('Teacher', slot.subject_id ? 'Checking available teachers…' : 'Select a subject first', [], '', 'teacher_id', slot);
             teacher.input.disabled = true; fields.append(subject.wrapper,teacher.wrapper); card.append(fields);
-            const room = select('Classroom', 'Choose an available classroom', [], '', 'classroom_id', slot); room.input.disabled = true; room.wrapper.hidden = !slot.subject_id; card.append(room.wrapper);
             const details = document.createElement('details'); details.className = 'mt-3 pt-3 border-top';
             const summary = document.createElement('summary'); summary.textContent = 'View teacher schedules & breaks'; details.append(summary);
             const link = document.createElement('a'); link.textContent = 'Open teacher weekly schedules'; link.href = @json(route('timetables.index', ['view' => 'teachers'])); link.target = '_blank'; link.rel = 'noopener'; details.append(link); card.append(details); host.append(card);
@@ -130,15 +129,25 @@
             fetch(@json(route('timetables.lessons.options')) + '?' + params, {headers: {Accept:'application/json'}}).then(async response => {
                 const result = await response.json(); if (current !== revision) return;
                 if (!response.ok) throw new Error(result.message || 'Availability could not be checked.');
-                result.rooms.forEach(item => room.input.add(new Option(item.room_number,item.id)));
-                if (!result.rooms.some(item => String(item.id) === String(slot.classroom_id))) slot.classroom_id = result.rooms.length === 1 ? String(result.rooms[0].id) : '';
-                room.input.value = slot.classroom_id; room.input.disabled = false;
                 teacher.input.options[0].textContent = 'Select an available teacher';
-                const available = result.teachers.filter(item => item.room_ids.some(id => String(id) === String(slot.classroom_id)));
-                available.forEach(item => teacher.input.add(new Option(item.name,item.id)));
+                const choices = result.teacher_statuses;
+                choices.forEach(item => {
+                    const busy = !item.available && /overlap|unavailable|free period|working hours/i.test(item.reason || '');
+                    const label = item.available ? 'Available' : `${busy ? 'Busy' : 'Unavailable'} — ${item.reason}`;
+                    const option = new Option(`${item.name} — ${label}`, item.id);
+                    option.disabled = !item.available;
+                    teacher.input.add(option);
+                });
+                const available = choices.filter(item => item.available);
                 if (!available.some(item => String(item.id) === String(slot.teacher_id))) slot.teacher_id = '';
-                teacher.input.value = slot.teacher_id; teacher.input.disabled = !available.length;
-                if (!available.length) teacher.input.options[0].textContent = slot.classroom_id ? 'No available qualified teachers' : 'Select a classroom first';
+                function assignRoom() {
+                    const selected = available.find(item => String(item.id) === String(slot.teacher_id));
+                    slot.classroom_id = selected ? String(selected.room_ids[0]) : '';
+                }
+                assignRoom();
+                teacher.input.addEventListener('change', assignRoom);
+                teacher.input.value = slot.teacher_id; teacher.input.disabled = !choices.length;
+                if (!choices.length) teacher.input.options[0].textContent = 'No qualified teachers for this subject';
             }).catch(error => { if (current === revision) teacher.input.options[0].textContent = error.message; });
         });
     }
@@ -155,7 +164,7 @@
                 if (subject && fitsWeeklyLimit(subject)) plans[day][index].subject_id = slot.subject_id;
             });
         });
-        status.textContent = 'Subjects copied within their weekly limits. Choose available classrooms and teachers for each day.'; render();
+        status.textContent = 'Subjects copied within their weekly limits. Choose available teachers for each day.'; render();
     });
     form.addEventListener('submit', event => {
         form.querySelectorAll('[data-generated-slot]').forEach(input => input.remove());
@@ -164,7 +173,7 @@
             event.preventDefault(); status.textContent = 'A subject exceeds its weekly hours. Remove an extra lesson before saving.'; return;
         }
         if (!slots.length || slots.some(slot => !slot.teacher_id || !slot.classroom_id)) {
-            event.preventDefault(); status.textContent = 'Choose at least one subject, and a classroom and teacher for every selected period.'; return;
+            event.preventDefault(); status.textContent = 'Choose at least one subject and an available teacher for every selected period.'; return;
         }
         slots.forEach((slot,index) => Object.entries(slot).forEach(([key,value]) => {
             const input = document.createElement('input'); input.type = 'hidden'; input.name = `slots[${index}][${key}]`; input.value = value; input.dataset.generatedSlot = ''; form.append(input);

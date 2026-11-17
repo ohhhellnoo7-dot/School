@@ -217,17 +217,19 @@ class UnifiedTimetableController extends Controller
             try { $service->validate($slot, false); return true; } catch (ValidationException $e) { return false; }
         });
         $rules = app(TeacherManagementService::class);
-        $teachers = User::where('role', 'teacher')->where('status', 'active')->where('program', $selectedClass->program)->get()->map(function ($teacher) use ($rules, $service, $subject, $data, $lesson, $rooms) {
+        $teacherStatuses = User::where('role', 'teacher')->where('status', 'active')->where('program', $selectedClass->program)->orderBy('name')->get()->map(function ($teacher) use ($rules, $service, $subject, $data, $lesson, $rooms) {
             if (! $rules->qualifications($teacher)->contains($subject->name)) return null;
             $roomIds = [];
+            $reason = 'No available classroom fits this class and period.';
             foreach ($rooms as $room) {
                 $slot = clone $lesson;
                 $slot->fill(array_intersect_key($data, array_flip(['school_class_id','day','starts_at','ends_at','academic_year'])) + ['classroom_id' => $room->id, 'room' => $room->room_number, 'entry_type' => 'academic', 'subject_id' => $subject->id, 'teacher_id' => $teacher->id]);
-                try { $service->validate($slot); $roomIds[] = $room->id; } catch (ValidationException $e) { }
+                try { $service->validate($slot); $roomIds[] = $room->id; } catch (ValidationException $e) { $reason = $e->getMessage(); }
             }
-            return $roomIds ? ['id' => $teacher->id, 'name' => $teacher->name, 'program' => $teacher->program, 'room_ids' => $roomIds] : null;
+            return ['id' => $teacher->id, 'name' => $teacher->name, 'program' => $teacher->program, 'room_ids' => $roomIds, 'available' => count($roomIds) > 0, 'reason' => $roomIds ? null : $reason];
         })->filter()->values();
-        return response()->json(['teachers' => $teachers, 'rooms' => $rooms->map->only(['id','room_number'])->values()])->header('Cache-Control', 'no-store');
+        $teachers = $teacherStatuses->where('available', true)->values();
+        return response()->json(['teachers' => $teachers, 'teacher_statuses' => $teacherStatuses, 'rooms' => $rooms->map->only(['id','room_number'])->values()])->header('Cache-Control', 'no-store');
     }
 
     public function preview(Request $request, UnifiedTimetableGenerator $generator)

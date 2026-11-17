@@ -13,6 +13,24 @@ class UnifiedTimetableTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_teacher_choices_include_qualified_busy_teachers_with_reasons(): void
+    {
+        $f = $this->fixture();
+        $row = array_replace($this->data($f), ['day' => 'Wednesday']);
+        $response = $this->actingAs($f['admin'])->getJson(route('timetables.lessons.options', $row))
+            ->assertOk()->assertJsonCount(0, 'teachers')->assertJsonCount(2, 'teacher_statuses');
+        foreach ($response->json('teacher_statuses') as $teacher) {
+            $this->assertFalse($teacher['available']);
+            $this->assertStringContainsString('designated free period', $teacher['reason']);
+        }
+        $response = $this->getJson(route('timetables.lessons.options', $this->data($f)))
+            ->assertOk()->assertJsonCount(2, 'teacher_statuses');
+        foreach ($response->json('teacher_statuses') as $teacher) {
+            $this->assertTrue($teacher['available']);
+            $this->assertNotEmpty($teacher['room_ids']);
+        }
+    }
+
     public function test_subject_weekly_hours_block_a_third_two_hour_lesson(): void
     {
         $f = $this->fixture();
