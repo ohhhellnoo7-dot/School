@@ -19,6 +19,9 @@ class KhmerWeekPlanner
         return $this->rules->locked(function () use ($class, $year) {
             DB::beginTransaction();
             try {
+                $deadline = microtime(true) + 12;
+                $commitments = Schedule::where(fn ($q) => $q->where('academic_year', $year)->orWhereNull('academic_year'))->get();
+                $bookings = \App\Models\ClassroomBooking::with('classSession')->get();
                 $teachers = User::where('role', 'teacher')->where('status', 'active')->where('program', 'Khmer')->orderBy('id')->get();
                 $qualifications = DB::table('teacher_qualifications')->whereIn('teacher_id', $teachers->modelKeys())->get()->groupBy('teacher_id');
                 $subjects = $class->subjects()->where(fn ($q) => $q->whereNull('required_weekly_minutes')->orWhere('required_weekly_minutes', '>', 0))->get();
@@ -44,8 +47,19 @@ class KhmerWeekPlanner
                                 $format = fn ($m) => sprintf('%02d:%02d', intdiv($m, 60), $m % 60);
                                 $base = ['school_class_id' => $class->id, 'subject_id' => $subject->id, 'academic_year' => $year, 'entry_type' => 'academic', 'day' => $day, 'starts_at' => $format($start), 'ends_at' => $format($start + $duration)];
                                 if ($candidates[$subject->id]->isEmpty()) break 2;
+                                if (microtime(true) >= $deadline) {
+                                    $reason = 'Planning time limit reached. Save the filled lessons, then run auto-fill again for the remaining hours.';
+                                    break 2;
+                                }
+                                $busy = $commitments->filter(fn ($s) => $s->day === $day && $this->rules::overlaps($base['starts_at'], $base['ends_at'], $s->starts_at, $s->ends_at));
+                                if ($busy->contains('school_class_id', $class->id)) continue;
+                                $reservations = $bookings->filter(fn ($b) => $b->day_of_week === $day && $this->rules::overlaps($base['starts_at'], $base['ends_at'], $b->starts_at, $b->ends_at));
+                                $assigned = $reservations->filter(fn ($b) => $b->class_group_id === $class->class_group_id && $b->classSession?->session === $class->session);
+                                $possibleRooms = $rooms->reject(fn ($r) => $busy->contains('classroom_id', $r->id)
+                                    || ($assigned->isNotEmpty() && ! $assigned->contains('classroom_id', $r->id))
+                                    || $reservations->contains(fn ($b) => $b->classroom_id === $r->id && ($b->class_group_id !== $class->class_group_id || $b->classSession?->session !== $class->session)));
                                 // Validate each room once before trying teachers.
-                                $room = $rooms->first(function ($room) use ($base) {
+                                $room = $possibleRooms->first(function ($room) use ($base) {
                                     try {
                                         $this->lessons->validate(new Schedule($base + ['classroom_id' => $room->id, 'room' => $room->room_number]), false);
                                         return true;
@@ -53,6 +67,14 @@ class KhmerWeekPlanner
                                 });
                                 if (! $room) continue;
                                 foreach ($candidates[$subject->id] as $teacher) {
+                                    if ($busy->contains('teacher_id', $teacher->id)) {
+                                        $reason = 'Qualified teachers are busy during the remaining periods.';
+                                        continue;
+                                    }
+                                    if (! $this->rules->onDuty($teacher, $day, $base['starts_at'], $base['ends_at'])) {
+                                        $reason = 'Qualified teachers are unavailable during the remaining periods.';
+                                        continue;
+                                    }
                                     $row = $base + ['teacher_id' => $teacher->id, 'classroom_id' => $room->id, 'room' => $room->room_number];
                                     try {
                                         $slot = new Schedule($row);
@@ -60,6 +82,7 @@ class KhmerWeekPlanner
                                         // Staging makes later choices see workload, teacher consistency,
                                         // room occupancy and weekly limits. Always rolled back below.
                                         $slot->saveQuietly();
+                                        $commitments->push($slot);
                                         $rows[] = $row;
                                         $remaining -= $duration;
                                         $placed = true;

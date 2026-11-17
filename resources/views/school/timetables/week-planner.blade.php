@@ -15,6 +15,7 @@
     <p class="alert alert-info" data-context></p>
     <div class="mb-3 d-flex flex-wrap gap-2" data-weekly-hours aria-live="polite"></div>
     <button type="button" class="btn btn-outline-secondary mb-3" data-copy>Auto-fill Monday to Friday</button>
+    <p role="status" aria-live="polite" data-auto-progress></p>
     <p class="small text-muted" data-auto-help hidden>Automatically rebuilds this unsaved draft using available teachers. Saved lessons are kept. Review the result before saving.</p>
     <div class="alert alert-warning" role="alert" data-auto-alert hidden></div>
     <div class="weekday-subject-planner">
@@ -168,6 +169,10 @@
             const alert = form.querySelector('[data-auto-alert]');
             alert.hidden = true;
             status.textContent = 'Planning subjects and checking available teachers…';
+            const progress = form.querySelector('[data-auto-progress]');
+            progress.textContent = status.textContent;
+            const button = form.querySelector('[data-copy]');
+            button.textContent = 'Planning…';
             revision++;
             form.inert = true;
             try {
@@ -176,6 +181,7 @@
                     headers: {'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': form.querySelector('[name="_token"]').value},
                     body: JSON.stringify({school_class_id: form.elements.school_class_id.value, academic_year: form.elements.academic_year.value})
                 });
+                if (!response.headers.get('content-type')?.includes('application/json')) throw new Error('The server could not finish planning. Please try again.');
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.message || 'Could not create a schedule.');
                 days.forEach(day => plans[day].forEach(slot => { slot.subject_id = ''; slot.teacher_id = ''; slot.classroom_id = ''; }));
@@ -200,7 +206,12 @@
                 alert.textContent = error.message; alert.hidden = false;
                 status.textContent = 'Auto-fill could not finish. Your draft has been kept.';
                 render();
-            } finally { form.inert = false; }
+            } finally {
+                form.inert = false;
+                progress.textContent = status.textContent;
+                button.textContent = 'Auto-fill subjects & teachers';
+                (alert.hidden ? progress : alert).scrollIntoView({behavior: 'smooth', block: 'nearest'});
+            }
             return;
         }
         const source = plans[active].map(slot => ({...slot}));
