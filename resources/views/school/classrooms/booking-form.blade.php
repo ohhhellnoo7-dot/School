@@ -4,6 +4,7 @@
 @section('content')
 <div class="page-heading"><div><div class="eyebrow">Conflict-safe scheduling</div><h1>{{ $booking->exists ? 'Edit classroom booking' : 'Assign a classroom' }}</h1><p>Reserve the room for its student cohort. Subject teachers and lesson times come from the shared timetable. An optional supervisor is a separate session commitment.</p></div><a class="btn btn-outline-secondary" href="{{ $booking->classroom_id ? route('classrooms.show', $booking->classroom_id) : route('classrooms.index') }}">Cancel</a></div>
 
+<section class="panel p-4 mb-4"><h2>Subject lessons and teachers</h2><p>This form reserves a classroom. To enter History 07:00–08:00 and choose a free, qualified teacher, select the class and session below, then open lesson setup.</p><a class="btn btn-primary" data-open-lesson-setup hidden href="{{ route('timetables.lessons.create') }}">Set up lessons &amp; teachers</a></section>
 <form class="panel entity-form booking-form" method="post" action="{{ $booking->exists ? route('classroom-bookings.update', $booking) : route('classroom-bookings.store') }}" data-booking-form>
     @csrf @if($booking->exists) @method('PUT') @endif
     <div class="panel-header"><div><h2>Booking information</h2><p>Choose one valid program session and one physical classroom.</p></div></div>
@@ -69,6 +70,10 @@
 @endsection
 
 @push('scripts')
+@php
+    $lessonSetupCohorts = $classGroups->flatMap->schoolClasses->map->only(['id','class_group_id','session'])->values();
+    $lessonSetupSessions = $classGroups->flatMap->sessions->map->only(['id','session'])->values();
+@endphp
 <script>
 (() => {
     const form = document.querySelector('[data-booking-form]');
@@ -79,6 +84,20 @@
     const teacher = form.querySelector('[data-booking-teacher]');
     const start = form.querySelector('[data-booking-start]');
     const end = form.querySelector('[data-booking-end]');
+    const cohorts = @json($lessonSetupCohorts);
+    const sessionNames = @json($lessonSetupSessions);
+    const setupLink = document.querySelector('[data-open-lesson-setup]');
+    function updateSetupLink() {
+        const name = sessionNames.find(item => String(item.id) === session.value)?.session;
+        const cohort = cohorts.find(item => String(item.class_group_id) === group.value && item.session === name);
+        setupLink.hidden = !cohort;
+        if (!cohort) return;
+        const url = new URL(@json(route('timetables.lessons.create')));
+        url.searchParams.set('school_class_id', cohort.id);
+        if (form.elements.classroom_id.value) url.searchParams.set('classroom_id', form.elements.classroom_id.value);
+        setupLink.href = url.toString();
+    }
+    form.addEventListener('change', updateSetupLink);
 
     const filterGroups = () => {
         [...group.options].forEach(option => option.hidden = Boolean(option.value && program.value && option.dataset.program !== program.value));
@@ -111,6 +130,7 @@
     });
     filterGroups();
     filterSessions(false);
+    updateSetupLink();
 })();
 </script>
 @endpush

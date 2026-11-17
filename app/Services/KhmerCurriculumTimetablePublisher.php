@@ -52,11 +52,20 @@ class KhmerCurriculumTimetablePublisher
             }
             foreach($teachers as $teacher) if(($loads[$teacher->id]??0)>$rules->limit($teacher) || count($names[$teacher->id]??[])>$rules->subjectLimit($teacher)) throw new RuntimeException('Teacher workload or subject limit exceeded.');
             $backup=app(TimetableBackup::class)->create();
-            Schedule::whereIn('school_class_id',$classes->modelKeys())->where(fn($q)=>$q->where('academic_year',$year)->orWhereNull('academic_year'))->update(['cancelled_at'=>now()]);
-            foreach($assignments as $subjectId=>$teacherId) DB::table('subjects')->where('id',$subjectId)->update(['teacher_id'=>$teacherId,'updated_at'=>now()]);
-            foreach(array_chunk($plan['rows'],100) as $chunk) DB::table('schedules')->insert(array_map(fn($row)=>$row+['generated_at'=>now(),'created_at'=>now(),'updated_at'=>now()],$chunk));
+            $existing = Schedule::whereIn('school_class_id',$classes->modelKeys())->where(fn($q)=>$q->where('academic_year',$year)->orWhereNull('academic_year'))->get();
+            $key = fn ($row) => implode('|', array_map(fn ($field) => in_array($field, ['starts_at','ends_at'], true) ? substr((string) $row[$field], 0, 5) : (string) $row[$field], ['school_class_id','subject_id','teacher_id','classroom_id','day','starts_at','ends_at','entry_type']));
+            $preserved = []; $newRows = [];
+            $existingByKey = $existing->keyBy(fn ($lesson) => $key($lesson->getAttributes()));
+            foreach ($plan['rows'] as $row) {
+                $match = !empty($plan['preserve_existing']) ? $existingByKey->get($key($row)) : null;
+                if ($match) $preserved[] = $match->id;
+                else $newRows[] = $row;
+            }
+            Schedule::whereKey($existing->modelKeys())->whereNotIn('id', $preserved)->update(['cancelled_at'=>now()]);
+            foreach($assignments as $subjectId=>$teacherId) DB::table('subjects')->where('id',$subjectId)->where(fn($q)=>$q->whereNull('teacher_id')->orWhere('teacher_id','!=',$teacherId))->update(['teacher_id'=>$teacherId,'updated_at'=>now()]);
+            foreach(array_chunk($newRows,100) as $chunk) DB::table('schedules')->insert(array_map(fn($row)=>$row+['generated_at'=>now(),'created_at'=>now(),'updated_at'=>now()],$chunk));
             if(hash('sha256',Schedule::with('subject')->whereNotIn('school_class_id',$classes->modelKeys())->where(fn($q)=>$q->where('academic_year',$year)->orWhereNull('academic_year'))->get()->toJson())!==$outsideHash) throw new RuntimeException('Other-program timetable changed.');
-            return ['backup'=>$backup,'cohorts'=>$classes->count(),'lesson_count'=>count($plan['rows']),'assigned_teachers'=>count($names),'student_free_periods'=>0,'curriculum_status'=>'provisional','planned_staff_ids'=>$plan['planned_staff_ids']??[]];
+            return ['backup'=>$backup,'cohorts'=>$classes->count(),'lesson_count'=>count($plan['rows']),'preserved_lessons'=>count($preserved),'cancelled_lessons'=>$existing->count()-count($preserved),'new_lessons'=>count($newRows),'assigned_teachers'=>count($names),'student_free_periods'=>0,'curriculum_status'=>'provisional','planned_staff_ids'=>$plan['planned_staff_ids']??[]];
         });
     }
 }

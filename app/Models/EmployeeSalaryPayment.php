@@ -11,6 +11,7 @@ class EmployeeSalaryPayment extends Model
     protected function casts(): array
     {
         return ['salary_month' => 'date', 'service_started_on' => 'date', 'paid_on' => 'date',
-            'base_cents' => 'integer', 'raise_cents' => 'integer', 'total_cents' => 'integer'];
+            'base_cents' => 'integer', 'raise_cents' => 'integer', 'total_cents' => 'integer',
+            'deduction_cents' => 'integer', 'deduction_details' => 'array'];
     }
 }

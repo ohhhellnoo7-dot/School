@@ -22,6 +22,7 @@
                     <button type="button" data-lesson-filter="studying" aria-pressed="false"><i class="bi bi-book" aria-hidden="true"></i> Studying <span data-lesson-count="studying"></span></button>
                     <button type="button" data-lesson-filter="free" aria-pressed="false"><i class="bi bi-cup-hot" aria-hidden="true"></i> Free period <span data-lesson-count="free"></span></button>
                     <button type="button" data-lesson-filter="incomplete" aria-pressed="false"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i> Incomplete timetable <span data-lesson-count="incomplete"></span></button>
+                    @if(auth()->user()->role === 'administrator')<button type="button" data-lesson-filter="awaiting" aria-pressed="false"><i class="bi bi-hourglass-split" aria-hidden="true"></i> Classes awaiting setup <span data-lesson-count="awaiting">{{ $awaitingSetup->count() }}</span></button>@endif
                 </div>
             </div>
         </div>
@@ -30,7 +31,35 @@
     <span class="status-legend"><span class="legend-available">{{ __('Available') }}</span><span class="legend-busy">Busy</span><span class="legend-upcoming">Upcoming</span><span class="legend-out">Out of service</span></span>
 </div>
 
-<section class="classroom-grid" aria-label="Physical classroom status">
+@if(auth()->user()->role === 'administrator')
+<section data-awaiting-panel data-awaiting-count="{{ $awaitingSetup->count() }}" hidden aria-label="Classes awaiting setup">
+    <p>Created classes awaiting a classroom or timetable. Filter by program, grade, or session above. Teachers and lessons can be assigned later.</p>
+    <div class="classroom-grid">
+    @forelse($awaitingSetup as $pending)
+        @php
+            $pendingGroup = $pending->classGroup;
+            $pendingLessons = $pendingGroup->schoolClasses->where('session', $pending->session)->flatMap->schedules;
+            $hasTeacher = $pendingGroup->teacher_id || $pendingLessons->whereNotNull('teacher_id')->isNotEmpty();
+        @endphp
+        <article class="panel p-4" data-awaiting-class="{{ $pendingGroup->id }}">
+            <span class="badge text-bg-warning">Awaiting setup</span>
+            <h3 class="h5 mt-3">{{ $pendingGroup->name }}@if($pendingGroup->section && !str_ends_with($pendingGroup->name, $pendingGroup->section)) · {{ $pendingGroup->section }}@endif</h3>
+            <p>Grade {{ $pendingGroup->grade }} · {{ $pendingGroup->program }} · {{ $pending->session }}</p>
+            <dl>
+                <dt>Classroom</dt><dd>{{ $pending->bookings->pluck('classroom.room_number')->concat($pendingLessons->pluck('classroom.room_number'))->filter()->unique()->join(', ') ?: 'Not assigned' }}</dd>
+                <dt>Teacher</dt><dd>{{ $hasTeacher ? ($pendingGroup->teacher?->name ?: 'Assigned in timetable') : 'Not assigned' }}</dd>
+                <dt>Timetable</dt><dd>{{ $pendingLessons->isEmpty() ? 'Not created yet' : 'Lessons added' }}</dd>
+            </dl>
+            <a class="btn btn-outline-primary" href="{{ route('class-groups.show', $pendingGroup) }}">Set up class <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+            @if($pendingCohort = $pendingGroup->schoolClasses->firstWhere('session', $pending->session))<a class="btn btn-primary mt-2" href="{{ route('timetables.lessons.create', ['school_class_id'=>$pendingCohort->id]) }}">Add lesson &amp; teacher</a>@endif
+        </article>
+    @empty
+        <p class="empty-state">No classes are awaiting setup for this program, grade, and session.</p>
+    @endforelse
+    </div>
+</section>
+@endif
+<section class="classroom-grid" data-physical-room-grid aria-label="Physical classroom status">
     @forelse($availability as $entry)
         @php
             $room = data_get($entry, 'classroom');

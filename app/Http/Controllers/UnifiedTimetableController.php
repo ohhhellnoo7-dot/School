@@ -163,7 +163,7 @@ class UnifiedTimetableController extends Controller
 
     public function form(Request $request, ?Schedule $lesson = null)
     {
-        return view('school.timetables.lesson-form', ['lesson' => $lesson, 'classes' => SchoolClass::orderBy('name')->get(), 'subjects' => Subject::orderBy('name')->get(), 'teachers' => User::where('role', 'teacher')->where('status', 'active')->get(), 'rooms' => Classroom::where('status', 'active')->get()]);
+        return view('school.timetables.lesson-form', ['lesson' => $lesson, 'classes' => SchoolClass::with('classGroup.sessions')->orderBy('name')->get(), 'subjects' => Subject::where(fn ($q) => $q->whereNull('required_weekly_minutes')->orWhere('required_weekly_minutes', '>', 0))->orderBy('name')->get(), 'teachers' => User::where('role', 'teacher')->where('status', 'active')->get(), 'rooms' => Classroom::where('status', 'active')->get()]);
     }
 
     public function store(Request $request, LessonManagementService $service)
@@ -193,6 +193,7 @@ class UnifiedTimetableController extends Controller
         $lesson = $request->filled('ignore_lesson') ? Schedule::findOrFail($request->integer('ignore_lesson')) : new Schedule;
         $subject = Subject::findOrFail($request->integer('subject_id'));
         $selectedClass = SchoolClass::findOrFail($data['school_class_id']);
+        if ($subject->school_class_id !== $selectedClass->id) throw ValidationException::withMessages(['subject_id' => 'Choose a subject belonging to the selected class.']);
         if ($selectedClass->shared_timetable_class_id && $subject->school_class_id === $selectedClass->id) {
             $owner = $selectedClass->timetableOwner();
             $data['school_class_id'] = $owner->id;
@@ -204,15 +205,17 @@ class UnifiedTimetableController extends Controller
             try { $service->validate($slot, false); return true; } catch (ValidationException $e) { return false; }
         });
         $rules = app(TeacherManagementService::class);
-        $teachers = User::where('role', 'teacher')->where('status', 'active')->get()->filter(function ($teacher) use ($rules, $subject, $data, $lesson) {
-            return $rules->qualifications($teacher)->contains($subject->name)
-                && Subject::where('teacher_id', $teacher->id)->pluck('name')->concat($rules->lessons($teacher)->pluck('subject.name'))->push($subject->name)->filter()->unique()->count() <= $rules->subjectLimit($teacher)
-                && $rules->lessons($teacher)->where('id', '!=', $lesson->id)->filter(fn ($s)=>\App\Support\AcademicYear::overlaps($s->academic_year,$data['academic_year']??null))->sum(fn ($s) => $rules::duration($s->starts_at, $s->ends_at)) + $rules::duration($data['starts_at'], $data['ends_at']) <= $rules->limit($teacher)
-                && $rules->onDuty($teacher, $data['day'], $data['starts_at'], $data['ends_at'])
-                && ! $rules->breaks($teacher)->contains(fn ($b) => $b->weekday === $data['day'] && $rules::overlaps($b->start_time, $b->end_time, $data['starts_at'], $data['ends_at']))
-                && ! Schedule::where('teacher_id', $teacher->id)->where('day', $data['day'])->where('starts_at', '<', $data['ends_at'])->where('ends_at', '>', $data['starts_at'])->when(!empty($data['academic_year']),fn ($q)=>$q->where(fn ($year)=>$year->where('academic_year',$data['academic_year'])->orWhereNull('academic_year')))->when($lesson->id, fn ($q) => $q->where('id', '!=', $lesson->id))->exists();
-        });
-        return response()->json(['teachers' => $teachers->map->only(['id','name'])->values(), 'rooms' => $rooms->map->only(['id','room_number'])->values()]);
+        $teachers = User::where('role', 'teacher')->where('status', 'active')->where('program', $selectedClass->program)->get()->map(function ($teacher) use ($rules, $service, $subject, $data, $lesson, $rooms) {
+            if (! $rules->qualifications($teacher)->contains($subject->name)) return null;
+            $roomIds = [];
+            foreach ($rooms as $room) {
+                $slot = clone $lesson;
+                $slot->fill(array_intersect_key($data, array_flip(['school_class_id','day','starts_at','ends_at','academic_year'])) + ['classroom_id' => $room->id, 'room' => $room->room_number, 'entry_type' => 'academic', 'subject_id' => $subject->id, 'teacher_id' => $teacher->id]);
+                try { $service->validate($slot); $roomIds[] = $room->id; } catch (ValidationException $e) { }
+            }
+            return $roomIds ? ['id' => $teacher->id, 'name' => $teacher->name, 'program' => $teacher->program, 'room_ids' => $roomIds] : null;
+        })->filter()->values();
+        return response()->json(['teachers' => $teachers, 'rooms' => $rooms->map->only(['id','room_number'])->values()])->header('Cache-Control', 'no-store');
     }
 
     public function preview(Request $request, UnifiedTimetableGenerator $generator)

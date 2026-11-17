@@ -10,7 +10,7 @@
 <form class="panel entity-form" method="post" action="{{ $classGroup->exists ? route('class-groups.update', $classGroup) : route('class-groups.store') }}">
     @csrf
     @if($classGroup->exists) @method('PUT') @endif
-    <div class="panel-header"><div><h2>Class group details</h2><p>Sessions are assigned automatically according to the selected academic program.</p></div></div>
+    <div class="panel-header"><div><h2>Class group details</h2><p>Create the class first. Teachers, classrooms and lessons can be assigned later. Study sessions are added automatically for the selected program.</p></div></div>
     <div class="panel-body form-section-grid">
         <div>
             <label class="form-label" for="name">Class name <span aria-hidden="true">*</span></label>
@@ -47,7 +47,7 @@
             <label class="form-label" for="section">Section</label>
             <select class="form-select @error('section') is-invalid @enderror" id="section" name="section">
                 <option value="">No section</option>
-                @foreach(['A', 'B', 'C', 'D', 'E'] as $section)<option value="{{ $section }}" @selected(old('section', $classGroup->section) === $section)>{{ $section }}</option>@endforeach
+                @foreach(range('A', 'Z') as $section)<option value="{{ $section }}" @selected(old('section', $classGroup->section) === $section)>{{ $section }}</option>@endforeach
             </select>
             <div class="form-text">Khmer uses sections A–E. English and Chinese have one identity per grade.</div>
             @error('section')<div class="invalid-feedback">{{ $message }}</div>@enderror

@@ -70,13 +70,17 @@
         results.querySelectorAll('[data-lesson-filter]').forEach(button => {
             const value = button.dataset.lessonFilter;
             button.setAttribute('aria-pressed', String(value === lessonFilter));
-            button.querySelector('[data-lesson-count]').textContent = cards.filter(card => value === 'all' || card.dataset.lessonState === value).length;
+            button.querySelector('[data-lesson-count]').textContent = value === 'awaiting' ? (results.querySelector('[data-awaiting-panel]')?.dataset.awaitingCount || 0) : cards.filter(card => value === 'all' || card.dataset.lessonState === value).length;
         });
         cards.forEach(card => { card.hidden = lessonFilter !== 'all' && card.dataset.lessonState !== lessonFilter; });
         const empty = results.querySelector('[data-lesson-empty]');
-        if (empty) empty.hidden = lessonFilter === 'all' || cards.some(card => !card.hidden);
+        if (empty) empty.hidden = lessonFilter === 'all' || lessonFilter === 'awaiting' || cards.some(card => !card.hidden);
+        const awaiting = results.querySelector('[data-awaiting-panel]');
+        if (awaiting) awaiting.hidden = lessonFilter !== 'awaiting';
+        const roomGrid = results.querySelector('[data-physical-room-grid]');
+        if (roomGrid) roomGrid.hidden = lessonFilter === 'awaiting';
         const selection = results.querySelector('[data-lesson-selection]');
-        if (selection) selection.textContent = lessonFilter === 'all' ? '' : ` Showing: ${{studying: 'Studying', free: 'Free period', incomplete: 'Incomplete timetable'}[lessonFilter] || lessonFilter}.`;
+        if (selection) selection.textContent = lessonFilter === 'all' ? '' : ` Showing: ${{studying: 'Studying', free: 'Free period', incomplete: 'Incomplete timetable', awaiting: 'Classes awaiting setup'}[lessonFilter] || lessonFilter}.`;
     };
     const openLessonPicker = open => {
         results.querySelector('.lesson-picker')?.classList.toggle('is-open', open);

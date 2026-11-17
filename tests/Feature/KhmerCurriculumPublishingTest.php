@@ -49,6 +49,24 @@ class KhmerCurriculumPublishingTest extends TestCase
         catch(\RuntimeException $e) { $this->assertStringContainsString('Overlapping',$e->getMessage()); }
         $this->assertSame(1,Schedule::count()); $this->assertSame(1,Schedule::withoutGlobalScope('active')->count());
     }
+    public function test_repair_preserves_matching_lesson_ids_and_is_idempotent(): void
+    {
+        $plan = $this->draft();
+        $old = Schedule::sole();
+        $plan['preserve_existing'] = true;
+        $service = app(KhmerCurriculumTimetablePublisher::class);
+        $result = $service->publish($plan);
+        $this->assertSame(1, $result['preserved_lessons']);
+        $this->assertSame(0, $result['cancelled_lessons']);
+        $this->assertSame(9, $result['new_lessons']);
+        $this->assertNotNull(Schedule::find($old->id));
+        $ids = Schedule::orderBy('id')->pluck('id')->all();
+        $plan['fingerprint'] = app(RotationTimetableGenerator::class)->fingerprint();
+        $result = $service->publish($plan);
+        $this->assertSame(10, $result['preserved_lessons']);
+        $this->assertSame(0, $result['new_lessons']);
+        $this->assertSame($ids, Schedule::orderBy('id')->pluck('id')->all());
+    }
     public function test_changed_school_data_rejects_a_stale_plan(): void
     {
         $plan=$this->draft(); DB::table('curriculum_profiles')->update(['notes'=>'Changed configuration']);

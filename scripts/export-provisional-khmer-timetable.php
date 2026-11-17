@@ -20,6 +20,7 @@ $data = app(TeacherManagementService::class)->locked(function () {
                 'stream'=>$class->classGroup?->stream, 'subjects'=>$class->subjects->whereNotNull('curriculum_requirement_id')->where('required_weekly_minutes','>',0)->map(fn ($s)=>['id'=>$s->id,'name'=>$s->name,'hours'=>$s->required_weekly_minutes === null ? null : $s->required_weekly_minutes/60,'duration'=>\App\Support\KhmerLessonDuration::minutes($s)/60,'assigned_teacher_id'=>$s->teacher_id])->values()->all(),
                 'reservations'=>$reservations->map(fn ($b)=>['day'=>$b->day_of_week,'classroom_id'=>$b->classroom_id,'room'=>$b->classroom->room_number,'starts_at'=>substr($b->starts_at,0,5),'ends_at'=>substr($b->ends_at,0,5)])->values()->all()];
         })->all(),
+        'existing'=>Schedule::whereIn('school_class_id',$classes->modelKeys())->where(fn($q)=>$q->where('academic_year','2026-2027')->orWhereNull('academic_year'))->get()->map(fn($s)=>$s->getAttributes())->all(),
         'teachers'=>$teachers->map(function ($teacher) use ($rules,$outside) {
             $available=[];
             foreach ($rules::DAYS as $d=>$day) foreach ([7,8,9,10,13,14,15,16] as $h=>$hour) {

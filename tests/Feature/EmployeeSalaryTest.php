@@ -12,7 +12,72 @@ class EmployeeSalaryTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_bulk_setup_uses_duties_and_hire_dates_preserves_existing_profiles_and_is_repeatable(): void
+    public function test_attendance_deductions_charge_daytime_absence_lateness_and_excuses_once_per_day(): void
+    {
+        $profile = new EmployeeSalaryProfile(['day_sessions' => 2, 'evening_sessions' => 2, 'service_started_on' => '2026-11-01']);
+        $marks = collect();
+        foreach ([['2026-11-02', 'Morning', 'absent'], ['2026-11-02', 'Afternoon', 'present'],
+            ['2026-11-03', 'Morning', 'absent'], ['2026-11-03', 'Afternoon', 'absent'],
+            ['2026-11-04', 'All', 'late'], ['2026-11-05', 'All', 'excused']] as [$date, $session, $status]) {
+            $marks->push(new \App\Models\EmployeeSalaryAttendance(compact('date', 'session', 'status')));
+        }
+        $salary = app(\App\Services\EmployeeSalaryDeductions::class)->apply(
+            ['total_cents' => 31250], $profile, collect(), collect(), $marks, Carbon::parse('2026-11-16'));
+        $this->assertSame(3100, $salary['deduction_cents']);
+        $this->assertSame(28150, $salary['total_cents']);
+        $this->assertSame([1000, 1500, 100, 500], array_column($salary['deduction_details'], 'total_cents'));
+    }
+
+    public function test_deduction_sources_do_not_double_count_records_and_skip_future_missing_and_evening_absence(): void
+    {
+        $profile = new EmployeeSalaryProfile(['day_sessions' => 2, 'evening_sessions' => 2, 'service_started_on' => '2026-11-01']);
+        $daily = new \Illuminate\Database\Eloquent\Collection([
+            new TeacherAttendance(['id' => 1, 'date' => '2026-11-02', 'status' => 'absent']),
+            new TeacherAttendance(['id' => 2, 'date' => '2026-11-03', 'status' => 'late']),
+            new TeacherAttendance(['id' => 3, 'date' => '2026-11-20', 'status' => 'absent']),
+        ]);
+        $scans = new \Illuminate\Database\Eloquent\Collection([
+            new TeacherSessionAttendance(['id' => 1, 'date' => '2026-11-04', 'session' => 'Evening', 'status' => 'excused']),
+        ]);
+        $marks = collect([new \App\Models\EmployeeSalaryAttendance(['date' => '2026-11-02', 'session' => 'All', 'status' => 'present'])]);
+        $service = app(\App\Services\EmployeeSalaryDeductions::class);
+        $salary = $service->apply(['total_cents' => 25000], $profile, $daily, $scans, $marks, Carbon::parse('2026-11-16'));
+        $this->assertSame(600, $salary['deduction_cents']);
+        $profile->day_sessions = 0;
+        $salary = $service->apply(['total_cents' => 6250], $profile, collect([new TeacherAttendance(['date' => '2026-11-02', 'status' => 'absent'])]), collect(), collect(), Carbon::parse('2026-11-16'));
+        $this->assertSame(0, $salary['deduction_cents']);
+        $this->assertSame(6250, $salary['total_cents']);
+    }
+
+    public function test_payroll_attendance_search_and_saved_deductions_are_applied_to_payment_snapshot(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-16 12:00:00'));
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = $this->employee();
+        $profile = $this->profile($teacher, $admin);
+        $profile->update(['service_started_on' => '2026-11-01', 'evening_sessions' => 0]);
+        $other = $this->employee();
+        $this->actingAs($admin)->get(route('employee-salaries.index', ['search' => $teacher->name]))
+            ->assertOk()->assertSee($teacher->name)->assertDontSee($other->name)->assertSee('data-salary-search', false)->assertDontSee('View payroll');
+        $this->get(route('employee-salaries.attendance', ['search' => $teacher->name]))
+            ->assertOk()->assertSee($teacher->name)->assertDontSee($other->name)->assertSee('Morning')->assertSee('Afternoon');
+        foreach (['Morning', 'Afternoon'] as $session) {
+            $this->post(route('employee-salaries.attendance.store', $teacher), ['date' => '2026-11-12', 'session' => $session, 'status' => 'absent'])
+                ->assertSessionHasNoErrors();
+        }
+        $this->get(route('employee-salaries.index', ['search' => $teacher->name]))->assertOk()->assertSee('-$15.00')->assertSee('$235.00')->assertSee('1 absent');
+        $this->get(route('employee-salaries.show', ['teacher' => $teacher, 'month' => '2026-11']))->assertOk()->assertSee('Attendance deduction details')->assertSee('$235.00');
+        $data = ['month' => '2026-11', 'paid_on' => '2026-11-16', 'confirm' => 1, 'expected_total_cents' => 25000];
+        $this->post(route('employee-salaries.pay', $teacher), $data)->assertSessionHasErrors('salary');
+        $this->post(route('employee-salaries.pay', $teacher), array_replace($data, ['expected_total_cents' => 23500]))->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('employee_salary_payments', ['teacher_id' => $teacher->id, 'deduction_cents' => 1500, 'total_cents' => 23500]);
+        $this->post(route('employee-salaries.attendance.store', $teacher), ['date' => '2026-11-12', 'session' => 'All', 'status' => 'present'])
+            ->assertSessionHasErrors('attendance');
+        $this->actingAs($teacher)->get(route('employee-salaries.attendance'))->assertForbidden();
+        $this->post(route('employee-salaries.attendance.store', $teacher), ['date' => '2026-11-12', 'session' => 'All', 'status' => 'present'])->assertForbidden();
+    }
+
+    public function test_bulk_setup_uses_salary_cycle_instead_of_old_hire_dates_and_preserves_existing_profiles(): void
     {
         $admin = User::factory()->create(['role' => 'administrator']);
         $teacher = $this->employee();

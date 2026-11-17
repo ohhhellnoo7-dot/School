@@ -130,3 +130,9 @@
     :root:root:root:root .timetable-workspace .shared-lesson-title { font-size: 9px; }
     .shared-lesson > a { display: none; }
 }
+
+.timetable-schedule-details { display: flex; flex: 1; flex-wrap: wrap; gap: 12px 22px; margin: 0; min-width: 0; }
+.timetable-schedule-details > div { min-width: 65px; max-width: 300px; }
+.timetable-schedule-details dt { color: var(--text-secondary); font-size: 10px; font-weight: 600; margin-bottom: 4px; }
+.timetable-schedule-details dd { color: var(--text-primary); font-size: 12px; font-weight: 700; margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 767px) { .timetable-schedule-details { flex-basis: 100%; } }

@@ -15,6 +15,13 @@
 </section>
 
 <div class="row g-4">
+    @if(auth()->user()->role === 'administrator')
+    <div class="col-12" id="lesson-setup">
+        <section class="panel p-4"><h2>Set up subject lessons and teachers</h2><p>Choose a session, then enter a subject, weekday and lesson time. Only qualified teachers from {{ $classGroup->program }} who are available at that time can be selected.</p>
+            <div class="d-flex gap-2 flex-wrap">@foreach($classGroup->schoolClasses as $cohort)<a class="btn btn-primary" href="{{ route('timetables.lessons.create', ['school_class_id'=>$cohort->id]) }}">Add {{ $cohort->session }} lesson</a><a class="btn btn-outline-secondary" href="{{ route('timetables.index', ['view'=>'students','class'=>$cohort->id]) }}">View {{ $cohort->session }} schedule</a>@endforeach</div>
+        </section>
+    </div>
+    @endif
     <div class="col-xl-4">
         <section class="panel h-100">
             <div class="panel-header"><div><h2>Study sessions</h2><p>Standard hours for this program</p></div></div>

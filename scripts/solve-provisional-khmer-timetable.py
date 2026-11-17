@@ -14,6 +14,17 @@ model=cp_model.CpModel()
 class_slots=defaultdict(list); teacher_slots=defaultdict(list); room_slots=defaultdict(list)
 teacher_load=defaultdict(list); teacher_names=defaultdict(dict)
 variables=[]; preferences=[]
+repair = '--repair' in sys.argv
+existing = data.get('existing', []) if repair else []
+unchanged_classes = set()
+for c in data['classes']:
+    lessons = [r for r in existing if r['school_class_id'] == c['id']]
+    actual = defaultdict(int)
+    for r in lessons:
+        actual[r['subject_id']] += (int(r['ends_at'][:2]) - int(r['starts_at'][:2]))
+    if lessons and all(actual[s['id']] == s['hours'] for s in c['subjects']) and sum(actual.values()) == 20:
+        unchanged_classes.add(c['id'])
+existing_keys = {(r['school_class_id'], r['subject_id'], r['teacher_id'], r['classroom_id'], r['day'], r['starts_at'][:5], r['ends_at'][:5]) for r in existing}
 days=['Monday','Tuesday','Wednesday','Thursday','Friday']
 for c in data['classes']:
     if sum(s['hours'] for s in c['subjects'])!=20: raise ValueError(f"Incomplete curriculum {c['id']}")
@@ -42,6 +53,9 @@ for c in data['classes']:
                     if begin<r['starts_at'] or end>r['ends_at']: continue
                     if any(o['day']==day and o['classroom_id']==r['classroom_id'] and o['starts_at'][:5]<end and o['ends_at'][:5]>begin for o in data['outside']): continue
                     x=model.new_bool_var(f'lesson_{len(variables)}'); model.add(x<=owner)
+                    key = (c['id'], s['id'], t['id'], r['classroom_id'], day, begin, end)
+                    if repair and key in existing_keys: preferences.append(x * 1000)
+                    if repair and '--allow-moves' not in sys.argv and c['id'] in unchanged_classes and key not in existing_keys: model.add(x == 0)
                     options.append(x); occurrences.append(x*int(s['duration']))
                     teacher_load[t['id']].append(x*int(s['duration']))
                     for slot in slots:
@@ -54,14 +68,14 @@ for c in data['classes']:
         for h in range(4): model.add(sum(class_slots[c['id'],d*8+offset+h])==1)
 for t in data['teachers']:
     model.add(sum(teacher_load[t['id']])<=int(t['limit']))
-    if teacher_load[t['id']]: model.add(sum(teacher_load[t['id']])>=1)
+    if teacher_load[t['id']] and not repair: model.add(sum(teacher_load[t['id']])>=1)
     model.add(sum(teacher_names[t['id']].values())<=t.get('subject_limit',2))
 for options in teacher_slots.values(): model.add(sum(options)<=1)
 for options in room_slots.values(): model.add(sum(options)<=1)
 # Prefer established subject-teacher links without making an infeasible old assignment mandatory.
 model.maximize(sum(preferences))
 solver=cp_model.CpSolver(); solver.parameters.max_time_in_seconds=120
-solver.parameters.stop_after_first_solution=True; solver.parameters.num_search_workers=8
+solver.parameters.stop_after_first_solution=not repair; solver.parameters.num_search_workers=8
 print(f"Solving {len(data['classes'])} cohorts, {len(data['teachers'])} staff records, {len(variables)} valid lesson options.",flush=True)
 status=solver.solve(model)
 result={'academic_year':data.get('academic_year','2026-2027'),'status':solver.status_name(status),'fingerprint':data['fingerprint'],'backup':data['backup'],'curriculum_status':'provisional','planned_staff_ids':[t['id'] for t in data['teachers'] if t.get('planned')],'rows':[]}

@@ -21,8 +21,7 @@ if ($apply) {
     $created = $service->apply($plan, $actor);
 }
 echo json_encode(['mode' => $apply ? 'applied' : 'preview', 'planned' => $plan->count(), 'created' => $created,
-    'using_hire_date' => $plan->where('start_date_source', 'hire_date')->count(),
-    'using_baseline' => $plan->where('start_date_source', 'baseline_no_hire_date')->count(),
+    'using_salary_cycle_start' => $plan->where('start_date_source', 'salary_cycle_start')->count(),
     'session_patterns' => $plan->countBy(fn ($row) => $row['day_sessions'].' daytime / '.$row['evening_sessions'].' evening'),
     'unresolved_teacher_ids' => $plan->where('eligible', false)->pluck('teacher_id')->values(),
     'profiles_after' => \App\Models\EmployeeSalaryProfile::count(), 'backup' => $backup,

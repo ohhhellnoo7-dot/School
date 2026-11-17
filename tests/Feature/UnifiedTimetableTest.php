@@ -335,6 +335,41 @@ class UnifiedTimetableTest extends TestCase
         $this->getJson(route('timetables.lessons.options', array_replace($this->data($f), ['ignore_lesson' => Schedule::first()->id])))->assertOk()->assertJsonCount(2, 'teachers');
     }
 
+    public function test_lesson_setup_is_accessible_from_class_and_room_assignment_pages(): void
+    {
+        $f = $this->fixture();
+        $class = $f['classes'][1];
+        $this->actingAs($f['admin'])->get(route('class-groups.show', $class->class_group_id))->assertOk()
+            ->assertSee('Set up subject lessons and teachers')->assertSee('school_class_id='.$class->id, false);
+        $this->get(route('classroom-bookings.create', ['class_group_id' => $class->class_group_id]))->assertOk()
+            ->assertSee('Set up lessons &amp; teachers', false)->assertSee('data-open-lesson-setup', false);
+        $page = $this->get(route('timetables.lessons.create', ['school_class_id' => $class->id]))->assertOk()
+            ->assertSee('Set up class schedule')->assertSee('Available Qualified Teacher')->assertSee('data-save-lesson', false);
+        $this->assertMatchesRegularExpression('/value="'.$class->id.'"[^>]*data-start="07:00"[^>]*selected/s', $page->getContent());
+    }
+
+    public function test_available_teachers_match_the_program_and_existing_subject_assignment(): void
+    {
+        $f = $this->fixture();
+        $this->actingAs($f['admin']);
+        $f['substitute']->update(['program' => 'English']);
+        $this->getJson(route('timetables.lessons.options', $this->data($f)))->assertOk()
+            ->assertJsonCount(1, 'teachers')->assertJsonPath('teachers.0.id', $f['primary']->id);
+        $this->post(route('timetables.lessons.store', []), array_replace($this->data($f), ['teacher_id' => $f['substitute']->id]))->assertSessionHasErrors();
+        $f['substitute']->update(['program' => 'Khmer']);
+        app(LessonManagementService::class)->save($this->data($f));
+        $this->getJson(route('timetables.lessons.options', array_replace($this->data($f), ['day' => 'Tuesday'])))->assertOk()
+            ->assertJsonCount(1, 'teachers')->assertJsonPath('teachers.0.id', $f['primary']->id)
+            ->assertJsonPath('teachers.0.room_ids.0', $f['rooms'][0]->id);
+    }
+
+    public function test_subject_from_another_class_is_rejected_by_available_options(): void
+    {
+        $f = $this->fixture();
+        $this->actingAs($f['admin'])->getJson(route('timetables.lessons.options', array_replace($this->data($f), ['subject_id' => $f['classes'][1]->subjects()->firstOrFail()->id])))
+            ->assertUnprocessable()->assertJsonValidationErrors('subject_id');
+    }
+
     public function test_stale_edits_and_missing_confirmation_leave_the_shared_lesson_intact(): void
     {
         $f = $this->fixture();

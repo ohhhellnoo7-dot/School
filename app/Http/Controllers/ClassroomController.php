@@ -433,7 +433,26 @@ class ClassroomController extends Controller
             ->values();
         $stats = $availabilityService->summary($availability);
 
-        return compact('availability', 'stats', 'filters', 'moment');
+        $awaitingSetup = collect();
+        if ($request->user()->role === 'administrator') {
+            $year = $moment->year.'-'.($moment->year + 1);
+            $awaitingSetup = ClassSession::with(['bookings.classroom', 'classGroup.teacher',
+                'classGroup.schoolClasses.schedules' => fn ($q) => $q->where(fn ($q) => $q->where('academic_year', $year)->orWhereNull('academic_year')),
+                'classGroup.schoolClasses.schedules.classroom',
+            ])->whereHas('classGroup', function ($q) use ($filters) {
+                $q->where('status', 'active')
+                    ->when($filters['program'] ?? null, fn ($q, $program) => $q->where('program', $program))
+                    ->when($filters['grade'] ?? null, fn ($q, $grade) => $q->where('grade', $grade));
+            })->when($filters['session'] ?? null, fn ($q, $session) => $q->where('session', $session))
+                ->orderBy('class_group_id')->orderBy('starts_at')->get()
+                ->filter(function ($session) {
+                    $lessons = $session->classGroup->schoolClasses->where('session', $session->session)->flatMap->schedules;
+                    return $lessons->isEmpty() || ($session->bookings->isEmpty() && $lessons->contains(fn ($lesson) => ! $lesson->classroom));
+                })
+                ->values();
+        }
+
+        return compact('availability', 'stats', 'filters', 'moment', 'awaitingSetup');
     }
 
     /** @param array<string, mixed> $filters */
@@ -504,7 +523,7 @@ class ClassroomController extends Controller
         return [
             'booking' => $booking,
             'classGroups' => ClassGroup::query()
-                ->with(['sessions' => fn ($query) => $query->orderBy('starts_at'), 'teacher:id,name'])
+                ->with(['sessions' => fn ($query) => $query->orderBy('starts_at'), 'teacher:id,name', 'schoolClasses'])
                 ->where('status', 'active')
                 ->orderBy('program')
                 ->orderBy('grade')
