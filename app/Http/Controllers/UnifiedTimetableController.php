@@ -185,6 +185,12 @@ class UnifiedTimetableController extends Controller
         return view('school.timetables.lesson-form', ['lesson' => $lesson, 'classes' => SchoolClass::with('classGroup.sessions')->orderBy('name')->get(), 'subjects' => Subject::where(fn ($q) => $q->whereNull('required_weekly_minutes')->orWhere('required_weekly_minutes', '>', 0))->orderBy('name')->get(), 'teachers' => User::where('role', 'teacher')->where('status', 'active')->get(), 'rooms' => Classroom::where('status', 'active')->get()]);
     }
 
+    public function autoFill(Request $request, \App\Services\KhmerWeekPlanner $planner)
+    {
+        $data = $request->validate(['school_class_id' => 'required|integer|exists:school_classes,id', 'academic_year' => ['required', 'regex:/^\d{4}-\d{4}$/']]);
+        return response()->json($planner->preview(SchoolClass::findOrFail($data['school_class_id']), $data['academic_year']))->header('Cache-Control', 'no-store');
+    }
+
     public function store(Request $request, LessonManagementService $service)
     {
         if ($request->has('slots')) {

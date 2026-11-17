@@ -60,6 +60,7 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
         Route::get('/diagnostics', [\App\Http\Controllers\UnifiedTimetableController::class, 'diagnostics'])->name('timetables.diagnostics');
         Route::get('/lessons/create', [\App\Http\Controllers\UnifiedTimetableController::class, 'form'])->name('timetables.lessons.create');
         Route::get('/lessons/options', [\App\Http\Controllers\UnifiedTimetableController::class, 'options'])->name('timetables.lessons.options');
+        Route::post('/lessons/auto-fill', [\App\Http\Controllers\UnifiedTimetableController::class, 'autoFill'])->name('timetables.lessons.auto-fill');
         Route::post('/lessons', [\App\Http\Controllers\UnifiedTimetableController::class, 'store'])->name('timetables.lessons.store');
         Route::get('/lessons/{lesson}/edit', [\App\Http\Controllers\UnifiedTimetableController::class, 'form'])->name('timetables.lessons.edit');
         Route::put('/lessons/{lesson}', [\App\Http\Controllers\UnifiedTimetableController::class, 'update'])->name('timetables.lessons.update');

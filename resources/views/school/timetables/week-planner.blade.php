@@ -15,6 +15,8 @@
     <p class="alert alert-info" data-context></p>
     <div class="mb-3 d-flex flex-wrap gap-2" data-weekly-hours aria-live="polite"></div>
     <button type="button" class="btn btn-outline-secondary mb-3" data-copy>Auto-fill Monday to Friday</button>
+    <p class="small text-muted" data-auto-help hidden>Automatically rebuilds this unsaved draft using available teachers. Saved lessons are kept. Review the result before saving.</p>
+    <div class="alert alert-warning" role="alert" data-auto-alert hidden></div>
     <div class="weekday-subject-planner">
         <div class="weekday-menu" role="group" aria-label="Choose a weekday">
             @foreach(['Monday','Tuesday','Wednesday','Thursday','Friday'] as $day)
@@ -31,8 +33,9 @@
 @endsection
 @push('scripts')
 @php
-    $plannerClasses = $classes->map(fn ($class) => ['id' => $class->id, 'label' => $class->label, 'hours' => $class->sessionHours()]);
-    $plannerSubjects = $subjects->map->only(['id','name','school_class_id','lesson_minutes','required_weekly_minutes']);
+    $plannerClasses = $classes->map(fn ($class) => ['id' => $class->id, 'program' => $class->program, 'label' => $class->label, 'hours' => $class->sessionHours()]);
+    $subjects->loadMissing('schoolClass');
+    $plannerSubjects = $subjects->map(fn ($subject) => array_merge($subject->only(['id','name','school_class_id','lesson_minutes','required_weekly_minutes']), ['lesson_minutes' => $subject->schoolClass?->program === 'Khmer' ? \App\Support\KhmerLessonDuration::minutes($subject) : $subject->lesson_minutes]));
     $savedLessons = \App\Models\Schedule::whereIn('subject_id', $subjects->modelKeys())->get(['subject_id','academic_year','starts_at','ends_at']);
 @endphp
 <script>
@@ -60,6 +63,8 @@
     }
     function initialize(restore = false) {
         revision++;
+        form.querySelector('[data-auto-alert]').hidden = true;
+        status.textContent = '';
         const cohort = classes.find(item => String(item.id) === form.elements.school_class_id.value);
         days.forEach(day => {
             plans[day] = [];
@@ -107,6 +112,8 @@
         });
         form.querySelector('[data-heading]').textContent = `${active} subjects`;
         const cohort = classes.find(item => String(item.id) === form.elements.school_class_id.value);
+        form.querySelector('[data-copy]').textContent = cohort?.program === 'Khmer' ? 'Auto-fill subjects & teachers' : 'Auto-fill Monday to Friday';
+        form.querySelector('[data-auto-help]').hidden = cohort?.program !== 'Khmer';
         form.querySelector('[data-context]').textContent = cohort ? `${cohort.label}: ${cohort.hours.map(t => t.slice(0,5)).join('–')} on ${active}.` : 'Add a class to start planning.';
         plans[active].forEach((slot, index) => {
             const preceding = plans[active].slice(0, index).find(item => item.subject_id && minute(item.ends_at) > minute(slot.starts_at));
@@ -154,7 +161,48 @@
     form.querySelectorAll('[data-day]').forEach(button => button.addEventListener('click', () => { active = button.dataset.day; render(); }));
     form.elements.school_class_id.addEventListener('change', () => initialize());
     form.elements.academic_year.addEventListener('change', render);
-    form.querySelector('[data-copy]').addEventListener('click', () => {
+    form.querySelector('[data-copy]').addEventListener('click', async () => {
+        const cohort = classes.find(item => String(item.id) === form.elements.school_class_id.value);
+        if (cohort?.program === 'Khmer') {
+            if (!form.reportValidity()) return;
+            const alert = form.querySelector('[data-auto-alert]');
+            alert.hidden = true;
+            status.textContent = 'Planning subjects and checking available teachers…';
+            revision++;
+            form.inert = true;
+            try {
+                const response = await fetch(@json(route('timetables.lessons.auto-fill')), {
+                    method: 'POST',
+                    headers: {'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': form.querySelector('[name="_token"]').value},
+                    body: JSON.stringify({school_class_id: form.elements.school_class_id.value, academic_year: form.elements.academic_year.value})
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message || 'Could not create a schedule.');
+                days.forEach(day => plans[day].forEach(slot => { slot.subject_id = ''; slot.teacher_id = ''; slot.classroom_id = ''; }));
+                result.slots.forEach(row => {
+                    const slot = plans[row.day]?.find(item => item.starts_at === row.starts_at);
+                    if (slot) Object.assign(slot, {day: row.day, starts_at: row.starts_at, ends_at: row.ends_at, subject_id: String(row.subject_id), teacher_id: String(row.teacher_id), classroom_id: String(row.classroom_id)});
+                });
+                if (result.unfilled.length) {
+                    alert.replaceChildren();
+                    const heading = document.createElement('strong'); heading.textContent = 'Some subjects could not be fully scheduled:'; alert.append(heading);
+                    const list = document.createElement('ul');
+                    result.unfilled.forEach(item => {
+                        const entry = document.createElement('li');
+                        entry.textContent = `${item.subject}${item.remaining_minutes === null ? '' : ` (${item.remaining_minutes / 60} hours remaining)`}: ${item.reason}`;
+                        list.append(entry);
+                    });
+                    alert.append(list); alert.hidden = false;
+                }
+                status.textContent = result.complete ? 'All required subject hours are planned. Review the teachers and save the class schedule.' : 'Available lessons have been filled. Review the subjects listed above before saving.';
+                render();
+            } catch (error) {
+                alert.textContent = error.message; alert.hidden = false;
+                status.textContent = 'Auto-fill could not finish. Your draft has been kept.';
+                render();
+            } finally { form.inert = false; }
+            return;
+        }
         const source = plans[active].map(slot => ({...slot}));
         days.forEach(day => { if (day !== active) plans[day] = source.map(slot => ({...slot, day, subject_id: '', teacher_id: '', classroom_id: ''})); });
         days.forEach(day => {

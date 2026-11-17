@@ -13,6 +13,52 @@ class UnifiedTimetableTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_khmer_auto_fill_assigns_teachers_and_reports_subjects_without_teachers_without_saving(): void
+    {
+        $f = $this->fixture();
+        Subject::create(['name' => 'History', 'code' => 'H-AUTO', 'school_class_id' => $f['classes'][0]->id, 'required_weekly_minutes' => 60, 'lesson_minutes' => 60]);
+        $count = Schedule::count();
+        $response = $this->actingAs($f['admin'])->postJson(route('timetables.lessons.auto-fill'), ['school_class_id' => $f['classes'][0]->id, 'academic_year' => '2026-2027'])
+            ->assertOk()->assertJsonPath('complete', false)->assertJsonCount(1, 'slots')->assertJsonPath('unfilled.0.subject', 'History');
+        $this->assertStringContainsString('No active qualified', $response->json('unfilled.0.reason'));
+        $row = $response->json('slots.0');
+        $this->assertSame($f['subjects'][0]->id, $row['subject_id']);
+        $this->assertContains($row['teacher_id'], [$f['primary']->id, $f['substitute']->id]);
+        app(LessonManagementService::class)->validate(new Schedule($row));
+        $this->assertSame($count, Schedule::count());
+        $this->post(route('timetables.lessons.store'), ['school_class_id' => $f['classes'][0]->id, 'academic_year' => '2026-2027', 'slots' => [$row]])->assertSessionHasNoErrors();
+        $this->assertSame($count + 1, Schedule::count());
+        $this->postJson(route('timetables.lessons.auto-fill'), ['school_class_id' => $f['classes'][0]->id, 'academic_year' => '2026-2027'])
+            ->assertOk()->assertJsonCount(0, 'slots');
+        $this->assertSame($count + 1, Schedule::count());
+    }
+
+    public function test_khmer_auto_fill_checks_staged_weekly_hours_and_conflicts(): void
+    {
+        $f = $this->fixture();
+        $f['subjects'][0]->update(['required_weekly_minutes' => 480]);
+        $payload = ['school_class_id' => $f['classes'][0]->id, 'academic_year' => '2026-2027'];
+        $response = $this->actingAs($f['admin'])->postJson(route('timetables.lessons.auto-fill'), $payload)
+            ->assertOk()->assertJsonPath('complete', true)->assertJsonCount(4, 'slots');
+        $this->assertSame(1, collect($response->json('slots'))->pluck('teacher_id')->unique()->count());
+        $this->assertSame(0, Schedule::count());
+        $this->post(route('timetables.lessons.store'), $payload + ['slots' => $response->json('slots')])->assertSessionHasNoErrors();
+        $this->assertSame(4, Schedule::count());
+    }
+
+    public function test_auto_fill_rejects_other_programs_and_reports_unavailable_teachers(): void
+    {
+        $f = $this->fixture();
+        DB::table('teacher_working_periods')->update(['unavailable' => true]);
+        $payload = ['school_class_id' => $f['classes'][0]->id, 'academic_year' => '2026-2027'];
+        $response = $this->actingAs($f['admin'])->postJson(route('timetables.lessons.auto-fill'), $payload)
+            ->assertOk()->assertJsonCount(0, 'slots')->assertJsonPath('complete', false)->assertJsonPath('unfilled.0.subject', 'Mathematics');
+        $this->assertStringContainsString('unavailable', $response->json('unfilled.0.reason'));
+        $f['classes'][0]->update(['program' => 'English']);
+        $this->postJson(route('timetables.lessons.auto-fill'), $payload)->assertUnprocessable();
+        $this->actingAs($f['student'])->postJson(route('timetables.lessons.auto-fill'), $payload)->assertForbidden();
+    }
+
     public function test_history_selection_shows_assigned_history_teachers_and_replaces_unrelated_teacher(): void
     {
         $f = $this->fixture();
