@@ -13,6 +13,7 @@
         <label class="col-md-4">Academic year<input class="form-control" name="academic_year" value="{{ old('academic_year', now()->year.'-'.(now()->year+1)) }}" pattern="[0-9]{4}-[0-9]{4}" required></label>
     </div>
     <p class="alert alert-info" data-context></p>
+    <div class="mb-3 d-flex flex-wrap gap-2" data-weekly-hours aria-live="polite"></div>
     <button type="button" class="btn btn-outline-secondary mb-3" data-copy>Auto-fill Monday to Friday</button>
     <div class="weekday-subject-planner">
         <div class="weekday-menu" role="group" aria-label="Choose a weekday">
@@ -31,13 +32,15 @@
 @push('scripts')
 @php
     $plannerClasses = $classes->map(fn ($class) => ['id' => $class->id, 'label' => $class->label, 'hours' => $class->sessionHours()]);
-    $plannerSubjects = $subjects->map->only(['id','name','school_class_id','lesson_minutes']);
+    $plannerSubjects = $subjects->map->only(['id','name','school_class_id','lesson_minutes','required_weekly_minutes']);
+    $savedLessons = \App\Models\Schedule::whereIn('subject_id', $subjects->modelKeys())->get(['subject_id','academic_year','starts_at','ends_at']);
 @endphp
 <script>
 (() => {
     const form = document.querySelector('#week-planner');
     const classes = @json($plannerClasses);
     const subjects = @json($plannerSubjects);
+    const savedLessons = @json($savedLessons);
     const restored = @json(old('slots', []));
     const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
     const plans = Object.fromEntries(days.map(day => [day, []]));
@@ -46,6 +49,15 @@
     let active = 'Monday', revision = 0;
     const minute = time => { const [h,m] = time.split(':').map(Number); return h*60+m; };
     const time = value => `${String(Math.floor(value/60)).padStart(2,'0')}:${String(value%60).padStart(2,'0')}`;
+    function usedMinutes(subject, except = null) {
+        const saved = savedLessons.filter(lesson => String(lesson.subject_id) === String(subject.id) && (!lesson.academic_year || lesson.academic_year === form.elements.academic_year.value))
+            .reduce((total, lesson) => total + minute(lesson.ends_at) - minute(lesson.starts_at), 0);
+        return saved + Object.values(plans).flat().filter(slot => slot !== except && String(slot.subject_id) === String(subject.id))
+            .reduce((total, slot) => total + Number(subject.lesson_minutes || 60), 0);
+    }
+    function fitsWeeklyLimit(subject, except = null) {
+        return subject.required_weekly_minutes === null || usedMinutes(subject, except) + Number(subject.lesson_minutes || 60) <= Number(subject.required_weekly_minutes);
+    }
     function initialize(restore = false) {
         revision++;
         const cohort = classes.find(item => String(item.id) === form.elements.school_class_id.value);
@@ -63,7 +75,14 @@
         const wrapper = document.createElement('label'); wrapper.className = 'col-md-6'; wrapper.textContent = label;
         const input = document.createElement('select'); input.className = 'form-select mt-2';
         input.add(new Option(placeholder, ''));
-        items.forEach(item => input.add(new Option(item.name, item.id)));
+        items.forEach(item => {
+            const option = new Option(item.name, item.id);
+            if (key === 'subject_id') {
+                option.disabled = !fitsWeeklyLimit(item, slot);
+                if (option.disabled) option.textContent += ' — weekly limit reached';
+            }
+            input.add(option);
+        });
         input.value = value || ''; wrapper.append(input);
         input.addEventListener('change', () => { slot[key] = input.value; if (key === 'subject_id') { slot.teacher_id = ''; slot.classroom_id = ''; render(); } else if (key === 'classroom_id') { slot.teacher_id = ''; render(); } updateDays(); });
         return {wrapper, input};
@@ -78,6 +97,14 @@
     function render() {
         const current = ++revision;
         host.replaceChildren(); updateDays();
+        const weeklyHours = form.querySelector('[data-weekly-hours]'); weeklyHours.replaceChildren();
+        subjects.filter(subject => String(subject.school_class_id) === form.elements.school_class_id.value).forEach(subject => {
+            const badge = document.createElement('span'); badge.className = 'badge text-bg-light border p-2';
+            const used = usedMinutes(subject);
+            badge.textContent = subject.required_weekly_minutes === null ? `${subject.name}: weekly hours not set` : `${subject.name}: ${used/60}/${subject.required_weekly_minutes/60} hours · ${Math.max(0, subject.required_weekly_minutes-used)/60} hours remaining`;
+            if (subject.required_weekly_minutes !== null && used > subject.required_weekly_minutes) badge.className = 'badge text-bg-danger p-2';
+            weeklyHours.append(badge);
+        });
         form.querySelector('[data-heading]').textContent = `${active} subjects`;
         const cohort = classes.find(item => String(item.id) === form.elements.school_class_id.value);
         form.querySelector('[data-context]').textContent = cohort ? `${cohort.label}: ${cohort.hours.map(t => t.slice(0,5)).join('–')} on ${active}.` : 'Add a class to start planning.';
@@ -119,12 +146,23 @@
     form.elements.school_class_id.addEventListener('change', () => initialize());
     form.elements.academic_year.addEventListener('change', render);
     form.querySelector('[data-copy]').addEventListener('click', () => {
-        days.forEach(day => { if (day !== active) plans[day] = plans[active].map(slot => ({...slot, day, teacher_id: '', classroom_id: ''})); });
-        status.textContent = 'Subjects copied to Monday to Friday. Choose available classrooms and teachers for each day.'; updateDays();
+        const source = plans[active].map(slot => ({...slot}));
+        days.forEach(day => { if (day !== active) plans[day] = source.map(slot => ({...slot, day, subject_id: '', teacher_id: '', classroom_id: ''})); });
+        days.forEach(day => {
+            if (day === active) return;
+            source.forEach((slot,index) => {
+                const subject = subjects.find(item => String(item.id) === String(slot.subject_id));
+                if (subject && fitsWeeklyLimit(subject)) plans[day][index].subject_id = slot.subject_id;
+            });
+        });
+        status.textContent = 'Subjects copied within their weekly limits. Choose available classrooms and teachers for each day.'; render();
     });
     form.addEventListener('submit', event => {
         form.querySelectorAll('[data-generated-slot]').forEach(input => input.remove());
         const slots = Object.values(plans).flat().filter(slot => slot.subject_id);
+        if (subjects.some(subject => subject.required_weekly_minutes !== null && usedMinutes(subject) > Number(subject.required_weekly_minutes))) {
+            event.preventDefault(); status.textContent = 'A subject exceeds its weekly hours. Remove an extra lesson before saving.'; return;
+        }
         if (!slots.length || slots.some(slot => !slot.teacher_id || !slot.classroom_id)) {
             event.preventDefault(); status.textContent = 'Choose at least one subject, and a classroom and teacher for every selected period.'; return;
         }

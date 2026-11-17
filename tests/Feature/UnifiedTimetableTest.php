@@ -13,9 +13,46 @@ class UnifiedTimetableTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_subject_weekly_hours_block_a_third_two_hour_lesson(): void
+    {
+        $f = $this->fixture();
+        $row = $this->data($f);
+        Subject::findOrFail($row['subject_id'])->update(['required_weekly_minutes' => 240]);
+        $service = app(LessonManagementService::class);
+        $first = $service->save($row);
+        $service->save(array_replace($row, ['day' => 'Tuesday']));
+        // Editing an existing lesson does not count its duration twice.
+        $service->save($row, $first);
+        try {
+            $service->save(array_replace($row, ['day' => 'Thursday']));
+            $this->fail('A third two-hour lesson exceeded the weekly subject limit.');
+        } catch (ValidationException $error) {
+            $this->assertStringContainsString('weekly limit of 4 hours', $error->getMessage());
+        }
+        $this->assertSame(2, Schedule::count());
+        // A different academic year has its own allowance.
+        $service->save(array_replace($row, ['academic_year' => '2027-2028']));
+        $this->assertSame(3, Schedule::count());
+    }
+
+    public function test_week_planner_saves_days_together_and_rolls_back_conflicts(): void
+    {
+        $f = $this->fixture();
+        $f['subjects'][0]->update(['required_weekly_minutes' => 480]);
+        $row = $this->data($f);
+        $payload = ['school_class_id' => $row['school_class_id'], 'academic_year' => $row['academic_year'], 'slots' => [$row, array_replace($row, ['day' => 'Tuesday'])]];
+        $this->actingAs($f['admin'])->post(route('timetables.lessons.store'), $payload)->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertSame(2, Schedule::count());
+        $payload['slots'] = [array_replace($row, ['day' => 'Wednesday']), $row];
+        $this->post(route('timetables.lessons.store'), $payload)->assertSessionHasErrors();
+        $this->assertSame(2, Schedule::count());
+        $this->assertFalse(Schedule::where('day', 'Wednesday')->exists());
+    }
+
     public function test_a_subject_cannot_use_different_teachers_on_different_weekdays(): void
     {
         $f = $this->fixture();
+        $f['subjects'][0]->update(['required_weekly_minutes' => 480]);
         $service = app(LessonManagementService::class);
         $service->save($this->data($f));
         $service->save(array_replace($this->data($f), ['day' => 'Tuesday']));
@@ -351,6 +388,7 @@ class UnifiedTimetableTest extends TestCase
     public function test_available_teachers_match_the_program_and_existing_subject_assignment(): void
     {
         $f = $this->fixture();
+        $f['subjects'][0]->update(['required_weekly_minutes' => 240]);
         $this->actingAs($f['admin']);
         $f['substitute']->update(['program' => 'English']);
         $this->getJson(route('timetables.lessons.options', $this->data($f)))->assertOk()

@@ -82,6 +82,15 @@ class LessonManagementService
         if ($lesson->isRelaxation()) return;
         $subject = Subject::findOrFail($lesson->subject_id);
         if ($subject->school_class_id !== $class->id) $this->rules->fail('Subject does not belong to this cohort.');
+        if ($subject->required_weekly_minutes !== null) {
+            $usedMinutes = Schedule::where('school_class_id', $class->id)->where('subject_id', $subject->id)
+                ->when($lesson->id, fn ($query) => $query->where('id', '!=', $lesson->id))
+                ->where(fn ($query) => $query->where('academic_year', $lesson->academic_year)->orWhereNull('academic_year'))
+                ->get()->sum(fn ($entry) => $this->rules::duration($entry->starts_at, $entry->ends_at));
+            if ($usedMinutes + $minutes > $subject->required_weekly_minutes) {
+                $this->rules->fail($subject->name.' has a weekly limit of '.($subject->required_weekly_minutes / 60).' hours. Only '.(max(0, $subject->required_weekly_minutes - $usedMinutes) / 60).' hours remain.');
+            }
+        }
         $otherTeachers = Schedule::where('school_class_id', $class->id)
             ->whereHas('subject', fn ($query) => $query->where('name', $subject->name))
             ->whereNotNull('teacher_id')->where('teacher_id', '!=', $lesson->teacher_id)
