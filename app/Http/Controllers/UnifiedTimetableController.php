@@ -163,11 +163,23 @@ class UnifiedTimetableController extends Controller
 
     public function form(Request $request, ?Schedule $lesson = null)
     {
+        if (! $lesson) {
+            return view('school.timetables.week-planner', ['classes' => SchoolClass::with('classGroup.sessions')->orderBy('name')->get(), 'subjects' => Subject::where(fn ($q) => $q->whereNull('required_weekly_minutes')->orWhere('required_weekly_minutes', '>', 0))->orderBy('name')->get()]);
+        }
         return view('school.timetables.lesson-form', ['lesson' => $lesson, 'classes' => SchoolClass::with('classGroup.sessions')->orderBy('name')->get(), 'subjects' => Subject::where(fn ($q) => $q->whereNull('required_weekly_minutes')->orWhere('required_weekly_minutes', '>', 0))->orderBy('name')->get(), 'teachers' => User::where('role', 'teacher')->where('status', 'active')->get(), 'rooms' => Classroom::where('status', 'active')->get()]);
     }
 
     public function store(Request $request, LessonManagementService $service)
     {
+        if ($request->has('slots')) {
+            $data = $request->validate(['slots' => 'required|array|min:1|max:100', 'slots.*' => 'required|array', 'school_class_id' => 'required|integer|exists:school_classes,id', 'academic_year' => ['required','regex:/^\d{4}-\d{4}$/'], 'room_change_reason' => 'nullable|string|max:500']);
+            app(TeacherManagementService::class)->locked(function () use ($data, $service) {
+                foreach ($data['slots'] as $slot) {
+                    $service->save(array_merge($slot, \Illuminate\Support\Arr::only($data, ['school_class_id', 'academic_year', 'room_change_reason'])));
+                }
+            });
+            return redirect()->route('timetables.index', ['class' => $data['school_class_id']])->with('success', 'Planned lessons saved in all three schedules.');
+        }
         $service->save($request->all());
         return redirect()->route('timetables.index', ['class' => $request->input('school_class_id')])->with('success', 'Lesson saved in all three schedules.');
     }
