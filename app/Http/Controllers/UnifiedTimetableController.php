@@ -221,10 +221,12 @@ class UnifiedTimetableController extends Controller
             if (! $rules->qualifications($teacher)->contains($subject->name)) return null;
             $roomIds = [];
             $reason = 'No available classroom fits this class and period.';
-            foreach ($rooms as $room) {
+            // Room/cohort constraints were checked above. Changing the teacher
+            // adds only teacher constraints, which do not depend on the room.
+            if ($room = $rooms->first()) {
                 $slot = clone $lesson;
                 $slot->fill(array_intersect_key($data, array_flip(['school_class_id','day','starts_at','ends_at','academic_year'])) + ['classroom_id' => $room->id, 'room' => $room->room_number, 'entry_type' => 'academic', 'subject_id' => $subject->id, 'teacher_id' => $teacher->id]);
-                try { $service->validate($slot); $roomIds[] = $room->id; } catch (ValidationException $e) { $reason = $e->getMessage(); }
+                try { $service->validate($slot); $roomIds = $rooms->pluck('id')->all(); } catch (ValidationException $e) { $reason = $e->getMessage(); }
             }
             return ['id' => $teacher->id, 'name' => $teacher->name, 'program' => $teacher->program, 'room_ids' => $roomIds, 'available' => count($roomIds) > 0, 'reason' => $roomIds ? null : $reason];
         })->filter()->values();

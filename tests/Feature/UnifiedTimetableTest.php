@@ -13,6 +13,28 @@ class UnifiedTimetableTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_teacher_options_match_full_validation_for_multiple_rooms(): void
+    {
+        $f = $this->fixture();
+        DB::table('classroom_bookings')->delete();
+        $row = $this->data($f);
+        $response = $this->actingAs($f['admin'])->getJson(route('timetables.lessons.options', $row))->assertOk();
+        $this->assertGreaterThan(1, count($response->json('rooms')));
+        foreach ($response->json('teacher_statuses') as $teacher) {
+            $expected = [];
+            foreach (Classroom::where('status', 'active')->get() as $room) {
+                $slot = new Schedule(array_replace($row, ['teacher_id' => $teacher['id'], 'classroom_id' => $room->id, 'room' => $room->room_number, 'entry_type' => 'academic']));
+                try {
+                    app(LessonManagementService::class)->validate($slot);
+                    $expected[] = $room->id;
+                } catch (ValidationException $error) {
+                    // Unavailable rooms must not be offered by the optimized lookup.
+                }
+            }
+            $this->assertEqualsCanonicalizing($expected, $teacher['room_ids']);
+        }
+    }
+
     public function test_teacher_choices_include_qualified_busy_teachers_with_reasons(): void
     {
         $f = $this->fixture();
