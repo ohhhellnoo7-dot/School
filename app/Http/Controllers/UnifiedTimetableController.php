@@ -22,6 +22,11 @@ class UnifiedTimetableController extends Controller
         $request->validate(['program' => ['nullable', \Illuminate\Validation\Rule::in($programs)]]);
         $timetableProgram = $request->input('program');
         $teacherProgram = $view === 'teachers' ? $timetableProgram : null;
+        $request->validate(['subject' => 'nullable|string|max:255']);
+        $subjectSearch = $timetableProgram === 'Khmer' ? $request->input('subject') : null;
+        $subjectChoices = $timetableProgram === 'Khmer'
+            ? Subject::whereHas('schoolClass', fn ($q) => $q->where('program', 'Khmer'))->distinct()->orderBy('name')->pluck('name')
+            : collect();
         $availableTeacherSessions = \App\Support\ProgramSessions::for($teacherProgram);
         $teacherSession = $teacherProgram ? $request->input('session') : null;
         if ($teacherSession) $request->validate(['session' => \Illuminate\Validation\Rule::in($availableTeacherSessions)]);
@@ -35,11 +40,12 @@ class UnifiedTimetableController extends Controller
         $academicYear = $request->input('academic_year') ?: now('Asia/Phnom_Penh')->year.'-'.(now('Asia/Phnom_Penh')->year+1);
         $query->where(fn ($q)=>$q->where('academic_year',$academicYear)->orWhereNull('academic_year'));
         if ($restricted) $query->whereIn('school_class_id', $classes->map->timetableOwnerId()->unique()->all());
+        if ($subjectSearch) $query->whereHas('subject', fn ($q) => $q->where('name', $subjectSearch));
         if ($view === 'teachers') {
             abort_if($restricted, 404);
             $programTeacherIds = $teachers->modelKeys();
-            if ($teacherSession) {
-                $query->whereHas('schoolClass', fn ($q) => $q->where('session', $teacherSession));
+            if ($teacherSession || $subjectSearch) {
+                if ($teacherSession) $query->whereHas('schoolClass', fn ($q) => $q->where('session', $teacherSession));
                 $sessionTeacherIds = (clone $query)->pluck('teacher_id');
                 $teachers = $teachers->whereIn('id', $sessionTeacherIds)->values();
             }
@@ -47,7 +53,7 @@ class UnifiedTimetableController extends Controller
             $defaultTeacher = $teachers->first(fn ($teacher) => $scheduledTeacherIds->contains($teacher->id)) ?? $teachers->first();
             $requestedTeacher = $request->integer('teacher');
             if ($requestedTeacher && User::withoutGlobalScope('archived')->whereKey($requestedTeacher)->where('role','teacher')->whereNotNull('archived_at')->exists()) $requestedTeacher = null;
-            if ($teacherSession && $requestedTeacher) {
+            if (($teacherSession || $subjectSearch) && $requestedTeacher) {
                 abort_unless(in_array($requestedTeacher, $programTeacherIds, true), 404);
                 if (! $teachers->contains('id', $requestedTeacher)) $requestedTeacher = null;
             }
@@ -121,7 +127,7 @@ class UnifiedTimetableController extends Controller
             $excess = $subjects->filter(fn ($s)=>$s->required_weekly_minutes !== null && $lessons->where('subject_id',$s->id)->sum(fn ($entry)=>TeacherManagementService::duration($entry->starts_at,$entry->ends_at)) > $s->required_weekly_minutes)->pluck('name')->all();
             $curriculum = ['unknown'=>$unknown,'missing'=>array_values(array_unique($missing)), 'excess'=>array_values(array_unique($excess))];
         }
-        return compact('programs', 'timetableProgram', 'view', 'classes', 'teachers', 'rooms', 'selected', 'lessons', 'periods', 'breaks','roomIssues','curriculum','academicYear','studentClasses','teacherProgram','teacherSession','availableTeacherSessions') + TimetableGrid::build($lessons, $periods);
+        return compact('subjectSearch', 'subjectChoices', 'programs', 'timetableProgram', 'view', 'classes', 'teachers', 'rooms', 'selected', 'lessons', 'periods', 'breaks','roomIssues','curriculum','academicYear','studentClasses','teacherProgram','teacherSession','availableTeacherSessions') + TimetableGrid::build($lessons, $periods);
     }
 
     public function index(Request $request)

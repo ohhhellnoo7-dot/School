@@ -13,6 +13,22 @@ class UnifiedTimetableTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_khmer_subject_search_filters_schedule_and_live_refresh(): void
+    {
+        $f = $this->fixture();
+        $lesson = app(LessonManagementService::class)->save($this->data($f));
+        $filters = ['view' => 'teachers', 'program' => 'Khmer', 'subject' => $lesson->subject->name, 'academic_year' => $lesson->academic_year];
+        $this->actingAs($f['admin'])->get(route('timetables.index', $filters))
+            ->assertOk()->assertSee('Search subject')
+            ->assertViewHas('lessons', fn ($lessons) => $lessons->modelKeys() === [$lesson->id]);
+        $this->getJson(route('timetables.data', $filters))->assertOk();
+        $filters['subject'] = 'No matching subject';
+        $this->get(route('timetables.index', $filters))->assertOk()
+            ->assertViewHas('lessons', fn ($lessons) => $lessons->isEmpty());
+        $this->get(route('timetables.index', ['view' => 'teachers', 'program' => 'English']))
+            ->assertOk()->assertDontSee('Search subject');
+    }
+
     public function test_teacher_options_match_full_validation_for_multiple_rooms(): void
     {
         $f = $this->fixture();
