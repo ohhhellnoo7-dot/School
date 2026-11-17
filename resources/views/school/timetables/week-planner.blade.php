@@ -82,12 +82,16 @@
         const cohort = classes.find(item => String(item.id) === form.elements.school_class_id.value);
         form.querySelector('[data-context]').textContent = cohort ? `${cohort.label}: ${cohort.hours.map(t => t.slice(0,5)).join('–')} on ${active}.` : 'Add a class to start planning.';
         plans[active].forEach((slot, index) => {
+            const preceding = plans[active].slice(0, index).find(item => item.subject_id && minute(item.ends_at) > minute(slot.starts_at));
+            if (preceding) { slot.subject_id = ''; slot.teacher_id = ''; slot.classroom_id = ''; return; }
+            const duration = Number(subjects.find(item => String(item.id) === String(slot.subject_id))?.lesson_minutes || 60);
+            slot.ends_at = time(minute(slot.starts_at) + duration);
             const card = document.createElement('section'); card.className = 'lesson-period';
             const stamp = document.createElement('div'); stamp.className = 'lesson-period-time';
             const caption = document.createElement('small'); caption.textContent = `Period ${index+1}`;
             const hours = document.createElement('h3'); hours.textContent = `${slot.starts_at}–${slot.ends_at}`; stamp.append(caption,hours); card.append(stamp);
             const fields = document.createElement('div'); fields.className = 'row g-3';
-            const subject = select('Subject', 'Leave this period empty', subjects.filter(s => String(s.school_class_id) === form.elements.school_class_id.value), slot.subject_id, 'subject_id', slot);
+            const subject = select('Subject', 'Leave this period empty', subjects.filter(s => String(s.school_class_id) === form.elements.school_class_id.value && minute(slot.starts_at) + Number(s.lesson_minutes || 60) <= minute(cohort.hours[1])), slot.subject_id, 'subject_id', slot);
             const teacher = select('Teacher', slot.subject_id ? 'Checking available teachers…' : 'Select a subject first', [], '', 'teacher_id', slot);
             teacher.input.disabled = true; fields.append(subject.wrapper,teacher.wrapper); card.append(fields);
             const room = select('Classroom', 'Choose an available classroom', [], '', 'classroom_id', slot); room.input.disabled = true; room.wrapper.hidden = !slot.subject_id; card.append(room.wrapper);

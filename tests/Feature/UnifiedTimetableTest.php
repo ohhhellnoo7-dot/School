@@ -258,7 +258,7 @@ class UnifiedTimetableTest extends TestCase
     public function test_one_lesson_is_created_edited_and_cancelled_in_all_three_views_without_copies(): void
     {
         $f = $this->fixture();
-        $this->actingAs($f['admin'])->get(route('timetables.lessons.create'))->assertOk()->assertSee('Available Qualified Teacher');
+        $this->actingAs($f['admin'])->get(route('timetables.lessons.create'))->assertOk()->assertSee('Monday subjects');
         $this->post(route('timetables.lessons.store'), $this->data($f))->assertSessionHasNoErrors()->assertRedirect();
         $this->assertSame(1, Schedule::count());
         $lesson = Schedule::firstOrFail();
@@ -344,8 +344,8 @@ class UnifiedTimetableTest extends TestCase
         $this->get(route('classroom-bookings.create', ['class_group_id' => $class->class_group_id]))->assertOk()
             ->assertSee('Set up lessons &amp; teachers', false)->assertSee('data-open-lesson-setup', false);
         $page = $this->get(route('timetables.lessons.create', ['school_class_id' => $class->id]))->assertOk()
-            ->assertSee('Set up class schedule')->assertSee('Available Qualified Teacher')->assertSee('data-save-lesson', false);
-        $this->assertMatchesRegularExpression('/value="'.$class->id.'"[^>]*data-start="07:00"[^>]*selected/s', $page->getContent());
+            ->assertSee('Set up class schedule')->assertSee('Monday subjects')->assertSee('data-periods', false);
+        $this->assertMatchesRegularExpression('/value="'.$class->id.'"[^>]*selected/s', $page->getContent());
     }
 
     public function test_available_teachers_match_the_program_and_existing_subject_assignment(): void
