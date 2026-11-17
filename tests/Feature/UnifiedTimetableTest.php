@@ -13,13 +13,26 @@ class UnifiedTimetableTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_history_selection_shows_assigned_history_teachers_and_replaces_unrelated_teacher(): void
+    {
+        $f = $this->fixture();
+        $historyTeacher = User::factory()->create(['role' => 'teacher', 'program' => 'Khmer', 'name' => 'History Teacher']);
+        Subject::create(['name' => 'History', 'code' => 'HISTORY-FILTER', 'school_class_id' => $f['classes'][0]->id, 'teacher_id' => $historyTeacher->id, 'lesson_minutes' => 60]);
+        $filters = ['view' => 'teachers', 'program' => 'Khmer', 'subject' => 'History', 'teacher' => $f['primary']->id, 'academic_year' => '2026-2027'];
+        $this->actingAs($f['admin'])->get(route('timetables.index', $filters))->assertOk()
+            ->assertViewHas('teachers', fn ($teachers) => $teachers->modelKeys() === [$historyTeacher->id])
+            ->assertViewHas('selected', $historyTeacher->id)
+            ->assertViewHas('lessons', fn ($lessons) => $lessons->isEmpty());
+        $this->getJson(route('timetables.data', $filters))->assertOk();
+    }
+
     public function test_khmer_subject_search_filters_schedule_and_live_refresh(): void
     {
         $f = $this->fixture();
         $lesson = app(LessonManagementService::class)->save($this->data($f));
         $filters = ['view' => 'teachers', 'program' => 'Khmer', 'subject' => $lesson->subject->name, 'academic_year' => $lesson->academic_year];
         $this->actingAs($f['admin'])->get(route('timetables.index', $filters))
-            ->assertOk()->assertSee('name="subject" onchange="this.form.requestSubmit()"', false)->assertDontSee('Search subject')
+            ->assertOk()->assertSee('name="subject" onchange="const teacher = this.form.elements.teacher; if (teacher) teacher.disabled = true; this.form.requestSubmit()"', false)->assertDontSee('Search subject')
             ->assertViewHas('lessons', fn ($lessons) => $lessons->modelKeys() === [$lesson->id]);
         $this->getJson(route('timetables.data', $filters))->assertOk();
         $filters['subject'] = 'No matching subject';

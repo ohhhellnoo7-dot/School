@@ -47,6 +47,16 @@ class UnifiedTimetableController extends Controller
             if ($teacherSession || $subjectSearch) {
                 if ($teacherSession) $query->whereHas('schoolClass', fn ($q) => $q->where('session', $teacherSession));
                 $sessionTeacherIds = (clone $query)->pluck('teacher_id');
+                if ($subjectSearch) {
+                    // Include assigned subject teachers even before their lessons
+                    // have been scheduled for the selected academic year.
+                    $assignedTeacherIds = Subject::where('name', $subjectSearch)
+                        ->whereHas('schoolClass', function ($q) use ($teacherProgram, $teacherSession) {
+                            $q->where('program', $teacherProgram);
+                            if ($teacherSession) $q->where('session', $teacherSession);
+                        })->whereNotNull('teacher_id')->pluck('teacher_id');
+                    $sessionTeacherIds = $sessionTeacherIds->merge($assignedTeacherIds)->unique();
+                }
                 $teachers = $teachers->whereIn('id', $sessionTeacherIds)->values();
             }
             $scheduledTeacherIds = (clone $query)->whereIn('teacher_id', $teachers->modelKeys())->pluck('teacher_id');
