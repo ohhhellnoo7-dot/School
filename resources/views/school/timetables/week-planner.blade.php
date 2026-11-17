@@ -29,11 +29,15 @@
 </form>
 @endsection
 @push('scripts')
+@php
+    $plannerClasses = $classes->map(fn ($class) => ['id' => $class->id, 'label' => $class->label, 'hours' => $class->sessionHours()]);
+    $plannerSubjects = $subjects->map->only(['id','name','school_class_id','lesson_minutes']);
+@endphp
 <script>
 (() => {
     const form = document.querySelector('#week-planner');
-    const classes = @json($classes->map(fn ($class) => ['id' => $class->id, 'label' => $class->label, 'hours' => $class->sessionHours()]));
-    const subjects = @json($subjects->map->only(['id','name','school_class_id','lesson_minutes']));
+    const classes = @json($plannerClasses);
+    const subjects = @json($plannerSubjects);
     const restored = @json(old('slots', []));
     const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
     const plans = Object.fromEntries(days.map(day => [day, []]));
