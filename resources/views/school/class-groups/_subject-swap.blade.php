@@ -7,9 +7,10 @@
         <input type="hidden" name="source_subject_id" data-source-subject>
         <input type="hidden" name="source_teacher_id" data-source-teacher>
         <input type="hidden" name="target_teacher_id" data-target-teacher>
-        <label class="form-label" for="target-subject">Teacher and class</label>
-        <select id="target-subject" class="form-select" name="target_subject_id" required></select>
-        <div class="mt-2" aria-live="polite"><span data-subject-swap-availability hidden></span></div>
+        <fieldset>
+            <legend class="form-label fs-6">Teacher and class</legend>
+            <div id="target-subject" class="border rounded overflow-auto" style="max-height:min(38vh,22rem)" hidden></div>
+        </fieldset>
         <p data-subject-swap-empty class="form-text" role="status"></p>
         @foreach(['subject_swap', 'source_subject_id', 'target_subject_id', 'source_teacher_id', 'target_teacher_id'] as $field)
         @error($field)<p class="text-danger" role="alert">{{ $message }}</p>@enderror
@@ -29,16 +30,13 @@
     const sessionButtons = [...document.querySelectorAll('[data-session-preview="Khmer"] [data-subject-session]')];
     const previousSubject = @json((string) old('source_subject_id', ''));
     const highlight = document.querySelector('[data-subject-swap-highlight]');
-    const availability = document.querySelector('[data-subject-swap-availability]');
+    const submit = document.getElementById('submit-subject-swap');
+    const colors = { Free: 'success', Busy: 'danger', Unavailable: 'warning' };
     let activeSession = subjects.find(item => String(item.id) === previousSubject)?.session || sessionButtons[0]?.dataset.subjectSession || 'Morning';
     const syncTarget = () => {
-        const option = target.selectedOptions[0];
+        const option = target.querySelector('input:checked');
         document.querySelector('[data-target-teacher]').value = option?.dataset.teacher || '';
-        const status = option?.dataset.availability || '';
-        const colors = { Free: 'success', Busy: 'danger', Unavailable: 'warning' };
-        availability.textContent = status;
-        availability.className = `badge text-bg-${colors[status] || 'secondary'}`;
-        availability.hidden = !status;
+        submit.disabled = !option;
     };
     const sync = () => {
         const selected = subjects.find(item => String(item.id) === subject.value);
@@ -53,15 +51,28 @@
         document.querySelector('[data-source-teacher]').value = selected?.teacher_id || '';
         highlight.textContent = selected?.name || '';
         document.querySelector('[data-subject-swap-summary]').textContent = selected ? `${selected.session} - ${selected.teacher}. ${selected.times}` : '';
-        target.replaceChildren(new Option('Choose a teacher and class', ''));
+        target.replaceChildren();
         (selected?.candidates || []).forEach(item => {
-            const option = new Option(`${item.label} · ${item.availability}`, item.id);
+            const row = document.createElement('label');
+            row.className = 'd-flex align-items-center gap-2 px-3 py-2 border-bottom';
+            const option = document.createElement('input');
+            option.type = 'radio';
+            option.name = 'target_subject_id';
+            option.value = item.id;
+            option.className = 'form-check-input flex-shrink-0 mt-0';
+            option.required = true;
             option.dataset.teacher = item.teacher_id;
-            option.dataset.availability = item.availability;
-            target.add(option);
+            const name = document.createElement('span');
+            name.className = 'flex-grow-1';
+            name.textContent = item.label;
+            const badge = document.createElement('span');
+            badge.className = `badge text-bg-${colors[item.availability] || 'secondary'}`;
+            badge.textContent = item.availability;
+            row.append(option, name, badge);
+            target.append(row);
         });
+        target.hidden = !selected?.candidates.length;
         document.querySelector('[data-subject-swap-empty]').textContent = selected?.candidates.length ? '' : 'No other active teacher is assigned to this subject in another Khmer class in the selected session.';
-        document.getElementById('submit-subject-swap').disabled = !selected?.candidates.length;
         syncTarget();
     };
     const filterSession = (wantedSubject = '') => {
