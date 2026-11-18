@@ -52,6 +52,9 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
     Route::get('/school/timetables', [\App\Http\Controllers\UnifiedTimetableController::class, 'index'])->name('timetables.index');
     Route::get('/school/timetables/data', [\App\Http\Controllers\UnifiedTimetableController::class, 'data'])->name('timetables.data');
     Route::middleware('role:administrator')->prefix('school/timetables')->group(function () {
+        Route::post('/reset', [\App\Http\Controllers\TimetableResetController::class, 'reset'])->middleware('throttle:5,1')->name('timetables.reset');
+        Route::post('/restore', [\App\Http\Controllers\TimetableResetController::class, 'restore'])->name('timetables.restore');
+        Route::put('/reset-password', [\App\Http\Controllers\TimetableResetController::class, 'updatePassword'])->middleware('throttle:5,1')->name('timetables.reset-password');
         Route::post('/curriculum/setup', [\App\Http\Controllers\UnifiedTimetableController::class, 'setupCurriculum'])->name('timetables.curriculum.setup');
         Route::get('/school-audit', [\App\Http\Controllers\UnifiedTimetableController::class, 'schoolAudit'])->name('timetables.school-audit');
         Route::get('/rooms/review', [\App\Http\Controllers\TimetableRoomController::class, 'review'])->name('timetables.rooms.review');

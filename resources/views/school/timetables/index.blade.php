@@ -16,6 +16,9 @@
     @include('school.timetables._schedule')
 </div>
 <p id="timetable-filter-status" class="text-danger" role="status"></p>
+@if(auth()->user()->role === 'administrator')
+    @include('school.timetables._reset-dialogs')
+@endif
 </div>
 @endsection
 @push('scripts')
