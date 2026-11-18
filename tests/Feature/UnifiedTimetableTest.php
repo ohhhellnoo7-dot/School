@@ -120,7 +120,7 @@ class UnifiedTimetableTest extends TestCase
         $lesson = app(LessonManagementService::class)->save($this->data($f));
         $filters = ['view' => 'teachers', 'program' => 'Khmer', 'subject' => $lesson->subject->name, 'academic_year' => $lesson->academic_year];
         $this->actingAs($f['admin'])->get(route('timetables.index', $filters))
-            ->assertOk()->assertSee('name="subject" onchange="const teacher = this.form.elements.teacher; if (teacher) teacher.disabled = true; this.form.requestSubmit()"', false)->assertDontSee('Search subject')
+            ->assertOk()->assertSee('<select class="form-select" name="subject">', false)->assertDontSee('Search subject')
             ->assertViewHas('lessons', fn ($lessons) => $lessons->modelKeys() === [$lesson->id]);
         $this->getJson(route('timetables.data', $filters))->assertOk();
         $filters['subject'] = 'No matching subject';

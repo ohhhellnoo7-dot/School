@@ -150,7 +150,11 @@ class UnifiedTimetableController extends Controller
     public function data(Request $request)
     {
         $context = $this->context($request);
-        $template = $request->boolean('compact') && $context['view'] === 'teachers' ? 'school.timetables.compact-teacher' : 'school.timetables.grid';
+        $template = match (true) {
+            $request->boolean('fragment') => 'school.timetables._schedule',
+            $request->boolean('compact') && $context['view'] === 'teachers' => 'school.timetables.compact-teacher',
+            default => 'school.timetables.grid',
+        };
         return response()->json(['html' => view($template, $context)->render()])->header('Cache-Control', 'no-store');
     }
 

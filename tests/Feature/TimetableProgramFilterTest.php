@@ -35,7 +35,12 @@ class TimetableProgramFilterTest extends TestCase
         DB::table('schedules')->insert(['school_class_id' => $classes['English']->id, 'classroom_id' => $rooms['Khmer']->id, 'entry_type' => 'relaxation', 'day' => 'Tuesday', 'starts_at' => '07:00', 'ends_at' => '08:00', 'room' => $rooms['Khmer']->room_number]);
         $this->actingAs($admin)->get(route('timetables.index', ['program' => 'Khmer', 'class' => $classes['English']->id]))
             ->assertOk()->assertViewHas('studentClasses', fn ($classes) => $classes->count() === 1 && $classes->first()->program === 'Khmer')
-            ->assertViewHas('selected', $classes['Khmer']->id);
+            ->assertViewHas('selected', $classes['Khmer']->id)->assertDontSee('View schedule');
+        $html = $this->getJson(route('timetables.data', ['program' => 'Khmer', 'fragment' => 1]))
+            ->assertOk()->json('html');
+        $this->assertStringContainsString('id="shared-timetable"', $html);
+        $this->assertStringContainsString('value="'.$classes['Khmer']->id.'" selected', $html);
+        $this->assertStringNotContainsString('value="'.$classes['English']->id.'"', $html);
         $this->get(route('timetables.index', ['view' => 'classrooms', 'program' => 'Khmer', 'classroom' => $rooms['English']->id]))
             ->assertOk()->assertViewHas('rooms', fn ($choices) => $choices->modelKeys() === [$rooms['Khmer']->id])
             ->assertViewHas('selected', $rooms['Khmer']->id)
