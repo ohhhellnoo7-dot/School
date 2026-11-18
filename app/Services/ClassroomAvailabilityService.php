@@ -54,6 +54,7 @@ class ClassroomAvailabilityService
         $academicYear = $filters['academic_year'] ?? $selected->year.'-'.($selected->year+1);
         $weeklyLessons = Schedule::with(['subject.teacher', 'teacher', 'schoolClass.classGroup'])->where(fn ($q)=>$q->where('academic_year',$academicYear)->orWhereNull('academic_year'))->get();
         $scheduledOwnerIds = $weeklyLessons->pluck('school_class_id');
+        $scheduledSubjectIds = $weeklyLessons->pluck('subject_id')->filter()->flip();
         // Detail selectors scope the contents, while ordinary availability filters only find rooms.
         $scopeProgram = $filters['detail_program'] ?? null;
         $scopeSession = $filters['detail_session'] ?? null;
@@ -65,7 +66,7 @@ class ClassroomAvailabilityService
         $lessons = $weeklyLessons->where('day', $day);
         $weeklyBookings = ClassroomBooking::with('classGroup', 'classSession', 'teacher')->get()->filter(fn ($booking) => (! $scopeProgram || $booking->classGroup?->program === $scopeProgram) && (! $scopeSession || $booking->classSession?->session === $scopeSession) && ChineseEveningPeriod::matches($booking, $period))->groupBy('classroom_id');
         $programsByRoom = $weeklyLessons->groupBy('classroom_id')->map(fn ($entries) => $entries->pluck('schoolClass.program')->filter());
-        $cohorts = \App\Models\SchoolClass::with(['classGroup', 'subjects'])->withCount(['students as enrolled_count' => fn ($query) => $query->where('status', 'active')])->get();
+        $cohorts = \App\Models\SchoolClass::with(['classGroup', 'subjects.teacher'])->withCount(['students as enrolled_count' => fn ($query) => $query->where('status', 'active')])->get();
         $lessonsByRoom = $weeklyLessons->groupBy('classroom_id');
         $visibleStudyClasses = auth()->check() && in_array(auth()->user()->role, ['student', 'parent'], true)
             ? \App\Models\SchoolClass::enrolledFor(auth()->user())->get() : null;
@@ -80,11 +81,11 @@ class ClassroomAvailabilityService
             ->get();
 
         return $rooms
-            ->map(function (Classroom $classroom) use ($minute, $day, $lessons, $weeklyBookings, $programsByRoom, $cohorts, $lessonsByRoom, $visibleStudyClasses, $scopeProgram, $scopeSession, $filters, $teacherAttendance, $activeStudies, $dailyTeacherStatuses, $period, $scheduledOwnerIds, $programSessionMap) {
+            ->map(function (Classroom $classroom) use ($minute, $day, $lessons, $weeklyBookings, $programsByRoom, $cohorts, $lessonsByRoom, $visibleStudyClasses, $scopeProgram, $scopeSession, $filters, $teacherAttendance, $activeStudies, $dailyTeacherStatuses, $period, $scheduledOwnerIds, $scheduledSubjectIds, $programSessionMap) {
                 $programs = ($programsByRoom->get($classroom->id) ?? collect())
                     ->merge(($weeklyBookings->get($classroom->id) ?? collect())->pluck('classGroup.program'))
                     ->filter()->unique()->sort()->values();
-                $buildProgramDetails = function ($program, $detailSession = null) use ($classroom, $weeklyBookings, $lessonsByRoom, $cohorts, $visibleStudyClasses, $day, $minute, $teacherAttendance, $period, $scheduledOwnerIds) {
+                $buildProgramDetails = function ($program, $detailSession = null) use ($classroom, $weeklyBookings, $lessonsByRoom, $cohorts, $visibleStudyClasses, $day, $minute, $teacherAttendance, $period, $scheduledOwnerIds, $scheduledSubjectIds) {
                     $programLessons = ($lessonsByRoom->get($classroom->id) ?? collect())->filter(fn ($lesson) => $lesson->schoolClass?->program === $program && (! $detailSession || $lesson->schoolClass?->session === $detailSession));
                     $programBookings = ($weeklyBookings->get($classroom->id) ?? collect())->filter(fn ($booking) => $booking->classGroup?->program === $program && (! $detailSession || $booking->classSession?->session === $detailSession));
                     if ($visibleStudyClasses !== null) {
@@ -100,14 +101,19 @@ class ClassroomAvailabilityService
                         ?? $todayLessons->first(fn ($lesson) => TeacherManagementService::minute($lesson->starts_at) > $minute);
                     $teacherLessons = $programLessons;
                     $teacherBookings = $programBookings;
+                    // Keep scheduled subjects with their lesson rooms and show unscheduled assignments with their cohort.
+                    $assignedSubjects = $program === 'Khmer' ? $classes->flatMap->subjects
+                        ->filter(fn ($subject) => $subject->teacher
+                            && ($subject->required_weekly_minutes === null || $subject->required_weekly_minutes > 0)
+                            && !$scheduledSubjectIds->has($subject->id)) : collect();
                     $teacherAssignments = $teacherLessons->pluck('teacher')
-                        ->merge($teacherBookings->pluck('teacher'))->filter()->unique('id')
+                        ->merge($teacherBookings->pluck('teacher'))->merge($assignedSubjects->pluck('teacher'))->filter()->unique('id')
                         ->map(fn ($teacher) => [
                             'id' => $teacher->id,
                             'name' => $teacher->name,
                             'attendance_status' => $teacherAttendance->get($teacher->id),
                             'subjects' => $teacherLessons->where('teacher_id', $teacher->id)
-                                ->pluck('subject.name')->filter()->unique()->values(),
+                                ->pluck('subject.name')->merge($assignedSubjects->where('teacher_id', $teacher->id)->pluck('name'))->filter()->unique()->values(),
                             'supervisor' => $teacherBookings->contains('teacher_id', $teacher->id),
                         ])->values();
                     return [
@@ -117,9 +123,10 @@ class ClassroomAvailabilityService
                         'classes' => $classes->pluck('label')->unique()->values(),
                         'class_ids' => $classes->pluck('id')->values(),
                         'streams' => $classes->pluck('classGroup.stream')->merge($programBookings->pluck('classGroup.stream'))->filter()->unique()->mapWithKeys(fn ($stream) => isset(\App\Models\ClassGroup::STREAMS[$stream]) ? [$stream => \App\Models\ClassGroup::STREAMS[$stream]] : [])->all(),
-                        'teachers' => $programLessons->pluck('teacher.name')->merge($programBookings->pluck('teacher.name'))->filter()->unique()->values(),
+                        'teachers' => $teacherAssignments->pluck('name')->unique()->values(),
                         'teacher_assignments' => $teacherAssignments,
                         'subjects' => $programLessons->pluck('subject.name')
+                            ->merge($assignedSubjects->pluck('name'))
                             ->merge($classes->flatMap(fn ($class) => $class->subjects->filter(fn ($subject) => $subject->curriculum_requirement_id && $subject->required_weekly_minutes > 0)->pluck('name')))
                             ->filter()->unique()->values(),
                         'sessions' => $classes->pluck('session')->merge($programBookings->pluck('classSession.session'))->filter()->unique()->values(),

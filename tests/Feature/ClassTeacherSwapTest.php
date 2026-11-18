@@ -174,6 +174,34 @@ class ClassTeacherSwapTest extends TestCase
         $this->assertEquals($afternoonSubject->id, $rows->firstWhere('session', 'Afternoon')['id']);
     }
 
+    public function test_room_details_show_the_swapped_teacher_for_a_subject_without_lessons(): void
+    {
+        $a = $this->khmerCohort(7);
+        $b = $this->khmerCohort(8);
+        $a['lesson']->delete();
+        $b['lesson']->delete();
+        ClassroomBooking::create([
+            'class_group_id' => $a['group']->id,
+            'class_session_id' => ClassSession::where('class_group_id', $a['group']->id)->value('id'),
+            'classroom_id' => $a['room']->id,
+            'teacher_id' => $a['teacher']->id,
+            'day_of_week' => 'Monday',
+            'starts_at' => '07:00',
+            'ends_at' => '08:00',
+        ]);
+
+        $this->actingAs(User::factory()->create(['role' => 'administrator']));
+        $this->requestSubjectSwap($a, $b)->assertSessionHasNoErrors();
+
+        $response = $this->get(route('classrooms.show', [
+            'classroom' => $a['room'], 'program' => 'Khmer', 'session' => 'Morning',
+            'date' => '2026-11-09', 'time' => '07:30',
+        ]))->assertOk();
+        $assignments = $response->viewData('snapshot')['programDetails']['Khmer']['teacher_assignments'];
+        $this->assertSame(['Writing'], $assignments->firstWhere('id', $b['teacher']->id)['subjects']->all());
+        $this->assertSame([], $assignments->firstWhere('id', $a['teacher']->id)['subjects']->all());
+    }
+
     public function test_subject_swap_lists_teachers_with_different_times_or_no_lessons(): void
     {
         $a = $this->khmerCohort(7);

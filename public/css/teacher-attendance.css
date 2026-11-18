@@ -26,11 +26,11 @@
 /* Balanced teacher directory rows. */
 .scholar-workspace.teachers-page .teacher-simple-table{table-layout:fixed;width:100%}
 .scholar-workspace.teachers-page .teacher-simple-table th:nth-child(1){width:21%}
-.scholar-workspace.teachers-page .teacher-simple-table th:nth-child(2){width:24%}
+.scholar-workspace.teachers-page .teacher-simple-table th:nth-child(2){width:22%}
 .scholar-workspace.teachers-page .teacher-simple-table th:nth-child(3){width:13%}
 .scholar-workspace.teachers-page .teacher-simple-table th:nth-child(4){width:10%}
 .scholar-workspace.teachers-page .teacher-simple-table th:nth-child(5){width:20%}
-.scholar-workspace.teachers-page .teacher-simple-table th:nth-child(6){width:12%}
+.scholar-workspace.teachers-page .teacher-simple-table th:nth-child(6){width:14%}
 .scholar-workspace.teachers-page .teacher-simple-table td{vertical-align:middle;padding:18px 14px;line-height:1.6}
 .scholar-workspace.teachers-page .teacher-simple-table th{padding:15px 14px}
 .scholar-workspace.teachers-page .teacher-simple-table td:nth-child(4),.scholar-workspace.teachers-page .teacher-simple-table th:nth-child(4){text-align:center;white-space:nowrap}
@@ -38,16 +38,80 @@
 .teacher-row-details{min-width:0}.teacher-row-details>a{color:var(--text-primary);font-weight:700;text-decoration:none;display:block}.teacher-row-details small{line-height:1.5}
 .scholar-workspace.teachers-page .teacher-row-identity .student-avatar{margin:0;float:none;border-radius:12px}
 .scholar-workspace.teachers-page .teacher-simple-table .teacher-inline-attendance{min-width:0;max-width:none}
-.scholar-workspace.teachers-page .teacher-attendance-row-form{grid-template-columns:minmax(0,1fr) 58px;gap:8px;align-items:center;margin:0}
-.scholar-workspace.teachers-page .teacher-attendance-row-form .form-select{grid-column:1;grid-row:1}
-.scholar-workspace.teachers-page .teacher-attendance-row-form .form-control{grid-column:1/-1;grid-row:2}
-.scholar-workspace.teachers-page .teacher-attendance-row-form .btn{grid-column:2;grid-row:1;justify-self:stretch;background:var(--primary,#0760ef);color:#fff;border-color:var(--primary,#0760ef)}
-.scholar-workspace.teachers-page .teacher-row-actions{display:grid;gap:8px}
+.teacher-row-attendance {
+    border:1px solid var(--border-color);
+    border-radius:12px;
+    background:var(--surface);
+}
+.teacher-row-attendance > summary {
+    display:flex;
+    align-items:center;
+    gap:7px;
+    padding:5px 8px;
+    min-height:42px;
+    list-style:none;
+    cursor:pointer;
+    border-radius:inherit;
+}
+.teacher-row-attendance > summary::-webkit-details-marker { display:none; }
+.teacher-row-attendance > summary:hover { background:var(--surface-tint); }
+.teacher-row-attendance > summary:focus-visible { outline:2px solid var(--action); outline-offset:2px; }
+.teacher-attendance-status {
+    --attendance-state:var(--text-secondary);
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:3px 7px;
+    border-radius:999px;
+    color:var(--attendance-state);
+    background:color-mix(in srgb,var(--attendance-state) 12%,var(--surface));
+    font-size:11px;
+    font-weight:650;
+    white-space:nowrap;
+}
+.teacher-attendance-status::before { content:""; width:6px; height:6px; border-radius:50%; background:currentColor; }
+.teacher-attendance-status[data-state="present"] { --attendance-state:var(--success); }
+.teacher-attendance-status[data-state="absent"] { --attendance-state:var(--danger); }
+.teacher-attendance-status[data-state="late"] { --attendance-state:var(--warning); }
+.teacher-attendance-status[data-state="excused"] { --attendance-state:var(--info,var(--action)); }
+.teacher-attendance-note-icon { color:var(--text-secondary); }
+.teacher-attendance-edit { margin-inline-start:auto; color:var(--action); font-weight:650; white-space:nowrap; }
+.teacher-attendance-edit i { display:inline-block; margin-inline-start:2px; font-size:9px; }
+.teacher-row-attendance[open] .teacher-attendance-edit i { transform:rotate(180deg); }
+.scholar-workspace.teachers-page .teacher-row-attendance .teacher-attendance-row-form {
+    gap:8px;
+    margin:0;
+    padding:9px;
+    border-top:1px solid var(--border-color);
+}
+.teacher-row-attendance .teacher-attendance-row-form .btn { justify-self:end; }
+.scholar-workspace.teachers-page .teacher-row-actions{display:flex;flex-wrap:wrap;gap:6px}
 .scholar-workspace.teachers-page .teacher-simple-table .teacher-row-actions .btn,.scholar-workspace.teachers-page .teacher-attendance-row-form :is(.btn,.form-select,.form-control){height:36px;min-height:36px;margin:0;border-radius:10px;padding:7px 10px;font-size:11px;line-height:20px}
 .scholar-workspace.teachers-page .teacher-attendance-row-form .form-select{padding-right:28px}
 .scholar-workspace.teachers-page .teacher-row-actions .btn{display:flex;align-items:center;justify-content:center;width:100%}
 @media(min-width:651px) and (max-width:1199px){.scholar-workspace.teachers-page .teacher-simple-table{min-width:1050px}}
-@media(max-width:650px){.scholar-workspace.teachers-page .teacher-simple-table{table-layout:auto}.scholar-workspace.teachers-page .teacher-simple-table td:nth-child(4){text-align:left;white-space:normal}.scholar-workspace.teachers-page .teacher-row-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.scholar-workspace.teachers-page .teacher-row-identity{align-items:flex-start;gap:8px}}
+@media(max-width:650px){.scholar-workspace.teachers-page .teacher-simple-table{table-layout:auto}.scholar-workspace.teachers-page .teacher-simple-table td:nth-child(4){text-align:left;white-space:normal}.scholar-workspace.teachers-page .teacher-row-identity{align-items:flex-start;gap:8px}}
+
+.teacher-hero-heading {
+    --teacher-heading-art: linear-gradient(110deg,var(--surface),color-mix(in srgb,var(--surface-tint) 68%,transparent));
+    display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:16px;
+    padding:clamp(16px,2.2vw,26px); margin-bottom:16px; border:1px solid var(--border-color);
+    border-radius:var(--card-radius,20px); background:var(--teacher-heading-art) center / cover;
+}
+:root[data-theme="autumn"] .teacher-hero-heading {
+    --teacher-heading-art:linear-gradient(90deg,var(--surface) 18%,color-mix(in srgb,var(--surface) 86%,transparent) 63%,color-mix(in srgb,var(--surface) 54%,transparent)),url('../images/autumn-school-hero.png');
+}
+.teacher-heading-title { display:flex; align-items:center; gap:14px; min-width:0; }
+.teacher-heading-icon { display:grid; place-items:center; flex-shrink:0; width:54px; height:54px; border-radius:16px; background:var(--action); color:var(--on-action); font-size:25px; box-shadow:0 4px 12px var(--shadow-color); }
+.teacher-heading-title h1 { margin:0 0 4px; font-size:clamp(24px,3vw,34px); font-weight:800; line-height:1.1; color:var(--text-primary); }
+.teacher-heading-title p { margin:0; color:var(--text-secondary); font-size:13px; }
+.teacher-row-meta { display:flex; align-items:center; flex-wrap:wrap; gap:4px; color:var(--text-secondary); }
+.teacher-account-pill,.teacher-count-pill,.teacher-hours-pill { display:inline-flex; align-items:center; gap:5px; padding:2px 7px; border-radius:999px; background:var(--surface-tint); color:var(--text-primary); font-weight:600; }
+.teacher-account-pill.is-active { background:color-mix(in srgb,var(--success) 14%,var(--surface)); color:var(--success); }
+.teacher-hours-pill { padding:5px 8px; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.teacher-row-context { display:flex; align-items:flex-start; gap:8px; }
+.teacher-row-context > i,.teacher-hours-pill > i { color:var(--action); font-size:14px; }
+.teacher-count-pill { display:table; }
 
 /* Attendance workspace: theme-aware overview, trends and supporting cards. */
 .teacher-attendance-dashboard{--attendance-accent:var(--primary,#075de8);--attendance-ink:var(--text-primary,#192b55);--attendance-muted:var(--text-secondary,#687b98);color:var(--attendance-ink)}

@@ -11,6 +11,21 @@ use Tests\TestCase;
 
 class TeacherManagementTest extends TestCase
 {
+    public function test_teacher_directory_export_respects_filters_and_requires_an_administrator(): void
+    {
+        $teacher = User::factory()->create(['role' => 'teacher', 'program' => 'Khmer', 'name' => '=2+2']);
+        User::factory()->create(['role' => 'teacher', 'program' => 'English', 'name' => 'English Teacher']);
+        $url = route('teacher-management.export', ['program' => 'Khmer']);
+
+        $this->actingAs($teacher)->get($url)->assertForbidden();
+        $response = $this->actingAs(User::factory()->create(['role' => 'administrator']))
+            ->get($url)->assertOk()->assertDownload('teachers.csv');
+
+        $csv = $response->streamedContent();
+        $this->assertStringContainsString("'=2+2", $csv);
+        $this->assertStringNotContainsString('English Teacher', $csv);
+    }
+
     use RefreshDatabase;
 
     public function test_workload_includes_subjects_and_classes_assigned_through_lessons(): void

@@ -1,0 +1,180 @@
+.school-map-workspace {
+    --map-line: var(--border-color);
+    --map-tint: var(--surface-tint);
+    color: var(--text-primary);
+}
+
+.campus-map-heading,
+.campus-map-heading > div,
+.campus-map-toolbar,
+.campus-zone-heading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.campus-map-heading {
+    justify-content: space-between;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.campus-map-heading h1 {
+    margin: 0;
+    font-size: clamp(26px, 3vw, 40px);
+    font-weight: 800;
+}
+
+.campus-map-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: var(--action);
+    color: var(--on-action);
+    font-size: 21px;
+}
+
+.campus-map-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(255px, 1fr);
+    gap: 16px;
+}
+
+.campus-map-canvas,
+.campus-check-in,
+.campus-zone-settings {
+    min-width: 0;
+    border: 1px solid var(--map-line);
+    border-radius: var(--card-radius, 20px);
+    background: var(--surface);
+}
+
+.campus-map-canvas {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.campus-map-toolbar {
+    justify-content: space-between;
+    flex-wrap: wrap;
+    padding: 10px 16px;
+    background: var(--map-tint);
+    font-size: .85rem;
+    font-weight: 650;
+    overflow-wrap: anywhere;
+}
+
+.campus-map-toolbar i,
+.campus-settings-link i,
+.campus-zone-option > summary i {
+    margin-inline-end: .25rem;
+}
+
+.campus-map-frame {
+    flex: 1;
+    display: grid;
+}
+
+.campus-map-frame iframe {
+    width: 100%;
+    height: 100%;
+    min-height: clamp(310px, 47vh, 540px);
+    border: 0;
+}
+
+.campus-map-empty {
+    flex: 1;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 14px;
+    min-height: 310px;
+    padding: 20px;
+    background: repeating-linear-gradient(0deg, transparent 0 27px, var(--map-line) 28px),
+        repeating-linear-gradient(90deg, transparent 0 27px, var(--map-line) 28px), var(--map-tint);
+}
+
+.campus-map-empty h2 {
+    margin: 0;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: var(--surface);
+    font-size: 1rem;
+}
+
+.campus-check-in,
+.campus-zone-settings {
+    padding: clamp(16px, 2vw, 26px);
+}
+
+.campus-check-in {
+    background: linear-gradient(150deg, var(--map-tint), var(--surface) 65%);
+}
+
+.campus-zone-heading {
+    margin-bottom: 16px;
+}
+
+.campus-zone-heading h2,
+.campus-zone-settings h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 750;
+}
+
+.campus-zone-name {
+    margin-bottom: 12px;
+    font-size: clamp(1.15rem, 2vw, 1.55rem);
+    font-weight: 750;
+    overflow-wrap: anywhere;
+}
+
+.campus-zone-facts {
+    display: grid;
+    gap: 8px;
+    margin: 0 0 16px;
+}
+
+.campus-zone-facts > div {
+    padding: 9px 12px;
+    border: 1px solid var(--map-line);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.campus-zone-facts dt,
+.campus-scan-result {
+    color: var(--text-secondary);
+    font-size: .8rem;
+}
+
+.campus-zone-facts dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+    font-variant-numeric: tabular-nums;
+    font-weight: 650;
+}
+
+.campus-scan-button { width: 100%; }
+.campus-scan-result { margin-top: 10px; }
+.campus-settings-link { display: inline-block; margin-top: 14px; font-weight: 650; }
+.campus-zone-settings { margin-top: 16px; scroll-margin-top: 100px; }
+.campus-zone-settings h2 { margin-bottom: 15px; }
+
+.campus-zone-option {
+    margin-top: 10px;
+    padding: 10px 14px;
+    border: 1px solid var(--map-line);
+    border-radius: 12px;
+}
+
+.campus-zone-option > summary { cursor: pointer; font-weight: 650; }
+.campus-zone-option[open] > summary { margin-bottom: 12px; }
+
+@media (max-width: 900px) {
+    .campus-map-grid { grid-template-columns: 1fr; }
+}

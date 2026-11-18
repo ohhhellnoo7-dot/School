@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\{EmployeeSalaryAttendance, EmployeeSalaryPayment, EmployeeSalaryProfile, TeacherAttendance, TeacherSessionAttendance, User};
 use App\Services\EmployeeSalaryCalculator;
+use App\Services\TeacherManagementService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -31,9 +32,10 @@ class EmployeeSalaryController extends Controller
     private function salary(EmployeeSalaryProfile $profile, Carbon $month, EmployeeSalaryCalculator $calculator): array
     {
         $range = [$month->toDateString(), $month->copy()->endOfMonth()->toDateString()];
+        $assignedMinutes = $calculator->assignedMinutes([$profile->teacher_id])->get($profile->teacher_id, 0);
 
         return app(\App\Services\EmployeeSalaryDeductions::class)->apply(
-            $calculator->calculate($profile, $this->assessmentDate($month)), $profile,
+            $calculator->calculate($profile, $this->assessmentDate($month), $assignedMinutes), $profile,
             TeacherAttendance::where('teacher_id', $profile->teacher_id)->whereBetween('date', $range)->get(),
             TeacherSessionAttendance::where('teacher_id', $profile->teacher_id)->whereBetween('date', $range)->get(),
             EmployeeSalaryAttendance::where('teacher_id', $profile->teacher_id)->whereBetween('date', $range)->get(),
@@ -41,7 +43,7 @@ class EmployeeSalaryController extends Controller
         );
     }
 
-    public function index(Request $request, EmployeeSalaryCalculator $calculator)
+    public function index(Request $request, EmployeeSalaryCalculator $calculator, TeacherManagementService $teaching)
     {
         $month = $this->month($request);
         $asOf = $this->assessmentDate($month);
@@ -56,19 +58,32 @@ class EmployeeSalaryController extends Controller
         $range = [$month->toDateString(), $month->copy()->endOfMonth()->toDateString()];
         $scans = TeacherSessionAttendance::whereIn('teacher_id', $teachers->modelKeys())->whereBetween('date', $range)->get()->groupBy('teacher_id');
         $overrides = EmployeeSalaryAttendance::whereIn('teacher_id', $teachers->modelKeys())->whereBetween('date', $range)->get()->groupBy('teacher_id');
-        $rows = $teachers->getCollection()->map(function ($teacher) use ($profiles, $payments, $attendance, $calculator, $asOf, $scans, $overrides) {
+        $teachingMinutes = $calculator->assignedMinutes($teachers->modelKeys());
+        $weeklyLimits = DB::table('teacher_profiles')->whereIn('teacher_id', $teachers->modelKeys())->pluck('weekly_minutes', 'teacher_id');
+        $rows = $teachers->getCollection()->map(function ($teacher) use ($profiles, $payments, $attendance, $calculator, $asOf, $scans, $overrides, $teaching, $teachingMinutes, $weeklyLimits) {
             $profile = $profiles->get($teacher->id);
             $payment = $payments->get($teacher->id);
+            $assignedMinutes = $teachingMinutes->get($teacher->id, 0);
+            $workSessions = $payment ?? $profile;
+            $weeklyHours = $workSessions
+                ? 5 * (4 * $workSessions->day_sessions + $workSessions->evening_sessions)
+                : null;
 
             return ['teacher' => $teacher, 'profile' => $profile, 'payment' => $payment,
+                'weekly_hours' => $assignedMinutes / 60,
+                'weekly_work_hours' => $weeklyHours,
+                'full_salary_cents' => $weeklyHours === null ? null : $calculator->baseCents($weeklyHours * 60),
+                'weekly_limit' => $weeklyHours ?? ($weeklyLimits->get($teacher->id) ?? $teaching->defaultLimit($teacher->program)) / 60,
                 'salary' => $payment ? $payment->only(['base_cents', 'raise_cents', 'total_cents', 'deduction_cents']) : ($profile ? app(\App\Services\EmployeeSalaryDeductions::class)->apply(
-                    $calculator->calculate($profile, $asOf), $profile, $attendance->get($teacher->id, collect()),
+                    $calculator->calculate($profile, $asOf, $assignedMinutes), $profile, $attendance->get($teacher->id, collect()),
                     $scans->get($teacher->id, collect()), $overrides->get($teacher->id, collect()), $asOf
                 ) : null),
                 'attendance' => app(\App\Services\EmployeeSalaryDeductions::class)->counts($attendance->get($teacher->id, collect()), $scans->get($teacher->id, collect()), $overrides->get($teacher->id, collect()))];
         });
 
-        return view('school.salaries.index', compact('month', 'teachers', 'rows', 'asOf'));
+        return view('school.salaries.index', compact('month', 'teachers', 'rows', 'asOf') + [
+            'salaryHourlyCents' => $calculator->baseCents(60),
+        ]);
     }
 
     public function show(Request $request, User $teacher, EmployeeSalaryCalculator $calculator)

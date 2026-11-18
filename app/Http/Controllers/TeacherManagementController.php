@@ -57,10 +57,29 @@ class TeacherManagementController extends Controller
             }
             return true;
         });
+        if ($request->routeIs('teacher-management.export')) {
+            return response()->streamDownload(function () use ($rows) {
+                $output = fopen('php://output', 'w');
+                $safe = fn (string $value) => preg_match('/^[\s\x00-\x1f]*[=+@-]|^[\t\r\n]/u', $value) ? "'".$value : $value;
+                fputcsv($output, ['Teacher', 'Teacher ID', 'Program', 'Status', 'Subjects', 'Classes', 'Weekly hours', 'Weekly limit'], escape: '');
+                foreach ($rows as ['teacher' => $teacher, 'workload' => $workload]) {
+                    fputcsv($output, [
+                        $safe($teacher->name), $safe($teacher->profile_number ?: (string) $teacher->id),
+                        $safe($teacher->program ?: 'Khmer'), $safe($teacher->status ?? ''),
+                        $safe($workload['subjects']->join(', ')), $safe($workload['classes']->pluck('label')->join(', ')),
+                        $workload['weekly'], $workload['limit'],
+                    ], escape: '');
+                }
+                fclose($output);
+            }, 'teachers.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+        }
+
         $records = new \Illuminate\Pagination\LengthAwarePaginator(new \Illuminate\Database\Eloquent\Collection($rows->pluck('teacher')->values()->all()), $rows->count(), max(1, $rows->count()), 1);
         return view('school.teachers.index', ['rows' => $rows, 'records' => $records, 'demand' => $service->demand(),
-            'total' => $teachers->count(), 'available' => $all->filter(fn ($r) => $r['teacher']->status === 'active' && in_array($r['workload']['status'], ['AVAILABLE', 'UNASSIGNED']))->count(),
-            'full' => $all->filter(fn ($r) => $r['teacher']->status === 'active' && $r['workload']['status'] === 'FULL')->count(),
+            'total' => $teachers->count(),
+            'subjectTotal' => $all->pluck('workload.subjects')->collapse()->unique()->count(),
+            'classTotal' => $all->pluck('workload.classes')->collapse()->unique(fn ($class) => $class->class_group_id ? 'group-'.$class->class_group_id : 'class-'.$class->id)->count(),
+            'weeklyTotal' => $all->sum('workload.weekly'),
             'classes' => SchoolClass::orderBy('name')->get(),
             'attendance' => $attendance = app(TeacherAttendanceController::class)->data($request, true),
             'rowAttendance' => $request->filled('session')

@@ -36,3 +36,35 @@ document.querySelectorAll('[data-salary-search]').forEach((form) => {
     });
     form.querySelectorAll('input[type="month"], input[type="date"]').forEach((input) => input.addEventListener('change', update));
 });
+
+document.querySelectorAll('#salary-calculator').forEach((dialog) => {
+    const form = dialog.querySelector('form');
+    const sliders = [...form.querySelectorAll('input[type="range"]')];
+    const estimates = Object.fromEntries(
+        [...dialog.querySelectorAll('[data-estimate]')].map((element) => [element.dataset.estimate, element])
+    );
+    const rateCents = Number(dialog.dataset.hourlyCents);
+    const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+    const formatSalary = (hours) => usd.format(hours * rateCents / 100);
+
+    const update = () => {
+        const hours = Object.fromEntries(sliders.map((slider) => {
+            const selected = slider.valueAsNumber;
+            slider.closest('.salary-slider').style.setProperty('--slider-progress', `${100 * selected / Number(slider.max)}%`);
+            dialog.querySelector(`[data-hours="${slider.name}"]`).textContent = `${selected} h`;
+            return [slider.name, selected];
+        }));
+        const totalHours = hours.daytime + hours.evening;
+        estimates.daytime.textContent = formatSalary(hours.daytime);
+        estimates.evening.textContent = formatSalary(hours.evening);
+        estimates.hours.textContent = `${totalHours} h`;
+        estimates.total.value = formatSalary(totalHours);
+    };
+
+    document.querySelector('[data-open-salary-calculator]').addEventListener('click', () => {
+        update();
+        dialog.showModal();
+    });
+    form.addEventListener('input', update);
+    form.addEventListener('reset', () => requestAnimationFrame(update));
+});

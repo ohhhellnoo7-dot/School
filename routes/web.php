@@ -170,6 +170,7 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
         Route::post('/schedules/confirm', [\App\Http\Controllers\TeacherManagementController::class, 'confirmSchedule'])->name('schedules.confirm');
         Route::post('/{teacher}/schedules/preview', [\App\Http\Controllers\TeacherManagementController::class, 'previewSchedule'])->name('schedules.preview');
         Route::get('/reports', [\App\Http\Controllers\TeacherManagementController::class, 'reports'])->name('reports');
+        Route::get('/export', [\App\Http\Controllers\TeacherManagementController::class, 'index'])->name('export');
         Route::post('/settings', [\App\Http\Controllers\TeacherManagementController::class, 'settings'])->name('settings');
         Route::post('/curriculum/{subject}', [\App\Http\Controllers\TeacherManagementController::class, 'curriculum'])->name('curriculum');
         Route::post('/samples/preview', [\App\Http\Controllers\TeacherManagementController::class, 'samplePreview'])->name('samples.preview');

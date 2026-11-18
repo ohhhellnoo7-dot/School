@@ -12,6 +12,29 @@ class EmployeeSalaryTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_payroll_compares_scheduled_hours_with_the_work_week_when_configured(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = User::factory()->create(['role' => 'teacher', 'program' => 'Khmer']);
+        \Illuminate\Support\Facades\DB::table('teacher_profiles')->insert(['teacher_id' => $teacher->id, 'weekly_minutes' => 2400]);
+        \App\Models\Schedule::create([
+            'teacher_id' => $teacher->id, 'entry_type' => 'academic', 'day' => 'Monday',
+            'starts_at' => '07:00', 'ends_at' => '08:30', 'room' => 'A1',
+        ]);
+        \App\Models\Schedule::create([
+            'teacher_id' => $teacher->id, 'entry_type' => 'academic', 'day' => 'Tuesday',
+            'starts_at' => '07:00', 'ends_at' => '08:00', 'room' => 'A1', 'cancelled_at' => now(),
+        ]);
+
+        $this->actingAs($admin)->get(route('employee-salaries.index'))->assertOk()->assertSee('1.5/40 h');
+
+        EmployeeSalaryProfile::create([
+            'teacher_id' => $teacher->id, 'day_sessions' => 2, 'evening_sessions' => 2,
+            'service_started_on' => '2026-11-01', 'updated_by' => $admin->id,
+        ]);
+        $this->get(route('employee-salaries.index'))->assertOk()->assertSee('1.5/50 h');
+    }
+
     public function test_attendance_deductions_charge_daytime_absence_lateness_and_excuses_once_per_day(): void
     {
         $profile = new EmployeeSalaryProfile(['day_sessions' => 2, 'evening_sessions' => 2, 'service_started_on' => '2026-11-01']);
@@ -56,6 +79,7 @@ class EmployeeSalaryTest extends TestCase
         $teacher = $this->employee();
         $profile = $this->profile($teacher, $admin);
         $profile->update(['service_started_on' => '2026-11-01', 'evening_sessions' => 0]);
+        $this->assignHours($teacher, 37);
         $other = $this->employee();
         $this->actingAs($admin)->get(route('employee-salaries.index', ['search' => $teacher->name]))
             ->assertOk()->assertSee($teacher->name)->assertDontSee($other->name)->assertSee('data-salary-search', false)->assertDontSee('View payroll');
@@ -65,12 +89,15 @@ class EmployeeSalaryTest extends TestCase
             $this->post(route('employee-salaries.attendance.store', $teacher), ['date' => '2026-11-12', 'session' => $session, 'status' => 'absent'])
                 ->assertSessionHasNoErrors();
         }
-        $this->get(route('employee-salaries.index', ['search' => $teacher->name]))->assertOk()->assertSee('-$15.00')->assertSee('$235.00')->assertSee('1 absent');
-        $this->get(route('employee-salaries.show', ['teacher' => $teacher, 'month' => '2026-11']))->assertOk()->assertSee('Attendance deduction details')->assertSee('$235.00');
+        $this->get(route('employee-salaries.index', ['search' => $teacher->name]))->assertOk()
+            ->assertSee('37/40 h')->assertSee('-$15.00')->assertSeeInOrder(['$216.25', '/ $250.00'])->assertSee('1 absent')
+            ->assertViewHas('rows', fn ($rows) => $rows->first()['full_salary_cents'] === 25000
+                && $rows->first()['salary']['base_cents'] === 23125);
+        $this->get(route('employee-salaries.show', ['teacher' => $teacher, 'month' => '2026-11']))->assertOk()->assertSee('Attendance deduction details')->assertSee('$231.25')->assertSee('$216.25');
         $data = ['month' => '2026-11', 'paid_on' => '2026-11-16', 'confirm' => 1, 'expected_total_cents' => 25000];
         $this->post(route('employee-salaries.pay', $teacher), $data)->assertSessionHasErrors('salary');
-        $this->post(route('employee-salaries.pay', $teacher), array_replace($data, ['expected_total_cents' => 23500]))->assertSessionHasNoErrors();
-        $this->assertDatabaseHas('employee_salary_payments', ['teacher_id' => $teacher->id, 'deduction_cents' => 1500, 'total_cents' => 23500]);
+        $this->post(route('employee-salaries.pay', $teacher), array_replace($data, ['expected_total_cents' => 21625]))->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('employee_salary_payments', ['teacher_id' => $teacher->id, 'base_cents' => 23125, 'deduction_cents' => 1500, 'total_cents' => 21625]);
         $this->post(route('employee-salaries.attendance.store', $teacher), ['date' => '2026-11-12', 'session' => 'All', 'status' => 'present'])
             ->assertSessionHasErrors('attendance');
         $this->actingAs($teacher)->get(route('employee-salaries.attendance'))->assertForbidden();
@@ -112,12 +139,24 @@ class EmployeeSalaryTest extends TestCase
             'service_started_on' => '2026-01-01', 'updated_by' => $admin->id]);
     }
 
-    public function test_salary_rates_match_every_session_combination(): void
+    private function assignHours(User $teacher, int $hours): void
+    {
+        $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        for ($slot = 0; $slot < $hours; $slot++) {
+            $start = 7 + intdiv($slot, 5);
+            \App\Models\Schedule::create([
+                'teacher_id' => $teacher->id, 'entry_type' => 'academic', 'day' => $days[$slot % 5],
+                'starts_at' => sprintf('%02d:00', $start), 'ends_at' => sprintf('%02d:00', $start + 1), 'room' => 'A1',
+            ]);
+        }
+    }
+
+    public function test_monthly_base_salary_is_prorated_by_assigned_weekly_hours(): void
     {
         $calculator = new EmployeeSalaryCalculator;
-        foreach ([[1, 0, 12500], [2, 0, 25000], [0, 1, 3125], [0, 2, 6250], [2, 2, 31250], [1, 1, 15625]] as [$day, $evening, $expected]) {
-            $profile = new EmployeeSalaryProfile(['day_sessions' => $day, 'evening_sessions' => $evening, 'service_started_on' => '2026-01-01']);
-            $this->assertSame($expected, $calculator->calculate($profile, Carbon::parse('2026-01-01'))['total_cents']);
+        $profile = new EmployeeSalaryProfile(['day_sessions' => 0, 'evening_sessions' => 2, 'service_started_on' => '2026-01-01']);
+        foreach ([0 => 0, 5 => 3125, 10 => 6250, 37 => 23125, 40 => 25000, 50 => 31250] as $hours => $expected) {
+            $this->assertSame($expected, $calculator->calculate($profile, Carbon::parse('2026-01-01'), $hours * 60)['total_cents']);
         }
     }
 
@@ -126,11 +165,11 @@ class EmployeeSalaryTest extends TestCase
         $calculator = new EmployeeSalaryCalculator;
         $profile = new EmployeeSalaryProfile(['day_sessions' => 2, 'evening_sessions' => 2, 'service_started_on' => '2026-01-15']);
         foreach (['2026-04-14' => 31250, '2026-04-15' => 31750, '2026-07-14' => 31750, '2026-07-15' => 32250, '2027-01-15' => 33250] as $date => $expected) {
-            $this->assertSame($expected, $calculator->calculate($profile, Carbon::parse($date))['total_cents']);
+            $this->assertSame($expected, $calculator->calculate($profile, Carbon::parse($date), 3000)['total_cents']);
         }
-        $this->assertSame(0, $calculator->calculate($profile, Carbon::parse('2026-01-14'))['total_cents']);
+        $this->assertSame(0, $calculator->calculate($profile, Carbon::parse('2026-01-14'), 3000)['total_cents']);
         $profile->service_started_on = '2026-01-31';
-        $this->assertSame(31750, $calculator->calculate($profile, Carbon::parse('2026-04-30'))['total_cents']);
+        $this->assertSame(31750, $calculator->calculate($profile, Carbon::parse('2026-04-30'), 3000)['total_cents']);
     }
 
     public function test_payroll_pages_show_salary_settings_attendance_and_scan_details(): void
@@ -139,6 +178,7 @@ class EmployeeSalaryTest extends TestCase
         $admin = User::factory()->create(['role' => 'administrator']);
         $teacher = $this->employee();
         $this->profile($teacher, $admin);
+        $this->assignHours($teacher, 50);
         TeacherAttendance::create(['teacher_id' => $teacher->id, 'date' => '2026-11-13', 'status' => 'present', 'recorded_by' => $admin->id]);
         TeacherSessionAttendance::create(['teacher_id' => $teacher->id, 'date' => '2026-11-13', 'session' => 'Morning',
             'status' => 'present', 'scanned_at' => '2026-11-13 07:00:00']);
@@ -172,6 +212,7 @@ class EmployeeSalaryTest extends TestCase
         $teacher = $this->employee();
         $profile = $this->profile($teacher, $admin);
         $profile->update(['service_started_on' => '2026-11-11', 'day_sessions' => 1, 'evening_sessions' => 0]);
+        $this->assignHours($teacher, 20);
         $this->actingAs($admin)->get(route('employee-salaries.show', ['teacher' => $teacher, 'month' => '2026-11']))
             ->assertOk()->assertSee('$125.00')->assertSee('Record salary payment');
         $profile->update(['service_started_on' => '2026-08-15']);
@@ -185,12 +226,14 @@ class EmployeeSalaryTest extends TestCase
         $admin = User::factory()->create(['role' => 'administrator']);
         $teacher = $this->employee();
         $profile = $this->profile($teacher, $admin);
+        $this->assignHours($teacher, 50);
         $data = ['month' => '2026-11', 'paid_on' => '2026-11-16', 'confirm' => 1, 'expected_total_cents' => 32750, 'reference' => 'Bank transfer 123'];
         $this->actingAs($admin)->post(route('employee-salaries.pay', $teacher), $data)->assertSessionHasNoErrors();
         $this->assertDatabaseHas('employee_salary_payments', ['teacher_id' => $teacher->id, 'base_cents' => 31250, 'raise_cents' => 1500, 'total_cents' => 32750]);
         $this->post(route('employee-salaries.pay', $teacher), $data)->assertSessionHasErrors('salary');
         $this->assertSame(1, EmployeeSalaryPayment::count());
         $profile->update(['day_sessions' => 1, 'evening_sessions' => 0]);
+        \App\Models\Schedule::where('teacher_id', $teacher->id)->delete();
         $this->get(route('employee-salaries.show', ['teacher' => $teacher, 'month' => '2026-11']))->assertOk()->assertSee('$327.50')->assertSee('Bank transfer 123');
         $this->get(route('employee-salaries.index', ['month' => '2026-11']))->assertOk()->assertSee('$327.50')->assertSee('Paid');
     }
@@ -201,6 +244,7 @@ class EmployeeSalaryTest extends TestCase
         $admin = User::factory()->create(['role' => 'administrator']);
         $teacher = $this->employee();
         $this->profile($teacher, $admin);
+        $this->assignHours($teacher, 50);
         $data = ['month' => '2026-11', 'paid_on' => '2026-11-16', 'confirm' => 1, 'expected_total_cents' => 31250];
         $this->actingAs($admin)->post(route('employee-salaries.pay', $teacher), $data)->assertSessionHasErrors('salary');
         $this->post(route('employee-salaries.pay', $teacher), array_replace($data, ['expected_total_cents' => 32750, 'confirm' => 0]))->assertSessionHasErrors('confirm');
