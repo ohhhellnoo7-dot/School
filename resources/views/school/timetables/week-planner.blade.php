@@ -31,6 +31,22 @@
     <button class="btn btn-primary" type="submit">Save class schedule</button>
     <a class="btn btn-outline-secondary" href="{{ route('timetables.index') }}">View weekly schedule</a>
 </form>
+<dialog id="teacher-schedule-preview" aria-labelledby="teacher-preview-title">
+    <header class="teacher-preview-header"><h2 id="teacher-preview-title">Teacher weekly schedule</h2><button type="button" class="btn-close" aria-label="Close teacher schedule" data-preview-close></button></header>
+    <label class="d-block mb-3">Teacher<select class="form-select" data-preview-teacher></select></label>
+    <div data-preview-content aria-live="polite"></div>
+    <p class="small text-muted mt-3 mb-0">Unsaved lessons in your current draft are not shown here.</p>
+</dialog>
+<style>
+#teacher-schedule-preview { width: min(860px, 92vw); max-height: 78vh; padding: 20px; border: 1px solid var(--border-color, #ead5cb); border-radius: 18px; background: var(--surface, #fff); color: var(--text-primary, #42383f); box-shadow: 0 20px 70px #0003; }
+#teacher-schedule-preview::backdrop { background: #21172166; }
+.teacher-preview-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px; }
+.teacher-preview-header h2 { font-size: 18px; margin: 0; }
+.teacher-preview-week { display: grid; grid-template-columns: repeat(5, minmax(120px, 1fr)); gap: 10px; overflow-x: auto; }
+.teacher-preview-week h3 { font-size: 13px; }
+.teacher-preview-lesson, .teacher-preview-break { font-size: 12px; border: 1px solid #e8d4ca; border-radius: 10px; padding: 10px; margin-bottom: 8px; background: var(--surface-muted, #fff5ee); }
+.teacher-preview-break { background: #f0f5ee; }
+</style>
 @endsection
 @push('scripts')
 @php
@@ -38,6 +54,7 @@
     $subjects->loadMissing('schoolClass');
     $plannerSubjects = $subjects->map(fn ($subject) => array_merge($subject->only(['id','name','school_class_id','lesson_minutes','required_weekly_minutes']), ['lesson_minutes' => $subject->schoolClass?->program === 'Khmer' ? \App\Support\KhmerLessonDuration::minutes($subject) : $subject->lesson_minutes]));
     $savedLessons = \App\Models\Schedule::whereIn('subject_id', $subjects->modelKeys())->get(['subject_id','academic_year','starts_at','ends_at']);
+    $previewTeacherList = \App\Models\User::where('role', 'teacher')->orderBy('name')->get(['id', 'name', 'program']);
 @endphp
 <script>
 (() => {
@@ -46,10 +63,38 @@
     const subjects = @json($plannerSubjects);
     const savedLessons = @json($savedLessons);
     const restored = @json(old('slots', []));
+    const previewTeachers = @json($previewTeacherList);
     const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
     const plans = Object.fromEntries(days.map(day => [day, []]));
     const host = form.querySelector('[data-periods]');
     const status = form.querySelector('[data-status]');
+    const preview = document.querySelector('#teacher-schedule-preview');
+    const previewTeacher = preview.querySelector('[data-preview-teacher]');
+    const previewContent = preview.querySelector('[data-preview-content]');
+    let previewRequest = 0;
+    async function loadTeacherPreview() {
+        const request = ++previewRequest;
+        previewContent.textContent = 'Loading teacher schedule…';
+        const cohort = classes.find(item => String(item.id) === form.elements.school_class_id.value);
+        const params = new URLSearchParams({view: 'teachers', compact: '1', program: cohort?.program || '', academic_year: form.elements.academic_year.value, teacher: previewTeacher.value});
+        try {
+            const response = await fetch(@json(route('timetables.data')) + '?' + params, {headers: {Accept: 'application/json'}});
+            if (!response.ok) throw new Error('Could not load the teacher schedule.');
+            const result = await response.json();
+            if (request === previewRequest && preview.open) previewContent.innerHTML = result.html;
+        } catch (error) { if (request === previewRequest) previewContent.textContent = error.message; }
+    }
+    previewTeacher.addEventListener('change', loadTeacherPreview);
+    preview.querySelector('[data-preview-close]').addEventListener('click', () => preview.close());
+    preview.addEventListener('click', event => { if (event.target === preview) { const rect = preview.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) preview.close(); } });
+    function openTeacherPreview(slot) {
+        const cohort = classes.find(item => String(item.id) === form.elements.school_class_id.value);
+        previewTeacher.replaceChildren();
+        previewTeachers.filter(teacher => teacher.program === cohort?.program).forEach(teacher => previewTeacher.add(new Option(teacher.name, teacher.id)));
+        if (slot.teacher_id && [...previewTeacher.options].some(option => option.value === String(slot.teacher_id))) previewTeacher.value = slot.teacher_id;
+        preview.showModal();
+        if (previewTeacher.options.length) loadTeacherPreview(); else previewContent.textContent = 'No teachers in this program.';
+    }
     let active = 'Monday', revision = 0;
     const minute = time => { const [h,m] = time.split(':').map(Number); return h*60+m; };
     const time = value => `${String(Math.floor(value/60)).padStart(2,'0')}:${String(value%60).padStart(2,'0')}`;
@@ -131,7 +176,7 @@
             teacher.input.disabled = true; fields.append(subject.wrapper,teacher.wrapper); card.append(fields);
             const details = document.createElement('details'); details.className = 'mt-3 pt-3 border-top';
             const summary = document.createElement('summary'); summary.textContent = 'View teacher schedules & breaks'; details.append(summary);
-            const link = document.createElement('a'); link.textContent = 'Open teacher weekly schedules'; link.href = @json(route('timetables.index', ['view' => 'teachers'])); link.target = '_blank'; link.rel = 'noopener'; details.append(link); card.append(details); host.append(card);
+            const link = document.createElement('button'); link.type = 'button'; link.className = 'btn btn-sm btn-outline-secondary mt-2'; link.textContent = 'View teacher weekly schedule'; link.addEventListener('click', () => openTeacherPreview(slot)); details.append(link); card.append(details); host.append(card);
             if (!slot.subject_id) return;
             const params = new URLSearchParams({school_class_id: form.elements.school_class_id.value, academic_year: form.elements.academic_year.value, ...slot});
             fetch(@json(route('timetables.lessons.options')) + '?' + params, {headers: {Accept:'application/json'}}).then(async response => {

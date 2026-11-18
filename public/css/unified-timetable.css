@@ -132,6 +132,11 @@
 }
 
 .timetable-schedule-details { display: flex; flex: 1; flex-wrap: wrap; gap: 12px 22px; margin: 0; min-width: 0; }
+.timetable-workspace .shared-lesson.lesson-other-subject { opacity: .55; filter: grayscale(.85); }
+.timetable-workspace .shared-lesson.lesson-other-subject:hover,
+.timetable-workspace .shared-lesson.lesson-other-subject:focus-within { opacity: 1; filter: none; }
+.lesson-other-subject-label { display: block; font-size: 10px; font-weight: 700; margin-bottom: 8px; }
+@media print { .timetable-workspace .shared-lesson.lesson-other-subject { opacity: 1; filter: grayscale(1); } }
 .timetable-schedule-details > div { min-width: 65px; max-width: 300px; }
 .timetable-schedule-details dt { color: var(--text-secondary); font-size: 10px; font-weight: 600; margin-bottom: 4px; }
 .timetable-schedule-details dd { color: var(--text-primary); font-size: 12px; font-weight: 700; margin: 0; overflow-wrap: anywhere; }

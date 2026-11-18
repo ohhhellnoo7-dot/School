@@ -40,13 +40,15 @@ class UnifiedTimetableController extends Controller
         $academicYear = $request->input('academic_year') ?: now('Asia/Phnom_Penh')->year.'-'.(now('Asia/Phnom_Penh')->year+1);
         $query->where(fn ($q)=>$q->where('academic_year',$academicYear)->orWhereNull('academic_year'));
         if ($restricted) $query->whereIn('school_class_id', $classes->map->timetableOwnerId()->unique()->all());
-        if ($subjectSearch) $query->whereHas('subject', fn ($q) => $q->where('name', $subjectSearch));
+        if ($subjectSearch && $view !== 'teachers') $query->whereHas('subject', fn ($q) => $q->where('name', $subjectSearch));
         if ($view === 'teachers') {
             abort_if($restricted, 404);
             $programTeacherIds = $teachers->modelKeys();
             if ($teacherSession || $subjectSearch) {
                 if ($teacherSession) $query->whereHas('schoolClass', fn ($q) => $q->where('session', $teacherSession));
-                $sessionTeacherIds = (clone $query)->pluck('teacher_id');
+                $matchingLessons = clone $query;
+                if ($subjectSearch) $matchingLessons->whereHas('subject', fn ($q) => $q->where('name', $subjectSearch));
+                $sessionTeacherIds = $matchingLessons->pluck('teacher_id');
                 if ($subjectSearch) {
                     // Include assigned subject teachers even before their lessons
                     // have been scheduled for the selected academic year.
@@ -147,7 +149,9 @@ class UnifiedTimetableController extends Controller
 
     public function data(Request $request)
     {
-        return response()->json(['html' => view('school.timetables.grid', $this->context($request))->render()])->header('Cache-Control', 'no-store');
+        $context = $this->context($request);
+        $template = $request->boolean('compact') && $context['view'] === 'teachers' ? 'school.timetables.compact-teacher' : 'school.timetables.grid';
+        return response()->json(['html' => view($template, $context)->render()])->header('Cache-Control', 'no-store');
     }
 
     public function diagnostics()

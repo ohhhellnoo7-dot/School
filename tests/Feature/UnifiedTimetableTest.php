@@ -13,6 +13,48 @@ class UnifiedTimetableTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_compact_teacher_schedule_shows_all_subjects_inside_preview(): void
+    {
+        $f = $this->fixture();
+        app(LessonManagementService::class)->save($this->data($f));
+        $this->actingAs($f['admin'])->get(route('timetables.lessons.create'))->assertOk()->assertSee('id="teacher-schedule-preview"', false)->assertSee('Close teacher schedule');
+        $html = $this->getJson(route('timetables.data', ['view' => 'teachers', 'program' => 'Khmer', 'teacher' => $f['primary']->id, 'academic_year' => '2026-2027', 'compact' => 1]))->assertOk()->json('html');
+        $this->assertStringContainsString('teacher-preview-week', $html);
+        $this->assertStringContainsString('Mathematics', $html);
+        $this->assertStringContainsString('Free period', $html);
+        $this->assertStringNotContainsString('Edit lesson', $html);
+    }
+
+    public function test_teacher_subject_focus_keeps_other_subjects_visible_on_page_and_refresh(): void
+    {
+        $f = $this->fixture();
+        $math = app(LessonManagementService::class)->save($this->data($f));
+        DB::table('teacher_qualifications')->insert(['teacher_id' => $f['primary']->id, 'subject_name' => 'History', 'slot' => 2]);
+        $history = Subject::create(['name' => 'History', 'code' => 'H-FOCUS', 'school_class_id' => $f['classes'][0]->id, 'teacher_id' => $f['primary']->id, 'lesson_minutes' => 60]);
+        $other = DB::table('schedules')->insertGetId(['school_class_id' => $f['classes'][0]->id, 'subject_id' => $history->id, 'teacher_id' => $f['primary']->id, 'classroom_id' => $f['rooms'][0]->id, 'room' => $f['rooms'][0]->room_number, 'entry_type' => 'academic', 'day' => 'Tuesday', 'starts_at' => '07:00', 'ends_at' => '08:00', 'academic_year' => '2026-2027']);
+        $filters = ['view' => 'teachers', 'program' => 'Khmer', 'subject' => 'Mathematics', 'teacher' => $f['primary']->id, 'academic_year' => '2026-2027'];
+        $this->actingAs($f['admin'])->get(route('timetables.index', $filters))->assertOk()
+            ->assertViewHas('lessons', fn ($lessons) => $lessons->contains('id', $math->id) && $lessons->contains('id', $other))
+            ->assertSee('Busy · Other subject')->assertSee('lesson-other-subject', false)->assertSee('History');
+        $html = $this->getJson(route('timetables.data', $filters))->assertOk()->json('html');
+        $this->assertStringContainsString('History', $html);
+        $this->assertStringContainsString('Busy · Other subject', $html);
+        $this->assertStringContainsString('data-lesson-id="'.$other.'" class="shared-lesson lesson-other-subject', $html);
+        $this->assertStringNotContainsString('data-lesson-id="'.$math->id.'" class="shared-lesson lesson-other-subject', $html);
+    }
+
+    public function test_auto_fill_chooses_teacher_with_time_for_all_math_blocks(): void
+    {
+        $f = $this->fixture();
+        $f['subjects'][0]->update(['required_weekly_minutes' => 480]);
+        DB::table('teacher_working_periods')->where('teacher_id', $f['primary']->id)->where('weekday', '!=', 'Monday')->delete();
+        DB::table('teacher_working_periods')->where('teacher_id', $f['primary']->id)->update(['end_time' => '09:00']);
+        $this->actingAs($f['admin'])->postJson(route('timetables.lessons.auto-fill'), ['school_class_id' => $f['classes'][0]->id, 'academic_year' => '2026-2027'])
+            ->assertOk()->assertJsonPath('complete', true)->assertJsonCount(4, 'slots')
+            ->assertJsonPath('slots.0.teacher_id', $f['substitute']->id);
+        $this->assertSame(0, Schedule::count());
+    }
+
     public function test_khmer_auto_fill_assigns_teachers_and_reports_subjects_without_teachers_without_saving(): void
     {
         $f = $this->fixture();

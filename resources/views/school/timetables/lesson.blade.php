@@ -1,4 +1,6 @@
-<article data-lesson-id="{{ $entry->id }}" class="shared-lesson {{ \App\Services\TeacherManagementService::duration($entry->starts_at,$entry->ends_at) === 120 ? 'two-hour-entry' : '' }}">
+@php($mutedSubject = ($view ?? null) === 'teachers' && !empty($subjectSearch) && $entry->subject?->name !== $subjectSearch)
+<article data-lesson-id="{{ $entry->id }}" class="shared-lesson {{ $mutedSubject ? 'lesson-other-subject' : '' }} {{ \App\Services\TeacherManagementService::duration($entry->starts_at,$entry->ends_at) === 120 ? 'two-hour-entry' : '' }}">
+@if($mutedSubject)<span class="lesson-other-subject-label">{{ __('Busy · Other subject') }}</span>@endif
 <strong class="shared-lesson-title"><i class="bi bi-{{ $entry->isRelaxation() ? 'cup-hot' : 'book' }}" aria-hidden="true"></i><span>{{ $entry->isRelaxation() ? __('Relaxation Period') : ($entry->subject?->name ?? __('Missing subject')) }}</span></strong>
 @if($continuation ?? false)<span class="lesson-continuation">{{ __('Continued lesson') }}</span>@endif
 <p><i class="bi bi-clock" aria-hidden="true"></i><span>{{ __($entry->day) }} {{ substr($entry->starts_at,0,5) }}–{{ substr($entry->ends_at,0,5) }}</span></p>
