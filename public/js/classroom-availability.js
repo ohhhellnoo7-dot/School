@@ -10,6 +10,7 @@
     const interval = Number(dashboard.dataset.interval || 30000);
     let followNow = dashboard.dataset.followNow === '1';
     let requestController = null;
+    let historyUpdatePending = false;
     let lessonFilter = 'all';
     const roomPrograms = new Map();
     const roomSessions = new Map();
@@ -161,12 +162,14 @@
     };
 
     const refresh = async ({ updateHistory = false } = {}) => {
+        historyUpdatePending ||= updateHistory;
         useCurrentMoment();
         const query = params();
         const url = `${endpoint}?${query.toString()}`;
 
         requestController?.abort();
-        requestController = new AbortController();
+        const controller = new AbortController();
+        requestController = controller;
         results.setAttribute('aria-busy', 'true');
         if (status) status.textContent = 'Refreshing classroom availability...';
 
@@ -174,11 +177,12 @@
             const response = await fetch(url, {
                 headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                 cache: 'no-store',
-                signal: requestController.signal,
+                signal: controller.signal,
             });
             if (!response.ok) throw new Error(`Availability request failed (${response.status})`);
 
             const payload = await response.json();
+            if (requestController !== controller) return;
             results.innerHTML = payload.html;
             results.querySelectorAll('[data-room-card]').forEach(card => {
                 const selected = roomPrograms.get(card.dataset.roomCard);
@@ -187,16 +191,20 @@
             });
             applyLessonFilter();
             if (status) status.textContent = `Showing room status for ${payload.label}. Refreshed just now; refreshes every 30 seconds.`;
-            if (updateHistory) {
+            if (historyUpdatePending) {
                 const browserUrl = `${form.action}?${query.toString()}`;
                 window.history.replaceState({}, '', browserUrl);
+                historyUpdatePending = false;
             }
         } catch (error) {
-            if (error.name !== 'AbortError' && status) {
+            if (requestController === controller && error.name !== 'AbortError' && status) {
                 status.textContent = 'Classroom status could not be refreshed. The last successful results are still shown.';
             }
         } finally {
-            results.removeAttribute('aria-busy');
+            if (requestController === controller) {
+                requestController = null;
+                results.removeAttribute('aria-busy');
+            }
         }
     };
 
@@ -290,7 +298,11 @@
 
     form.addEventListener('submit', event => {
         event.preventDefault();
-        followNow = false;
+        refresh({ updateHistory: true });
+    });
+    form.addEventListener('change', event => {
+        if (!event.target.matches('select, [name="date"], [name="time"]')) return;
+        if (event.target.matches('[name="date"], [name="time"]')) followNow = false;
         refresh({ updateHistory: true });
     });
     form.querySelectorAll('[name="date"], [name="time"]').forEach(input => {
@@ -299,6 +311,6 @@
     document.querySelector('[data-availability-refresh]')?.addEventListener('click', () => refresh());
 
     window.setInterval(() => {
-        if (!document.hidden) refresh();
+        if (!document.hidden && !requestController) refresh();
     }, Math.max(interval, 10000));
 })();

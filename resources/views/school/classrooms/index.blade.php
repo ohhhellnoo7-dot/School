@@ -75,13 +75,13 @@
             <label class="form-label" for="availability-room">Room name</label>
             <select class="form-select" id="availability-room" name="room"><option value="">All rooms</option>@foreach($roomNames as $number => $name)<option value="{{ $number }}" @selected(($filters['room'] ?? '') === (string) $number)>{{ $number }}{{ $name && $name !== $number ? ' · '.$name : '' }}</option>@endforeach</select>
         </div>
-        <div class="filter-actions"><button class="btn btn-primary" type="submit"><i class="bi bi-funnel me-1" aria-hidden="true"></i> Apply</button><a class="btn btn-light" href="{{ route('classrooms.index') }}">{{ __('Reset') }}</a></div>
+        <div class="filter-actions"><a class="btn btn-light" href="{{ route('classrooms.index') }}">{{ __('Reset') }}</a></div>
     </form>
 </section>
 
 <div class="availability-live-region" aria-live="polite" aria-atomic="true" data-refresh-status>Showing room status for {{ $moment->format('D, M j, Y · H:i') }}. Refreshes every 30 seconds.</div>
 
-<div data-classroom-dashboard data-endpoint="{{ route('classrooms.data') }}" data-interval="30000" data-follow-now="{{ request()->filled('date') || request()->filled('time') ? '0' : '1' }}">
+<div data-classroom-dashboard data-endpoint="{{ route('classrooms.data') }}" data-interval="30000" data-follow-now="{{ request()->boolean('live') || (!request()->filled('date') && !request()->filled('time')) ? '1' : '0' }}">
     <div id="availability-results" data-availability-results>
         @include('school.classrooms._availability-results')
     </div>
