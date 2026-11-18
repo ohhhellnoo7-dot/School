@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\{ClassGroup, ClassroomBooking, Schedule, Subject};
+use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
 class KhmerSubjectSwapService
@@ -35,16 +36,58 @@ class KhmerSubjectSwapService
             ->sortByDesc(fn ($subject) => ($subject->schedules->isNotEmpty() ? 2 : 0) + ($subject->teacher_id ? 1 : 0))
             ->unique(fn ($subject) => json_encode([$subject->schoolClass->class_group_id, $subject->schoolClass->session, $subject->name]))
             ->sortBy('name')->values();
+        $teacherIds = $subjects->pluck('teacher_id')->filter()->unique();
+        $lessons = Schedule::whereIn('teacher_id', $teacherIds)->get()->groupBy('teacher_id');
+        $bookings = ClassroomBooking::whereIn('teacher_id', $teacherIds)->get()->groupBy('teacher_id');
+
         return $subjects->filter(fn ($s) => $s->schoolClass->class_group_id === $group->id)->map(fn ($source) => [
             'id' => $source->id, 'teacher_id' => $source->teacher_id, 'session' => $source->schoolClass->session,
+            'name' => $source->name,
             'label' => $source->name.' - '.$source->schoolClass->session,
             'teacher' => $source->teacher?->name ?? 'Unassigned',
             'times' => $source->schedules->map(fn ($s) => $s->day.' '.substr($s->starts_at, 0, 5).'-'.substr($s->ends_at, 0, 5).' ('.$s->academic_year.')')->join(', '),
             'candidates' => $subjects->filter(fn ($target) => $this->matches($source, $target))->sortBy('teacher.name')->map(fn ($target) => [
                 'id' => $target->id, 'teacher_id' => $target->teacher_id,
                 'label' => $target->teacher->name.' - '.$target->name.' - '.$target->schoolClass->classGroup->display_name.' - '.$target->schoolClass->session,
+                'availability' => $this->availabilityForSwap($source, $target, $lessons, $bookings),
             ])->values()->all(),
         ])->values()->all();
+    }
+
+    private function availabilityForSwap(Subject $source, Subject $target, Collection $lessons, Collection $bookings): string
+    {
+        $rules = app(TeacherManagementService::class);
+        $status = 'No lesson times';
+
+        foreach ([[$source, $target], [$target, $source]] as [$destination, $incoming]) {
+            if ($destination->schedules->isEmpty()) continue;
+
+            $teacher = $incoming->teacher;
+            $teacherLessons = $lessons->get($teacher->id, collect())->where('subject_id', '!=', $incoming->id);
+            $teacherBookings = $bookings->get($teacher->id, collect());
+            $breaks = $rules->breaks($teacher);
+
+            foreach ($destination->schedules as $slot) {
+                $overlaps = fn ($start, $end) => $rules::overlaps($slot->starts_at, $slot->ends_at, $start, $end);
+                if ($teacherLessons->contains(fn ($lesson) => $lesson->day === $slot->day
+                    && (!$slot->academic_year || !$lesson->academic_year || $lesson->academic_year === $slot->academic_year)
+                    && $overlaps($lesson->starts_at, $lesson->ends_at))
+                    || $teacherBookings->contains(fn ($booking) => $booking->day_of_week === $slot->day
+                        && $booking->class_group_id !== $destination->schoolClass->class_group_id
+                        && $overlaps($booking->starts_at, $booking->ends_at))) {
+                    return 'Busy';
+                }
+
+                if (!$rules->onDuty($teacher, $slot->day, $slot->starts_at, $slot->ends_at)
+                    || $breaks->contains(fn ($break) => $break->weekday === $slot->day && $overlaps($break->start_time, $break->end_time))) {
+                    $status = 'Unavailable';
+                } elseif ($status === 'No lesson times') {
+                    $status = 'Free';
+                }
+            }
+        }
+
+        return $status;
     }
 
     public function swap(ClassGroup $group, int $sourceId, int $targetId, int $sourceTeacher, int $targetTeacher): void

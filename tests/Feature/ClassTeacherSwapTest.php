@@ -190,6 +190,7 @@ class ClassTeacherSwapTest extends TestCase
         $row = collect(app(\App\Services\KhmerSubjectSwapService::class)->formData($a['group']))->first();
         $this->assertEqualsCanonicalizing([$b['subject']->id, $c['subject']->id], array_column($row['candidates'], 'id'));
         $this->assertStringStartsWith($b['teacher']->name.' - ', collect($row['candidates'])->firstWhere('id', $b['subject']->id)['label']);
+        $this->assertSame('No lesson times', collect($row['candidates'])->firstWhere('id', $c['subject']->id)['availability']);
         $this->actingAs(User::factory()->create(['role' => 'administrator']));
         $this->requestSubjectSwap($a, $c)->assertSessionHasNoErrors();
         $this->assertEquals($c['teacher']->id, $a['subject']->fresh()->teacher_id);
@@ -219,6 +220,7 @@ class ClassTeacherSwapTest extends TestCase
         $a = $this->khmerCohort(7);
         $b = $this->khmerCohort(8);
         Schedule::whereKey($b['lesson']->id)->update(['starts_at' => '08:00', 'ends_at' => '09:00']);
+        $this->assertSame('Free', app(\App\Services\KhmerSubjectSwapService::class)->formData($a['group'])[0]['candidates'][0]['availability']);
         $this->actingAs(User::factory()->create(['role' => 'administrator']));
         $this->requestSubjectSwap($a, $b)->assertSessionHasNoErrors();
         $this->assertEquals($b['teacher']->id, $a['lesson']->fresh()->teacher_id);
@@ -250,6 +252,8 @@ class ClassTeacherSwapTest extends TestCase
         $other = $this->khmerCohort(9);
         Schedule::whereKey($b['lesson']->id)->update(['starts_at' => '08:00', 'ends_at' => '09:00']);
         Schedule::whereKey($other['lesson']->id)->update(['teacher_id' => $b['teacher']->id]);
+        $candidates = collect(app(\App\Services\KhmerSubjectSwapService::class)->formData($a['group'])[0]['candidates']);
+        $this->assertSame('Busy', $candidates->firstWhere('id', $b['subject']->id)['availability']);
         $this->actingAs(User::factory()->create(['role' => 'administrator']));
 
         $this->requestSubjectSwap($a, $b)->assertSessionHasErrors('subject_swap');
