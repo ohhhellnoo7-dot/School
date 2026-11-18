@@ -7,6 +7,7 @@ use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\User;
 use App\Support\SchoolDependencies;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -108,11 +109,32 @@ class StudentController extends Controller
         return view('school.students.form', ['student' => $student, 'classes' => SchoolClass::where(fn ($q) => $q->whereNull('program')->orWhere('program', '!=', 'Chinese')->orWhere('session', 'Evening'))->orderBy('name')->get(), 'parents' => User::where('role', 'parent')->get(), 'accounts' => User::where('role', 'student')->get()]);
     }
 
-    public function show(Student $student)
+    public function show(Request $request, Student $student)
     {
         Gate::authorize('view', $student);
 
-        return view('school.students.show', ['student' => $student->load(['schoolClass', 'studyClasses', 'user', 'parent', 'attendances' => fn ($q) => $q->latest('date')->limit(30), 'grades.examination.subject', 'fees']),
+        $filters = $request->validate(['month' => 'nullable|date_format:Y-m']);
+        $currentMonth = CarbonImmutable::now()->startOfMonth();
+        $month = isset($filters['month'])
+            ? CarbonImmutable::createFromFormat('!Y-m', $filters['month'])
+            : $currentMonth;
+        $student->load(['attendances' => fn ($query) => $query
+            ->where('date', '>=', $month->toDateString())
+            ->where('date', '<', $month->addMonth()->toDateString())
+            ->latest('date')]);
+        $records = $student->attendances;
+        $attendanceRate = $records->isEmpty() ? null
+            : round($records->whereIn('status', ['present', 'late'])->count() * 100 / $records->count(), 1);
+        $attendanceReport = compact('student', 'month', 'currentMonth', 'attendanceRate');
+
+        if ($request->expectsJson()) {
+            return response()->json(['html' => view('school.students._monthly-attendance', $attendanceReport)->render()])
+                ->header('Cache-Control', 'no-store');
+        }
+
+        $student->load(['schoolClass', 'studyClasses', 'user', 'parent', 'grades.examination.subject', 'fees']);
+
+        return view('school.students.show', $attendanceReport + [
             'classes' => SchoolClass::orderBy('program')->orderBy('name')->get()]);
     }
 
