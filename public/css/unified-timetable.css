@@ -131,7 +131,8 @@
     .shared-lesson > a { display: none; }
 }
 
-.timetable-schedule-details { display: flex; flex: 1; flex-wrap: wrap; gap: 12px 22px; margin: 0; min-width: 0; }
+.timetable-schedule-details { display: flex; flex: 1 1 360px; flex-wrap: wrap; gap: 12px 22px; margin: 0; min-width: 0; }
+.timetable-reset-row { border-top: 1px solid var(--border-color); padding-top: 12px; }
 .timetable-workspace .shared-lesson.lesson-other-subject { opacity: .8; filter: grayscale(.55) blur(.35px); }
 .timetable-workspace .shared-lesson.lesson-other-subject:hover,
 .timetable-workspace .shared-lesson.lesson-other-subject:focus-within { opacity: 1; filter: none; }

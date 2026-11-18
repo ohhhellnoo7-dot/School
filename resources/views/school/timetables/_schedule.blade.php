@@ -43,6 +43,12 @@
 </div>
 @endif
 <section class="timetable-calendar" aria-label="{{ __('Weekly timetable') }}">
-    <header class="timetable-calendar-toolbar"><div><span class="timetable-calendar-icon"><i class="bi bi-calendar3" aria-hidden="true"></i></span><div><h2>{{ __('Weekly schedule') }}</h2><p>{{ __('Monday–Friday') }} <span>·</span> {{ $academicYear }}</p></div></div>@include('school.timetables._schedule-details')<div class="timetable-calendar-tools">@if(auth()->user()->role === 'administrator')@include('school.timetables._reset-controls')@endif<span class="timetable-refresh-note"><span></span>{{ __('Updates every 30 seconds') }}</span><button class="btn btn-outline-secondary" type="button" onclick="window.print()"><i class="bi bi-printer" aria-hidden="true"></i> {{ __('Print Schedule') }}</button></div></header>
+    <header class="timetable-calendar-toolbar"><div><span class="timetable-calendar-icon"><i class="bi bi-calendar3" aria-hidden="true"></i></span><div><h2>{{ __('Weekly schedule') }}</h2><p>{{ __('Monday–Friday') }} <span>·</span> {{ $academicYear }}</p></div></div>@include('school.timetables._schedule-details')<div class="timetable-calendar-tools"><span class="timetable-refresh-note"><span></span>{{ __('Updates every 30 seconds') }}</span><button class="btn btn-outline-secondary" type="button" onclick="window.print()"><i class="bi bi-printer" aria-hidden="true"></i> {{ __('Print Schedule') }}</button></div>
+        @if(auth()->user()->role === 'administrator')
+            <div class="timetable-reset-row w-100 d-print-none">
+                @include('school.timetables._reset-controls')
+            </div>
+        @endif
+    </header>
     <div id="shared-timetable">@include('school.timetables.grid')</div>
 </section>
