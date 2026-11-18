@@ -41,6 +41,17 @@ class UnifiedTimetableTest extends TestCase
         $this->assertStringContainsString('Busy · Other subject', $html);
         $this->assertStringContainsString('data-lesson-id="'.$other.'" class="shared-lesson lesson-other-subject', $html);
         $this->assertStringNotContainsString('data-lesson-id="'.$math->id.'" class="shared-lesson lesson-other-subject', $html);
+
+        foreach ([
+            ['view' => 'students', 'class' => $f['classes'][0]->id],
+            ['view' => 'classrooms', 'classroom' => $f['rooms'][0]->id],
+        ] as $selection) {
+            $query = $selection + array_diff_key($filters, ['teacher' => true]);
+            $html = $this->getJson(route('timetables.data', $query + ['fragment' => 1]))->assertOk()->json('html');
+            $this->assertStringContainsString('data-lesson-id="'.$other.'" class="shared-lesson lesson-other-subject', $html);
+            $this->assertStringContainsString('data-lesson-id="'.$math->id.'" class="shared-lesson', $html);
+            $this->assertStringNotContainsString('data-lesson-id="'.$math->id.'" class="shared-lesson lesson-other-subject', $html);
+        }
     }
 
     public function test_auto_fill_chooses_teacher_with_time_for_all_math_blocks(): void

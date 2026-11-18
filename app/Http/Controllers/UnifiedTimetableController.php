@@ -40,7 +40,6 @@ class UnifiedTimetableController extends Controller
         $academicYear = $request->input('academic_year') ?: now('Asia/Phnom_Penh')->year.'-'.(now('Asia/Phnom_Penh')->year+1);
         $query->where(fn ($q)=>$q->where('academic_year',$academicYear)->orWhereNull('academic_year'));
         if ($restricted) $query->whereIn('school_class_id', $classes->map->timetableOwnerId()->unique()->all());
-        if ($subjectSearch && $view !== 'teachers') $query->whereHas('subject', fn ($q) => $q->where('name', $subjectSearch));
         if ($view === 'teachers') {
             abort_if($restricted, 404);
             $programTeacherIds = $teachers->modelKeys();

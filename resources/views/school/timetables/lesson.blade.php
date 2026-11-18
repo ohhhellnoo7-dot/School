@@ -1,4 +1,4 @@
-@php($mutedSubject = ($view ?? null) === 'teachers' && !empty($subjectSearch) && $entry->subject?->name !== $subjectSearch)
+@php($mutedSubject = !empty($subjectSearch) && $entry->subject?->name !== $subjectSearch)
 <article data-lesson-id="{{ $entry->id }}" class="shared-lesson {{ $mutedSubject ? 'lesson-other-subject' : '' }} {{ \App\Services\TeacherManagementService::duration($entry->starts_at,$entry->ends_at) === 120 ? 'two-hour-entry' : '' }}">
 @if($mutedSubject)<span class="lesson-other-subject-label">{{ __('Busy · Other subject') }}</span>@endif
 <strong class="shared-lesson-title"><i class="bi bi-{{ $entry->isRelaxation() ? 'cup-hot' : 'book' }}" aria-hidden="true"></i><span>{{ $entry->isRelaxation() ? __('Relaxation Period') : ($entry->subject?->name ?? __('Missing subject')) }}</span></strong>
