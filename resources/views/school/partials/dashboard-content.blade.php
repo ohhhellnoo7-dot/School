@@ -63,22 +63,7 @@
 </div>
 <div class="row g-3 dashboard-feature-row">
     <div class="col-lg-8"><section class="panel h-100"><div class="panel-header"><div class="dashboard-panel-title"><span aria-hidden="true">&#129689;</span><div><h2>{{ in_array(auth()->user()->role, ['administrator', 'parent']) ? 'Monthly revenue' : 'Enrollment trend' }}</h2><p>{{ in_array(auth()->user()->role, ['administrator', 'parent']) ? 'Recorded fee payments · USD' : 'New students joining your classes' }}</p></div></div><div class="chart-key"><span>{{ in_array(auth()->user()->role, ['administrator', 'parent']) ? 'Collected fees' : 'New students' }}</span></div></div><div class="chart-wrap"><canvas id="revenueChart" role="img" aria-label="Monthly trend chart"></canvas></div></section></div>
-    <div class="col-lg-4"><section class="panel h-100"><div class="panel-header"><div class="dashboard-panel-title"><span aria-hidden="true">&#128101;</span><div><h2>Students by gender</h2><p>Different perspectives. Shared possibilities.</p></div></div></div>@php($genderTotal = collect($charts['gender'])->sum())
-        <div class="dashboard-gender">
-            <div class="chart-wrap small">
-                <div class="donut-label"><strong>{{ number_format($genderTotal) }}</strong><span>Students</span></div>
-                <canvas id="genderChart" role="img" aria-label="Student distribution by gender"></canvas>
-            </div>
-            <dl class="dashboard-gender-legend">
-                @foreach([1 => __('Male'), 0 => __('Female'), 2 => __('Other')] as $index => $label)
-                    <div class="dashboard-gender-{{ $index }}">
-                        <dt>{{ $label }}</dt>
-                        <dd>{{ number_format($charts['gender'][$index]) }}</dd>
-                        <dd>{{ number_format($genderTotal ? $charts['gender'][$index] / $genderTotal * 100 : 0, 1) }}%</dd>
-                    </div>
-                @endforeach
-            </dl>
-        </div></section></div>
+    <div class="col-lg-4"><section class="panel h-100"><div class="panel-header"><div><h2>Student attendance report</h2><p>{{ $reportDate->format('l, M d, Y') }} &middot; {{ $attendanceSession ?: 'All sessions' }}</p></div><span class="stat-icon tint-green"><i class="bi bi-check2-circle"></i></span></div><div class="chart-wrap small attendance-donut"><div class="donut-label"><strong>{{ $attendanceCount ? round($presentCount / $attendanceCount * 100) : 0 }}%</strong><span>Present</span></div><canvas id="attendanceChart" role="img" aria-label="Attendance by status for {{ $reportDate->format('M d, Y') }}"></canvas></div><div class="chart-legend">@foreach(['present' => 'Present', 'absent' => 'Absent', 'late' => 'Late', 'excused' => 'Excused'] as $status => $label)<a class="text-reset" href="{{ route('attendance.people', array_filter(['kind' => 'students', 'status' => $status, 'date' => $reportDate->toDateString(), 'session' => $attendanceSession])) }}"><span><b>{{ $charts['attendance'][array_search($status, ['present', 'absent', 'late', 'excused'])] }}</b> {{ $label }}</span></a>@endforeach</div>@if($attendanceCount === 0)<p class="text-secondary text-center small mt-2">No attendance recorded for this date.</p>@endif</section></div>
 </div>
     @if($role === 'administrator' && $reportDate->isToday())
         <div class="dashboard-attendance-actions d-flex flex-wrap gap-2 mb-3">
@@ -192,9 +177,24 @@
 ])
 </div>
 @endif
-<div class="row g-3 mb-3">
+<div class="row g-3 dashboard-feature-row">
     <div class="col-lg-8"><section class="panel h-100"><div class="panel-header"><div><h2>Student enrollment</h2><p>A growing community of bright minds</p></div><span class="date-pill py-1">Last 6 months <i class="bi bi-chevron-down ms-2"></i></span></div><div class="chart-wrap"><canvas id="enrollmentChart" role="img" aria-label="Monthly student enrollment chart"></canvas></div></section></div>
-    <div class="col-lg-4"><section class="panel h-100"><div class="panel-header"><div><h2>Student attendance report</h2><p>{{ $reportDate->format('l, M d, Y') }} &middot; {{ $attendanceSession ?: 'All sessions' }}</p></div><span class="stat-icon tint-green"><i class="bi bi-check2-circle"></i></span></div><div class="chart-wrap small attendance-donut"><div class="donut-label"><strong>{{ $attendanceCount ? round($presentCount / $attendanceCount * 100) : 0 }}%</strong><span>Present</span></div><canvas id="attendanceChart" role="img" aria-label="Attendance by status for {{ $reportDate->format('M d, Y') }}"></canvas></div><div class="chart-legend">@foreach(['present' => 'Present', 'absent' => 'Absent', 'late' => 'Late', 'excused' => 'Excused'] as $status => $label)<a class="text-reset" href="{{ route('attendance.people', array_filter(['kind' => 'students', 'status' => $status, 'date' => $reportDate->toDateString(), 'session' => $attendanceSession])) }}"><span><b>{{ $charts['attendance'][array_search($status, ['present', 'absent', 'late', 'excused'])] }}</b> {{ $label }}</span></a>@endforeach</div>@if($attendanceCount === 0)<p class="text-secondary text-center small mt-2">No attendance recorded for this date.</p>@endif</section></div>
+    <div class="col-lg-4"><section class="panel h-100"><div class="panel-header"><div class="dashboard-panel-title"><span aria-hidden="true">&#128101;</span><div><h2>Students by gender</h2><p>Different perspectives. Shared possibilities.</p></div></div></div>@php($genderTotal = collect($charts['gender'])->sum())
+        <div class="dashboard-gender">
+            <div class="chart-wrap small">
+                <div class="donut-label"><strong>{{ number_format($genderTotal) }}</strong><span>Students</span></div>
+                <canvas id="genderChart" role="img" aria-label="Student distribution by gender"></canvas>
+            </div>
+            <dl class="dashboard-gender-legend">
+                @foreach([1 => __('Male'), 0 => __('Female'), 2 => __('Other')] as $index => $label)
+                    <div class="dashboard-gender-{{ $index }}">
+                        <dt>{{ $label }}</dt>
+                        <dd>{{ number_format($charts['gender'][$index]) }}</dd>
+                        <dd>{{ number_format($genderTotal ? $charts['gender'][$index] / $genderTotal * 100 : 0, 1) }}%</dd>
+                    </div>
+                @endforeach
+            </dl>
+        </div></section></div>
 </div>
 <div class="row g-3 dashboard-feature-row">
     <div class="col-lg-8"><section class="panel h-100"><div class="panel-header"><div class="dashboard-panel-title"><span aria-hidden="true">&#128203;</span><div><h2>Recent registrations</h2><p>The newest faces in our community</p></div></div><a class="text-link" href="{{ route('students.index') }}">View all students <i class="bi bi-arrow-right ms-1"></i></a></div><div class="table-responsive"><table class="table"><thead><tr><th>Student name</th><th>{{ __('Student ID') }}</th><th>{{ __('Class') }}</th><th>Enrolled</th><th>{{ __('Status') }}</th></tr></thead><tbody>@forelse($recent as $student)<tr><td><a href="{{ route('students.show', $student) }}">@include('school.partials.avatar', ['person' => $student])<strong>{{ $student->name }}</strong></a></td><td>{{ $student->student_number }}</td><td>{{ $student->schoolClass->name }} · {{ $student->schoolClass->section }}</td><td>{{ $student->enrollment_date->format('M d, Y') }}</td><td><span class="status-badge {{ $student->status }}">{{ __(ucfirst($student->status)) }}</span></td></tr>@empty<tr><td colspan="5" class="empty-state">No student records yet. {{ auth()->user()->role === 'administrator' ? 'Enroll your first student to get started.' : 'Ask the school office to link your account.' }}</td></tr>@endforelse</tbody></table></div>
