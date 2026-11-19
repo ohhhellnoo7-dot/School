@@ -23,63 +23,35 @@
 
     & .sidebar .brand-dot { display: none; }
     & .sidebar .brand-mark { border-radius: 50%; }
-    & .school-nav a { border-radius: 18px; }
+    & .sidebar .school-nav { gap: 4px; }
+    & .sidebar .school-nav a { min-height: 44px; padding-block: 8px; border-radius: 16px; font-size: .875rem; }
+    & .main-content { padding-top: 14px; padding-inline: clamp(12px, 1.5vw, 25px); }
+    & .topbar { padding-block: 9px; min-height: 62px; }
+    & .topbar > div { gap: 10px !important; }
     & .topbar :is(.portal-search, .profile-link, .btn, summary) { border-radius: 999px; }
     & .topbar .portal-search { flex: 1; max-width: 34rem; }
     & .topbar .breadcrumb-label { display: none; }
     & .profile-link { padding: 4px 12px 4px 4px; background: var(--surface); }
 
     & .school-hero.dashboard-heading {
-        min-height: 155px;
+        min-height: 146px;
         padding: clamp(18px, 2vw, 30px);
         margin-bottom: 12px;
         flex-wrap: wrap;
         gap: 12px;
         background-image: linear-gradient(90deg, var(--hero-overlay-start), var(--hero-overlay-middle) 44%, var(--hero-overlay-end) 88%), var(--dashboard-campus-image, var(--hero-background-image));
-        --hero-overlay-middle: color-mix(in srgb, var(--surface) 88%, transparent);
+        --hero-overlay-middle: color-mix(in srgb, var(--surface) 92%, transparent);
+        background-position: center, right 56%;
+        background-size: cover, max(64%, 520px) auto;
+        border-radius: var(--card-radius);
+        &::after { display: none; }
     }
 
-    & .dashboard-heading h1 { margin: 0 0 6px; font-weight: 800; }
+    & .dashboard-heading h1 { margin: 0 0 6px; font-weight: 800; font-size: clamp(1.55rem, 2.45vw, 2.6rem); }
     & .dashboard-heading p { margin: 0; font-size: 1rem; color: var(--hero-subtitle); }
     & .dashboard-attendance-actions { justify-content: flex-end; }
     & .dashboard-attendance-actions summary { border-radius: 999px; }
 
-    & .dashboard-stat-grid .stat-card {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        min-height: 108px;
-        height: 100%;
-        padding: 14px 14px 14px clamp(62px, 6vw, 94px);
-        border-radius: var(--card-radius, 24px);
-        background: linear-gradient(130deg, var(--surface), color-mix(in srgb, var(--tile, var(--primary)) 15%, var(--surface)));
-        border: 1px solid color-mix(in srgb, var(--tile, var(--primary)) 22%, var(--border-color));
-        box-shadow: var(--dashboard-shadow);
-    }
-
-    & .dashboard-stat-grid .stat-card:is(:hover, :focus-within) { z-index: 2; }
-    & .dashboard-stat-grid .stat-top { padding: 0; font-size: .875rem; }
-    & .dashboard-stat-grid .stat-value {
-        padding: 0;
-        margin: 2px 0 0;
-        font-size: clamp(1.6rem, 3vw, 2.8rem);
-        line-height: 1.05;
-        color: var(--text-primary);
-    }
-
-    & .dashboard-stat-grid .stat-icon {
-        inset: 50% auto auto 10px;
-        translate: 0 -50%;
-        width: clamp(42px, 5vw, 70px);
-        height: clamp(42px, 5vw, 70px);
-        font-size: clamp(26px, 3.5vw, 49px);
-        background: transparent;
-        border: 0;
-        box-shadow: none;
-    }
-
-    & .dashboard-stat-grid .stat-breakdown::before { top: 71%; left: 12px; width: 52px; height: 32px; }
-    & .dashboard-stat-grid .stat-breakdown-menu { top: calc(100% - 2px); left: 0; right: auto; max-width: min(280px, calc(100vw - 32px)); }
     & .dashboard-feature-row { margin-bottom: 14px; }
     & .dashboard-feature-row .panel {
         border-radius: var(--card-radius, 24px);
@@ -90,7 +62,10 @@
     & .dashboard-panel-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
     & .dashboard-panel-title > span { font-size: clamp(1.5rem, 2.7vw, 2.6rem); line-height: 1; }
     & .dashboard-panel-title h2 { font-size: clamp(1.05rem, 1.5vw, 1.4rem); font-weight: 800; }
-    & .dashboard-feature-row .panel-header { flex-wrap: wrap; gap: 8px; }
+    & .dashboard-feature-row .panel-header { flex-wrap: wrap; gap: 8px; padding: 16px 18px 12px; }
+    & .dashboard-feature-row .chart-wrap:not(.small) { height: clamp(190px, 14vw, 235px); padding: 0 16px 14px; }
+    & .dashboard-feature-row .table td { padding-block: 7px; }
+    & .dashboard-feature-row .text-link { color: var(--action); }
     & .dashboard-feature-row .table-responsive { margin-inline: 12px; border-radius: 12px; }
     & .dashboard-feature-row .table thead th {
         background: color-mix(in srgb, var(--dashboard-line) 13%, var(--surface));
@@ -102,6 +77,21 @@
 }
 
 :root[data-theme="light"]:root:root:root:root:root:root:root:root:root .dashboard-page {
+    --app-bg: #eef6f2;
+    --page: #eef6f2;
+    --text-primary: #102d28;
+    --ink: #102d28;
+    --text-secondary: #465f59;
+    --muted: #465f59;
+    --primary: #198549;
+    --accent: #75ba92;
+    --action: #116b3e;
+    --green: #116b3e;
+    --border-color: #d8e8df;
+    --border: #d8e8df;
+    --surface-tint: #eaf5ee;
+    --shadow-color: #173f2e17;
+    --card-radius: 22px;
     --dashboard-line: #128443;
     --dashboard-female: #e54b99;
     --dashboard-male: #168be4;
@@ -116,7 +106,19 @@
     & .sidebar .brand-mark,
     & .sidebar .school-nav a.active { background: linear-gradient(130deg, #138345, #176f49); border-color: #61bd87; }
     & .sidebar .school-switch { background: #ffffff14; border-color: #ffffff30; }
-    & .topbar { background: linear-gradient(105deg, var(--surface), #def2fa); }
+    & .workspace { background: radial-gradient(ellipse at 100% 0, #e2f3f7, transparent 47rem), var(--app-bg); }
+    & .topbar { background: linear-gradient(105deg, var(--surface), #e8f5f7); border-color: var(--border-color); }
+    & .topbar :is(.portal-search, .theme-switcher > summary, .language-switcher > summary, .profile-link, .btn:not(.teacher-scan-shortcut)) {
+        background: var(--surface);
+        color: var(--text-primary);
+        border-color: var(--border-color);
+    }
+    & .topbar .teacher-scan-shortcut {
+        background: linear-gradient(135deg, #16834a, #116b3e);
+        border-color: #116b3e;
+        box-shadow: 0 4px 12px #116b3e35;
+    }
+    & .dashboard-feature-row .panel { background: var(--surface); border-color: var(--border-color); }
 }
 
 .dashboard-gender {
@@ -125,7 +127,7 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 0 14px 16px;
+    padding: 4px 16px 16px;
 }
 
 .dashboard-gender .chart-wrap.small { flex: 1 1 136px; max-width: 205px; height: 168px; padding: 0; }
@@ -148,6 +150,7 @@
 
 @media (max-width: 767px) {
     :root[data-theme]:root:root:root:root:root:root:root:root:root .dashboard-page .school-hero.dashboard-heading {
+        background-size: cover;
         --hero-overlay-end: color-mix(in srgb, var(--surface) 76%, transparent);
     }
 }
@@ -156,9 +159,59 @@
     .dashboard-attendance-actions .attendance-actions { width: 100%; }
     .dashboard-attendance-actions .attendance-action-menu { position: static; width: 100%; max-width: none; margin-top: 8px; }
 
-    :root[data-theme]:root:root:root:root:root:root:root:root:root .dashboard-page .dashboard-stat-grid .stat-card {
-        padding: 12px 10px 12px 52px;
-    }
-    :root[data-theme]:root:root:root:root:root:root:root:root:root .dashboard-page .dashboard-stat-grid .stat-icon { left: 4px; }
-    :root[data-theme]:root:root:root:root:root:root:root:root:root .dashboard-page .dashboard-stat-grid > div:nth-child(even) .stat-breakdown-menu { inset-inline: auto 0; }
+}
+
+/* The overview cards have their own layout. Program menus share the existing interaction. */
+.dashboard-metrics { margin-bottom: 14px; }
+.dashboard-metrics > :nth-child(1) { --metric-tint: var(--theme-tile-1, var(--primary)); }
+.dashboard-metrics > :nth-child(2) { --metric-tint: var(--theme-tile-2, var(--accent)); }
+.dashboard-metrics > :nth-child(3) { --metric-tint: var(--theme-tile-3, var(--primary)); }
+.dashboard-metrics > :nth-child(4) { --metric-tint: var(--theme-tile-4, var(--accent)); }
+.dashboard-metric {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: clamp(8px, 1.3vw, 20px);
+    min-height: 102px;
+    height: 100%;
+    padding: 12px clamp(10px, 1.1vw, 18px);
+    border: 1px solid color-mix(in srgb, var(--metric-tint) 24%, var(--surface));
+    border-radius: var(--card-radius);
+    background: linear-gradient(125deg, var(--surface), color-mix(in srgb, var(--metric-tint) 13%, var(--surface)));
+    box-shadow: 0 5px 16px color-mix(in srgb, var(--metric-tint) 17%, var(--shadow-color));
+}
+.dashboard-metric:is(:hover, :focus-within) { z-index: 2; }
+.dashboard-metric-icon {
+    position: relative;
+    z-index: 1;
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: clamp(36px, 4vw, 64px);
+    aspect-ratio: 1;
+    padding: 0;
+    border: 0;
+    border-radius: 28%;
+    background: color-mix(in srgb, var(--metric-tint) 18%, var(--surface));
+    font-size: clamp(23px, 2.8vw, 43px);
+    line-height: 1;
+}
+.dashboard-metric-icon > span { filter: drop-shadow(0 4px 3px color-mix(in srgb, var(--metric-tint) 32%, transparent)); }
+.dashboard-metric-copy { display: grid; gap: 4px; min-width: 0; }
+.dashboard-metric-copy span { font-size: .875rem; font-weight: 650; color: var(--text-secondary); overflow-wrap: anywhere; }
+.dashboard-metric-copy strong { font-size: clamp(1.5rem, 2.7vw, 2.65rem); line-height: 1; letter-spacing: -.05em; color: var(--text-primary); }
+.dashboard-metrics .dashboard-metric .stat-breakdown-menu {
+    inset: calc(100% - 2px) auto auto 0;
+    max-width: calc(100vw - 32px);
+    background: var(--surface);
+    border-color: var(--border-color);
+}
+.dashboard-metrics .dashboard-metric .stat-breakdown::before { inset: calc(50% + clamp(18px, 2vw, 32px)) auto 0 12px; width: 64px; height: auto; }
+.dashboard-metrics .dashboard-metric .stat-breakdown-menu::before { left: 28px; right: auto; background: var(--surface); }
+.dashboard-metrics > :last-child .dashboard-metric .stat-breakdown-menu { inset-inline: auto 0; }
+.dashboard-metrics > :last-child .dashboard-metric .stat-breakdown-menu::before { display: none; }
+
+@media (max-width: 767px) {
+    .dashboard-metrics > :nth-child(even) .dashboard-metric .stat-breakdown-menu { inset-inline: auto 0; }
+    .dashboard-metrics > :nth-child(even) .dashboard-metric .stat-breakdown-menu::before { display: none; }
 }

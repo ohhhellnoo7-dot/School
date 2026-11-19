@@ -18,12 +18,12 @@
     <div><h1>Good {{ now('Asia/Phnom_Penh')->hour < 12 ? 'morning' : (now('Asia/Phnom_Penh')->hour < 18 ? 'afternoon' : 'evening') }}, {{ auth()->user()->name }} <span aria-hidden="true">&#128075;</span></h1><p>Here's what's happening at Greenfield Academy today.</p></div>
 </x-scholar-hero>
 
-<div class="row g-3 dashboard-stat-grid">
-    @foreach([[$studentLabel, $studentCount, 'people', 'green', '🎓'], [$teacherLabel, $teacherCount, 'person-workspace', 'blue', '👨‍🏫'], [$classLabel, $classCount, 'building', 'orange', '🏫'], [$subjectLabel, $subjectCount, 'book', 'purple', '📚']] as [$label, $value, $icon, $color, $illustration])
-    <div class="col-6 col-xl-3"><div class="stat-card stat-card-{{ $color }}"><div class="stat-top"><span>{{ __($label) }}</span>
+<div class="row g-3 dashboard-metrics">
+    @foreach([[$studentLabel, $studentCount, 'people', '🎓'], [$teacherLabel, $teacherCount, 'person-workspace', '👨‍🏫'], [$classLabel, $classCount, 'building', '🏫'], [$subjectLabel, $subjectCount, 'book', '📚']] as [$label, $value, $icon, $illustration])
+    <div class="col-6 col-md-3"><div class="dashboard-metric">
         @if(isset($programBreakdowns[$icon]))
             <div class="stat-breakdown">
-                <button type="button" class="stat-icon tint-{{ $color }} stat-breakdown-trigger" aria-label="{{ __($label) }} by program" aria-describedby="breakdown-{{ $icon }}"><span aria-hidden="true">{{ $illustration }}</span></button>
+                <button type="button" class="dashboard-metric-icon stat-breakdown-trigger" aria-label="{{ __($label) }} by program" aria-describedby="breakdown-{{ $icon }}"><span aria-hidden="true">{{ $illustration }}</span></button>
                 <div class="stat-breakdown-menu" id="breakdown-{{ $icon }}">
                     <div class="breakdown-heading"><span class="breakdown-eyebrow">PROGRAM BREAKDOWN</span><strong>{{ __($label) }} by program</strong><span class="breakdown-subtitle">Current school data</span></div>
                     <dl class="mb-0">
@@ -42,9 +42,9 @@
                 </div>
             </div>
         @else
-            <span class="stat-icon tint-{{ $color }}"><span aria-hidden="true">{{ $illustration }}</span></span>
+            <span class="dashboard-metric-icon"><span aria-hidden="true">{{ $illustration }}</span></span>
         @endif
-    </div><div class="stat-value">{{ number_format($value) }}</div></div></div>
+    <div class="dashboard-metric-copy"><span>{{ __($label) }}</span><strong>{{ number_format($value) }}</strong></div></div></div>
     @endforeach
 </div>
 <div class="row g-3 dashboard-feature-row">

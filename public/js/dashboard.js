@@ -13,12 +13,12 @@
         if (typeof Chart === 'undefined') return;
         latestPayload = payload;
         const night = document.documentElement.dataset.bsTheme === 'dark';
-        const palette = getComputedStyle(document.documentElement);
+        const palette = getComputedStyle(content);
         const color = (name, fallback) => palette.getPropertyValue('--chart-' + name).trim() || fallback;
         const data = payload.charts;
         Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
         Chart.defaults.font.size = 11;
-        Chart.defaults.color = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#98a4ab';
+        Chart.defaults.color = palette.getPropertyValue('--muted').trim() || '#98a4ab';
         const axes = () => ({x: {grid: {display: false}, border: {display: false}}, y: {beginAtZero: true, grid: {color: color('grid', night ? '#a7b7d225' : '#83909825')}, border: {display: false}, ticks: {maxTicksLimit: 5, precision: 0}}});
         const create = (id, config) => {
             const canvas = document.getElementById(id);
@@ -31,8 +31,7 @@
         const teacherValues = data.teacherAttendance || [0, 0, 0, 0];
         const teacherTotal = teacherValues.reduce((sum, value) => sum + value, 0);
         create('teacherAttendanceChart', {type: 'doughnut', data: {labels: teacherTotal ? ['Present', 'Absent', 'Late', 'Excused'] : ['No records'], datasets: [{data: teacherTotal ? teacherValues : [1], backgroundColor: teacherTotal ? ['#329c7c', '#d45669', '#c68b25', '#8d96af'] : ['#dce5e2'], borderWidth: 0}]}, options: {...options, cutout: '77%', plugins: {legend: {display: false}, tooltip: {enabled: teacherTotal > 0}}}});
-        const dashboardPalette = getComputedStyle(content);
-        const dashboardColor = (name, fallback) => dashboardPalette.getPropertyValue('--dashboard-' + name).trim() || fallback;
+        const dashboardColor = (name, fallback) => palette.getPropertyValue('--dashboard-' + name).trim() || fallback;
         const trendColor = dashboardColor('line', '#128443');
         create('revenueChart', {
             type: 'line',

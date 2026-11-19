@@ -29,12 +29,16 @@
 <link href="{{ asset('css/teacher-attendance.css') }}?v={{ filemtime(public_path('css/teacher-attendance.css')) }}" rel="stylesheet">
 @endif
 @if(request()->routeIs('students.index'))<link href="{{ asset('css/student-attendance-workspace.css') }}?v={{ filemtime(public_path('css/student-attendance-workspace.css')) }}" rel="stylesheet">@endif
+@if(request()->routeIs('dashboard'))
+    <link href="{{ asset('css/dashboard-report.css') }}?v={{ filemtime(public_path('css/dashboard-report.css')) }}" rel="stylesheet">
+    <link href="{{ asset('css/dashboard-campus.css') }}?v={{ filemtime(public_path('css/dashboard-campus.css')) }}" rel="stylesheet">
+@endif
 <script src="{{ asset('js/hover-menus.js') }}?v={{ filemtime(public_path('js/hover-menus.js')) }}"></script>
 <style>
 html[data-hover-menus=off] .stat-breakdown:not(.is-open) .stat-breakdown-menu,
 html[data-hover-menus=off] .building-picker:not(.is-open) .building-options,
 html[data-hover-menus=off] .program-picker:not(.is-open) .program-options { display:none!important; }
-.stat-card .stat-breakdown.is-open .stat-breakdown-menu { display:block; }
+.dashboard-metric .stat-breakdown.is-open .stat-breakdown-menu { display:block; }
 a.attendance-status-tile { text-decoration:none; color:inherit; }
 a.attendance-status-tile:hover, a.attendance-status-tile:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
 .topbar .teacher-scan-shortcut { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-width:42px; min-height:42px; flex-shrink:0; padding:9px 12px; border:1px solid var(--border-color); border-radius:12px; background:var(--primary); color:#fff; font-size:12px; font-weight:700; text-decoration:none; }

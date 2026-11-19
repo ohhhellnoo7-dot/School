@@ -1,8 +1,6 @@
 @extends('school.layout')
 @section('title', auth()->user()->role === 'student' ? 'My school day' : 'Overview')
 @section('content')
-<link href="{{ asset('css/dashboard-report.css') }}?v={{ filemtime(public_path('css/dashboard-report.css')) }}" rel="stylesheet">
-<link href="{{ asset('css/dashboard-campus.css') }}?v={{ filemtime(public_path('css/dashboard-campus.css')) }}" rel="stylesheet">
 <div id="dashboard-content" data-url="{{ route('dashboard.data') }}" aria-busy="false">
     @include('school.partials.dashboard-content')
 </div>
