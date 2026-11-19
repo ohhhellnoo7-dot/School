@@ -163,7 +163,7 @@ class DashboardAjaxTest extends TestCase
         $this->travelTo(now()->setDate(2026, 10, 26)->startOfDay());
         $this->seed(SchoolSeeder::class);
         $this->actingAs(User::where('role', 'administrator')->firstOrFail());
-        $this->get('/dashboard')->assertOk()->assertSee('dashboard-refresh')->assertSee('School-wide totals');
+        $this->get('/dashboard')->assertOk()->assertSee('dashboard-refresh')->assertDontSee('School-wide totals');
         $this->getJson('/dashboard/data')->assertOk()
             ->assertJsonPath('summary.studentCount', Student::count())
             ->assertJsonPath('summary.teacherCount', User::where('role', 'teacher')->count())

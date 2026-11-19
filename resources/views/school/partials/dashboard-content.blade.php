@@ -8,7 +8,7 @@
     $classLabel = match ($role) { 'administrator' => 'Total classes', 'parent' => $childrenLabel.' classes', default => 'My classes' };
     $subjectLabel = match ($role) { 'administrator' => 'Total subjects', 'parent' => $childrenLabel.' subjects', default => 'My subjects' };
     $studentLabel = match ($role) { 'administrator' => 'Total students', 'teacher' => 'Students in my classes', 'parent' => 'My children', default => 'My student profile' };
-    $scope = match ($role) { 'administrator' => 'School-wide totals from the current database.', 'teacher' => 'These figures cover your assigned classes and subjects.', 'parent' => 'These figures cover your linked children and their classes.', default => 'These figures cover your linked student profile and class.' };
+    $scope = match ($role) { 'administrator' => null, 'teacher' => 'These figures cover your assigned classes and subjects.', 'parent' => 'These figures cover your linked children and their classes.', default => 'These figures cover your linked student profile and class.' };
 @endphp
 
 @if($role !== 'administrator' && $studentCount === 0)
@@ -47,7 +47,9 @@
     <div class="dashboard-metric-copy"><span>{{ __($label) }}</span><strong>{{ number_format($value) }}</strong></div></div></div>
     @endforeach
 </div>
+@if($scope)
 <p class="dashboard-scope">{{ $scope }}</p>
+@endif
 <div class="mini-stats">
     <div class="mini-stat"><i class="bi bi-calendar2-check"></i><div><small>Present students</small><strong>{{ $presentCount }} <span class="fw-normal text-secondary" style="font-size:10px">/ {{ $attendanceCount }} recorded</span></strong></div></div>
     @if(in_array(auth()->user()->role, ['administrator', 'parent']))
