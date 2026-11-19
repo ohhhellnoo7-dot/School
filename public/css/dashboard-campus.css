@@ -50,7 +50,7 @@
 
     & .dashboard-heading h1 { margin: 0 0 6px; font-weight: 800; font-size: clamp(1.55rem, 2.45vw, 2.6rem); }
     & .dashboard-heading p { margin: 0; font-size: 1rem; color: var(--hero-subtitle); }
-    & .dashboard-attendance-actions { justify-content: flex-end; }
+    & .dashboard-attendance-actions { justify-content: flex-end; margin-inline-start: auto; }
     & .dashboard-attendance-actions summary { border-radius: 999px; }
 
     & .dashboard-feature-row { margin-bottom: 14px; }
@@ -151,6 +151,7 @@
 
 @media (max-width: 767px) {
     :root[data-theme]:root:root:root:root:root:root:root:root:root .dashboard-page .school-hero.dashboard-heading {
+        & .dashboard-attendance-actions { margin-inline-start: 0; justify-content: flex-start; }
         --dashboard-hero-tint: color-mix(in srgb, var(--surface) 88%, transparent);
         --hero-overlay-middle: var(--dashboard-hero-tint);
         --hero-overlay-end: color-mix(in srgb, var(--surface) 76%, transparent);

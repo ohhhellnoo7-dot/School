@@ -16,57 +16,8 @@
 @endif
 <x-scholar-hero tag="div" class="page-heading dashboard-heading school-hero">
     <div><h1>Good {{ now('Asia/Phnom_Penh')->hour < 12 ? 'morning' : (now('Asia/Phnom_Penh')->hour < 18 ? 'afternoon' : 'evening') }}, {{ auth()->user()->name }} <span aria-hidden="true">&#128075;</span></h1><p>Here's what's happening at Greenfield Academy today.</p></div>
-</x-scholar-hero>
-
-<div class="row g-3 dashboard-metrics">
-    @foreach([[$studentLabel, $studentCount, 'people', '🎓'], [$teacherLabel, $teacherCount, 'person-workspace', '👨‍🏫'], [$classLabel, $classCount, 'building', '🏫'], [$subjectLabel, $subjectCount, 'book', '📚']] as [$label, $value, $icon, $illustration])
-    <div class="col-6 col-md-3"><div class="dashboard-metric">
-        @if(isset($programBreakdowns[$icon]))
-            <div class="stat-breakdown">
-                <button type="button" class="dashboard-metric-icon stat-breakdown-trigger" aria-label="{{ __($label) }} by program" aria-describedby="breakdown-{{ $icon }}"><span aria-hidden="true">{{ $illustration }}</span></button>
-                <div class="stat-breakdown-menu" id="breakdown-{{ $icon }}">
-                    <div class="breakdown-heading"><span class="breakdown-eyebrow">PROGRAM BREAKDOWN</span><strong>{{ __($label) }} by program</strong><span class="breakdown-subtitle">Current school data</span></div>
-                    <dl class="mb-0">
-                        @foreach($programBreakdowns[$icon] as $program => $count)
-                            @php($share = array_sum($programBreakdowns[$icon]) ? round($count / array_sum($programBreakdowns[$icon]) * 100) : 0)
-                            <div class="breakdown-program breakdown-program-{{ strtolower($program) }}">
-                                <dt><span class="breakdown-dot" aria-hidden="true"></span>{{ __($program) }}</dt>
-                                <dd>{{ number_format($count) }}</dd>
-                                <div class="breakdown-track" aria-hidden="true"><span style="width: {{ $share }}%"></span></div>
-                            </div>
-                        @endforeach
-                    </dl>
-                    @if(in_array($icon, ['building', 'book']))
-                        <p class="small text-secondary border-top pt-2 mt-2 mb-0">{{ $icon === 'building' ? 'Unique grades and sections per program.' : 'Unique subject names per program.' }} Shared {{ $icon === 'building' ? 'classes' : 'subjects' }} count in each program.</p>
-                    @endif
-                </div>
-            </div>
-        @else
-            <span class="dashboard-metric-icon"><span aria-hidden="true">{{ $illustration }}</span></span>
-        @endif
-    <div class="dashboard-metric-copy"><span>{{ __($label) }}</span><strong>{{ number_format($value) }}</strong></div></div></div>
-    @endforeach
-</div>
-@if($scope)
-<p class="dashboard-scope">{{ $scope }}</p>
-@endif
-<div class="mini-stats">
-    <div class="mini-stat"><i class="bi bi-calendar2-check"></i><div><small>Present students</small><strong>{{ $presentCount }} <span class="fw-normal text-secondary" style="font-size:10px">/ {{ $attendanceCount }} recorded</span></strong></div></div>
-    @if(in_array(auth()->user()->role, ['administrator', 'parent']))
-    <div class="mini-stat"><i class="bi bi-cash-stack"></i><div><small>Fees collected · USD</small><strong>${{ number_format($collected, 2) }}</strong></div></div>
-    <div class="mini-stat"><i class="bi bi-hourglass-split"></i><div><small>Pending payments · USD</small><strong>${{ number_format($pending, 2) }}</strong></div></div>
-    @else
-    <div class="mini-stat"><i class="bi bi-journal-text"></i><div><small>Learning resources</small><a href="{{ route('modules.index', 'assignments') }}">View assignments <i class="bi bi-arrow-up-right"></i></a></div></div>
-    <div class="mini-stat"><i class="bi bi-clock"></i><div><small>Your school week</small><a href="{{ route('modules.index', 'schedules') }}">View timetable <i class="bi bi-arrow-up-right"></i></a></div></div>
-    @endif
-    <div class="mini-stat"><i class="bi bi-person-dash"></i><div><small>Absent students</small><strong>{{ $absentCount }}</strong></div></div>
-</div>
-<div class="row g-3 dashboard-feature-row">
-    <div class="col-lg-8"><section class="panel h-100"><div class="panel-header"><div class="dashboard-panel-title"><span aria-hidden="true">&#129689;</span><div><h2>{{ in_array(auth()->user()->role, ['administrator', 'parent']) ? 'Monthly revenue' : 'Enrollment trend' }}</h2><p>{{ in_array(auth()->user()->role, ['administrator', 'parent']) ? 'Recorded fee payments · USD' : 'New students joining your classes' }}</p></div></div><div class="chart-key"><span>{{ in_array(auth()->user()->role, ['administrator', 'parent']) ? 'Collected fees' : 'New students' }}</span></div></div><div class="chart-wrap"><canvas id="revenueChart" role="img" aria-label="Monthly trend chart"></canvas></div></section></div>
-    <div class="col-lg-4"><section class="panel h-100"><div class="panel-header"><div><h2>Student attendance report</h2><p>{{ $reportDate->format('l, M d, Y') }} &middot; {{ $attendanceSession ?: 'All sessions' }}</p></div><span class="stat-icon tint-green"><i class="bi bi-check2-circle"></i></span></div><div class="chart-wrap small attendance-donut"><div class="donut-label"><strong>{{ $attendanceCount ? round($presentCount / $attendanceCount * 100) : 0 }}%</strong><span>Present</span></div><canvas id="attendanceChart" role="img" aria-label="Attendance by status for {{ $reportDate->format('M d, Y') }}"></canvas></div><div class="chart-legend">@foreach(['present' => 'Present', 'absent' => 'Absent', 'late' => 'Late', 'excused' => 'Excused'] as $status => $label)<a class="text-reset" href="{{ route('attendance.people', array_filter(['kind' => 'students', 'status' => $status, 'date' => $reportDate->toDateString(), 'session' => $attendanceSession])) }}"><span><b>{{ $charts['attendance'][array_search($status, ['present', 'absent', 'late', 'excused'])] }}</b> {{ $label }}</span></a>@endforeach</div>@if($attendanceCount === 0)<p class="text-secondary text-center small mt-2">No attendance recorded for this date.</p>@endif</section></div>
-</div>
     @if($role === 'administrator' && $reportDate->isToday())
-        <div class="dashboard-attendance-actions d-flex flex-wrap gap-2 mb-3">
+        <div class="dashboard-attendance-actions d-flex flex-wrap gap-2">
         <details class="attendance-actions">
             <summary class="btn btn-primary"><i class="bi bi-check2-all me-2" aria-hidden="true"></i>Teacher attendance <i class="bi bi-chevron-down ms-2" aria-hidden="true"></i></summary>
             <div class="attendance-action-menu">
@@ -136,6 +87,51 @@
         </details>
         </div>
     @endif
+</x-scholar-hero>
+
+<div class="row g-3 dashboard-metrics">
+    @foreach([[$studentLabel, $studentCount, 'people', '🎓'], [$teacherLabel, $teacherCount, 'person-workspace', '👨‍🏫'], [$classLabel, $classCount, 'building', '🏫'], [$subjectLabel, $subjectCount, 'book', '📚']] as [$label, $value, $icon, $illustration])
+    <div class="col-6 col-md-3"><div class="dashboard-metric">
+        @if(isset($programBreakdowns[$icon]))
+            <div class="stat-breakdown">
+                <button type="button" class="dashboard-metric-icon stat-breakdown-trigger" aria-label="{{ __($label) }} by program" aria-describedby="breakdown-{{ $icon }}"><span aria-hidden="true">{{ $illustration }}</span></button>
+                <div class="stat-breakdown-menu" id="breakdown-{{ $icon }}">
+                    <div class="breakdown-heading"><span class="breakdown-eyebrow">PROGRAM BREAKDOWN</span><strong>{{ __($label) }} by program</strong><span class="breakdown-subtitle">Current school data</span></div>
+                    <dl class="mb-0">
+                        @foreach($programBreakdowns[$icon] as $program => $count)
+                            @php($share = array_sum($programBreakdowns[$icon]) ? round($count / array_sum($programBreakdowns[$icon]) * 100) : 0)
+                            <div class="breakdown-program breakdown-program-{{ strtolower($program) }}">
+                                <dt><span class="breakdown-dot" aria-hidden="true"></span>{{ __($program) }}</dt>
+                                <dd>{{ number_format($count) }}</dd>
+                                <div class="breakdown-track" aria-hidden="true"><span style="width: {{ $share }}%"></span></div>
+                            </div>
+                        @endforeach
+                    </dl>
+                    @if(in_array($icon, ['building', 'book']))
+                        <p class="small text-secondary border-top pt-2 mt-2 mb-0">{{ $icon === 'building' ? 'Unique grades and sections per program.' : 'Unique subject names per program.' }} Shared {{ $icon === 'building' ? 'classes' : 'subjects' }} count in each program.</p>
+                    @endif
+                </div>
+            </div>
+        @else
+            <span class="dashboard-metric-icon"><span aria-hidden="true">{{ $illustration }}</span></span>
+        @endif
+    <div class="dashboard-metric-copy"><span>{{ __($label) }}</span><strong>{{ number_format($value) }}</strong></div></div></div>
+    @endforeach
+</div>
+@if($scope)
+<p class="dashboard-scope">{{ $scope }}</p>
+@endif
+<div class="mini-stats">
+    <div class="mini-stat"><i class="bi bi-calendar2-check"></i><div><small>Present students</small><strong>{{ $presentCount }} <span class="fw-normal text-secondary" style="font-size:10px">/ {{ $attendanceCount }} recorded</span></strong></div></div>
+    @if(in_array(auth()->user()->role, ['administrator', 'parent']))
+    <div class="mini-stat"><i class="bi bi-cash-stack"></i><div><small>Fees collected · USD</small><strong>${{ number_format($collected, 2) }}</strong></div></div>
+    <div class="mini-stat"><i class="bi bi-hourglass-split"></i><div><small>Pending payments · USD</small><strong>${{ number_format($pending, 2) }}</strong></div></div>
+    @else
+    <div class="mini-stat"><i class="bi bi-journal-text"></i><div><small>Learning resources</small><a href="{{ route('modules.index', 'assignments') }}">View assignments <i class="bi bi-arrow-up-right"></i></a></div></div>
+    <div class="mini-stat"><i class="bi bi-clock"></i><div><small>Your school week</small><a href="{{ route('modules.index', 'schedules') }}">View timetable <i class="bi bi-arrow-up-right"></i></a></div></div>
+    @endif
+    <div class="mini-stat"><i class="bi bi-person-dash"></i><div><small>Absent students</small><strong>{{ $absentCount }}</strong></div></div>
+</div>
 <section class="attendance-toolbar" aria-label="Daily attendance report filters">
     <div class="attendance-toolbar-title">
         <span class="attendance-toolbar-icon"><i class="bi bi-calendar2-week" aria-hidden="true"></i></span>
@@ -162,6 +158,10 @@
         <button type="submit" class="btn btn-primary attendance-view-button">View report <i class="bi bi-arrow-right ms-2" aria-hidden="true"></i></button>
     </form>
 </section>
+<div class="row g-3 dashboard-feature-row">
+    <div class="col-lg-8"><section class="panel h-100"><div class="panel-header"><div class="dashboard-panel-title"><span aria-hidden="true">&#129689;</span><div><h2>{{ in_array(auth()->user()->role, ['administrator', 'parent']) ? 'Monthly revenue' : 'Enrollment trend' }}</h2><p>{{ in_array(auth()->user()->role, ['administrator', 'parent']) ? 'Recorded fee payments · USD' : 'New students joining your classes' }}</p></div></div><div class="chart-key"><span>{{ in_array(auth()->user()->role, ['administrator', 'parent']) ? 'Collected fees' : 'New students' }}</span></div></div><div class="chart-wrap"><canvas id="revenueChart" role="img" aria-label="Monthly trend chart"></canvas></div></section></div>
+    <div class="col-lg-4"><section class="panel h-100"><div class="panel-header"><div><h2>Student attendance report</h2><p>{{ $reportDate->format('l, M d, Y') }} &middot; {{ $attendanceSession ?: 'All sessions' }}</p></div><span class="stat-icon tint-green"><i class="bi bi-check2-circle"></i></span></div><div class="chart-wrap small attendance-donut"><div class="donut-label"><strong>{{ $attendanceCount ? round($presentCount / $attendanceCount * 100) : 0 }}%</strong><span>Present</span></div><canvas id="attendanceChart" role="img" aria-label="Attendance by status for {{ $reportDate->format('M d, Y') }}"></canvas></div><div class="chart-legend">@foreach(['present' => 'Present', 'absent' => 'Absent', 'late' => 'Late', 'excused' => 'Excused'] as $status => $label)<a class="text-reset" href="{{ route('attendance.people', array_filter(['kind' => 'students', 'status' => $status, 'date' => $reportDate->toDateString(), 'session' => $attendanceSession])) }}"><span><b>{{ $charts['attendance'][array_search($status, ['present', 'absent', 'late', 'excused'])] }}</b> {{ $label }}</span></a>@endforeach</div>@if($attendanceCount === 0)<p class="text-secondary text-center small mt-2">No attendance recorded for this date.</p>@endif</section></div>
+</div>
 @if(auth()->user()->role === 'administrator')
 <div class="mb-4">
 @include('school.attendance._workspace', [
