@@ -47,6 +47,18 @@
     <div class="dashboard-metric-copy"><span>{{ __($label) }}</span><strong>{{ number_format($value) }}</strong></div></div></div>
     @endforeach
 </div>
+<p class="dashboard-scope">{{ $scope }}</p>
+<div class="mini-stats">
+    <div class="mini-stat"><i class="bi bi-calendar2-check"></i><div><small>Present students</small><strong>{{ $presentCount }} <span class="fw-normal text-secondary" style="font-size:10px">/ {{ $attendanceCount }} recorded</span></strong></div></div>
+    @if(in_array(auth()->user()->role, ['administrator', 'parent']))
+    <div class="mini-stat"><i class="bi bi-cash-stack"></i><div><small>Fees collected · USD</small><strong>${{ number_format($collected, 2) }}</strong></div></div>
+    <div class="mini-stat"><i class="bi bi-hourglass-split"></i><div><small>Pending payments · USD</small><strong>${{ number_format($pending, 2) }}</strong></div></div>
+    @else
+    <div class="mini-stat"><i class="bi bi-journal-text"></i><div><small>Learning resources</small><a href="{{ route('modules.index', 'assignments') }}">View assignments <i class="bi bi-arrow-up-right"></i></a></div></div>
+    <div class="mini-stat"><i class="bi bi-clock"></i><div><small>Your school week</small><a href="{{ route('modules.index', 'schedules') }}">View timetable <i class="bi bi-arrow-up-right"></i></a></div></div>
+    @endif
+    <div class="mini-stat"><i class="bi bi-person-dash"></i><div><small>Absent students</small><strong>{{ $absentCount }}</strong></div></div>
+</div>
 <div class="row g-3 dashboard-feature-row">
     <div class="col-lg-8"><section class="panel h-100"><div class="panel-header"><div class="dashboard-panel-title"><span aria-hidden="true">&#129689;</span><div><h2>{{ in_array(auth()->user()->role, ['administrator', 'parent']) ? 'Monthly revenue' : 'Enrollment trend' }}</h2><p>{{ in_array(auth()->user()->role, ['administrator', 'parent']) ? 'Recorded fee payments · USD' : 'New students joining your classes' }}</p></div></div><div class="chart-key"><span>{{ in_array(auth()->user()->role, ['administrator', 'parent']) ? 'Collected fees' : 'New students' }}</span></div></div><div class="chart-wrap"><canvas id="revenueChart" role="img" aria-label="Monthly trend chart"></canvas></div></section></div>
     <div class="col-lg-4"><section class="panel h-100"><div class="panel-header"><div class="dashboard-panel-title"><span aria-hidden="true">&#128101;</span><div><h2>Students by gender</h2><p>Different perspectives. Shared possibilities.</p></div></div></div>@php($genderTotal = collect($charts['gender'])->sum())
@@ -65,18 +77,6 @@
                 @endforeach
             </dl>
         </div></section></div>
-</div>
-<p class="dashboard-scope">{{ $scope }}</p>
-<div class="mini-stats">
-    <div class="mini-stat"><i class="bi bi-calendar2-check"></i><div><small>Present students</small><strong>{{ $presentCount }} <span class="fw-normal text-secondary" style="font-size:10px">/ {{ $attendanceCount }} recorded</span></strong></div></div>
-    @if(in_array(auth()->user()->role, ['administrator', 'parent']))
-    <div class="mini-stat"><i class="bi bi-cash-stack"></i><div><small>Fees collected · USD</small><strong>${{ number_format($collected, 2) }}</strong></div></div>
-    <div class="mini-stat"><i class="bi bi-hourglass-split"></i><div><small>Pending payments · USD</small><strong>${{ number_format($pending, 2) }}</strong></div></div>
-    @else
-    <div class="mini-stat"><i class="bi bi-journal-text"></i><div><small>Learning resources</small><a href="{{ route('modules.index', 'assignments') }}">View assignments <i class="bi bi-arrow-up-right"></i></a></div></div>
-    <div class="mini-stat"><i class="bi bi-clock"></i><div><small>Your school week</small><a href="{{ route('modules.index', 'schedules') }}">View timetable <i class="bi bi-arrow-up-right"></i></a></div></div>
-    @endif
-    <div class="mini-stat"><i class="bi bi-person-dash"></i><div><small>Absent students</small><strong>{{ $absentCount }}</strong></div></div>
 </div>
     @if($role === 'administrator' && $reportDate->isToday())
         <div class="dashboard-attendance-actions d-flex flex-wrap gap-2 mb-3">
