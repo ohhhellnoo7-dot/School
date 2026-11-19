@@ -186,9 +186,14 @@
                 <canvas id="genderChart" role="img" aria-label="Student distribution by gender"></canvas>
             </div>
             <dl class="dashboard-gender-legend">
-                @foreach([1 => __('Male'), 0 => __('Female'), 2 => __('Other')] as $index => $label)
+                @foreach([1 => [__('Male'), 'bi-gender-male'], 0 => [__('Female'), 'bi-gender-female'], 2 => [__('Other'), null]] as $index => [$label, $icon])
                     <div class="dashboard-gender-{{ $index }}">
-                        <dt>{{ $label }}</dt>
+                        <dt>
+                            <span class="dashboard-gender-marker" aria-hidden="true">
+                                @if($icon)<i class="bi {{ $icon }}"></i>@endif
+                            </span>
+                            {{ $label }}
+                        </dt>
                         <dd>{{ number_format($charts['gender'][$index]) }}</dd>
                         <dd>{{ number_format($genderTotal ? $charts['gender'][$index] / $genderTotal * 100 : 0, 1) }}%</dd>
                     </div>

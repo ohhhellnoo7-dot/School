@@ -143,7 +143,8 @@
     color: var(--text-primary);
 }
 .dashboard-gender-legend dt { display: flex; align-items: center; gap: 6px; }
-.dashboard-gender-legend dt::before { content: ''; width: 9px; height: 9px; flex-shrink: 0; border-radius: 50%; background: var(--gender-color); }
+.dashboard-gender-marker { display: inline-grid; place-items: center; width: 1em; flex-shrink: 0; color: var(--gender-color); line-height: 1; }
+.dashboard-gender-2 .dashboard-gender-marker::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
 .dashboard-gender-legend dd { margin: 0; font-variant-numeric: tabular-nums; }
 .dashboard-gender-0 { --gender-color: var(--dashboard-female); }
 .dashboard-gender-1 { --gender-color: var(--dashboard-male); }
