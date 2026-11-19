@@ -31,8 +31,43 @@
         const teacherValues = data.teacherAttendance || [0, 0, 0, 0];
         const teacherTotal = teacherValues.reduce((sum, value) => sum + value, 0);
         create('teacherAttendanceChart', {type: 'doughnut', data: {labels: teacherTotal ? ['Present', 'Absent', 'Late', 'Excused'] : ['No records'], datasets: [{data: teacherTotal ? teacherValues : [1], backgroundColor: teacherTotal ? ['#329c7c', '#d45669', '#c68b25', '#8d96af'] : ['#dce5e2'], borderWidth: 0}]}, options: {...options, cutout: '77%', plugins: {legend: {display: false}, tooltip: {enabled: teacherTotal > 0}}}});
-        create('revenueChart', {type: 'bar', data: {labels: data.labels, datasets: [{label: payload.showRevenue ? 'Collected (USD)' : 'New students', data: payload.showRevenue ? data.revenue : data.enrollment, backgroundColor: data.labels.map((_, index) => color(index === data.labels.length - 1 ? 'bar-active' : 'bar', index === data.labels.length - 1 ? (night ? '#71d6b0' : '#329c7c') : (night ? '#315f60' : '#d9eee4'))), borderRadius: 5, maxBarThickness: 32}]}, options: {...options, scales: axes()}});
-        doughnut('genderChart', ['Female', 'Male', 'Other'], data.gender, [color('female', '#a6b9e8'), color('male', '#55a38c'), color('other', '#e8cc91')]);
+        const dashboardPalette = getComputedStyle(content);
+        const dashboardColor = (name, fallback) => dashboardPalette.getPropertyValue('--dashboard-' + name).trim() || fallback;
+        const trendColor = dashboardColor('line', '#128443');
+        create('revenueChart', {
+            type: 'line',
+            data: {labels: data.labels, datasets: [{
+                label: payload.showRevenue ? 'Collected (USD)' : 'New students',
+                data: payload.showRevenue ? data.revenue : data.enrollment,
+                borderColor: trendColor,
+                backgroundColor: ({chart}) => {
+                    if (!chart.chartArea) return 'transparent';
+                    const gradient = chart.ctx.createLinearGradient(0, chart.chartArea.top, 0, chart.chartArea.bottom);
+                    gradient.addColorStop(0, `color-mix(in srgb, ${trendColor} 45%, transparent)`);
+                    gradient.addColorStop(1, 'transparent');
+                    return gradient;
+                },
+                fill: true,
+                tension: .35,
+                cubicInterpolationMode: 'monotone',
+                borderWidth: 3,
+                pointRadius: 4,
+                pointBackgroundColor: trendColor,
+                pointBorderColor: palette.getPropertyValue('--surface').trim() || '#fff',
+                pointBorderWidth: 2,
+            }]},
+            options: {...options, scales: axes()},
+        });
+        const genderColors = [dashboardColor('female', '#e54b99'), dashboardColor('male', '#168be4'), dashboardColor('other', '#8060d6')];
+        if (data.gender.some(Boolean)) {
+            doughnut('genderChart', ['Female', 'Male', 'Other'], data.gender, genderColors);
+        } else {
+            create('genderChart', {
+                type: 'doughnut',
+                data: {datasets: [{data: [1], backgroundColor: palette.getPropertyValue('--border-color').trim(), borderWidth: 0}]},
+                options: {...options, cutout: '77%', events: []},
+            });
+        }
     }
 
     async function refresh() {
