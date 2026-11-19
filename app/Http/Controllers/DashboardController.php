@@ -217,6 +217,10 @@ class DashboardController extends Controller
 
     public function reports(Request $request)
     {
+        if ($request->user()->role === 'teacher') {
+            return redirect()->route('teacher-attendance.monthly', $request->only(['date', 'month', 'session']));
+        }
+
         abort_unless($request->user()->role === 'administrator', 403);
         $classes = SchoolClass::withCount('students')->with('teacher')->get();
         $date = $request->validate(['date' => 'nullable|date'])['date'] ?? today()->toDateString();

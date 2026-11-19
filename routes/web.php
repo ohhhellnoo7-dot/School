@@ -95,7 +95,7 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
     Route::get('/teacher-attendance/monthly', [\App\Http\Controllers\TeacherAttendanceController::class, 'monthly'])->name('teacher-attendance.monthly');
     Route::get('/teacher-attendance', [\App\Http\Controllers\TeacherAttendanceController::class, 'index'])->name('teacher-attendance.index');
     Route::post('/teacher-attendance', [\App\Http\Controllers\TeacherAttendanceController::class, 'store'])->middleware('role:administrator')->name('teacher-attendance.store');
-    Route::get('/reports', [DashboardController::class, 'reports'])->middleware('role:administrator')->name('reports');
+    Route::get('/reports', [DashboardController::class, 'reports'])->middleware('role:administrator,teacher')->name('reports');
     Route::middleware('role:administrator')->prefix('employee-salaries')->name('employee-salaries.')->group(function () {
         Route::get('/', [\App\Http\Controllers\EmployeeSalaryController::class, 'index'])->name('index');
         Route::get('/attendance', [\App\Http\Controllers\EmployeeSalaryController::class, 'attendance'])->name('attendance');

@@ -61,6 +61,13 @@ class TeacherAttendanceTest extends TestCase
         $other = User::factory()->create(['role'=>'teacher','program'=>'Chinese','status'=>'active']);
         $data=['date'=>today()->toDateString(),'records'=>[['teacher_id'=>$teacher->id,'status'=>'present']]];
         $this->actingAs($teacher)->get(route('teacher-attendance.index'))->assertOk()->assertSee($teacher->email)->assertDontSee($other->email);
+        $reportFilters = ['date' => $data['date'], 'session' => 'Morning'];
+        $this->get(route('teacher-attendance.index', $reportFilters))
+            ->assertOk()
+            ->assertSee(route('reports', $reportFilters))
+            ->assertDontSee(route('teacher-management.reports'));
+        $this->get(route('reports', $reportFilters))
+            ->assertRedirect(route('teacher-attendance.monthly', $reportFilters));
         $this->get(route('teacher-attendance.index',['program'=>'Chinese']))->assertOk()->assertDontSee($other->email);
         $this->post(route('teacher-attendance.store'),$data)->assertForbidden();
         foreach (['parent','student'] as $role) {
