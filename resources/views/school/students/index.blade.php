@@ -68,7 +68,6 @@
         <div class="directory-heading-copy">
             <h2>{{ __('Student directory') }} <span class="directory-count">{{ number_format($students->total()) }}</span></h2>
         </div>
-        <img class="directory-illustration" src="{{ asset('images/student-directory.png') }}" alt="" width="400" height="400">
     </div>
     <form method="get" class="student-filters directory-workspace">
         <div class="directory-search-row">
@@ -87,10 +86,9 @@
         <details class="directory-advanced" @if($advancedActive) open @endif>
             <summary><i class="bi bi-sliders" aria-hidden="true"></i> {{ __('Advanced filters') }} <i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
             <div class="directory-refine-grid">
+            <div><label class="form-label" for="program">{{ __('Program') }}</label><select class="form-select" id="program" name="program"><option value="">{{ __('All programs') }}</option>@foreach(\App\Models\Program::names() as $value)<option value="{{ $value }}" @selected(request('program') === $value)>{{ __($value) }}</option>@endforeach</select></div>
             <div><label for="class" class="form-label">{{ __('Class') }}</label><select id="class" name="class" class="form-select"><option value="">{{ __('All classes') }}</option>@foreach($classes as $class)<option value="{{ $class->id }}" data-program="{{ $class->program }}" data-session="{{ $class->session }}" @selected(request('class') == $class->id)>{{ $class->label }}</option>@endforeach</select></div>
-            @foreach(['program' => \App\Models\Program::names(), 'session' => ['Morning', 'Afternoon', 'Evening']] as $field => $values)
-            <div><label class="form-label" for="{{ $field }}">{{ __(ucfirst($field)) }}</label><select class="form-select" id="{{ $field }}" name="{{ $field }}"><option value="">{{ __('All '.$field.'s') }}</option>@foreach($values as $value)<option value="{{ $value }}" @selected(request($field) === $value)>{{ __($value) }}</option>@endforeach</select></div>
-            @endforeach
+            <div><label class="form-label" for="session">{{ __('Session') }}</label><select class="form-select" id="session" name="session"><option value="">{{ __('All sessions') }}</option>@foreach(['Morning', 'Afternoon', 'Evening'] as $value)<option value="{{ $value }}" @selected(request('session') === $value)>{{ __($value) }}</option>@endforeach</select></div>
             <div><label for="status" class="form-label">{{ __('Enrollment') }}</label><select id="status" name="status" class="form-select"><option value="">{{ __('All statuses') }}</option>@foreach(['active', 'inactive', 'graduated'] as $status)<option @selected(request('status') === $status) value="{{ $status }}">{{ __(ucfirst($status)) }}</option>@endforeach</select></div>
             <div><label class="form-label" for="sort">{{ __('Sort by') }}</label><select class="form-select" id="sort" name="sort">@foreach(['name' => 'Name', 'student_number' => 'Student ID', 'gender' => 'Gender', 'date_of_birth' => 'Date of birth', 'school_class_id' => 'Class', 'email' => 'Email', 'phone' => 'Phone', 'status' => 'Status'] as $key => $label)<option value="{{ $key }}" @selected(request('sort', 'name') === $key)>{{ __($label) }}</option>@endforeach</select></div>
             <div><label class="form-label" for="direction">{{ __('Order') }}</label><select class="form-select" id="direction" name="direction"><option value="asc" @selected(request('direction', 'asc') === 'asc')>{{ __('Ascending') }}</option><option value="desc" @selected(request('direction') === 'desc')>{{ __('Descending') }}</option></select></div>

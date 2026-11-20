@@ -108,7 +108,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    min-height: 91px;
+    min-height: 64px;
     padding: 12px 22px;
     margin: 0;
     border: 0;
@@ -117,7 +117,6 @@
 .students-page .student-directory .directory-heading::after { display: none; }
 :root:root:root:root .students-page .directory-heading h2 { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin: 0; font-size: clamp(1.2rem, 2.3vw, 1.65rem); line-height: 1.2; letter-spacing: -.025em; }
 .students-page .directory-count { padding: 5px 10px; border: 1px solid var(--border-color); border-radius: 999px; background: var(--surface); font-size: .75rem; letter-spacing: 0; color: var(--text-primary); }
-.students-page .directory-illustration { width: clamp(74px, 13vw, 136px); height: 70px; object-fit: contain; object-position: right center; }
 
 :root:root:root:root .students-page .student-directory .directory-workspace {
     display: block;
