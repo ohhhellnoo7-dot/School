@@ -68,7 +68,7 @@
         <div class="directory-heading-copy">
             <h2>{{ __('Student directory') }} <span class="directory-count">{{ number_format($students->total()) }}</span></h2>
         </div>
-        <img class="directory-illustration" src="{{ asset('images/student-directory.webp') }}" alt="" width="220" height="130">
+        <img class="directory-illustration" src="{{ asset('images/student-directory.png') }}" alt="" width="400" height="400">
     </div>
     <form method="get" class="student-filters directory-workspace">
         <div class="directory-search-row">

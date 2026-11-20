@@ -35,7 +35,10 @@
                 // Student attendance totals must follow the same live search as the roster.
                 const summary = document.querySelector('.students-page .attendance-summary');
                 const nextSummary = html.querySelector('.students-page .attendance-summary');
-                if (summary && nextSummary) summary.replaceWith(nextSummary);
+                if (summary && nextSummary) {
+                    summary.replaceWith(nextSummary);
+                    document.dispatchEvent(new Event('student-attendance-summary-replaced'));
+                }
                 panel.querySelectorAll('[data-attendance-count]').forEach(count => {
                     const replacement = next.querySelector(`[data-attendance-count="${count.dataset.attendanceCount}"]`);
                     if (replacement) {

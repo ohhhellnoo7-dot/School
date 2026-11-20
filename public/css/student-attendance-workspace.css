@@ -7,10 +7,10 @@
 }
 
 .students-page :is(.attendance-tone-total, .attendance-all) { --attendance-color: #3b78d5; }
-.students-page :is(.attendance-tone-present, .attendance-present, [data-attendance-row="present"], [data-attendance-state="present"], [data-tone="present"], option[value="present"]) { --attendance-color: #21a36b; }
-.students-page :is(.attendance-tone-absent, .attendance-absent, [data-attendance-row="absent"], [data-attendance-state="absent"], [data-tone="absent"], option[value="absent"]) { --attendance-color: #df4d5d; }
-.students-page :is(.attendance-tone-late, .attendance-late, [data-attendance-row="late"], [data-attendance-state="late"], [data-tone="late"], option[value="late"]) { --attendance-color: #de851b; }
-.students-page :is(.attendance-tone-excused, .attendance-excused, [data-attendance-row="excused"], [data-attendance-state="excused"], [data-tone="excused"], option[value="excused"]) { --attendance-color: #8858d7; }
+.students-page :is(.attendance-tone-present, .attendance-present, [data-attendance-row="present"], [data-attendance-state="present"], [data-tone="present"]) { --attendance-color: #21a36b; }
+.students-page :is(.attendance-tone-absent, .attendance-absent, [data-attendance-row="absent"], [data-attendance-state="absent"], [data-tone="absent"]) { --attendance-color: #df4d5d; }
+.students-page :is(.attendance-tone-late, .attendance-late, [data-attendance-row="late"], [data-attendance-state="late"], [data-tone="late"]) { --attendance-color: #de851b; }
+.students-page :is(.attendance-tone-excused, .attendance-excused, [data-attendance-row="excused"], [data-attendance-state="excused"], [data-tone="excused"]) { --attendance-color: #8858d7; }
 
 .students-page .attendance-summary { margin: 20px 0; }
 .students-page .attendance-cards {
@@ -114,7 +114,7 @@
     border: 0;
     background: linear-gradient(110deg, var(--attendance-glass), var(--surface-tint));
 }
-.students-page .directory-heading::after { display: none; }
+.students-page .student-directory .directory-heading::after { display: none; }
 :root:root:root:root .students-page .directory-heading h2 { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin: 0; font-size: clamp(1.2rem, 2.3vw, 1.65rem); line-height: 1.2; letter-spacing: -.025em; }
 .students-page .directory-count { padding: 5px 10px; border: 1px solid var(--border-color); border-radius: 999px; background: var(--surface); font-size: .75rem; letter-spacing: 0; color: var(--text-primary); }
 .students-page .directory-illustration { width: clamp(74px, 13vw, 136px); height: 70px; object-fit: contain; object-position: right center; }
@@ -218,7 +218,7 @@
     :root:root:root:root .students-page .attendance-tab:hover > span { border-color: var(--attendance-color); }
 }
 @media (prefers-reduced-motion: no-preference) {
-    .students-page .attendance-summary-card, .students-page .attendance-overview, .students-page .student-directory { animation: student-dashboard-in .32s ease-out both; }
+    .students-page .attendance-summary-card, .students-page .attendance-overview, .students-page .student-directory { animation: student-dashboard-in .32s ease-out; }
     @keyframes student-dashboard-in { from { opacity: .4; transform: translateY(5px); } }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -230,6 +230,9 @@
     .students-page .attendance-summary-card:nth-child(n+4) { grid-column: span 3; }
     .students-page .directory-refine-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+@media (max-width: 767px) {
+    :root:root:root:root .students-page .student-directory .directory-workspace { padding: 12px !important; }
+}
 @media (max-width: 650px) {
     .students-page .attendance-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
     .students-page .attendance-summary-card:nth-child(n) { grid-column: auto; padding: 13px; border-radius: 17px; }
@@ -238,7 +241,7 @@
     .students-page .directory-search-row { grid-template-columns: minmax(0, 1fr); }
     .students-page .directory-refine-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     :root:root:root:root .students-page .student-directory .directory-heading { padding-inline: 14px; }
-    :root:root:root:root .students-page .student-directory .directory-workspace { margin-inline: 9px; padding: 10px; }
+    :root:root:root:root .students-page .student-directory .directory-workspace { margin-inline: 9px; }
 }
 @media print {
     .students-page .directory-workspace { display: none !important; }
