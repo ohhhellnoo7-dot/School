@@ -69,11 +69,11 @@
             <h2>{{ __('Student directory') }} <span class="directory-count">{{ number_format($students->total()) }}</span></h2>
         </div>
     </div>
-    <form method="get" class="student-filters directory-workspace">
+    <form method="get" class="student-filters directory-workspace" data-live-filters>
         <div class="directory-search-row">
             <div class="directory-search-field"><label for="search" class="form-label">{{ __('Search students') }}</label><div class="directory-search-input"><i class="bi bi-search" aria-hidden="true"></i><input id="search" type="search" name="search" class="form-control" placeholder="{{ __('Search name, student ID, or email...') }}" value="{{ request('search') }}"></div></div>
             <div><label for="attendance-date" class="form-label">{{ __('Attendance date') }}</label><input id="attendance-date" name="attendance_date" type="date" class="form-control" value="{{ $attendanceDate }}" max="{{ today()->toDateString() }}" required></div>
-            <div class="directory-filter-actions"><button class="btn btn-primary"><i class="bi bi-funnel" aria-hidden="true"></i> {{ __('Apply filters') }}</button><a class="btn btn-outline-secondary" href="{{ route('students.index') }}" aria-label="{{ __('Reset filters') }}"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> {{ __('Reset') }}</a></div>
+            <div class="directory-filter-actions"><a class="btn btn-outline-secondary" href="{{ route('students.index') }}" aria-label="{{ __('Reset filters') }}"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> {{ __('Reset') }}</a></div>
         </div>
         <fieldset class="attendance-filter-group">
             <legend>{{ __('Attendance status') }}</legend>
