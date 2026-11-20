@@ -10,10 +10,10 @@ class ThemeRegistryTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_all_twenty_three_themes_render_on_login_and_dashboard(): void
+    public function test_all_twenty_four_themes_render_on_login_and_dashboard(): void
     {
         $themes = config('scholar-themes');
-        $this->assertCount(23, $themes);
+        $this->assertCount(24, $themes);
         $this->assertCount(7, array_unique(array_column($themes, 'group')));
         $login = $this->get('/login')->assertOk();
         $dashboard = $this->actingAs(User::factory()->create(['role'=>'administrator']))->get('/dashboard')->assertOk();
@@ -30,13 +30,17 @@ class ThemeRegistryTest extends TestCase
             $page->assertSee('ocean-shark.css')->assertSee('ocean-shark.js')->assertDontSee('js/ocean-mermaid.js');
             $page->assertSee('ocean-surface.css')->assertSee('ocean-surface.js');
             $page->assertSee('autumn.css')->assertSee('autumn.js');
+            $page->assertSee('windy-breeze.css');
+            $page->assertSee('class="windy-breeze-air" aria-hidden="true"', false);
         }
+        $this->get(route('employee-salaries.index'))->assertOk()
+            ->assertSee('class="windy-breeze-air" aria-hidden="true"', false);
     }
 
     public function test_new_palettes_have_complete_tokens_and_readable_body_and_button_text(): void
     {
         $newThemes = array_filter(config('scholar-themes'), fn ($theme) => isset($theme['palette']));
-        $this->assertCount(15, $newThemes);
+        $this->assertCount(16, $newThemes);
         foreach ($newThemes as $id => $theme) {
             $this->assertCount(8, $theme['palette']);
             foreach ($theme['palette'] as $color) $this->assertMatchesRegularExpression('/^#[0-9A-F]{6}$/i', $color);

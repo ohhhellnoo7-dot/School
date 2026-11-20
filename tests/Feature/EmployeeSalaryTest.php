@@ -72,6 +72,19 @@ class EmployeeSalaryTest extends TestCase
         $this->assertSame(6250, $salary['total_cents']);
     }
 
+    public function test_payroll_search_matches_name_prefixes_and_employee_ids(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        User::factory()->create(['role' => 'teacher', 'name' => 'Bernadette Marquardt', 'profile_number' => 'TCH026']);
+        User::factory()->create(['role' => 'teacher', 'name' => 'Abigail Brown', 'profile_number' => 'TCH027']);
+
+        $this->actingAs($admin)->get(route('employee-salaries.index', ['search' => 'b']))
+            ->assertOk()->assertSee('Bernadette Marquardt')->assertDontSee('Abigail Brown');
+
+        $this->get(route('employee-salaries.index', ['search' => '027']))
+            ->assertOk()->assertSee('Abigail Brown')->assertDontSee('Bernadette Marquardt');
+    }
+
     public function test_payroll_attendance_search_and_saved_deductions_are_applied_to_payment_snapshot(): void
     {
         $this->travelTo(Carbon::parse('2026-11-16 12:00:00'));
@@ -98,6 +111,11 @@ class EmployeeSalaryTest extends TestCase
         $this->post(route('employee-salaries.pay', $teacher), $data)->assertSessionHasErrors('salary');
         $this->post(route('employee-salaries.pay', $teacher), array_replace($data, ['expected_total_cents' => 21625]))->assertSessionHasNoErrors();
         $this->assertDatabaseHas('employee_salary_payments', ['teacher_id' => $teacher->id, 'base_cents' => 23125, 'deduction_cents' => 1500, 'total_cents' => 21625]);
+        $this->get(route('employee-salaries.index', ['month' => '2026-11', 'search' => $other->name]))
+            ->assertOk()->assertViewHas('teacherCount', 2)
+            ->assertViewHas('recorded', fn ($recorded) => (int) $recorded->paid_count === 1 && (int) $recorded->paid_cents === 21625);
+        $this->get(route('employee-salaries.index', ['month' => '2026-10']))
+            ->assertOk()->assertViewHas('recorded', fn ($recorded) => (int) $recorded->paid_count === 0 && (int) $recorded->paid_cents === 0);
         $this->post(route('employee-salaries.attendance.store', $teacher), ['date' => '2026-11-12', 'session' => 'All', 'status' => 'present'])
             ->assertSessionHasErrors('attendance');
         $this->actingAs($teacher)->get(route('employee-salaries.attendance'))->assertForbidden();

@@ -48,8 +48,11 @@ class EmployeeSalaryController extends Controller
         $month = $this->month($request);
         $asOf = $this->assessmentDate($month);
         $request->validate(['search' => 'nullable|string|max:255']);
-        $teachers = User::where('role', 'teacher')
-            ->when($request->filled('search'), fn ($q) => $q->where(fn ($q) => $q->where('name', 'like', '%'.$request->search.'%')->orWhere('profile_number', 'like', '%'.$request->search.'%')))
+        $teacherPopulation = User::where('role', 'teacher');
+        $teachers = (clone $teacherPopulation)
+            ->when($request->filled('search'), fn ($q) => $q->where(fn ($q) => $q
+                ->whereRaw('LOWER(name) LIKE ?', [mb_strtolower($request->search).'%'])
+                ->orWhere('profile_number', 'like', '%'.$request->search.'%')))
             ->orderBy('name')->paginate(20)->withQueryString();
         $profiles = EmployeeSalaryProfile::whereIn('teacher_id', $teachers->modelKeys())->get()->keyBy('teacher_id');
         $payments = EmployeeSalaryPayment::whereIn('teacher_id', $teachers->modelKeys())->whereDate('salary_month', $month)->get()->keyBy('teacher_id');
@@ -81,7 +84,13 @@ class EmployeeSalaryController extends Controller
                 'attendance' => app(\App\Services\EmployeeSalaryDeductions::class)->counts($attendance->get($teacher->id, collect()), $scans->get($teacher->id, collect()), $overrides->get($teacher->id, collect()))];
         });
 
-        return view('school.salaries.index', compact('month', 'teachers', 'rows', 'asOf') + [
+        $teacherCount = $request->filled('search') ? $teacherPopulation->count() : $teachers->total();
+        $recorded = EmployeeSalaryPayment::whereIn('teacher_id', $teacherPopulation->select('id'))
+            ->whereDate('salary_month', $month)
+            ->selectRaw('COUNT(*) AS paid_count, COALESCE(SUM(total_cents), 0) AS paid_cents')
+            ->first();
+
+        return view('school.salaries.index', compact('month', 'teachers', 'rows', 'asOf', 'teacherCount', 'recorded') + [
             'salaryHourlyCents' => $calculator->baseCents(60),
         ]);
     }

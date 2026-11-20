@@ -3,11 +3,6 @@
 :root[data-theme="autumn"] .dashboard-page { --dashboard-campus-image: url('../images/autumn-school-hero.png'); }
 :root[data-theme="ocean"] .dashboard-page { --dashboard-campus-image: url('../images/ocean-school-hero.png'); }
 :root[data-theme="light"] .dashboard-page {
-    --theme-nav-start: #146246;
-    --theme-nav-end: #063f31;
-    --theme-nav-text: #f1fff8;
-    --theme-nav-muted: #c1e9d7;
-    --theme-nav-active: #138345;
     --theme-tile-1: #9776d7;
     --theme-tile-2: #5bb7de;
     --theme-tile-3: #dbb54c;
@@ -78,46 +73,19 @@
 }
 
 :root[data-theme="light"]:root:root:root:root:root:root:root:root:root .dashboard-page {
-    --app-bg: #eef6f2;
-    --page: #eef6f2;
-    --text-primary: #102d28;
-    --ink: #102d28;
-    --text-secondary: #465f59;
-    --muted: #465f59;
-    --primary: #198549;
-    --accent: #75ba92;
-    --action: #116b3e;
-    --green: #116b3e;
-    --border-color: #d8e8df;
-    --border: #d8e8df;
-    --surface-tint: #eaf5ee;
-    --shadow-color: #173f2e17;
     --card-radius: 22px;
-    --dashboard-line: #128443;
-    --dashboard-female: #e54b99;
-    --dashboard-male: #168be4;
-    --dashboard-other: #8060d6;
 
-    & .sidebar {
-        background: radial-gradient(ellipse at bottom left, #12765a, transparent 55%),
-                    radial-gradient(ellipse at top right, #146246, transparent 65%), #063f31;
-        background-color: #063f31 !important;
-        border-color: #146246;
-    }
-    & .sidebar .brand-mark,
-    & .sidebar .school-nav a.active { background: linear-gradient(130deg, #138345, #176f49); border-color: #61bd87; }
-    & .sidebar .school-switch { background: #ffffff14; border-color: #ffffff30; }
-    & .workspace { background: radial-gradient(ellipse at 100% 0, #e2f3f7, transparent 47rem), var(--app-bg); }
-    & .topbar { background: linear-gradient(105deg, var(--surface), #e8f5f7); border-color: var(--border-color); }
+    & .workspace { background: radial-gradient(ellipse at 100% 0, var(--surface-tint), transparent 47rem), var(--app-bg); }
     & .topbar :is(.portal-search, .theme-switcher > summary, .language-switcher > summary, .profile-link, .btn:not(.teacher-scan-shortcut)) {
         background: var(--surface);
         color: var(--text-primary);
         border-color: var(--border-color);
     }
     & .topbar .teacher-scan-shortcut {
-        background: linear-gradient(135deg, #16834a, #116b3e);
-        border-color: #116b3e;
-        box-shadow: 0 4px 12px #116b3e35;
+        background: linear-gradient(135deg, var(--primary), var(--action));
+        color: var(--on-action);
+        border-color: var(--action);
+        box-shadow: 0 4px 12px color-mix(in srgb, var(--action) 20%, transparent);
     }
     & .dashboard-feature-row .panel { background: var(--surface); border-color: var(--border-color); }
 }

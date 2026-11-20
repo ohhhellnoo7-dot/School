@@ -7,6 +7,7 @@
 @include('school.partials.theme-head')
 </head>
 <body>
+@include('school.partials.windy-breeze-air')
     <h1> {{ $hiName }}</h1>
 </body>
 </html>

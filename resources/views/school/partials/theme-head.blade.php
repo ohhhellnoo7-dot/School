@@ -14,6 +14,7 @@
 <link href="{{ asset('css/christmas.css') }}?v={{ filemtime(public_path('css/christmas.css')) }}" rel="stylesheet">
 <script src="{{ asset('js/christmas.js') }}?v={{ filemtime(public_path('js/christmas.js')) }}" defer></script>
 <link href="{{ asset('css/autumn.css') }}?v={{ filemtime(public_path('css/autumn.css')) }}" rel="stylesheet">
+<link href="{{ asset('css/windy-breeze.css') }}?v={{ filemtime(public_path('css/windy-breeze.css')) }}" rel="stylesheet">
 <script src="{{ asset('js/autumn.js') }}?v={{ filemtime(public_path('js/autumn.js')) }}" defer></script>
 <link href="{{ asset('css/ocean-life.css') }}?v={{ filemtime(public_path('css/ocean-life.css')) }}" rel="stylesheet">
 <script src="{{ asset('js/ocean-life.js') }}?v={{ filemtime(public_path('js/ocean-life.js')) }}" defer></script>

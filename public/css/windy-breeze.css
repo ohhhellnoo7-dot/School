@@ -1,0 +1,182 @@
+:root[data-theme="windy-breeze"] {
+    --theme-nav-start: #347785;
+    --theme-nav-end: #194b4c;
+    --theme-nav-active: #255e62;
+    --theme-nav-muted: #d4e9e6;
+    --windy-sky: #c9eaf5;
+    --windy-sage: #a5c6ae;
+    --windy-campus: url('../images/windy-breeze-campus.jpg');
+    --chart-female: #367c88;
+    --chart-male: #527957;
+    --chart-other: #566d96;
+    --chart-present: #39785c;
+    --chart-late: #8b651d;
+    --chart-absent: #a04156;
+}
+
+:root[data-theme="windy-breeze"]:root:root:root:root:root:root:root:root:root {
+    & .scholar-workspace .workspace {
+        background: radial-gradient(ellipse at 95% 0, var(--windy-sky), transparent 48rem),
+            radial-gradient(ellipse at 0 58%, #dceee2, transparent 44rem), var(--app-bg);
+    }
+
+    & .scholar-workspace .sidebar {
+        background: linear-gradient(156deg, var(--theme-nav-start), var(--theme-nav-end) 78%);
+    }
+
+    & .scholar-workspace { --dashboard-campus-image: var(--windy-campus); }
+
+    & .scholar-workspace .scholar-hero {
+        --hero-background-image: var(--windy-campus);
+        --hero-overlay-middle: color-mix(in srgb, var(--surface) 88%, transparent);
+    }
+
+    & .scholar-workspace .scholar-hero::before {
+        content: "";
+        position: absolute;
+        inset: 6px 12% 0 auto;
+        z-index: -1;
+        width: min(28%, 17rem);
+        border-radius: inherit;
+        background: url('../images/windy-breeze-foliage.png') center bottom / contain no-repeat;
+        transform-origin: center bottom;
+        pointer-events: none;
+    }
+
+    & .scholar-workspace .teacher-attendance-hero {
+        background-image: linear-gradient(90deg, var(--surface) 10%, color-mix(in srgb, var(--surface) 90%, transparent) 54%, transparent), var(--windy-campus);
+        background-size: cover;
+        background-position: right 56%;
+    }
+
+    & .scholar-workspace .teacher-attendance-hero::before {
+        background-image: var(--windy-campus);
+    }
+
+    & .school-auth .auth-story {
+        background-image: var(--windy-campus);
+    }
+
+    & .scholar-workspace :is(.dashboard-metric, .dashboard-stat-grid .stat-card, .payroll-metrics > div) {
+        background: linear-gradient(140deg, color-mix(in srgb, var(--surface) 91%, transparent),
+            color-mix(in srgb, var(--tile-color, var(--windy-sage)) 18%, var(--surface)));
+        border-color: var(--border-color);
+        box-shadow: inset 0 1px 0 var(--surface), 0 4px 12px var(--shadow-color);
+    }
+
+    & .scholar-workspace .payroll-hero {
+        --payroll-hero-highlight: color-mix(in srgb, var(--windy-sky) 62%, var(--surface));
+    }
+
+    & :is(.modal-content, .salary-calculator, .confirm-dialog, .attendance-action-menu) {
+        border-color: var(--border-color);
+        background-color: var(--surface-raised);
+        color: var(--text-primary);
+    }
+}
+
+.windy-breeze-air { display: none; }
+
+:root[data-theme="windy-breeze"] .windy-breeze-air {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.windy-breeze-air span { position: absolute; }
+
+.windy-breeze-cloud {
+    top: 14%;
+    left: 38%;
+    width: clamp(9rem, 25vw, 24rem);
+    height: 2rem;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, #ffffffbd, transparent 72%);
+    opacity: .5;
+}
+
+.windy-breeze-cloud:nth-child(2) { top: 28%; left: 72%; opacity: .35; }
+
+.windy-breeze-trail {
+    top: 36%;
+    left: 56%;
+    width: 11rem;
+    height: 1.4rem;
+    border-top: 1px solid #4f93a247;
+    border-radius: 50%;
+    opacity: .6;
+}
+
+.windy-breeze-trail:nth-child(4) { top: 62%; left: 82%; width: 7rem; }
+
+.windy-breeze-leaf {
+    top: 0;
+    left: -1.25rem;
+    width: 12px;
+    height: 7px;
+    border-radius: 10px 1px;
+    background: linear-gradient(145deg, #8ebc91, #477a58);
+    opacity: 0;
+}
+
+.windy-breeze-leaf:nth-child(5) { top: 20%; --windy-duration: 35s; --windy-delay: -12s; }
+.windy-breeze-leaf:nth-child(6) { top: 39%; --windy-duration: 44s; --windy-delay: -29s; }
+.windy-breeze-leaf:nth-child(7) { top: 55%; --windy-duration: 39s; --windy-delay: -8s; }
+.windy-breeze-leaf:nth-child(8) { top: 75%; --windy-duration: 49s; --windy-delay: -25s; }
+.windy-breeze-leaf:nth-child(9) { top: 88%; --windy-duration: 41s; --windy-delay: -34s; }
+.windy-breeze-leaf:nth-child(10) { top: 12%; --windy-duration: 47s; --windy-delay: -38s; }
+.windy-breeze-leaf:nth-child(11) { top: 30%; --windy-duration: 38s; --windy-delay: -22s; }
+.windy-breeze-leaf:nth-child(12) { top: 48%; --windy-duration: 52s; --windy-delay: -46s; }
+.windy-breeze-leaf:nth-child(13) { top: 65%; --windy-duration: 42s; --windy-delay: -17s; }
+.windy-breeze-leaf:nth-child(14) { top: 81%; --windy-duration: 46s; --windy-delay: -30s; }
+
+@media (prefers-reduced-motion: no-preference) {
+    :root[data-theme="windy-breeze"] .windy-breeze-cloud { animation: windy-cloud-drift 32s ease-in-out infinite alternate; }
+    :root[data-theme="windy-breeze"] .windy-breeze-trail { animation: windy-trail-drift 14s ease-in-out infinite alternate; }
+    :root[data-theme="windy-breeze"] .windy-breeze-leaf { animation: windy-leaf-drift var(--windy-duration) linear var(--windy-delay) infinite; }
+    :root[data-theme="windy-breeze"]:root:root:root:root:root:root:root:root:root .scholar-workspace .scholar-hero::before {
+        animation: windy-foliage-sway 8s ease-in-out infinite alternate;
+    }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    :root[data-theme="windy-breeze"] .scholar-workspace :is(.btn, .payroll-action) { transition: translate .18s ease, box-shadow .18s ease, background-color .18s ease; }
+    :root[data-theme="windy-breeze"] .scholar-workspace :is(.btn, .payroll-action):hover { translate: 0 -1px; }
+}
+
+@media (max-width: 767px) {
+    .windy-breeze-air :is(.windy-breeze-cloud:nth-child(2), .windy-breeze-trail:nth-child(4), .windy-breeze-leaf:nth-child(n+10)) { display: none; }
+    :root[data-theme="windy-breeze"]:root:root:root:root:root:root:root:root:root .scholar-workspace .scholar-hero::before {
+        inset-inline-end: 2%;
+        opacity: .45;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root[data-theme="windy-breeze"] .windy-breeze-air { display: none; }
+}
+
+@keyframes windy-cloud-drift {
+    to { transform: translate3d(11vw, -8px, 0); }
+}
+
+@keyframes windy-trail-drift {
+    from { opacity: .1; }
+    to { opacity: .65; transform: translate3d(7vw, -6px, 0); }
+}
+
+@keyframes windy-leaf-drift {
+    0% { opacity: 0; transform: translate3d(0, 0, 0) rotate(0); }
+    16% { opacity: .45; }
+    45% { transform: translate3d(45vw, -24px, 0) rotate(85deg); }
+    78% { opacity: .4; }
+    100% { opacity: 0; transform: translate3d(calc(100vw + 2rem), 38px, 0) rotate(220deg); }
+}
+
+@keyframes windy-foliage-sway {
+    from { transform: skewX(-1.5deg); }
+    to { transform: skewX(2.5deg); }
+}

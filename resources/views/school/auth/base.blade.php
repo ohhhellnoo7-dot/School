@@ -8,7 +8,9 @@
 @include('school.partials.theme-head')
 <link href="{{ asset('css/school-auth.css') }}?v={{ filemtime(public_path('css/school-auth.css')) }}" rel="stylesheet">
 <script src="{{ asset('js/school-auth.js') }}" defer></script>
-</head><body class="school-auth"><main class="auth-page">
+</head><body class="school-auth">
+@include('school.partials.windy-breeze-air')
+<main class="auth-page">
 <section class="auth-story" aria-label="Greenfield Academy">
 <a class="brand" href="{{ url('/') }}"><span class="brand-mark"><i class="bi bi-mortarboard-fill" aria-hidden="true"></i></span><span>scholar.<small>School Portal</small></span></a>
 <div class="auth-story-copy"><div class="academy-pill">GREENFIELD ACADEMY</div>

@@ -14,6 +14,7 @@
 </head>
 
 <body>
+@include('school.partials.windy-breeze-air')
   <div class="container"><div class="legacy-theme">@include('school.partials.theme-picker')</div>
     <h1>@yield('title')</h1>
     @yield('content')

@@ -97,7 +97,13 @@
             if (typeof payload.html !== 'string' || !payload.charts) throw new Error('Invalid dashboard response');
             charts.forEach(chart => chart.destroy());
             charts = [];
+            const calendar = content.querySelector('#dashboard-khmer-calendar');
+            const calendarFocus = calendar?.contains(document.activeElement) ? document.activeElement : null;
             content.innerHTML = payload.html;
+            if (calendar) {
+                content.querySelector('#dashboard-khmer-calendar')?.replaceWith(calendar);
+                calendarFocus?.focus({preventScroll: true});
+            }
             renderCharts(payload);
             status.textContent = `Updated ${new Date().toLocaleTimeString()} · refreshes every 30 seconds`;
         } catch (_) {

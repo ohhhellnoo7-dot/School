@@ -1,0 +1,152 @@
+(() => {
+    const calendar = document.getElementById('dashboard-khmer-calendar');
+    if (!calendar || !window.momentkh) return;
+
+    const grid = calendar.querySelector('.khmer-calendar-grid');
+    const body = grid.tBodies[0];
+    const lunarDate = calendar.querySelector('[data-calendar-date]');
+    const solarDate = calendar.querySelector('[data-calendar-solar]');
+    const selectedHoliday = calendar.querySelector('[data-selected-holiday]');
+    const fullDateLabel = new Intl.DateTimeFormat('km-KH-u-nu-khmr', {timeZone: 'UTC', dateStyle: 'full'});
+    const cambodiaDate = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Phnom_Penh', year: 'numeric', month: 'numeric', day: 'numeric',
+    });
+    const monthLabel = new Intl.DateTimeFormat('km-KH-u-nu-khmr', {
+        timeZone: 'UTC', month: 'long', year: 'numeric',
+    });
+    const numerals = new Intl.NumberFormat('km-KH-u-nu-khmr');
+    const holidays = calendar.querySelector('[data-calendar-holidays]');
+    const holidayList = holidays.querySelector('ul');
+
+    // Cambodia's 2026 Legal Reform Committee calendar and 2027 Sub-Decree No. 198.
+    const commonHolidays = {
+        '1-1': 'ចូលឆ្នាំសកល',
+        '1-7': 'ទិវាជ័យជម្នះ ៧ មករា',
+        '3-8': 'ទិវានារីអន្តរជាតិ',
+        '4-14': 'បុណ្យចូលឆ្នាំថ្មីប្រពៃណីខ្មែរ',
+        '4-15': 'បុណ្យចូលឆ្នាំថ្មីប្រពៃណីខ្មែរ',
+        '4-16': 'បុណ្យចូលឆ្នាំថ្មីប្រពៃណីខ្មែរ',
+        '5-1': 'ទិវាពលកម្មអន្តរជាតិ',
+        '5-14': 'ព្រះរាជពិធីបុណ្យចម្រើនព្រះជន្មព្រះមហាក្សត្រ',
+        '6-18': 'ព្រះរាជពិធីបុណ្យចម្រើនព្រះជន្មសម្តេចព្រះមហាក្សត្រី',
+        '9-24': 'ទិវាប្រកាសរដ្ឋធម្មនុញ្ញ',
+        '10-15': 'ទិវាប្រារព្ធពិធីគោរពព្រះវិញ្ញាណក្ខន្ធព្រះបរមរតនកោដ្ឋ',
+        '10-29': 'ព្រះរាជពិធីគ្រងព្រះបរមរាជសម្បត្តិ',
+        '11-9': 'ទិវាបុណ្យឯករាជ្យជាតិ',
+        '12-29': 'ទិវាសន្តិភាពនៅកម្ពុជា',
+    };
+    const visak = 'បុណ្យវិសាខបូជា';
+    const ploughing = 'ព្រះរាជពិធីច្រត់ព្រះនង្គ័ល';
+    const pchumBen = 'បុណ្យភ្ជុំបិណ្ឌ';
+    const waterFestival = 'ព្រះរាជពិធីបុណ្យអុំទូក';
+    const holidaySchedules = {
+        2026: {
+            ...commonHolidays,
+            '5-1': `${commonHolidays['5-1']} និង ${visak}`,
+            '5-5': ploughing,
+            '10-10': pchumBen, '10-11': pchumBen, '10-12': pchumBen,
+            '11-23': waterFestival, '11-24': waterFestival, '11-25': waterFestival,
+        },
+        2027: {
+            ...commonHolidays,
+            '5-20': visak, '5-24': ploughing,
+            '9-29': pchumBen, '9-30': pchumBen, '10-1': pchumBen,
+            '11-12': waterFestival, '11-13': waterFestival, '11-14': waterFestival,
+        },
+    };
+
+    function today() {
+        const parts = Object.fromEntries(cambodiaDate.formatToParts().map(({type, value}) => [type, value]));
+        return new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day)));
+    }
+
+    let selected = today();
+
+    function selectDay(date) {
+        selected = date;
+        const year = date.getUTCFullYear();
+        const month = date.getUTCMonth() + 1;
+        const day = date.getUTCDate();
+        const lunar = momentkh.fromGregorian(year, month, day, 12);
+        solarDate.textContent = fullDateLabel.format(date);
+        lunarDate.textContent = momentkh.format(lunar);
+        const holiday = holidaySchedules[year]?.[`${month}-${day}`];
+        selectedHoliday.querySelector('p').textContent = holiday || '';
+        selectedHoliday.hidden = !holiday;
+        for (const button of body.querySelectorAll('button')) {
+            button.setAttribute('aria-pressed', Number(button.dataset.calendarDay) === day);
+        }
+    }
+
+    function renderMonth() {
+        const year = selected.getUTCFullYear();
+        const month = selected.getUTCMonth();
+        const first = new Date(Date.UTC(year, month, 1));
+        const start = first.getUTCDay();
+        const days = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+        const current = today().getTime();
+        const schedule = holidaySchedules[year];
+        const monthHolidays = new Map();
+
+        grid.caption.textContent = monthLabel.format(first);
+        body.replaceChildren();
+        for (let slot = 0; slot < Math.ceil((start + days) / 7) * 7; slot++) {
+            if (slot % 7 === 0) body.insertRow();
+            const cell = body.rows[body.rows.length - 1].insertCell();
+            const day = slot - start + 1;
+            if (day < 1 || day > days) continue;
+
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.dataset.calendarDay = day;
+            button.textContent = numerals.format(day);
+            const holiday = schedule?.[`${month + 1}-${day}`];
+            if (holiday) {
+                button.classList.add('is-holiday');
+                button.title = holiday;
+                button.setAttribute('aria-label', `${button.textContent} · ${holiday}`);
+                const flag = document.createElement('i');
+                flag.className = 'bi bi-flag-fill';
+                flag.setAttribute('aria-hidden', 'true');
+                if (!monthHolidays.has(holiday)) monthHolidays.set(holiday, []);
+                monthHolidays.get(holiday).push(button.textContent);
+                button.append(flag);
+            }
+            if (Date.UTC(year, month, day) === current) button.setAttribute('aria-current', 'date');
+            cell.append(button);
+        }
+        holidayList.replaceChildren();
+        for (const [name, dates] of monthHolidays) {
+            const item = document.createElement('li');
+            const dateBadge = document.createElement('span');
+            dateBadge.textContent = dates.join(', ');
+            item.append(dateBadge, name);
+            holidayList.append(item);
+        }
+        holidayList.hidden = monthHolidays.size === 0;
+        holidays.querySelector('[data-holiday-coverage]').hidden = Boolean(schedule);
+        holidays.hidden = Boolean(schedule) && monthHolidays.size === 0;
+        selectDay(selected);
+    }
+
+    calendar.addEventListener('click', event => {
+        const button = event.target.closest('button');
+        if (!button) return;
+        const year = selected.getUTCFullYear();
+        const month = selected.getUTCMonth();
+        if (button.dataset.calendarDay) {
+            selectDay(new Date(Date.UTC(year, month, Number(button.dataset.calendarDay))));
+            return;
+        }
+        const action = button.dataset.calendarAction;
+        selected = action === 'today'
+            ? today()
+            : new Date(Date.UTC(year, month + (action === 'previous' ? -1 : 1), 1));
+        renderMonth();
+    });
+
+    renderMonth();
+    calendar.querySelector('[data-calendar-layout]').hidden = false;
+    calendar.querySelector('[data-calendar-controls]').hidden = false;
+    calendar.querySelector('[data-calendar-fallback]').hidden = true;
+})();

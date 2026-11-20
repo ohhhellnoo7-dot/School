@@ -50,6 +50,7 @@ a.attendance-status-tile:hover, a.attendance-status-tile:focus-visible { outline
 </head>
 <body class="scholar-workspace {{ request()->routeIs('dashboard') ? 'dashboard-page' : '' }} {{ request()->routeIs('modules.index') && request()->route('module') === 'subjects' ? 'subjects-page' : '' }} {{ request()->routeIs('class-groups.*') ? 'classes-page' : '' }} {{ request()->routeIs('classrooms.*', 'classroom-bookings.*') ? 'classrooms-page' : '' }} {{ request()->routeIs('modules.index') && request()->route('module') === 'teachers' ? 'teachers-page' : '' }} {{ request()->routeIs('modules.index') && request()->route('module') === 'parents' ? 'parents-page' : '' }} {{ request()->routeIs('students.index') ? 'students-page' : '' }}">
 <a href="#main-content" class="skip-link">{{ __('Skip to content') }}</a>
+@include('school.partials.windy-breeze-air')
 <aside class="sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="sidebar" aria-label="{{ __('Main navigation') }}">
     <button class="btn sidebar-close d-lg-none" type="button" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="{{ __('Close navigation') }}"><i class="bi bi-x-lg"></i></button>
     <a class="brand" href="{{ route('dashboard') }}"><span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span><span class="brand-name">Scholar<small>{{ __('School Portal') }}</small></span><span class="brand-dot">.</span></a>

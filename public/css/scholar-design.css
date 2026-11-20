@@ -398,3 +398,102 @@
 .nav-group-caption {margin:13px 11px 5px;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--sidebar-text);opacity:.8;flex-shrink:0}
 :root:root:root:root[lang=km] :where(body,h1,h2,h3,h4) {font-family:'Noto Sans Khmer','Khmer OS System',system-ui,sans-serif;letter-spacing:normal;line-height:1.7}
 :root:root:root:root[lang=zh] :where(body,h1,h2,h3,h4) {font-family:'Microsoft YaHei','Noto Sans SC',system-ui,sans-serif;letter-spacing:normal}
+
+.khmer-calendar {
+    --calendar-holiday: var(--danger);
+    --calendar-holiday-bg: color-mix(in srgb, var(--calendar-holiday) 12%, var(--surface));
+    line-height: 1.65;
+}
+.khmer-calendar-header,
+.khmer-calendar-heading,
+.khmer-calendar-legend {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+}
+.khmer-calendar-header {
+    justify-content: space-between;
+    flex-wrap: wrap;
+    padding: .7rem;
+    border: 1px solid var(--border);
+    border-radius: .875rem;
+    background: linear-gradient(110deg, var(--surface-tint), var(--surface));
+}
+.khmer-calendar-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 2.5rem;
+    height: 2.5rem;
+    border-radius: .75rem;
+    background: var(--action);
+    color: var(--on-action);
+    box-shadow: 0 3px 8px var(--shadow-color);
+}
+.khmer-calendar-header h3 { margin: 0; font-size: 1rem; font-weight: 750; }
+.khmer-calendar-heading p { margin: 0; color: var(--muted); font-size: .76rem; }
+.khmer-calendar-controls:not([hidden]) { display: flex; gap: .25rem; }
+.khmer-calendar-controls .btn { min-height: 2rem; background: var(--surface); }
+.khmer-calendar-controls .btn:hover { background: var(--surface-tint); }
+.khmer-calendar-layout:not([hidden]) { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: .65rem; }
+.khmer-calendar-month { flex: 3 1 17rem; }
+.khmer-calendar-sidebar { flex: 2 1 13rem; display: grid; align-content: start; gap: .5rem; }
+.khmer-calendar-month, .khmer-calendar-sidebar { min-width: 0; }
+.khmer-calendar-month, .khmer-calendar-selection, .khmer-calendar-holidays {
+    padding: .55rem .65rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface);
+    box-shadow: 0 2px 6px var(--shadow-color);
+}
+.khmer-calendar-grid { width: 100%; table-layout: fixed; text-align: center; }
+.khmer-calendar-grid caption {
+    caption-side: top;
+    padding: 0 0 .25rem;
+    color: var(--ink);
+    font-weight: 700;
+}
+.khmer-calendar-grid th {
+    padding-block: .2rem;
+    color: var(--muted);
+    font-size: .68rem;
+    overflow-wrap: anywhere;
+}
+.khmer-calendar-grid td { padding: .1rem; }
+.khmer-calendar-grid button {
+    position: relative;
+    width: 100%;
+    min-height: 2.15rem;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: .45rem;
+    background: var(--surface-tint);
+    color: var(--ink);
+    font: inherit;
+    font-size: .82rem;
+}
+.khmer-calendar-grid button i { position: absolute; inset: 1px 2px auto auto; font-size: .55rem; }
+.khmer-calendar-grid button:hover { border-color: var(--action); }
+.khmer-calendar-grid button[aria-current="date"] { border-color: var(--action); font-weight: 700; }
+.khmer-calendar-grid button.is-holiday { background: var(--calendar-holiday-bg); color: var(--calendar-holiday); }
+.khmer-calendar-grid button[aria-pressed="true"] { background: var(--action); color: var(--on-action); }
+.khmer-calendar-legend { flex-wrap: wrap; margin-top: .35rem; color: var(--muted); font-size: .72rem; }
+.khmer-calendar-legend i { color: var(--action); }
+.khmer-calendar-holiday-key, .khmer-calendar-legend .khmer-calendar-holiday-key i { color: var(--calendar-holiday); }
+.khmer-calendar-sidebar h4 { margin: 0 0 .3rem; font-size: .78rem; font-weight: 700; }
+.khmer-calendar-sidebar h4 i { margin-inline-end: .2rem; color: var(--action); }
+.khmer-calendar-solar { margin: 0 0 .3rem; font-size: .9rem; font-weight: 700; }
+.khmer-calendar-detail:not([hidden]), .khmer-calendar-holidays li { display: flex; align-items: baseline; gap: .4rem; }
+.khmer-calendar-detail { color: var(--muted); font-size: .8rem; }
+.khmer-calendar-detail p { margin: 0; }
+.khmer-calendar-detail.khmer-calendar-holiday-key { margin-top: .25rem; color: var(--calendar-holiday); }
+.khmer-calendar-holidays { font-size: .78rem; }
+.khmer-calendar-holidays ul { margin: 0; padding: 0; list-style: none; }
+.khmer-calendar-holidays li + li { margin-top: .25rem; }
+.khmer-calendar-holidays li span {
+    flex: none;
+    padding: 0 .3rem;
+    border-radius: .3rem;
+    background: var(--calendar-holiday-bg);
+    color: var(--calendar-holiday);
+    font-weight: 700;
+}

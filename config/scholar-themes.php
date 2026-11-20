@@ -14,6 +14,7 @@ return [
     'autumn' => ['name'=>'Autumn', 'group'=>'Seasonal', 'dark'=>false, 'radius'=>24, 'palette'=>['#FFF3E7','#713414','#B44913','#F6B541','#FFFCF6','#54240F','#80573F','#AE3E0B']],
     'khmer-heritage' => ['name'=>'Khmer Heritage', 'group'=>'Culture', 'dark'=>false, 'radius'=>18, 'palette'=>['#FFF5E2','#650B15','#850F1B','#C79532','#FFFCF5','#4B1418','#795D48','#950F1D']],
     'emerald-forest' => ['name'=>'Emerald Forest', 'group'=>'Nature', 'dark'=>false, 'radius'=>22, 'palette'=>['#F4F8F2','#123D32','#25856C','#9BC9A8','#FFFFFF','#203B31','#526E60','#20745D']],
+    'windy-breeze' => ['name'=>'Windy Breeze', 'group'=>'Nature', 'dark'=>false, 'radius'=>24, 'palette'=>['#EEF8FB','#184B51','#216D76','#A5C6AE','#FCFEFF','#163B43','#49646C','#205F64']],
     'desert-sand' => ['name'=>'Desert Sand', 'group'=>'Nature', 'dark'=>false, 'radius'=>18, 'palette'=>['#FFF9F1','#76513F','#A65C42','#D7A67A','#FFFFFF','#49382F','#7E6656','#A65C42']],
     'mint-fresh' => ['name'=>'Mint Fresh', 'group'=>'Nature', 'dark'=>false, 'radius'=>26, 'palette'=>['#EFFBF8','#0F766E','#14998C','#75D5C3','#FFFFFF','#164D46','#4D756E','#08786D']],
     'olive-garden' => ['name'=>'Olive Garden', 'group'=>'Nature', 'dark'=>false, 'radius'=>22, 'palette'=>['#F2F5EB','#506C3D','#718F55','#B5C99A','#FFFFFF','#34442C','#647657','#4F6D37']],
