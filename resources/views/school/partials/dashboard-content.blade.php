@@ -129,6 +129,18 @@
 @if($scope)
 <p class="dashboard-scope">{{ $scope }}</p>
 @endif
+@if($isTeacher)
+    <div class="row g-3 dashboard-feature-row">
+        <div class="col-xl-6">
+            @include('school.partials.today-teaching-periods')
+        </div>
+        <div class="col-xl-6">
+            <div class="panel h-100">
+                @include('school.partials.khmer-calendar')
+            </div>
+        </div>
+    </div>
+@endif
 @unless($isTeacher)
 <div class="mini-stats">
     <div class="mini-stat"><i class="bi bi-calendar2-check"></i><div><small>Present students</small><strong>{{ $presentCount }} <span class="fw-normal text-secondary" style="font-size:10px">/ {{ $attendanceCount }} recorded</span></strong></div></div>

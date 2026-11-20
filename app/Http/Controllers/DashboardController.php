@@ -6,6 +6,7 @@ use App\Models\Announcement;
 use App\Models\Attendance;
 use App\Models\ClassGroup;
 use App\Models\Fee;
+use App\Models\Schedule;
 use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\User;
@@ -148,6 +149,13 @@ class DashboardController extends Controller
             'reportDate' => $reportDate,
             'programBreakdowns' => $programBreakdowns,
             'todayClasses' => $user->role === 'student' ? SchoolModules::query('schedules', $user)->with('subject')->where('day', today()->format('l'))->orderBy('starts_at')->get() : collect(),
+            'todayTeachingPeriods' => $user->role === 'teacher'
+                ? Schedule::with(['subject.schoolClass', 'schoolClass', 'classroom.buildingRecord'])
+                    ->where('teacher_id', $user->id)
+                    ->whereNotNull('subject_id')
+                    ->where('day', today()->format('l'))
+                    ->orderBy('starts_at')->orderBy('id')->get()
+                : collect(),
             'upcomingAssignments' => $user->role === 'student' ? SchoolModules::query('assignments', $user)->with('subject')->whereDate('due_date', '>=', today())->orderBy('due_date')->orderBy('id')->limit(5)->get() : collect(),
             'upcomingExams' => $user->role === 'student' ? SchoolModules::query('examinations', $user)->with('subject')->whereDate('date', '>=', today())->orderBy('date')->orderBy('id')->limit(3)->get() : collect(),
             'studentCount' => (clone $students)->count(),
