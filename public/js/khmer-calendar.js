@@ -7,51 +7,47 @@
     const lunarDate = calendar.querySelector('[data-calendar-date]');
     const solarDate = calendar.querySelector('[data-calendar-solar]');
     const selectedHoliday = calendar.querySelector('[data-selected-holiday]');
-    const fullDateLabel = new Intl.DateTimeFormat('km-KH-u-nu-khmr', {timeZone: 'UTC', dateStyle: 'full'});
+    const locale = {en: 'en', km: 'km-KH-u-nu-khmr', zh: 'zh-CN'}[calendar.lang] || 'en';
+    const holidayLabels = JSON.parse(calendar.dataset.holidayLabels);
+    const fullDateLabel = new Intl.DateTimeFormat(locale, {timeZone: 'UTC', dateStyle: 'full'});
     const cambodiaDate = new Intl.DateTimeFormat('en-CA', {
         timeZone: 'Asia/Phnom_Penh', year: 'numeric', month: 'numeric', day: 'numeric',
     });
-    const monthLabel = new Intl.DateTimeFormat('km-KH-u-nu-khmr', {
+    const monthLabel = new Intl.DateTimeFormat(locale, {
         timeZone: 'UTC', month: 'long', year: 'numeric',
     });
-    const numerals = new Intl.NumberFormat('km-KH-u-nu-khmr');
+    const numerals = new Intl.NumberFormat(locale);
     const holidays = calendar.querySelector('[data-calendar-holidays]');
     const holidayList = holidays.querySelector('ul');
 
     // Cambodia's 2026 Legal Reform Committee calendar and 2027 Sub-Decree No. 198.
     const commonHolidays = {
-        '1-1': 'ចូលឆ្នាំសកល',
-        '1-7': 'ទិវាជ័យជម្នះ ៧ មករា',
-        '3-8': 'ទិវានារីអន្តរជាតិ',
-        '4-14': 'បុណ្យចូលឆ្នាំថ្មីប្រពៃណីខ្មែរ',
-        '4-15': 'បុណ្យចូលឆ្នាំថ្មីប្រពៃណីខ្មែរ',
-        '4-16': 'បុណ្យចូលឆ្នាំថ្មីប្រពៃណីខ្មែរ',
-        '5-1': 'ទិវាពលកម្មអន្តរជាតិ',
-        '5-14': 'ព្រះរាជពិធីបុណ្យចម្រើនព្រះជន្មព្រះមហាក្សត្រ',
-        '6-18': 'ព្រះរាជពិធីបុណ្យចម្រើនព្រះជន្មសម្តេចព្រះមហាក្សត្រី',
-        '9-24': 'ទិវាប្រកាសរដ្ឋធម្មនុញ្ញ',
-        '10-15': 'ទិវាប្រារព្ធពិធីគោរពព្រះវិញ្ញាណក្ខន្ធព្រះបរមរតនកោដ្ឋ',
-        '10-29': 'ព្រះរាជពិធីគ្រងព្រះបរមរាជសម្បត្តិ',
-        '11-9': 'ទិវាបុណ្យឯករាជ្យជាតិ',
-        '12-29': 'ទិវាសន្តិភាពនៅកម្ពុជា',
+        '1-1': 'new_year',
+        '1-7': 'victory',
+        '3-8': 'women',
+        '4-14': 'khmer_new_year', '4-15': 'khmer_new_year', '4-16': 'khmer_new_year',
+        '5-1': 'labour',
+        '5-14': 'king_birthday',
+        '6-18': 'queen_mother',
+        '9-24': 'constitution',
+        '10-15': 'king_father',
+        '10-29': 'coronation',
+        '11-9': 'independence',
+        '12-29': 'peace',
     };
-    const visak = 'បុណ្យវិសាខបូជា';
-    const ploughing = 'ព្រះរាជពិធីច្រត់ព្រះនង្គ័ល';
-    const pchumBen = 'បុណ្យភ្ជុំបិណ្ឌ';
-    const waterFestival = 'ព្រះរាជពិធីបុណ្យអុំទូក';
     const holidaySchedules = {
         2026: {
             ...commonHolidays,
-            '5-1': `${commonHolidays['5-1']} និង ${visak}`,
-            '5-5': ploughing,
-            '10-10': pchumBen, '10-11': pchumBen, '10-12': pchumBen,
-            '11-23': waterFestival, '11-24': waterFestival, '11-25': waterFestival,
+            '5-1': 'labour_and_visak',
+            '5-5': 'ploughing',
+            '10-10': 'pchum_ben', '10-11': 'pchum_ben', '10-12': 'pchum_ben',
+            '11-23': 'water_festival', '11-24': 'water_festival', '11-25': 'water_festival',
         },
         2027: {
             ...commonHolidays,
-            '5-20': visak, '5-24': ploughing,
-            '9-29': pchumBen, '9-30': pchumBen, '10-1': pchumBen,
-            '11-12': waterFestival, '11-13': waterFestival, '11-14': waterFestival,
+            '5-20': 'visak', '5-24': 'ploughing',
+            '9-29': 'pchum_ben', '9-30': 'pchum_ben', '10-1': 'pchum_ben',
+            '11-12': 'water_festival', '11-13': 'water_festival', '11-14': 'water_festival',
         },
     };
 
@@ -70,7 +66,7 @@
         const lunar = momentkh.fromGregorian(year, month, day, 12);
         solarDate.textContent = fullDateLabel.format(date);
         lunarDate.textContent = momentkh.format(lunar);
-        const holiday = holidaySchedules[year]?.[`${month}-${day}`];
+        const holiday = holidayLabels[holidaySchedules[year]?.[`${month}-${day}`]];
         selectedHoliday.querySelector('p').textContent = holiday || '';
         selectedHoliday.hidden = !holiday;
         for (const button of body.querySelectorAll('button')) {
@@ -100,7 +96,7 @@
             button.type = 'button';
             button.dataset.calendarDay = day;
             button.textContent = numerals.format(day);
-            const holiday = schedule?.[`${month + 1}-${day}`];
+            const holiday = holidayLabels[schedule?.[`${month + 1}-${day}`]];
             if (holiday) {
                 button.classList.add('is-holiday');
                 button.title = holiday;
