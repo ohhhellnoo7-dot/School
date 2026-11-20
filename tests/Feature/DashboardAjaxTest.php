@@ -18,6 +18,28 @@ class DashboardAjaxTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_teacher_dashboard_focuses_on_teaching_and_attendance_on_initial_load_and_refresh(): void
+    {
+        $this->seed(SchoolSeeder::class);
+        $teacher = User::where('email', 'teacher@school.test')->firstOrFail();
+        $this->actingAs($teacher)->get('/dashboard')->assertOk()->assertSee('My teaching schedule');
+
+        $pages = [
+            $this->get('/dashboard')->assertOk()->getContent(),
+            $this->getJson('/dashboard/data')->assertOk()->json('html'),
+        ];
+
+        foreach ($pages as $html) {
+            foreach (['Students in my classes', 'My classes', 'My subjects', 'View assignments', 'Daily attendance', 'Student attendance report', 'School announcements'] as $label) {
+                $this->assertStringContainsString($label, $html);
+            }
+
+            foreach (['My teachers', 'Enrollment trend', 'Student enrollment', 'Students by gender', 'Recent registrations', 'Monthly revenue'] as $label) {
+                $this->assertStringNotContainsString($label, $html);
+            }
+        }
+    }
+
     public function test_parent_labels_refer_to_their_own_children_on_initial_and_live_dashboard(): void
     {
         $parent = User::factory()->create();
