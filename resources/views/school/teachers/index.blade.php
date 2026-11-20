@@ -34,7 +34,7 @@
 <tr>
 <td data-label="Teacher">
     <div class="teacher-row-identity">
-        @include('school.partials.avatar', ['person' => $t])
+        @include('school.partials.avatar', ['person' => $t, 'teacherIcon' => true])
         <div class="teacher-row-details">
             <a href="{{ route('teacher-management.show', $t) }}">{{ $t->name }}</a>
             <small class="teacher-row-meta">{{ $t->profile_number ?: '#'.$t->id }} · {{ $t->program ?: 'Khmer' }}

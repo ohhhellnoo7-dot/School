@@ -11,10 +11,7 @@
             <a class="payroll-action" id="salary-monthly-attendance" href="{{ route('teacher-attendance.monthly', ['month' => $month->format('Y-m')]) }}"><i class="bi bi-calendar-check" aria-hidden="true"></i> Monthly Attendance</a>
         </div>
     </div>
-    <div class="payroll-hero-art" aria-hidden="true">
-        <span class="payroll-hero-tile"><i class="bi bi-receipt"></i></span>
-        <span class="payroll-hero-tile payroll-hero-tile-check"><i class="bi bi-check2"></i></span>
-    </div>
+    <img class="payroll-hero-art" src="{{ asset('images/payroll-hero-3d.png') }}" width="640" height="427" alt="" decoding="async">
 </header>
 @include('school.salaries._calculator')
 <section class="payroll-surface payroll-rates" aria-labelledby="payroll-rates-heading">
@@ -77,11 +74,7 @@
     <div id="salary-search-results" aria-live="polite"><div class="table-responsive" role="region" aria-labelledby="payroll-register-heading" tabindex="0"><table class="table salary-table"><thead><tr><th scope="col">#</th><th scope="col">Employee</th><th scope="col">Work sessions</th><th scope="col">Attendance days</th><th scope="col">Base salary</th><th scope="col">Salary increase</th><th scope="col">Deductions</th><th scope="col">Net monthly salary</th><th scope="col">Status</th><th scope="col">Action</th></tr></thead><tbody>
     @forelse($rows as $row)
         <tr><td><span class="payroll-row-number">{{ $teachers->firstItem() + $loop->index }}</span></td><td><div class="payroll-person">
-            @if($row['teacher']->profile_photo_url)
-                <img class="payroll-avatar" src="{{ $row['teacher']->profile_photo_url }}" alt="" loading="lazy">
-            @else
-                <span class="payroll-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($row['teacher']->name, 0, 1)) }}</span>
-            @endif
+            @include('school.partials.avatar', ['person' => $row['teacher'], 'avatarClass' => 'payroll-avatar', 'teacherIcon' => true])
             <div><strong>{{ $row['teacher']->name }}</strong><small>{{ $row['teacher']->profile_number ?: $row['teacher']->email }}</small></div>
         </div></td><td>
             @if($row['profile']){{ $row['payment']?->day_sessions ?? $row['profile']->day_sessions }} daytime / {{ $row['payment']?->evening_sessions ?? $row['profile']->evening_sessions }} evening @else<span class="text-secondary">Not configured</span>@endif

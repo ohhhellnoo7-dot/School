@@ -2,7 +2,7 @@
 @section('title', $teacher->name.' · '.__('Teacher schedule'))
 @section('content')
 <div class="page-heading">
-    <div><div class="eyebrow">{{ __('Teacher schedule') }}</div><h1>@include('school.partials.avatar', ['person' => $teacher]){{ $teacher->name }}</h1><p>{{ __($teacher->program ?: 'Khmer') }} · {{ __('View teaching lessons and weekly free periods.') }}</p></div>
+    <div><div class="eyebrow">{{ __('Teacher schedule') }}</div><h1>@include('school.partials.avatar', ['person' => $teacher, 'teacherIcon' => true]){{ $teacher->name }}</h1><p>{{ __($teacher->program ?: 'Khmer') }} · {{ __('View teaching lessons and weekly free periods.') }}</p></div>
     @if(auth()->user()->role === 'administrator')
         <a class="btn btn-outline-secondary" href="{{ route('modules.index', 'teachers') }}">{{ __('Back to teachers') }}</a>
     @endif

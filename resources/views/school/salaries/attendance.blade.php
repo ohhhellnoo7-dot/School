@@ -9,7 +9,10 @@
     @forelse($teachers as $teacher)
         @php($marks = $overrides->get($teacher->id, collect())->keyBy('session'))
         @php($scanMarks = $scans->get($teacher->id, collect())->keyBy('session'))
-        <tr><td><strong>{{ $teacher->name }}</strong><small>{{ $teacher->profile_number }}</small><a class="small" href="{{ route('employee-salaries.show', ['teacher' => $teacher, 'month' => substr($date, 0, 7)]) }}#salary-attendance">Monthly history</a></td>
+        <tr><td><div class="payroll-person">
+            @include('school.partials.avatar', ['person' => $teacher, 'avatarClass' => 'payroll-avatar', 'teacherIcon' => true])
+            <div><strong>{{ $teacher->name }}</strong><small>{{ $teacher->profile_number }}</small><a class="small" href="{{ route('employee-salaries.show', ['teacher' => $teacher, 'month' => substr($date, 0, 7)]) }}#salary-attendance">Monthly history</a></div>
+        </div></td>
         @foreach(['Morning', 'Afternoon', 'Evening'] as $session)
             @php($status = $marks->get($session)?->status ?? $marks->get('All')?->status ?? $daily->get($teacher->id)?->status ?? $scanMarks->get($session)?->status)
             <td>@if($status)<span class="status-badge {{ $status }}">{{ ucfirst($status) }}</span>@else<span class="text-secondary">Not recorded</span>@endif</td>

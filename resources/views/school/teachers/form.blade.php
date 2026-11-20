@@ -3,7 +3,7 @@
 @section('content')
 @php($qualified = $teacher->exists ? $service->qualifications($teacher) : collect())
 @php($periods = $teacher->exists ? $service->periods($teacher) : collect())
-<div class="page-heading"><div><div class="eyebrow">School workspace</div><h1>@if($teacher->exists)@include('school.partials.avatar', ['person' => $teacher])@endif{{ $teacher->exists ? 'Edit Teacher' : 'Add Teacher' }}</h1><p>Confirm the teacher’s subjects and working hours.</p></div><a href="{{ route('modules.index', 'teachers') }}" class="btn btn-outline-secondary">Back to Teachers</a></div>
+<div class="page-heading"><div><div class="eyebrow">School workspace</div><h1>@if($teacher->exists)@include('school.partials.avatar', ['person' => $teacher, 'teacherIcon' => true])@endif{{ $teacher->exists ? 'Edit Teacher' : 'Add Teacher' }}</h1><p>Confirm the teacher’s subjects and working hours.</p></div><a href="{{ route('modules.index', 'teachers') }}" class="btn btn-outline-secondary">Back to Teachers</a></div>
 <form method="post" action="{{ $teacher->exists ? route('teacher-management.update', $teacher) : route('teacher-management.store') }}" class="panel p-4">@csrf @if($teacher->exists)@method('put')@endif
 <div class="row g-3">
 <script type="application/json" data-teacher-program-options>@json($programOptions)</script>
