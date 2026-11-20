@@ -4,16 +4,16 @@
 <div class="payroll-page">
 <header class="payroll-hero">
     <div class="payroll-hero-copy">
-        <span class="payroll-hero-label">Payroll Management</span>
         <h1>Employee Salary</h1>
-        <p>Manage teacher salaries, working hours, and attendance in one place.</p>
+        <p>Manage teacher pay, working hours, and attendance.</p>
         <div class="payroll-actions">
             <button class="payroll-action payroll-action-primary" type="button" data-open-salary-calculator aria-haspopup="dialog" aria-controls="salary-calculator"><i class="bi bi-calculator" aria-hidden="true"></i> Salary Calculator</button>
             <a class="payroll-action" id="salary-monthly-attendance" href="{{ route('teacher-attendance.monthly', ['month' => $month->format('Y-m')]) }}"><i class="bi bi-calendar-check" aria-hidden="true"></i> Monthly Attendance</a>
         </div>
     </div>
     <div class="payroll-hero-art" aria-hidden="true">
-        <img src="{{ asset('images/payroll-hero-illustration.png') }}" width="768" height="512" alt="">
+        <span class="payroll-hero-tile"><i class="bi bi-receipt"></i></span>
+        <span class="payroll-hero-tile payroll-hero-tile-check"><i class="bi bi-check2"></i></span>
     </div>
 </header>
 @include('school.salaries._calculator')
