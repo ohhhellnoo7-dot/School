@@ -10,37 +10,83 @@
     </div>
     @can('create', \App\Models\Student::class)<a href="{{ route('students.create') }}" class="btn btn-primary hero-enroll"><i class="bi bi-plus-lg me-2" aria-hidden="true"></i>{{ __('Enroll student') }}</a>@endcan
 </x-scholar-hero>
-<div class="attendance-summary" aria-label="{{ __('Attendance overview') }}">
-    @foreach(['total' => ['Total Students', 'people-fill'], 'present' => ['Present Today', 'check-circle-fill'], 'absent' => ['Absent Today', 'x-circle-fill'], 'late' => ['Late Today', 'clock-fill'], 'excused' => ['Excused Today', 'shield-check']] as $key => [$label, $icon])
-    <article class="attendance-summary-card attendance-tone-{{ $key }}">
-        <span class="attendance-summary-icon"><i class="bi bi-{{ $icon }}" aria-hidden="true"></i></span>
-        <h2>{{ __($attendanceDate === today()->toDateString() ? $label : str_replace(' Today', '', $label)) }}</h2>
-        <strong data-attendance-count="{{ $key }}" data-count="{{ $attendanceCounts[$key] }}">{{ number_format($attendanceCounts[$key]) }}</strong>
-        <span class="attendance-summary-note">{{ \Illuminate\Support\Carbon::parse($attendanceDate)->format('d M Y') }} &middot; {{ __('Matching students') }}</span>
-        <i class="bi bi-{{ $icon }} attendance-summary-decoration" aria-hidden="true"></i>
-    </article>
-    @endforeach
+@php
+    $statuses = [
+        'present' => ['Present', 'patch-check-fill'],
+        'absent' => ['Absent', 'person-x-fill'],
+        'late' => ['Late', 'clock-fill'],
+        'excused' => ['Excused', 'shield-fill-check'],
+        'unrecorded' => ['Not Marked', 'dash-circle'],
+    ];
+    $formatPercent = fn ($key) => $attendanceCounts['total']
+        ? round($attendanceCounts[$key] / $attendanceCounts['total'] * 100, 1)
+        : 0;
+    $displayDate = \Illuminate\Support\Carbon::parse($attendanceDate)->translatedFormat('d M Y');
+    $isToday = $attendanceDate === today()->toDateString();
+    $advancedActive = request()->filled('class') || request()->filled('program') || request()->filled('session')
+        || request()->filled('status') || request('sort', 'name') !== 'name' || request('direction', 'asc') !== 'asc';
+@endphp
+<div class="attendance-summary">
+    <div class="attendance-cards">
+        @foreach(['total' => ['Total Students', 'people-fill'], ...array_slice($statuses, 0, 4)] as $key => [$label, $icon])
+            <article class="attendance-summary-card attendance-tone-{{ $key }}">
+                <span class="attendance-summary-icon" aria-hidden="true"><i class="bi bi-{{ $icon }}"></i></span>
+                <h2>{{ $isToday ? __(['present' => 'Present Today', 'absent' => 'Absent Today', 'late' => 'Late Today', 'excused' => 'Excused Today'][$key] ?? $label) : __($label) }}</h2>
+                <strong data-attendance-count="{{ $key }}" data-count="{{ $attendanceCounts[$key] }}">{{ number_format($attendanceCounts[$key]) }}</strong>
+                @if($key === 'total')
+                    <small class="attendance-summary-note">{{ __('Matching students') }}</small>
+                @else
+                    <small class="attendance-summary-note"><b data-attendance-percent="{{ $key }}">{{ $formatPercent($key) }}%</b> {{ __('of matching students') }}</small>
+                @endif
+            </article>
+        @endforeach
+    </div>
+    <section class="attendance-overview" aria-labelledby="attendance-overview-title">
+        <div class="attendance-overview-heading">
+            <h2 id="attendance-overview-title">{{ __('Attendance overview') }}</h2>
+            <time class="directory-date" datetime="{{ $attendanceDate }}"><i class="bi bi-calendar3" aria-hidden="true"></i> {{ $displayDate }}</time>
+        </div>
+        <div class="attendance-distribution" aria-hidden="true">
+            @foreach($statuses as $key => [$label, $icon])
+                <span class="attendance-tone-{{ $key }}" data-attendance-segment="{{ $key }}" style="flex-grow: {{ $attendanceCounts[$key] }}"></span>
+            @endforeach
+        </div>
+        <ul class="attendance-distribution-legend">
+            @foreach($statuses as $key => [$label, $icon])
+                <li class="attendance-tone-{{ $key }}">
+                    <i class="bi bi-{{ $icon }}" aria-hidden="true"></i>
+                    <span>{{ __($label) }}</span>
+                    <strong data-attendance-count="{{ $key }}" data-count="{{ $attendanceCounts[$key] }}">{{ number_format($attendanceCounts[$key]) }}</strong>
+                    <small data-attendance-percent="{{ $key }}">{{ $formatPercent($key) }}%</small>
+                </li>
+            @endforeach
+        </ul>
+    </section>
 </div>
 <section class="panel directory-panel student-directory">
     <div class="panel-header directory-heading">
-        <div><span class="directory-eyebrow">{{ __('STUDENTS & ATTENDANCE') }}</span><h2>{{ __('Student directory') }} <span class="directory-count">{{ $students->total() }}</span></h2><p>{{ __('Find a student, review attendance, and keep today up to date.') }}</p></div>
-        <span class="directory-date"><i class="bi bi-calendar3" aria-hidden="true"></i> {{ \Illuminate\Support\Carbon::parse($attendanceDate)->format('d M Y') }}</span>
+        <div class="directory-heading-copy">
+            <h2>{{ __('Student directory') }} <span class="directory-count">{{ number_format($students->total()) }}</span></h2>
+        </div>
+        <img class="directory-illustration" src="{{ asset('images/student-directory.webp') }}" alt="" width="220" height="130">
     </div>
     <form method="get" class="student-filters directory-workspace">
         <div class="directory-search-row">
             <div class="directory-search-field"><label for="search" class="form-label">{{ __('Search students') }}</label><div class="directory-search-input"><i class="bi bi-search" aria-hidden="true"></i><input id="search" type="search" name="search" class="form-control" placeholder="{{ __('Search name, student ID, or email...') }}" value="{{ request('search') }}"></div></div>
             <div><label for="attendance-date" class="form-label">{{ __('Attendance date') }}</label><input id="attendance-date" name="attendance_date" type="date" class="form-control" value="{{ $attendanceDate }}" max="{{ today()->toDateString() }}" required></div>
-            <div class="directory-filter-actions"><button class="btn btn-primary"><i class="bi bi-funnel" aria-hidden="true"></i> {{ __('Apply filters') }}</button><a class="btn btn-outline-secondary" href="{{ route('students.index') }}" aria-label="{{ __('Reset filters') }}">{{ __('Reset') }}</a></div>
+            <div class="directory-filter-actions"><button class="btn btn-primary"><i class="bi bi-funnel" aria-hidden="true"></i> {{ __('Apply filters') }}</button><a class="btn btn-outline-secondary" href="{{ route('students.index') }}" aria-label="{{ __('Reset filters') }}"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> {{ __('Reset') }}</a></div>
         </div>
         <fieldset class="attendance-filter-group">
             <legend>{{ __('Attendance status') }}</legend>
             <div class="attendance-filter-tabs">
-            @foreach(['' => ['All students', 'people'], 'present' => ['Present', 'check-circle'], 'absent' => ['Absent', 'x-circle'], 'late' => ['Late', 'clock'], 'excused' => ['Excused', 'shield-check'], 'unrecorded' => ['Not Marked', 'dash-circle']] as $value => [$label, $icon])
+            @foreach(['' => ['All students', 'people'], ...$statuses] as $value => [$label, $icon])
                 <label class="attendance-tab attendance-{{ $value ?: 'all' }}"><input type="radio" name="attendance_status" value="{{ $value }}" @checked(request('attendance_status', '') === $value)><span><i class="bi bi-{{ $icon }}" aria-hidden="true"></i>{{ __($label) }}<b class="attendance-tab-count" data-attendance-count="{{ $value ?: 'total' }}" data-count="{{ $attendanceCounts[$value ?: 'total'] }}">{{ number_format($attendanceCounts[$value ?: 'total']) }}</b></span></label>
             @endforeach
             </div>
         </fieldset>
-        <div class="directory-refine-grid">
+        <details class="directory-advanced" @if($advancedActive) open @endif>
+            <summary><i class="bi bi-sliders" aria-hidden="true"></i> {{ __('Advanced filters') }} <i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+            <div class="directory-refine-grid">
             <div><label for="class" class="form-label">{{ __('Class') }}</label><select id="class" name="class" class="form-select"><option value="">{{ __('All classes') }}</option>@foreach($classes as $class)<option value="{{ $class->id }}" data-program="{{ $class->program }}" data-session="{{ $class->session }}" @selected(request('class') == $class->id)>{{ $class->label }}</option>@endforeach</select></div>
             @foreach(['program' => \App\Models\Program::names(), 'session' => ['Morning', 'Afternoon', 'Evening']] as $field => $values)
             <div><label class="form-label" for="{{ $field }}">{{ __(ucfirst($field)) }}</label><select class="form-select" id="{{ $field }}" name="{{ $field }}"><option value="">{{ __('All '.$field.'s') }}</option>@foreach($values as $value)<option value="{{ $value }}" @selected(request($field) === $value)>{{ __($value) }}</option>@endforeach</select></div>
@@ -48,7 +94,8 @@
             <div><label for="status" class="form-label">{{ __('Enrollment') }}</label><select id="status" name="status" class="form-select"><option value="">{{ __('All statuses') }}</option>@foreach(['active', 'inactive', 'graduated'] as $status)<option @selected(request('status') === $status) value="{{ $status }}">{{ __(ucfirst($status)) }}</option>@endforeach</select></div>
             <div><label class="form-label" for="sort">{{ __('Sort by') }}</label><select class="form-select" id="sort" name="sort">@foreach(['name' => 'Name', 'student_number' => 'Student ID', 'gender' => 'Gender', 'date_of_birth' => 'Date of birth', 'school_class_id' => 'Class', 'email' => 'Email', 'phone' => 'Phone', 'status' => 'Status'] as $key => $label)<option value="{{ $key }}" @selected(request('sort', 'name') === $key)>{{ __($label) }}</option>@endforeach</select></div>
             <div><label class="form-label" for="direction">{{ __('Order') }}</label><select class="form-select" id="direction" name="direction"><option value="asc" @selected(request('direction', 'asc') === 'asc')>{{ __('Ascending') }}</option><option value="desc" @selected(request('direction') === 'desc')>{{ __('Descending') }}</option></select></div>
-        </div>
+            </div>
+        </details>
     </form>
 <div class="table-responsive"><table class="table table-hover directory-roster"><thead><tr><th>{{ __('Student') }}</th><th>{{ __('Class') }}</th><th>{{ __('Contact') }}</th><th>{{ __('Guardian') }}</th><th>{{ __('Enrollment') }}</th><th>{{ __('Attendance') }}<small class="d-block">{{ $attendanceDate }}</small></th><th>{{ __('Actions') }}</th></tr></thead><tbody>@forelse($students as $student)
 @php($attendanceStatus = $student->attendances->first()?->status)
