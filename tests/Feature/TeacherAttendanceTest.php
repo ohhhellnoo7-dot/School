@@ -58,17 +58,14 @@ class TeacherAttendanceTest extends TestCase
     public function test_access_and_invalid_inputs_do_not_create_records(): void {
         $admin = User::factory()->create(['role'=>'administrator']);
         $teacher = User::factory()->create(['role'=>'teacher','program'=>'Khmer','status'=>'active']);
-        $other = User::factory()->create(['role'=>'teacher','program'=>'Chinese','status'=>'active']);
         $data=['date'=>today()->toDateString(),'records'=>[['teacher_id'=>$teacher->id,'status'=>'present']]];
-        $this->actingAs($teacher)->get(route('teacher-attendance.index'))->assertOk()->assertSee($teacher->email)->assertDontSee($other->email);
         $reportFilters = ['date' => $data['date'], 'session' => 'Morning'];
-        $this->get(route('teacher-attendance.index', $reportFilters))
-            ->assertOk()
-            ->assertSee(route('reports', $reportFilters))
-            ->assertDontSee(route('teacher-management.reports'));
+        $scheduleUrl = route('timetables.index', ['view' => 'teachers']);
+        $this->actingAs($teacher)->get(route('teacher-attendance.index', $reportFilters))->assertRedirect($scheduleUrl);
+        $this->get($scheduleUrl)->assertOk()->assertViewHas('selected', $teacher->id)
+            ->assertDontSee('Overall teacher attendance');
         $this->get(route('reports', $reportFilters))
             ->assertRedirect(route('teacher-attendance.monthly', $reportFilters));
-        $this->get(route('teacher-attendance.index',['program'=>'Chinese']))->assertOk()->assertDontSee($other->email);
         $this->post(route('teacher-attendance.store'),$data)->assertForbidden();
         foreach (['parent','student'] as $role) {
             $user=User::factory()->create(['role'=>$role]);

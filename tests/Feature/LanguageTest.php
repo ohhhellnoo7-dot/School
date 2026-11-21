@@ -15,11 +15,12 @@ class LanguageTest extends TestCase
         foreach (['km', 'zh'] as $locale) {
             $response = $this->actingAs($teacher)->withSession(['locale' => $locale])
                 ->get(route('teachers.schedule', $teacher))->assertOk();
-            foreach (['Teacher schedule', 'School Timetables', 'Main menu', 'Subject', 'Reset', 'Designated Free Periods:', 'Print Schedule', 'No lesson'] as $key) {
+            foreach (['Teacher schedule', 'Main menu', 'Subject', 'Reset', 'Designated Free Periods:', 'Print Schedule', 'No lesson'] as $key) {
                 $translated = __($key, [], $locale);
                 $this->assertNotSame($key, $translated);
                 $response->assertSee($translated);
             }
+            $response->assertSee('href="'.route('timetables.index').'"><i class="bi bi-calendar-week"></i><span class="nav-label"> '.__('Teacher schedule', [], $locale).'</span>', false);
             $this->getJson(route('teachers.schedule.status', $teacher))->assertOk()
                 ->assertJsonPath('current', __('No lesson', [], $locale))
                 ->assertJsonPath('next', __('No lesson', [], $locale));

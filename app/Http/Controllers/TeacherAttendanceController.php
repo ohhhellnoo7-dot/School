@@ -180,6 +180,9 @@ class TeacherAttendanceController extends Controller
 
     public function index(Request $request) {
         abort_unless(in_array($request->user()->role, ['administrator', 'teacher']), 403);
+        if ($request->user()->role === 'teacher') {
+            return redirect()->route('timetables.index', ['view' => 'teachers']);
+        }
         return view('school.attendance.teachers', $this->data($request));
     }
 
@@ -248,7 +251,7 @@ class TeacherAttendanceController extends Controller
             $insights = compact('trend', 'programs', 'recent');
         }
         $teachers = new \Illuminate\Pagination\LengthAwarePaginator($teachers->forPage(max(1, $request->integer($prefix.'page', 1)), 50)->values(), $total, 50, max(1, $request->integer($prefix.'page', 1)), ['path' => $request->url(), 'query' => $request->query(), 'pageName' => $prefix.'page', 'fragment' => 'teacher-attendance']);
-        $workingHours = DB::table('teacher_working_periods')->whereIn('teacher_id', $teachers->pluck('id'))->where('unavailable', false)->get()->groupBy('teacher_id')->map(fn ($periods) => $periods->map(fn ($p) => substr($p->start_time, 0, 5).'?'.substr($p->end_time, 0, 5))->unique()->join(', '));
+        $workingHours = DB::table('teacher_working_periods')->whereIn('teacher_id', $teachers->pluck('id'))->where('unavailable', false)->orderBy('start_time')->get()->groupBy('teacher_id')->map(fn ($periods) => $periods->map(fn ($p) => substr($p->start_time, 0, 5).'–'.substr($p->end_time, 0, 5))->unique()->join(', '));
         return compact('teachers', 'records', 'counts', 'total', 'date', 'workingHours', 'filters', 'embedded', 'prefix', 'insights');
     }
     public function store(Request $request) {

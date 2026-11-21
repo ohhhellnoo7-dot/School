@@ -58,7 +58,7 @@ a.attendance-status-tile:hover, a.attendance-status-tile:focus-visible { outline
     <div class="nav-caption">{{ __('Main menu') }}</div>
     <nav class="school-nav">
         <a class="{{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}"><i class="bi bi-grid-1x2"></i><span class="nav-label"> {{ __('Overview') }}</span></a>
-        <a class="{{ request()->routeIs('timetables.*') ? 'active' : '' }}" href="{{ route('timetables.index') }}"><i class="bi bi-calendar-week"></i><span class="nav-label"> {{ __('School Timetables') }}</span></a>
+        <a class="{{ request()->routeIs('timetables.*') ? 'active' : '' }}" href="{{ route('timetables.index') }}"><i class="bi bi-calendar-week"></i><span class="nav-label"> {{ auth()->user()->role === 'teacher' ? __('Teacher schedule') : __('School Timetables') }}</span></a>
         <a class="{{ request()->routeIs('students.*') ? 'active' : '' }}" href="{{ route('students.index') }}"><i class="bi bi-people"></i><span class="nav-label"> {{ auth()->user()->role === 'parent' ? __('My children') : (auth()->user()->role === 'student' ? __('My profile') : __('Students')) }}</span></a>
         <div class="nav-group-caption">{{ __('Academics') }}</div>
         @foreach(\App\Support\SchoolModules::all() as $key => $module)
@@ -66,9 +66,6 @@ a.attendance-status-tile:hover, a.attendance-status-tile:focus-visible { outline
                 <a class="{{ ($key === 'classes' ? request()->routeIs('class-groups.*') : (request()->route('module') === $key || ($key === 'fees' && request()->routeIs('finance.*')) || ($key === 'teachers' && request()->routeIs('teacher-management.*', 'teachers.schedule*', 'teacher-attendance.*')))) ? 'active' : '' }}" href="{{ $key === 'classes' ? route('class-groups.index') : route('modules.index', $key) }}"><i class="bi bi-{{ $module['icon'] }}"></i><span class="nav-label">{{ __($module['title']) }}</span></a>
             @endif
         @endforeach
-        @if(auth()->user()->role === 'teacher')
-<a class="{{ request()->routeIs('teacher-attendance.*') ? 'active' : '' }}" href="{{ route('teacher-attendance.index') }}"><i class="bi bi-person-check"></i><span class="nav-label">{{ __('Teachers') }}</span></a>
-@endif
 <div class="nav-group-caption">{{ __('Workspace') }}</div>
         <a class="{{ request()->routeIs('classrooms.*', 'classroom-bookings.*') ? 'active' : '' }}" href="{{ route('classrooms.index') }}"><i class="bi bi-door-open"></i><span class="nav-label">{{ __('Classroom availability') }}</span></a>
         <a class="{{ request()->routeIs('school.map') ? 'active' : '' }}" href="{{ route('school.map') }}"><i class="bi bi-geo-alt" aria-hidden="true"></i><span class="nav-label">{{ __('School map') }}</span></a>

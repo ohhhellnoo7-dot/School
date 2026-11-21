@@ -26,7 +26,7 @@
 @if(auth()->user()->role === 'administrator' && $date <= today()->toDateString())
 <input class="form-control" name="records[{{ $index }}][notes]" maxlength="1000" value="{{ old("records.$index.notes", $record?->notes) }}" aria-label="Notes for {{ $teacher->name }}">
 @else
-{{ $record?->notes ?: '?' }}
+{{ $record?->notes ?: __('No notes') }}
 @endif
 </td></tr>
 @empty
