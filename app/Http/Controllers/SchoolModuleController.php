@@ -181,14 +181,32 @@ class SchoolModuleController extends Controller
             $query->whereDate('date', $request->date);
         }
         $attendanceClasses = null;
-        if ($module === 'attendance' && $request->user()->role === 'teacher') {
-            $filters = $request->validate(['class' => 'nullable|integer', 'session' => 'nullable|in:Morning,Afternoon,Evening']);
-            $attendanceClasses = SchoolClass::scheduledForTeacher($request->user())->orderBy('name')->orderBy('section')->orderBy('session')->get();
-            $matchingClasses = fn ($classes) => $classes->scheduledForTeacher($request->user())
+        $attendanceSummary = null;
+        if ($module === 'attendance') {
+            $filters = $request->validate(['class' => 'nullable|integer', 'session' => 'nullable|in:Morning,Afternoon,Evening', 'date' => 'nullable|date_format:Y-m-d']);
+            $user = $request->user();
+            $eligibleClasses = match ($user->role) {
+                'teacher' => SchoolClass::scheduledForTeacher($user),
+                'administrator' => SchoolClass::query(),
+                default => SchoolClass::enrolledFor($user),
+            };
+            $attendanceClasses = (clone $eligibleClasses)->with('classGroup')->orderBy('name')->orderBy('section')->orderBy('session')->get();
+            $matchingClasses = fn ($classes) => $classes->whereIn('school_classes.id', (clone $eligibleClasses)->select('school_classes.id'))
                 ->when($filters['class'] ?? null, fn ($classes, $id) => $classes->where('school_classes.id', $id))
                 ->when($filters['session'] ?? null, fn ($classes, $session) => $classes->where('school_classes.session', $session));
-            $query->whereHas('student.studyClasses', $matchingClasses)
-                ->with(['student.studyClasses' => $matchingClasses]);
+            $filterByClass = ! empty($filters['class']) || ! empty($filters['session']);
+            $query->with(['student.studyClasses' => $matchingClasses])
+                ->when($filterByClass, fn ($records) => $records->whereHas('student.studyClasses', $matchingClasses));
+            $students = Student::visibleForAttendance($user)
+                ->when($filterByClass, fn ($students) => $students->whereHas('studyClasses', $matchingClasses));
+            $summaryDate = isset($filters['date']) ? Carbon::parse($filters['date']) : today();
+            $attendanceSummary = [
+                'date' => $summaryDate,
+                'total' => (clone $students)->count(),
+                'statuses' => Attendance::whereIn('student_id', $students->select('id'))
+                    ->whereDate('date', $summaryDate)
+                    ->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status'),
+            ];
         }
         if ($module === 'classes' && $request->filled('teacher')) {
             $query->where('teacher_id', $request->teacher);
@@ -227,6 +245,7 @@ class SchoolModuleController extends Controller
 
         return view('school.modules.index', ['module' => $module, 'meta' => $meta,
             'attendanceClasses' => $attendanceClasses,
+            'attendanceSummary' => $attendanceSummary,
             'uniqueClassCount' => $uniqueClassCount,
             'parentGrades' => $parentGrades,
             'parentSummary' => $parentSummary,

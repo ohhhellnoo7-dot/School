@@ -1,17 +1,17 @@
 :root[data-theme="windy-breeze"] {
-    --theme-nav-start: #347785;
-    --theme-nav-end: #194b4c;
-    --theme-nav-active: #255e62;
-    --theme-nav-muted: #d4e9e6;
-    --windy-sky: #c9eaf5;
+    --theme-nav-start: #003e50;
+    --theme-nav-end: #007f8d;
+    --theme-nav-active: #007b89;
+    --theme-nav-muted: #e0f5fa;
+    --windy-sky: #cdeffc;
     --windy-sage: #a5c6ae;
     --windy-campus: url('../images/windy-breeze-campus.jpg');
     --chart-female: #367c88;
     --chart-male: #527957;
     --chart-other: #566d96;
-    --chart-present: #39785c;
-    --chart-late: #8b651d;
-    --chart-absent: #a04156;
+    --chart-present: #00b85e;
+    --chart-late: #ffaa19;
+    --chart-absent: #f34863;
 }
 
 :root[data-theme="windy-breeze"]:root:root:root:root:root:root:root:root:root {
@@ -21,7 +21,29 @@
     }
 
     & .scholar-workspace .sidebar {
-        background: linear-gradient(156deg, var(--theme-nav-start), var(--theme-nav-end) 78%);
+        background: linear-gradient(156deg, var(--theme-nav-start), #00566b 58%, var(--theme-nav-end)) !important;
+    }
+    & .scholar-workspace .school-nav a {
+        color: #fff;
+        border-radius: 1rem;
+        transition: background-color .2s ease, box-shadow .2s ease;
+    }
+    & .scholar-workspace .school-nav a:hover { background: #ffffff20; }
+    & .scholar-workspace .sidebar :is(.brand, .brand small, .school-switch, .school-switch small) { color: #fff; }
+    & .scholar-workspace .school-nav a.active {
+        color: #fff !important;
+        background: linear-gradient(110deg, #008d9b, #006476) !important;
+        border: 1px solid #8de6ed;
+        box-shadow: inset 0 1px 3px #ffffff9a, 0 0 16px #18e7ef60;
+    }
+    & .scholar-workspace .teacher-dashboard-hero {
+        position: relative;
+        isolation: isolate;
+        min-height: 13rem;
+        background: linear-gradient(90deg, #f1fcff 5%, #ecfaffde 37%, transparent 72%), var(--windy-campus) right 55% / cover no-repeat;
+    }
+    & .scholar-workspace .student-attendance-hero:not(.teacher-dashboard-hero) {
+        background: linear-gradient(90deg, #f1fcff 5%, #ecfaffde 37%, transparent 72%), var(--windy-campus) right 55% / cover no-repeat;
     }
 
     & .scholar-workspace { --dashboard-campus-image: var(--windy-campus); }
@@ -63,6 +85,10 @@
         border-color: var(--border-color);
         box-shadow: inset 0 1px 0 var(--surface), 0 4px 12px var(--shadow-color);
     }
+    & .scholar-workspace .dashboard-metric:has(.bi-people), & .scholar-workspace .dashboard-metric:has(#breakdown-people) { --tile-color: #32b9e8; }
+    & .scholar-workspace .dashboard-metric:has(.bi-building), & .scholar-workspace .dashboard-metric:has(#breakdown-building) { --tile-color: #00c968; }
+    & .scholar-workspace .dashboard-metric:has(.bi-book), & .scholar-workspace .dashboard-metric:has(#breakdown-book) { --tile-color: #9657ee; }
+    & .scholar-workspace .dashboard-metric:has(#breakdown-person-workspace) { --tile-color: #ffaa19; }
 
     & :is(.modal-content, .salary-calculator, .confirm-dialog, .attendance-action-menu) {
         border-color: var(--border-color);
@@ -118,16 +144,12 @@
     opacity: 0;
 }
 
-.windy-breeze-leaf:nth-child(5) { top: 20%; --windy-duration: 35s; --windy-delay: -12s; }
-.windy-breeze-leaf:nth-child(6) { top: 39%; --windy-duration: 44s; --windy-delay: -29s; }
-.windy-breeze-leaf:nth-child(7) { top: 55%; --windy-duration: 39s; --windy-delay: -8s; }
-.windy-breeze-leaf:nth-child(8) { top: 75%; --windy-duration: 49s; --windy-delay: -25s; }
-.windy-breeze-leaf:nth-child(9) { top: 88%; --windy-duration: 41s; --windy-delay: -34s; }
-.windy-breeze-leaf:nth-child(10) { top: 12%; --windy-duration: 47s; --windy-delay: -38s; }
-.windy-breeze-leaf:nth-child(11) { top: 30%; --windy-duration: 38s; --windy-delay: -22s; }
-.windy-breeze-leaf:nth-child(12) { top: 48%; --windy-duration: 52s; --windy-delay: -46s; }
-.windy-breeze-leaf:nth-child(13) { top: 65%; --windy-duration: 42s; --windy-delay: -17s; }
-.windy-breeze-leaf:nth-child(14) { top: 81%; --windy-duration: 46s; --windy-delay: -30s; }
+.windy-breeze-leaf:nth-child(5) { top: 20%; --windy-duration: 18s; --windy-delay: -3s; }
+.windy-breeze-leaf:nth-child(6) { top: 39%; width: 9px; height: 5px; --windy-duration: 24s; --windy-delay: -13s; }
+.windy-breeze-leaf:nth-child(7) { top: 55%; --windy-duration: 21s; --windy-delay: -8s; }
+.windy-breeze-leaf:nth-child(8) { top: 75%; width: 14px; height: 8px; --windy-duration: 25s; --windy-delay: -20s; }
+.windy-breeze-leaf:nth-child(9) { top: 88%; --windy-duration: 23s; --windy-delay: -10s; }
+.windy-breeze-leaf:nth-child(10) { top: 12%; width: 9px; height: 5px; --windy-duration: 19s; --windy-delay: -12s; }
 
 @media (prefers-reduced-motion: no-preference) {
     :root[data-theme="windy-breeze"] .windy-breeze-cloud { animation: windy-cloud-drift 32s ease-in-out infinite alternate; }
@@ -175,4 +197,111 @@
 @keyframes windy-foliage-sway {
     from { transform: skewX(-1.5deg); }
     to { transform: skewX(2.5deg); }
+}
+
+.windy-landscape { display: none; pointer-events: none; }
+:root:not([data-theme="windy-breeze"]) .windy-only,
+:root[data-theme="windy-breeze"] .windy-original { display: none !important; }
+
+:root[data-theme="windy-breeze"] .windy-landscape {
+    display: block;
+    overflow: hidden;
+}
+:root[data-theme="windy-breeze"] .windy-landscape--sidebar {
+    position: relative;
+    flex: 0 0 8rem;
+    min-height: 8rem;
+    margin: .6rem 0 0;
+    background: linear-gradient(180deg, #00566b 0%, transparent 29%, transparent 77%, #00596a 100%),
+        url('../images/teacher-dashboard-wind-hills.png') center 64% / cover no-repeat;
+}
+:root[data-theme="windy-breeze"] .windy-landscape--hero {
+    position: absolute;
+    inset: .25rem 0 0 auto;
+    width: min(45%, 36rem);
+    z-index: -1;
+}
+:root[data-theme="windy-breeze"][data-sidebar="collapsed"] .windy-landscape--sidebar { display: none; }
+.windy-landscape--sidebar .windy-turbine--distant { --position: 22%; --hill: 22%; --tower: 1.65rem; --blade: .85rem; }
+.windy-landscape--sidebar .windy-turbine--middle { --position: 49%; --hill: 15%; --tower: 2.2rem; --blade: 1.15rem; }
+.windy-landscape--sidebar .windy-turbine--near { --position: 75%; --hill: 18%; --tower: 3.05rem; --blade: 1.5rem; }
+.windy-landscape--sidebar .windy-turbine::before { inset-inline: -.19rem; }
+.windy-landscape--sidebar .windy-turbine-rotor::after { width: .4rem; height: .4rem; }
+.windy-landscape--sidebar .windy-turbine-rotor i { left: -.2rem; width: .4rem; }
+.windy-turbine {
+    position: absolute;
+    bottom: var(--hill);
+    left: var(--position);
+    width: 0;
+    height: var(--tower);
+    filter: drop-shadow(2px 2px 2px #193e6250);
+}
+.windy-turbine--distant { --position: 56%; --hill: 24%; --tower: 3.15rem; --blade: 1.35rem; --spin: 10s; }
+.windy-turbine--middle { --position: 73%; --hill: 18%; --tower: 5rem; --blade: 2.45rem; --spin: 8s; }
+.windy-turbine--near { --position: 88%; --hill: 11%; --tower: 7rem; --blade: 3.5rem; --spin: 7s; }
+.windy-turbine::before {
+    content: '';
+    position: absolute;
+    inset: 0 -.34rem;
+    background: linear-gradient(90deg, #c9e6ed, #fff 45%, #88b3c2);
+    clip-path: polygon(34% 0, 66% 0, 100% 100%, 0 100%);
+}
+.windy-turbine-rotor {
+    position: absolute;
+    top: 0;
+    left: 0;
+    animation: none;
+    animation-delay: -2s;
+}
+.windy-turbine-rotor::after {
+    content: '';
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: .65rem;
+    height: .65rem;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle at 30% 28%, #fff, #a3c9d2 70%);
+}
+.windy-turbine-rotor i {
+    position: absolute;
+    bottom: 0;
+    left: -.32rem;
+    width: .64rem;
+    height: var(--blade);
+    transform-origin: center bottom;
+    background: linear-gradient(90deg, #c9e6ed, #fff 65%);
+    clip-path: polygon(52% 0, 64% 2%, 91% 66%, 83% 87%, 55% 100%, 35% 100%, 19% 80%);
+}
+.windy-turbine-rotor i:nth-child(2) { transform: rotate(120deg); }
+.windy-turbine-rotor i:nth-child(3) { transform: rotate(240deg); }
+.windy-hero-wind-streak {
+    position: absolute;
+    top: 24%;
+    left: 30%;
+    width: clamp(4rem, 16%, 13rem);
+    height: 1.1rem;
+    border-top: 2px solid #ffffffb8;
+    border-radius: 50%;
+    opacity: 0;
+    animation: none;
+}
+.windy-hero-wind-streak:nth-last-child(2) { top: 39%; animation-delay: -2s; }
+.windy-hero-wind-streak:last-child { top: 56%; animation-delay: -4.5s; }
+@keyframes windyTurbineSpin { to { transform: rotate(1turn); } }
+@keyframes windy-hero-wind-drift {
+    18%, 65% { opacity: .72; }
+    100% { transform: translateX(320%) translateY(-1rem); opacity: 0; }
+}
+@media (prefers-reduced-motion: no-preference) {
+    :root[data-theme="windy-breeze"] .windy-turbine-rotor { animation: windyTurbineSpin var(--spin) linear infinite; animation-delay: -2s; }
+    :root[data-theme="windy-breeze"] .windy-hero-wind-streak { animation: windy-hero-wind-drift 7s ease-in-out infinite; }
+}
+@media (max-width: 575px) {
+    .windy-turbine--near { --position: 83%; --tower: 5.3rem; --blade: 2.4rem; }
+    .windy-turbine--middle { --position: 63%; --tower: 3.65rem; --blade: 1.6rem; }
+    .windy-turbine--distant { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .windy-turbine-rotor, .windy-hero-wind-streak { animation: none; }
 }

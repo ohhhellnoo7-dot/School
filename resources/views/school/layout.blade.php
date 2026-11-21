@@ -33,6 +33,14 @@
     <link href="{{ asset('css/dashboard-report.css') }}?v={{ filemtime(public_path('css/dashboard-report.css')) }}" rel="stylesheet">
     <link href="{{ asset('css/dashboard-campus.css') }}?v={{ filemtime(public_path('css/dashboard-campus.css')) }}" rel="stylesheet">
 @endif
+@php
+    $studentAttendancePage = request()->routeIs('modules.index') && request()->route('module') === 'attendance';
+    $teacherWorkspaceDesign = auth()->user()->role === 'teacher'
+        && (request()->routeIs('dashboard') || $studentAttendancePage);
+@endphp
+@if($teacherWorkspaceDesign || $studentAttendancePage || request()->routeIs('dashboard'))
+    <link href="{{ asset('css/student-attendance.css') }}?v={{ filemtime(public_path('css/student-attendance.css')) }}" rel="stylesheet">
+@endif
 <script src="{{ asset('js/hover-menus.js') }}?v={{ filemtime(public_path('js/hover-menus.js')) }}"></script>
 <style>
 html[data-hover-menus=off] .stat-breakdown:not(.is-open) .stat-breakdown-menu,
@@ -48,7 +56,7 @@ a.attendance-status-tile:hover, a.attendance-status-tile:focus-visible { outline
 #attendance-check-in { scroll-margin-top:100px; }
 </style>
 </head>
-<body class="scholar-workspace {{ request()->routeIs('dashboard') ? 'dashboard-page' : '' }} {{ request()->routeIs('modules.index') && request()->route('module') === 'subjects' ? 'subjects-page' : '' }} {{ request()->routeIs('class-groups.*') ? 'classes-page' : '' }} {{ request()->routeIs('classrooms.*', 'classroom-bookings.*') ? 'classrooms-page' : '' }} {{ request()->routeIs('modules.index') && request()->route('module') === 'teachers' ? 'teachers-page' : '' }} {{ request()->routeIs('modules.index') && request()->route('module') === 'parents' ? 'parents-page' : '' }} {{ request()->routeIs('students.index') ? 'students-page' : '' }}">
+<body class="scholar-workspace {{ $teacherWorkspaceDesign ? 'teacher-workspace-design' : '' }} {{ request()->routeIs('dashboard') ? 'dashboard-page' : '' }} {{ request()->routeIs('modules.index') && request()->route('module') === 'subjects' ? 'subjects-page' : '' }} {{ request()->routeIs('class-groups.*') ? 'classes-page' : '' }} {{ request()->routeIs('classrooms.*', 'classroom-bookings.*') ? 'classrooms-page' : '' }} {{ request()->routeIs('modules.index') && request()->route('module') === 'teachers' ? 'teachers-page' : '' }} {{ request()->routeIs('modules.index') && request()->route('module') === 'parents' ? 'parents-page' : '' }} {{ request()->routeIs('students.index') ? 'students-page' : '' }}">
 <a href="#main-content" class="skip-link">{{ __('Skip to content') }}</a>
 @include('school.partials.windy-breeze-air')
 <aside class="sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="sidebar" aria-label="{{ __('Main navigation') }}">
@@ -71,6 +79,7 @@ a.attendance-status-tile:hover, a.attendance-status-tile:focus-visible { outline
         <a class="{{ request()->routeIs('school.map') ? 'active' : '' }}" href="{{ route('school.map') }}"><i class="bi bi-geo-alt" aria-hidden="true"></i><span class="nav-label">{{ __('School map') }}</span></a>
         @if(auth()->user()->role === 'administrator')<a class="{{ request()->routeIs('employee-salaries.*') ? 'active' : '' }}" href="{{ route('employee-salaries.index') }}"><i class="bi bi-cash-stack"></i><span class="nav-label"> {{ __('Employee salary') }}</span></a><a class="{{ request()->routeIs('reports') ? 'active' : '' }}" href="{{ route('reports') }}"><i class="bi bi-bar-chart-line"></i><span class="nav-label"> {{ __('Reports') }}</span></a>@endif
     </nav>
+    @include('school.partials.windy-landscape', ['placement' => 'sidebar'])
     <div class="school-switch"><span class="school-icon"><i class="bi bi-buildings"></i></span><div><strong>Greenfield Academy</strong><small>{{ __('School management portal') }}</small></div></div>
     <div class="sidebar-footer"><span class="live-dot"></span> {{ __('Academic year') }} {{ now()->year }}–{{ now()->addYear()->format('y') }}<small>{{ __('Building brighter futures, together.') }}</small></div>
 </aside>

@@ -15,13 +15,32 @@
 @if($role !== 'administrator' && $studentCount === 0)
 <div class="alert alert-info" role="status">No student records are linked to your account{{ $role === 'teacher' ? ' through a class or teaching assignment' : '' }}. Ask the school administrator to link your {{ $role === 'parent' ? 'children' : ($role === 'teacher' ? 'teaching assignments' : 'student profile') }}. These zero counts do not mean the school database is empty.</div>
 @endif
+@if($isTeacher)
+<x-scholar-hero tag="div" class="page-heading dashboard-heading school-hero windy-original">
+    <div>
+        <h1>Good {{ now('Asia/Phnom_Penh')->hour < 12 ? 'morning' : (now('Asia/Phnom_Penh')->hour < 18 ? 'afternoon' : 'evening') }}, {{ auth()->user()->name }} <span aria-hidden="true">&#128075;</span></h1>
+        <a class="btn btn-outline-secondary mt-2" href="{{ route('modules.index', 'assignments') }}">{{ __('View assignments') }}</a>
+    </div>
+</x-scholar-hero>
+<section class="student-attendance-hero teacher-dashboard-hero windy-only" aria-labelledby="teacher-dashboard-heading">
+    <div class="student-attendance-breadcrumb">{{ __('School workspace') }} <i class="bi bi-chevron-right" aria-hidden="true"></i> {{ __('Overview') }}</div>
+    <div class="student-attendance-heading">
+        <i class="bi bi-grid-1x2" aria-hidden="true"></i>
+        <div>
+            <h1 id="teacher-dashboard-heading">
+                Good {{ now('Asia/Phnom_Penh')->hour < 12 ? 'morning' : (now('Asia/Phnom_Penh')->hour < 18 ? 'afternoon' : 'evening') }}, {{ auth()->user()->name }}
+                <span class="teacher-greeting-emoji" aria-hidden="true">👋</span>
+            </h1>
+            <p>{{ __('Manage your teaching schedule and attendance.') }}</p>
+        </div>
+    </div>
+    <a class="btn btn-light" href="{{ route('modules.index', 'assignments') }}"><i class="bi bi-journal-bookmark me-2" aria-hidden="true"></i>{{ __('View assignments') }}</a>
+</section>
+@else
 <x-scholar-hero tag="div" class="page-heading dashboard-heading school-hero">
-    <div><h1>Good {{ now('Asia/Phnom_Penh')->hour < 12 ? 'morning' : (now('Asia/Phnom_Penh')->hour < 18 ? 'afternoon' : 'evening') }}, {{ auth()->user()->name }} <span aria-hidden="true">&#128075;</span></h1>
-        @if($isTeacher)
-            <a class="btn btn-outline-secondary mt-2" href="{{ route('modules.index', 'assignments') }}">{{ __('View assignments') }}</a>
-        @else
-            <p>Here's what's happening at Greenfield Academy today.</p>
-        @endif
+    @include('school.partials.windy-landscape', ['placement' => 'hero'])
+    <div><h1><span class="windy-original">Good {{ now('Asia/Phnom_Penh')->hour < 12 ? 'morning' : (now('Asia/Phnom_Penh')->hour < 18 ? 'afternoon' : 'evening') }}, {{ auth()->user()->name }} <span aria-hidden="true">&#128075;</span></span><span class="windy-only">Welcome back, {{ auth()->user()->name }}</span></h1>
+            <p><span class="windy-original">Here's what's happening at Greenfield Academy today.</span><span class="windy-only">Here's what's happening at your school today.</span></p>
     </div>
     @if($role === 'administrator' && $reportDate->isToday())
         <div class="dashboard-attendance-actions d-flex flex-wrap gap-2">
@@ -95,12 +114,20 @@
         </div>
     @endif
 </x-scholar-hero>
+@endif
+
+@if(in_array($role, ['administrator', 'teacher'], true))
+    @include('school.partials.windy-dashboard-attendance')
+@endif
 
 <div class="row g-3 dashboard-metrics">
     @foreach([[$studentLabel, $studentCount, 'people', '🎓'], [$teacherLabel, $teacherCount, 'person-workspace', '👨‍🏫'], [$classLabel, $classCount, 'building', '🏫'], [$subjectLabel, $subjectCount, 'book', '📚']] as [$label, $value, $icon, $illustration])
     @continue($isTeacher && $icon === 'person-workspace')
-    <div class="col-6 {{ $isTeacher ? 'col-md-4' : 'col-md-3' }}"><div class="dashboard-metric">
-        @if(isset($programBreakdowns[$icon]))
+    <div class="col-6 {{ $isTeacher ? 'col-md-4' : 'col-md-3' }}"><div class="dashboard-metric {{ $isTeacher ? 'teacher-dashboard-metric teacher-dashboard-metric--'.$icon : '' }}">
+        @if($isTeacher)
+            <span class="dashboard-metric-icon windy-only"><i class="bi bi-{{ $icon }}" aria-hidden="true"></i></span>
+            <span class="dashboard-metric-icon windy-original"><span aria-hidden="true">{{ $illustration }}</span></span>
+        @elseif(isset($programBreakdowns[$icon]))
             <div class="stat-breakdown">
                 <button type="button" class="dashboard-metric-icon stat-breakdown-trigger" aria-label="{{ __($label) }} by program" aria-describedby="breakdown-{{ $icon }}"><span aria-hidden="true">{{ $illustration }}</span></button>
                 <div class="stat-breakdown-menu" id="breakdown-{{ $icon }}">

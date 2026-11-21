@@ -34,6 +34,7 @@ class AttendancePeopleTest extends TestCase
 
         $this->actingAs($teacher)->get(route('modules.index', 'attendance'))->assertOk()
             ->assertSee($ownStudent->name)->assertDontSee($otherStudent->name)
+            ->assertViewHas('attendanceSummary', fn ($summary) => $summary['total'] === 1 && (int) $summary['statuses']['present'] === 1)
             ->assertSee('Own class A')->assertSee('Afternoon')->assertDontSee('Other class');
         $this->get(route('modules.index', ['module' => 'attendance', 'class' => $ownClass->id, 'session' => 'Afternoon']))
             ->assertOk()->assertSee($ownStudent->name)->assertSee('data-session="Afternoon"', false);

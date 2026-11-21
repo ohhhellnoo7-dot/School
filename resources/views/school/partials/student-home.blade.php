@@ -1,7 +1,9 @@
 <x-scholar-hero tag="div" class="page-heading school-hero">
-    <div><div class="eyebrow">MY SCHOOL DAY</div><h1>Hi, {{ explode(' ', auth()->user()->name)[0] }}!</h1><p>Your classes, schoolwork and updates in one place.</p></div>
+    @include('school.partials.windy-landscape', ['placement' => 'hero'])
+    <div><div class="eyebrow">MY SCHOOL DAY</div><h1><span class="windy-original">Hi, {{ explode(' ', auth()->user()->name)[0] }}!</span><span class="windy-only">Welcome back, {{ auth()->user()->name }}</span></h1><p><span class="windy-original">Your classes, schoolwork and updates in one place.</span><span class="windy-only">Your learning journey starts here.</span></p></div>
     <div class="date-pill">{{ today()->format('l, M j, Y') }}</div>
 </x-scholar-hero>
+@include('school.partials.windy-dashboard-attendance')
 @if($studentCount === 0)
     <div class="alert alert-info" role="status">No student records are linked to your account. Ask the school office to link your student profile so your classes and schoolwork appear here.</div>
 @endif

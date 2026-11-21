@@ -4,6 +4,4 @@
     <span class="windy-breeze-leaf"></span><span class="windy-breeze-leaf"></span>
     <span class="windy-breeze-leaf"></span><span class="windy-breeze-leaf"></span>
     <span class="windy-breeze-leaf"></span><span class="windy-breeze-leaf"></span>
-    <span class="windy-breeze-leaf"></span><span class="windy-breeze-leaf"></span>
-    <span class="windy-breeze-leaf"></span><span class="windy-breeze-leaf"></span>
 </div>

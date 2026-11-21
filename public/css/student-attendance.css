@@ -1,0 +1,183 @@
+:root[data-theme="windy-breeze"] {
+    .student-attendance-hero {
+        padding: 1rem clamp(1rem, 2.1vw, 2rem) 1.25rem;
+        margin: 0 calc(-1 * var(--teacher-workspace-gutter)) .65rem;
+        border-bottom: 1px solid #bfe4ef;
+        color: #102f48;
+        background: linear-gradient(90deg, #f0fbff 6%, #e7faff 29%, #dcf8ff45 63%, transparent 85%),
+            url('../images/school-hero.png') center 52% / cover no-repeat;
+    }
+    .student-attendance-breadcrumb { margin-bottom: .9rem; font-size: .83rem; font-weight: 700; }
+    .student-attendance-breadcrumb i { margin-inline: .3rem; font-size: .72rem; }
+    .student-attendance-heading { display: flex; align-items: center; gap: 1rem; }
+    .student-attendance-heading > i {
+        display: grid;
+        place-items: center;
+        flex: 0 0 3.75rem;
+        height: 3.75rem;
+        border-radius: 1rem;
+        background: linear-gradient(145deg, #06c3c5, #005462);
+        color: white;
+        font-size: 1.9rem;
+        box-shadow: 0 5px 14px #00546250;
+    }
+    .student-attendance-heading h1 { margin: 0; font-size: clamp(1.8rem, 4vw, 2.8rem); color: inherit; }
+    .student-attendance-heading p { margin: .25rem 0 0; color: inherit; }
+
+    .attendance-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 175px), 1fr));
+        gap: .8rem;
+        margin-bottom: 1rem;
+    }
+    .attendance-tone-total { --attendance-ink: #134b89; --attendance-tint: #daefff; --attendance-accent: #1487dc; }
+    .attendance-tone-present { --attendance-ink: #086238; --attendance-tint: #d8f9e6; --attendance-accent: #098647; }
+    .attendance-tone-absent { --attendance-ink: #9f2033; --attendance-tint: #ffe3e8; --attendance-accent: #d63251; }
+    .attendance-tone-late { --attendance-ink: #8a4600; --attendance-tint: #ffecd3; --attendance-accent: #a75a00; }
+    .attendance-tone-excused { --attendance-ink: #6324a2; --attendance-tint: #eee2fc; --attendance-accent: #8339d1; }
+    .attendance-summary-card {
+        position: relative;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: .65rem;
+        padding: 1rem;
+        min-height: 6.4rem;
+        border: 1px solid var(--attendance-tint);
+        border-radius: 1.15rem;
+        color: var(--attendance-ink);
+        background: linear-gradient(160deg, #fff, var(--attendance-tint));
+        box-shadow: 0 5px 14px #153d541c;
+    }
+    .attendance-summary-icon {
+        display: grid;
+        place-items: center;
+        flex: 0 0 2.45rem;
+        height: 2.45rem;
+        border-radius: 50%;
+        background: var(--attendance-accent);
+        color: white;
+        font-size: 1.2rem;
+    }
+    .attendance-summary-card h2 { margin: 0; font-size: .85rem; color: inherit; }
+    .attendance-summary-card strong { display: block; font-size: 1.85rem; line-height: 1.25; }
+    .attendance-summary-card small {
+        align-self: flex-end;
+        margin-left: auto;
+        padding: .15rem .4rem;
+        border-radius: 1rem;
+        background: var(--attendance-tint);
+        font-weight: 700;
+    }
+
+    .scholar-workspace { --teacher-workspace-gutter: clamp(1rem, 2vw, 2rem); }
+    :is(.teacher-workspace-design, .scholar-workspace:has(.student-attendance-panel)) .main-content { padding: 0 var(--teacher-workspace-gutter); }
+    .teacher-workspace-design .topbar { box-shadow: 0 2px 10px #0f476614; }
+    .teacher-workspace-design .topbar .teacher-scan-shortcut,
+    .teacher-workspace-design .student-attendance-tools .btn-primary {
+        color: #fff;
+        background: linear-gradient(160deg, #00aab7, #005161);
+        border: 1px solid #27c3ce;
+        box-shadow: inset 0 1px #ffffff72, 0 4px 9px #00495b39;
+    }
+    .student-attendance-panel { border-radius: 1.25rem; overflow: visible; box-shadow: 0 8px 24px #1b506621; }
+    .student-attendance-toolbar { gap: .75rem; flex-wrap: wrap; }
+    .student-attendance-toolbar h2 { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+    .student-attendance-toolbar h2 i { color: var(--primary); font-size: 1.45em; }
+    .student-attendance-toolbar .badge { color: #134b66; background: #daf1fc; }
+    .student-attendance-tools { display: flex; align-items: center; flex-wrap: wrap; gap: .65rem; }
+    .student-attendance-date { border: 1px solid var(--border); border-radius: .75rem; padding: .55rem .75rem; }
+    .student-attendance-date i { margin-right: .3rem; }
+    .student-attendance-panel .filter-grid { align-items: flex-end; }
+    .student-attendance-panel .filter-grid > div:has(> select) { flex: 1 1 8rem; min-width: 0; }
+    .student-attendance-panel .directory-search-field { flex: 2 1 13rem; }
+    .student-attendance-panel .filter-grid :is(.form-control, .form-select, .btn) { min-height: 2.7rem; border-radius: .8rem; }
+    .student-attendance-extra { position: relative; }
+    .student-attendance-extra summary { display: inline-flex; align-items: center; gap: .4rem; }
+    .student-attendance-extra-fields {
+        position: absolute;
+        z-index: 30;
+        inset: calc(100% + .4rem) 0 auto auto;
+        display: grid;
+        gap: .65rem;
+        min-width: 12rem;
+        padding: .85rem;
+        border: 1px solid var(--border);
+        border-radius: .85rem;
+        background: var(--surface, var(--bs-body-bg));
+        box-shadow: 0 6px 18px #123c552e;
+    }
+    .student-attendance-extra:not([open]) .student-attendance-extra-fields { display: none; }
+    .student-attendance-panel .table-responsive { margin-inline: clamp(.5rem, 1.4vw, 1.15rem); border: 1px solid var(--border); border-radius: .95rem; }
+    .student-attendance-panel .table { margin-bottom: 0; }
+    .student-attendance-panel .table th,
+    .student-attendance-panel .table td { vertical-align: middle; }
+    .student-attendance-panel .table thead th {
+        --bs-table-bg: var(--surface-soft, #e0f0f6);
+        background-color: var(--bs-table-bg);
+    }
+    .attendance-student { display: flex; align-items: center; gap: .65rem; }
+    .attendance-student small { display: block; color: var(--text-secondary); overflow-wrap: anywhere; }
+    .attendance-status {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .3rem .6rem;
+        border-radius: .65rem;
+        background: var(--attendance-tint, var(--surface-soft));
+        color: var(--attendance-ink, inherit);
+        font-weight: 700;
+    }
+    .student-attendance-panel .table .btn[aria-label^="View record"] { color: #134b89; background: #daefff; }
+    .student-attendance-panel .table .btn[aria-label^="Edit record"] { color: #07566a; background: #d5f5fc; }
+    .student-attendance-panel .table .btn[aria-label^="Delete record"] { color: #9f2033; background: #ffe3e8; }
+    .student-attendance-panel .table .btn { border-radius: .65rem; }
+    .student-attendance-panel .pagination { gap: .25rem; }
+    .student-attendance-panel .pagination .page-link { border-radius: .6rem; }
+
+    .teacher-dashboard-hero .btn { margin-top: .75rem; border-radius: .75rem; }
+    #teacher-dashboard-heading {
+        font-family: Manrope, 'DM Sans', sans-serif;
+        font-size: clamp(1.45rem, 2.5vw, 2.25rem);
+        font-weight: 800;
+        line-height: 1.2;
+        letter-spacing: -.035em;
+    }
+    .teacher-greeting-emoji { font-size: .8em; margin-inline-start: .15em; white-space: nowrap; }
+    .teacher-workspace-design .teacher-dashboard-metric {
+        --metric-ink: #134b89;
+        --metric-tint: #daefff;
+        --metric-accent: #1487dc;
+        border: 1px solid var(--metric-tint);
+        border-radius: 1.15rem;
+        background: linear-gradient(155deg, #fff, var(--metric-tint));
+        box-shadow: 0 6px 16px #153d5421;
+    }
+    .teacher-workspace-design .teacher-dashboard-metric--building { --metric-ink: #086238; --metric-tint: #d8f9e6; --metric-accent: #098647; }
+    .teacher-workspace-design .teacher-dashboard-metric--book { --metric-ink: #6324a2; --metric-tint: #eee2fc; --metric-accent: #8339d1; }
+    .teacher-workspace-design .teacher-dashboard-metric .dashboard-metric-icon {
+        color: #fff;
+        background: var(--metric-accent);
+        border-radius: 50%;
+        box-shadow: 0 4px 9px #153d5425;
+    }
+    .teacher-workspace-design .teacher-dashboard-metric .dashboard-metric-copy :is(span, strong) { color: var(--metric-ink); }
+    .teacher-workspace-design .dashboard-feature-row .panel {
+        border-radius: 1.15rem;
+        box-shadow: 0 6px 16px #153d5421;
+    }
+
+    @media (max-width: 575px) {
+        .student-attendance-hero {
+            background-image: linear-gradient(90deg, #effaff 25%, #effaffc9 100%), url('../images/school-hero.png');
+        }
+        .attendance-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .attendance-summary-card { flex-wrap: wrap; padding: .7rem; }
+        .attendance-summary-card small { margin-left: 0; }
+        .student-attendance-extra-fields { position: static; margin-top: .4rem; }
+    }
+}
+
+:root:not([data-theme="windy-breeze"]) .student-attendance-extra--windy,
+:root:not([data-theme="windy-breeze"]) .student-attendance-extra--windy .student-attendance-extra-fields { display: contents; }
+:root:not([data-theme="windy-breeze"]) .student-attendance-extra--windy > summary { display: none; }

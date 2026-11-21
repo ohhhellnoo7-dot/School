@@ -54,6 +54,27 @@ class ThemeRegistryTest extends TestCase
         }
     }
 
+    public function test_windy_breeze_dashboard_and_attendance_render_for_each_school_role(): void
+    {
+        foreach (['administrator', 'teacher', 'student'] as $role) {
+            $user = User::factory()->create(['role' => $role]);
+            $dashboard = $this->actingAs($user)->get(route('dashboard'))->assertOk()
+                ->assertSee('windy-landscape--sidebar', false)
+                ->assertSee('windy-turbine-rotor', false)->assertSee('Student attendance summary');
+            $this->get(route('modules.index', 'attendance'))->assertOk()
+                ->assertSee('student-attendance-hero windy-only', false)
+                ->assertSee('Attendance list')->assertSee('More filters')->assertSee('All sessions');
+            if ($role === 'teacher') {
+                $dashboard->assertDontSee('windy-landscape--hero', false)
+                    ->assertSee('teacher-dashboard-hero windy-only', false)
+                    ->assertSee('dashboard-heading school-hero windy-original', false)
+                    ->assertSee('teacher-greeting-emoji', false);
+            } else {
+                $dashboard->assertSee('windy-landscape--hero', false);
+            }
+        }
+    }
+
     private function contrast(string $a, string $b): float
     {
         $luminance = function ($hex) {
