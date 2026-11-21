@@ -31,10 +31,9 @@
 :root:root:root:root .timetable-workspace .timetable-view-tabs .btn-outline-secondary { background: var(--surface); color: var(--primary); border-color: var(--border-color); }
 :root:root:root:root .panel.timetable-filters { position: relative; z-index: 20; overflow: visible; }
 :root:root:root:root .timetable-workspace .timetable-filters { padding: 20px 22px !important; margin: 0 !important; gap: 18px !important; border-radius: 23px; box-shadow: 0 7px 22px var(--shadow-color); }
-:root:root:root:root .timetable-workspace .timetable-filters label { display: grid; flex: 1 1 140px; min-width: 0; gap: 10px; font-size: 11px; font-weight: 700; color: var(--text-primary); }
+:root:root:root:root .timetable-workspace .timetable-filters > :is(label, .timetable-filter-field) { display: grid; flex: 1 1 140px; min-width: 0; grid-template-columns: minmax(0, 1fr); gap: 10px; font-size: 11px; font-weight: 700; color: var(--text-primary); }
 .timetable-filter-label { display: flex; gap: 9px; align-items: center; }
 .timetable-filter-label > i { font-size: 18px; color: var(--primary); }
-.timetable-filters label:has([name='class']), .timetable-filters label:has([name='teacher']) { flex-grow: 1.5; }
 .timetable-workspace .timetable-filters :is(.form-control, .form-select) { min-height: 44px; border-radius: 15px; font-size: 12px; font-weight: 500; }
 .timetable-filters :is(.form-control, .form-select, .btn) { --control-radius: 15px; }
 .timetable-workspace .timetable-filters > button { min-height: 44px; min-width: 148px; border-radius: 15px; font-size: 11px; }
@@ -98,7 +97,7 @@
 @media (max-width: 1100px) {
     .timetable-hero-copy { max-width: 100%; }
     .timetable-calendar-tools { flex-wrap: wrap; gap: 12px; }
-    .timetable-workspace .timetable-filters label { flex-basis: 180px; }
+    :root:root:root:root .timetable-workspace .timetable-filters > :is(label, .timetable-filter-field) { flex-basis: 180px; }
 }
 @media (max-width: 650px) {
     :root:root:root:root .timetable-workspace .unified-timetable-hero { padding: 24px 19px; min-height: 0; background-image: linear-gradient(90deg, var(--surface), color-mix(in srgb, var(--surface) 82%, transparent)), url('../images/school-hero.png'); }

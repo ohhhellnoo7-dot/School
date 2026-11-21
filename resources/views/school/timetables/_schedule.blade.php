@@ -19,7 +19,7 @@
 <form class="panel timetable-filters p-3 mb-3 d-flex gap-3 flex-wrap align-items-end" method="get" action="{{ route('timetables.index') }}"><input type="hidden" name="view" value="{{ $view }}"><label><span class="timetable-filter-label"><i class="bi bi-calendar-event" aria-hidden="true"></i>{{ __('Academic year') }}</span><input class="form-control" name="academic_year" pattern="[0-9]{4}-[0-9]{4}" value="{{ $academicYear }}"></label>
 @if($teacherId)
     @if($timetableProgram)
-    <div><span class="timetable-filter-label"><i class="bi bi-layers" aria-hidden="true"></i>{{ __('Program') }}</span><span class="form-control">{{ __($timetableProgram) }}</span></div>
+    <div class="timetable-filter-field"><span class="timetable-filter-label"><i class="bi bi-layers" aria-hidden="true"></i>{{ __('Program') }}</span><span class="form-control d-flex align-items-center">{{ __($timetableProgram) }}</span></div>
     @endif
 @else
 <label><span class="timetable-filter-label"><i class="bi bi-layers" aria-hidden="true"></i>{{ __('Program') }}</span><select class="form-select" name="program"><option value="">{{ __('All programs') }}</option>@foreach($programs as $program)<option value="{{ $program }}" @selected($timetableProgram === $program)>{{ __($program) }}</option>@endforeach</select></label>
@@ -31,8 +31,9 @@
 <label><span class="timetable-filter-label"><i class="bi bi-person-workspace" aria-hidden="true"></i>{{ $teacherProgram ? $teacherProgram.' teacher' : 'Teacher' }}</span><select class="form-select" name="teacher">@forelse($teachers as $teacher)<option value="{{ $teacher->id }}" @selected($selected === $teacher->id)>{{ $teacher->name }} · {{ $teacher->program ?: 'Program not set' }}{{ $teacher->requiresTeacherConfirmation() ? ' (unverified)' : '' }}</option>@empty<option value="" disabled selected>{{ $teacherSession ? 'No teachers in this session' : 'No teachers in this program' }}</option>@endforelse</select></label>
 @if($teacherProgram)
 @if($teacherSession)<input type="hidden" name="session" value="{{ $teacherSession }}">@endif
-<div class="dropdown" data-teacher-session-menu>
-    <button type="button" class="btn btn-outline-primary dropdown-toggle" id="teacher-session-button" data-bs-toggle="dropdown" aria-expanded="false">Session{{ $teacherSession ? ': '.$teacherSession : '' }}</button>
+<div class="dropdown timetable-filter-field" data-teacher-session-menu>
+    <span id="teacher-session-label" class="timetable-filter-label"><i class="bi bi-clock" aria-hidden="true"></i>{{ __('Session') }}</span>
+    <button type="button" class="form-select text-start" id="teacher-session-button" data-bs-toggle="dropdown" aria-expanded="false" aria-labelledby="teacher-session-label teacher-session-button">{{ __($teacherSession ?: 'All sessions') }}</button>
     <ul class="dropdown-menu" aria-labelledby="teacher-session-button">
         @foreach(['' => 'All sessions'] + array_combine($availableTeacherSessions, $availableTeacherSessions) as $sessionValue => $sessionLabel)
         <li><a class="dropdown-item {{ ($teacherSession ?? '') === $sessionValue ? 'active' : '' }}" href="{{ route('timetables.index', ['view'=>'teachers', 'program'=>$teacherProgram, 'academic_year'=>$academicYear, 'teacher'=>$selected, 'session'=>$sessionValue ?: null, 'subject'=>$subjectSearch]) }}" @if(($teacherSession ?? '') === $sessionValue) aria-current="page" @endif>{{ __($sessionLabel) }}</a></li>
