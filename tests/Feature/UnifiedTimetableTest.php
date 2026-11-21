@@ -13,6 +13,57 @@ class UnifiedTimetableTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_teacher_timetable_only_shows_that_teachers_data_in_all_views(): void
+    {
+        $f = $this->fixture();
+        $own = app(LessonManagementService::class)->save($this->data($f));
+        DB::table('teacher_qualifications')->insert([
+            'teacher_id' => $f['substitute']->id, 'subject_name' => 'Other Teacher History', 'slot' => 2,
+        ]);
+        $otherSubject = Subject::create([
+            'name' => 'Other Teacher History',
+            'code' => 'H-PRIVATE',
+            'school_class_id' => $f['classes'][0]->id,
+            'teacher_id' => $f['substitute']->id,
+        ]);
+        DB::table('schedules')->insert(array_replace($own->only([
+            'school_class_id', 'classroom_id', 'starts_at', 'ends_at', 'academic_year', 'room', 'entry_type',
+        ]), [
+            'subject_id' => $otherSubject->id,
+            'teacher_id' => $f['substitute']->id,
+            'day' => 'Tuesday',
+        ]));
+        $f['subjects'][1]->update(['teacher_id' => $f['substitute']->id]);
+
+        $this->actingAs($f['primary']);
+        $this->get(route('timetables.index'))->assertOk()->assertViewHas('view', 'teachers');
+        $year = ['academic_year' => '2026-2027', 'program' => 'Khmer'];
+        foreach ([
+            ['view' => 'teachers'],
+            ['view' => 'students', 'class' => $f['classes'][0]->id],
+            ['view' => 'classrooms', 'classroom' => $f['rooms'][0]->id],
+        ] as $selection) {
+            $filters = $selection + $year;
+            $this->get(route('timetables.index', $filters))->assertOk()
+                ->assertViewHas('lessons', fn ($lessons) => $lessons->modelKeys() === [$own->id])
+                ->assertViewHas('classes', fn ($classes) => $classes->modelKeys() === [$f['classes'][0]->id])
+                ->assertViewHas('rooms', fn ($rooms) => $rooms->modelKeys() === [$f['rooms'][0]->id])
+                ->assertViewHas('curriculum', null)
+                ->assertDontSee($otherSubject->name);
+            $html = $this->getJson(route('timetables.data', $filters + ['fragment' => 1]))->assertOk()->json('html');
+            $this->assertStringContainsString('Mathematics', $html);
+            $this->assertStringNotContainsString($otherSubject->name, $html);
+        }
+
+        foreach ([
+            ['view' => 'teachers', 'teacher' => $f['substitute']->id],
+            ['view' => 'students', 'class' => $f['classes'][1]->id],
+            ['view' => 'classrooms', 'classroom' => $f['rooms'][1]->id],
+        ] as $selection) {
+            $this->getJson(route('timetables.data', $selection + $year))->assertNotFound();
+        }
+    }
+
     public function test_compact_teacher_schedule_shows_all_subjects_inside_preview(): void
     {
         $f = $this->fixture();
