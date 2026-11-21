@@ -62,6 +62,14 @@ class UnifiedTimetableTest extends TestCase
         ] as $selection) {
             $this->getJson(route('timetables.data', $selection + $year))->assertNotFound();
         }
+
+        $f['classes'][1]->update(['name' => 'Assigned class without lessons', 'teacher_id' => $f['primary']->id]);
+        $studentView = ['view' => 'students'] + $year;
+        $this->get(route('timetables.index', $studentView))->assertOk()
+            ->assertViewHas('selected', $f['classes'][0]->id);
+        $this->get(route('timetables.index', $studentView + ['class' => $f['classes'][1]->id]))->assertOk()
+            ->assertSee('You have no lessons scheduled for this selection.')
+            ->assertDontSee('INCOMPLETE: required lesson missing');
     }
 
     public function test_compact_teacher_schedule_shows_all_subjects_inside_preview(): void

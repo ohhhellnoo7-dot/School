@@ -4,6 +4,7 @@
 @endif
 @if(!empty($curriculum['missing']))<div class="alert alert-warning">Incomplete timetable: required curriculum hours are missing for {{ implode(', ',$curriculum['missing']) }}. Check teacher qualifications, working hours, workload limits, and classroom reservations before generating the remaining lessons.</div>@endif
 @if(!empty($curriculum['excess']))<div class="alert alert-warning">Scheduled hours exceed the weekly curriculum for {{ implode(', ', $curriculum['excess']) }}. Review these lessons against Scheduling Settings.</div>@endif
+@if(!empty($teacherId) && $lessons->isEmpty())<p class="alert alert-info">{{ __('You have no lessons scheduled for this selection.') }}</p>@endif
 @if(($view ?? null) === 'teachers' && !empty($subjectSearch))<p class="small text-secondary px-3 pt-3">{{ $subjectSearch }} lessons are highlighted. Other subjects remain visible in muted cards and still count as busy time.</p>@endif
 @php
     $studentSession = ($view ?? null) === 'students' ? $classes->firstWhere('id', $selected)?->session : null;
@@ -37,7 +38,7 @@
 <td class="timetable-hour-cell day-{{ strtolower($day) }}">
 @if($cell && $cell['lessons']->count() > 1)<article class="timetable-conflict-card"><strong>CONFLICT DETECTED</strong><p>{{ $cell['lessons']->count() }} lessons assigned</p>@if(auth()->user()->role === 'administrator')<a href="{{ route('timetables.conflicts', $cell['lessons']->first()) }}">View Conflict</a>@endif</article>
 @elseif($cell)@include('school.timetables.lesson', ['entry'=>$cell['lessons']->first(), 'continuation' => $continuation])
-@else @php($free = $breaks->first(fn ($b) => $b->weekday === $day && substr($b->start_time,0,5) === $from))<span class="text-secondary">{{ $free ? 'Designated teacher free period' : ((($view ?? null) === 'students' && $classes->firstWhere('id', $selected)?->program === 'Khmer') ? 'INCOMPLETE: required lesson missing' : 'No lesson scheduled') }}</span>@endif
+@else @php($free = $breaks->first(fn ($b) => $b->weekday === $day && substr($b->start_time,0,5) === $from))<span class="text-secondary">{{ $free ? 'Designated teacher free period' : ((empty($teacherId) && ($view ?? null) === 'students' && $classes->firstWhere('id', $selected)?->program === 'Khmer') ? 'INCOMPLETE: required lesson missing' : 'No lesson scheduled') }}</span>@endif
 </td>@endforeach</tr>@endforeach
 </tbody>
 @endforeach

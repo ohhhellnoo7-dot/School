@@ -103,7 +103,12 @@ class UnifiedTimetableController extends Controller
             $filtered = $classes->when($timetableProgram, fn ($c) => $c->where('program', $timetableProgram))->when($request->filled('grade'), fn ($c) => $c->filter(fn ($class) => (int) ($class->classGroup?->grade) === $request->integer('grade')))->when($request->filled('session'), fn ($c) => $c->where('session', $request->input('session')));
             $requestedClass = $request->integer('class');
             abort_if($requestedClass && ! $classes->contains('id', $requestedClass), 404);
-            $selected = $requestedClass && $filtered->contains('id',$requestedClass) ? $requestedClass : $filtered->first()?->id;
+            $defaultClass = $filtered->first();
+            if ($teacherId && ! $filtered->contains('id', $requestedClass)) {
+                $scheduledClassIds = (clone $query)->distinct()->pluck('school_class_id');
+                $defaultClass = $filtered->first(fn ($class) => $scheduledClassIds->contains($class->timetableOwnerId())) ?? $defaultClass;
+            }
+            $selected = $requestedClass && $filtered->contains('id', $requestedClass) ? $requestedClass : $defaultClass?->id;
             $studentClasses = $filtered;
             if ($selected) $query->where('school_class_id',$classes->firstWhere('id',$selected)->timetableOwnerId()); else $query->whereRaw('1 = 0');
         }
@@ -157,7 +162,7 @@ class UnifiedTimetableController extends Controller
             $excess = $subjects->filter(fn ($s)=>$s->required_weekly_minutes !== null && $lessons->where('subject_id',$s->id)->sum(fn ($entry)=>TeacherManagementService::duration($entry->starts_at,$entry->ends_at)) > $s->required_weekly_minutes)->pluck('name')->all();
             $curriculum = ['unknown'=>$unknown,'missing'=>array_values(array_unique($missing)), 'excess'=>array_values(array_unique($excess))];
         }
-        return compact('subjectSearch', 'subjectChoices', 'programs', 'timetableProgram', 'view', 'classes', 'teachers', 'rooms', 'selected', 'lessons', 'periods', 'breaks','roomIssues','curriculum','academicYear','studentClasses','teacherProgram','teacherSession','availableTeacherSessions') + TimetableGrid::build($lessons, $periods);
+        return compact('subjectSearch', 'subjectChoices', 'programs', 'timetableProgram', 'view', 'classes', 'teachers', 'rooms', 'selected', 'lessons', 'periods', 'breaks','roomIssues','curriculum','academicYear','studentClasses','teacherProgram','teacherSession','availableTeacherSessions','teacherId') + TimetableGrid::build($lessons, $periods);
     }
 
     public function index(Request $request)
