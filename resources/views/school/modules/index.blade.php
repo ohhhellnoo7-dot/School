@@ -123,7 +123,8 @@
     @endphp
     @if(in_array($gender, ['male', 'female'], true))
         <span class="attendance-gender attendance-gender--{{ $gender }}">
-            <i class="bi bi-gender-{{ $gender }}" aria-hidden="true"></i> {{ __(ucfirst($gender)) }}
+            <i class="bi bi-gender-{{ $gender }}" aria-hidden="true"></i>
+            <span class="visually-hidden">{{ __(ucfirst($gender)) }}</span>
         </span>
     @else
         {{ $gender ? __(ucfirst($gender)) : __('Not provided') }}
