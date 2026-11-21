@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\Assignment;
 use App\Models\Attendance;
+use App\Models\Classroom;
 use App\Models\Fee;
+use App\Models\Schedule;
 use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\Subject;
@@ -20,8 +22,15 @@ class DashboardAjaxTest extends TestCase
 
     public function test_teacher_dashboard_focuses_on_teaching_and_attendance_on_initial_load_and_refresh(): void
     {
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-16 09:00'));
         $this->seed(SchoolSeeder::class);
         $teacher = User::where('email', 'teacher@school.test')->firstOrFail();
+        $classroom = Classroom::create(['room_number' => 'A-TEST', 'name' => 'Test classroom', 'building' => 'A']);
+        Schedule::where('teacher_id', $teacher->id)->where('starts_at', 'like', '08:00%')->update(['classroom_id' => $classroom->id]);
+        Schedule::where('teacher_id', $teacher->id)->where('starts_at', 'like', '09:00%')->update(['starts_at' => '13:00', 'ends_at' => '14:00']);
+        Schedule::where('teacher_id', $teacher->id)->where('starts_at', 'like', '10:00%')->update(['starts_at' => '17:00', 'ends_at' => '18:00']);
+        $otherTeacher = User::where('email', 'james@school.test')->firstOrFail();
+        Schedule::where('teacher_id', $otherTeacher->id)->update(['room' => 'Another teacher’s room']);
         $this->actingAs($teacher)->get('/dashboard')->assertOk()->assertSee('My teaching schedule');
 
         $pages = [
@@ -30,11 +39,12 @@ class DashboardAjaxTest extends TestCase
         ];
 
         foreach ($pages as $html) {
-            foreach (['Students in my classes', 'My classes', 'My subjects', 'View assignments', 'Daily attendance', 'Student attendance report', 'School announcements'] as $label) {
+            $this->assertMatchesRegularExpression('~🌅</span>Morning.*08:00–08:50.*☀️</span>Afternoon.*13:00–14:00.*🌙</span>Evening.*17:00–18:00~s', $html);
+            foreach (['Students in my classes', 'My classes', 'My subjects', 'View assignments', 'Daily attendance', 'Student attendance report', 'School announcements', 'Today’s teaching schedule', 'Period 1', 'A-TEST', 'Building A', 'dashboard-khmer-calendar'] as $label) {
                 $this->assertStringContainsString($label, $html);
             }
 
-            foreach (['My teachers', 'Enrollment trend', 'Student enrollment', 'Students by gender', 'Recent registrations', 'Monthly revenue'] as $label) {
+            foreach (['My teachers', 'Enrollment trend', 'Student enrollment', 'Students by gender', 'Recent registrations', 'Monthly revenue', 'Another teacher’s room'] as $label) {
                 $this->assertStringNotContainsString($label, $html);
             }
         }

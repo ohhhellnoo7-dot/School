@@ -17,16 +17,36 @@
                     <th scope="col">{{ __('Classroom and building') }}</th>
                 </tr></thead>
                 <tbody>
+                    @php
+                        $previousSession = null;
+                    @endphp
                     @foreach($todayTeachingPeriods as $period)
                         @php
                             $class = $period->schoolClass ?? $period->subject?->schoolClass;
                             $room = $period->classroom;
                             $building = $room?->buildingRecord?->name ?: $room?->building;
+                            $start = substr($period->starts_at, 0, 5);
+                            $session = match (true) {
+                                $start < '12:00' => 'Morning',
+                                $start >= '17:00' => 'Evening',
+                                $start >= '16:30' && $class?->session === 'Evening' => 'Evening',
+                                default => 'Afternoon',
+                            };
                         @endphp
+                        @if($session !== $previousSession)
+                            <tr>
+                                <th colspan="3" class="bg-body-tertiary fw-semibold">
+                                    <span class="me-1" aria-hidden="true">{{ match ($session) { 'Morning' => '🌅', 'Afternoon' => '☀️', 'Evening' => '🌙' } }}</span>{{ __($session) }}
+                                </th>
+                            </tr>
+                            @php
+                                $previousSession = $session;
+                            @endphp
+                        @endif
                         <tr>
                             <th scope="row">
                                 {{ __('Period :number', ['number' => $loop->iteration]) }}
-                                <small class="d-block fw-normal text-secondary text-nowrap">{{ substr($period->starts_at, 0, 5) }}–{{ substr($period->ends_at, 0, 5) }}</small>
+                                <small class="d-block fw-normal text-secondary text-nowrap">{{ $start }}–{{ substr($period->ends_at, 0, 5) }}</small>
                             </th>
                             <td>
                                 <strong>{{ $class ? trim($class->name.' '.$class->section) : __('Class not assigned') }}</strong>

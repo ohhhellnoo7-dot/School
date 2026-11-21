@@ -89,6 +89,8 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $validated = $request->validate(['date' => 'nullable|date_format:Y-m-d']);
+        $today = today();
+        $academicYear = $today->year.'-'.($today->year + 1);
         $reportDate = Carbon::parse($validated['date'] ?? today()->toDateString())->startOfDay();
         $students = Student::visibleTo($user);
         $attendanceSession = AttendanceSession::selected($request);
@@ -153,7 +155,8 @@ class DashboardController extends Controller
                 ? Schedule::with(['subject.schoolClass', 'schoolClass', 'classroom.buildingRecord'])
                     ->where('teacher_id', $user->id)
                     ->whereNotNull('subject_id')
-                    ->where('day', today()->format('l'))
+                    ->where('day', $today->format('l'))
+                    ->where(fn ($query) => $query->where('academic_year', $academicYear)->orWhereNull('academic_year'))
                     ->orderBy('starts_at')->orderBy('id')->get()
                 : collect(),
             'upcomingAssignments' => $user->role === 'student' ? SchoolModules::query('assignments', $user)->with('subject')->whereDate('due_date', '>=', today())->orderBy('due_date')->orderBy('id')->limit(5)->get() : collect(),
