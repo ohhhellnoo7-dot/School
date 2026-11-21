@@ -36,7 +36,7 @@ class UnifiedTimetableTest extends TestCase
         $f['subjects'][1]->update(['teacher_id' => $f['substitute']->id]);
 
         $this->actingAs($f['primary']);
-        $this->get(route('timetables.index'))->assertOk()->assertViewHas('view', 'teachers');
+        $this->get(route('timetables.index'))->assertOk()->assertViewHas('view', 'teachers')->assertDontSee('view=students', false);
         $year = ['academic_year' => '2026-2027', 'program' => 'Khmer'];
         foreach ([
             ['view' => 'teachers'],
@@ -57,19 +57,19 @@ class UnifiedTimetableTest extends TestCase
 
         foreach ([
             ['view' => 'teachers', 'teacher' => $f['substitute']->id],
-            ['view' => 'students', 'class' => $f['classes'][1]->id],
             ['view' => 'classrooms', 'classroom' => $f['rooms'][1]->id],
         ] as $selection) {
             $this->getJson(route('timetables.data', $selection + $year))->assertNotFound();
         }
 
-        $f['classes'][1]->update(['name' => 'Assigned class without lessons', 'teacher_id' => $f['primary']->id]);
-        $studentView = ['view' => 'students'] + $year;
-        $this->get(route('timetables.index', $studentView))->assertOk()
-            ->assertViewHas('selected', $f['classes'][0]->id);
-        $this->get(route('timetables.index', $studentView + ['class' => $f['classes'][1]->id]))->assertOk()
-            ->assertSee('You have no lessons scheduled for this selection.')
-            ->assertDontSee('INCOMPLETE: required lesson missing');
+        $legacyFilters = ['view' => 'students', 'class' => $f['classes'][1]->id, 'program' => 'Chinese', 'session' => 'Evening'] + $year;
+        $this->get(route('timetables.index', $legacyFilters))->assertOk()
+            ->assertViewHas('view', 'teachers')
+            ->assertViewHas('selected', $f['primary']->id)
+            ->assertViewHas('lessons', fn ($lessons) => $lessons->modelKeys() === [$own->id])
+            ->assertDontSee('view=students', false);
+        $this->actingAs($f['admin'])->get(route('timetables.index', ['view' => 'students'] + $year))->assertOk()
+            ->assertViewHas('view', 'students')->assertSee('view=students', false);
     }
 
     public function test_compact_teacher_schedule_shows_all_subjects_inside_preview(): void

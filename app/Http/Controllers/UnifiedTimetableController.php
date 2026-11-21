@@ -23,20 +23,25 @@ class UnifiedTimetableController extends Controller
         $classQuery = SchoolClass::query()->when($restricted, fn ($q) => $q->whereIn('id', SchoolClass::enrolledFor($user)->select('school_classes.id')));
         if ($teacherId) {
             $query->where('schedules.teacher_id', $teacherId);
+            if ($user->program) {
+                $query->whereHas('schoolClass', fn ($q) => $q->where('program', $user->program));
+            }
             $scheduledClasses = (clone $query)->select('school_class_id');
-            $classQuery->where(function ($q) use ($teacherId, $scheduledClasses) {
-                $q->where('teacher_id', $teacherId)
-                    ->orWhereHas('subjects', fn ($subjects) => $subjects->where('teacher_id', $teacherId))
-                    ->orWhereIn('id', $scheduledClasses)
+            $classQuery->where(function ($q) use ($scheduledClasses) {
+                $q->whereIn('id', $scheduledClasses)
                     ->orWhereIn('shared_timetable_class_id', $scheduledClasses);
             });
         }
         $classes = $classQuery->orderBy('name')->orderBy('section')->orderBy('session')->get();
         $view = $request->input('view', $teacherId ? 'teachers' : 'students');
+        $legacyTeacherView = $teacherId && $view === 'students';
+        if ($legacyTeacherView) {
+            $view = 'teachers';
+        }
         $studentClasses = null;
         $programs = \App\Models\Program::names();
         $request->validate(['program' => ['nullable', \Illuminate\Validation\Rule::in($programs)]]);
-        $timetableProgram = $request->input('program');
+        $timetableProgram = $teacherId ? $user->program : $request->input('program');
         $teacherProgram = $view === 'teachers' ? $timetableProgram : null;
         $request->validate(['subject' => 'nullable|string|max:255']);
         $subjectSearch = $timetableProgram === 'Khmer' ? $request->input('subject') : null;
@@ -47,10 +52,10 @@ class UnifiedTimetableController extends Controller
                 ->distinct()->orderBy('name')->pluck('name')
             : collect();
         $availableTeacherSessions = \App\Support\ProgramSessions::for($teacherProgram);
-        $teacherSession = $teacherProgram ? $request->input('session') : null;
+        $teacherSession = $teacherProgram && ! $legacyTeacherView ? $request->input('session') : null;
         if ($teacherSession) $request->validate(['session' => \Illuminate\Validation\Rule::in($availableTeacherSessions)]);
         $teachers = User::where('role', 'teacher')->when($teacherId, fn ($q) => $q->whereKey($teacherId))->when($teacherProgram, fn ($q) => $q->where('program', $teacherProgram))->orderBy('name')->get();
-        if ($timetableProgram && $view !== 'teachers') $query->whereHas('schoolClass', fn ($q) => $q->where('program', $timetableProgram));
+        if (! $teacherId && $timetableProgram && $view !== 'teachers') $query->whereHas('schoolClass', fn ($q) => $q->where('program', $timetableProgram));
         $rooms = Classroom::when($teacherId, fn ($q) => $q->whereIn('id', (clone $query)->select('classroom_id')))
             ->when(! $teacherId && $timetableProgram, fn ($q) => $q->where(function ($q) use ($timetableProgram) {
             $q->whereHas('bookings.classGroup', fn ($q) => $q->where('program', $timetableProgram))
@@ -103,12 +108,7 @@ class UnifiedTimetableController extends Controller
             $filtered = $classes->when($timetableProgram, fn ($c) => $c->where('program', $timetableProgram))->when($request->filled('grade'), fn ($c) => $c->filter(fn ($class) => (int) ($class->classGroup?->grade) === $request->integer('grade')))->when($request->filled('session'), fn ($c) => $c->where('session', $request->input('session')));
             $requestedClass = $request->integer('class');
             abort_if($requestedClass && ! $classes->contains('id', $requestedClass), 404);
-            $defaultClass = $filtered->first();
-            if ($teacherId && ! $filtered->contains('id', $requestedClass)) {
-                $scheduledClassIds = (clone $query)->distinct()->pluck('school_class_id');
-                $defaultClass = $filtered->first(fn ($class) => $scheduledClassIds->contains($class->timetableOwnerId())) ?? $defaultClass;
-            }
-            $selected = $requestedClass && $filtered->contains('id', $requestedClass) ? $requestedClass : $defaultClass?->id;
+            $selected = $requestedClass && $filtered->contains('id', $requestedClass) ? $requestedClass : $filtered->first()?->id;
             $studentClasses = $filtered;
             if ($selected) $query->where('school_class_id',$classes->firstWhere('id',$selected)->timetableOwnerId()); else $query->whereRaw('1 = 0');
         }

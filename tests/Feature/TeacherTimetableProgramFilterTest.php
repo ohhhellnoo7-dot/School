@@ -58,11 +58,12 @@ class TeacherTimetableProgramFilterTest extends TestCase
         $this->get(route('timetables.index',['view'=>'teachers','program'=>'Khmer','teacher'=>$teachers['English']->id]))->assertNotFound();
     }
 
-    public function test_empty_program_does_not_select_another_programs_teacher_and_student_access_is_restricted(): void
+    public function test_teacher_program_is_fixed_and_student_access_is_restricted(): void
     {
         $teacher=User::factory()->create(['role'=>'teacher','program'=>'Khmer']);
         $this->actingAs($teacher)->get(route('timetables.index',['view'=>'teachers','program'=>'Chinese']))->assertOk()
-            ->assertSee('No teachers in this program')->assertViewHas('selected',null)->assertViewHas('lessons',fn($lessons)=>$lessons->isEmpty());
+            ->assertViewHas('timetableProgram', 'Khmer')->assertViewHas('selected', $teacher->id)
+            ->assertDontSee('All programs')->assertDontSee('data-teacher-program-menu', false);
         $student=User::factory()->create(['role'=>'student']);
         $this->actingAs($student)->get(route('timetables.index'))->assertOk()->assertDontSee('<div class="dropdown" data-teacher-program-menu>',false);
         $this->get(route('timetables.index',['view'=>'teachers','program'=>'Khmer']))->assertNotFound();
