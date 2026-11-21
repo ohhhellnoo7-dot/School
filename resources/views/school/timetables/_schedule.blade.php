@@ -1,6 +1,6 @@
 <nav class="timetable-view-tabs d-flex gap-2 mb-3 flex-wrap" aria-label="{{ __('Schedule views') }}">
     @if($teacherId)
-    <a class="btn {{ $view === 'teachers' ? 'btn-primary' : 'btn-outline-secondary' }}" href="{{ route('timetables.index', ['view'=>'teachers','academic_year'=>$academicYear]) }}" @if($view === 'teachers') aria-current="page" @endif><i class="bi bi-person-workspace" aria-hidden="true"></i> {{ __('Teacher schedule') }}</a>
+    <a class="btn {{ $view === 'teachers' ? 'btn-primary' : 'btn-outline-secondary' }}" href="{{ route('timetables.index', ['view'=>'teachers','academic_year'=>$academicYear,'subject'=>$subjectSearch]) }}" @if($view === 'teachers') aria-current="page" @endif><i class="bi bi-person-workspace" aria-hidden="true"></i> {{ __('Teacher schedule') }}</a>
     @elseif(!in_array(auth()->user()->role, ['student','parent']))
     <div class="dropdown" data-teacher-program-menu>
         <button type="button" class="btn dropdown-toggle {{ $view === 'teachers' ? 'btn-primary' : 'btn-outline-secondary' }}" id="teacher-program-button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-person-workspace" aria-hidden="true"></i> {{ $teacherProgram ? __($teacherProgram).' · '.__('Teachers') : __('Teachers') }}</button>
@@ -13,7 +13,7 @@
     @endif
     @foreach(['students'=>'Students','classrooms'=>'Classrooms'] as $key=>$label)
     @continue($key === 'students' && auth()->user()->role === 'teacher')
-    <a class="btn {{ $view === $key ? 'btn-primary' : 'btn-outline-secondary' }}" href="{{ route('timetables.index', ['view'=>$key,'academic_year'=>$academicYear,'program'=>$timetableProgram]) }}" @if($view === $key) aria-current="page" @endif><i class="bi bi-{{ $key === 'students' ? 'people' : 'display' }}" aria-hidden="true"></i> {{ __($label) }}</a>
+    <a class="btn {{ $view === $key ? 'btn-primary' : 'btn-outline-secondary' }}" href="{{ route('timetables.index', ['view'=>$key,'academic_year'=>$academicYear,'program'=>$timetableProgram,'subject'=>$teacherId ? $subjectSearch : null]) }}" @if($view === $key) aria-current="page" @endif><i class="bi bi-{{ $key === 'students' ? 'people' : 'display' }}" aria-hidden="true"></i> {{ __($label) }}</a>
     @endforeach
 </nav>
 <form class="panel timetable-filters p-3 mb-3 d-flex gap-3 flex-wrap align-items-end" method="get" action="{{ route('timetables.index') }}"><input type="hidden" name="view" value="{{ $view }}"><label><span class="timetable-filter-label"><i class="bi bi-calendar-event" aria-hidden="true"></i>{{ __('Academic year') }}</span><input class="form-control" name="academic_year" pattern="[0-9]{4}-[0-9]{4}" value="{{ $academicYear }}"></label>
@@ -24,7 +24,7 @@
 @else
 <label><span class="timetable-filter-label"><i class="bi bi-layers" aria-hidden="true"></i>{{ __('Program') }}</span><select class="form-select" name="program"><option value="">{{ __('All programs') }}</option>@foreach($programs as $program)<option value="{{ $program }}" @selected($timetableProgram === $program)>{{ __($program) }}</option>@endforeach</select></label>
 @endif
-@if($timetableProgram === 'Khmer')
+@if($teacherId || $timetableProgram === 'Khmer')
 <label><span class="timetable-filter-label"><i class="bi bi-book" aria-hidden="true"></i>{{ __('Subject') }}</span><select class="form-select" name="subject"><option value="">{{ __('All subjects') }}</option>@foreach($subjectChoices as $subjectName)<option value="{{ $subjectName }}" @selected($subjectSearch === $subjectName)>{{ $subjectName }}</option>@endforeach</select></label>
 @endif
 @if($view === 'teachers')

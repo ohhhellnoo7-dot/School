@@ -13,6 +13,37 @@ class UnifiedTimetableTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_teacher_subject_filter_shows_matching_classes_and_rooms(): void
+    {
+        $f = $this->fixture();
+        $math = app(LessonManagementService::class)->save($this->data($f));
+        DB::table('teacher_qualifications')->insert([
+            'teacher_id' => $f['primary']->id, 'subject_name' => 'English', 'slot' => 2,
+        ]);
+        $english = Subject::create([
+            'name' => 'English', 'code' => 'ENG-FILTER',
+            'school_class_id' => $f['classes'][1]->id, 'teacher_id' => $f['primary']->id,
+        ]);
+        DB::table('schedules')->insert(array_replace($math->getAttributes(), [
+            'id' => $math->id + 1,
+            'subject_id' => $english->id,
+            'school_class_id' => $f['classes'][1]->id,
+            'classroom_id' => $f['rooms'][1]->id,
+            'room' => $f['rooms'][1]->room_number,
+            'day' => 'Tuesday',
+        ]));
+        $this->actingAs($f['primary']);
+        foreach (['teachers', 'classrooms'] as $view) {
+            $filters = ['view' => $view, 'subject' => 'English', 'academic_year' => '2026-2027', 'classroom' => $f['rooms'][0]->id];
+            $this->get(route('timetables.index', $filters))->assertOk()
+                ->assertViewHas('lessons', fn ($lessons) => $lessons->pluck('subject_id')->all() === [$english->id])
+                ->assertViewHas('rooms', fn ($rooms) => $rooms->modelKeys() === [$f['rooms'][1]->id]);
+            $html = $this->getJson(route('timetables.data', $filters))->assertOk()->json('html');
+            $this->assertStringContainsString(e($f['classes'][1]->label), $html);
+            $this->assertStringNotContainsString(e($f['classes'][0]->label), $html);
+        }
+    }
+
     public function test_teacher_timetable_only_shows_that_teachers_data_in_all_views(): void
     {
         $f = $this->fixture();
@@ -55,12 +86,9 @@ class UnifiedTimetableTest extends TestCase
             $this->assertStringNotContainsString($otherSubject->name, $html);
         }
 
-        foreach ([
-            ['view' => 'teachers', 'teacher' => $f['substitute']->id],
-            ['view' => 'classrooms', 'classroom' => $f['rooms'][1]->id],
-        ] as $selection) {
-            $this->getJson(route('timetables.data', $selection + $year))->assertNotFound();
-        }
+        $this->getJson(route('timetables.data', ['view' => 'teachers', 'teacher' => $f['substitute']->id] + $year))->assertNotFound();
+        $this->get(route('timetables.index', ['view' => 'classrooms', 'classroom' => $f['rooms'][1]->id] + $year))
+            ->assertOk()->assertViewHas('selected', $f['rooms'][0]->id);
 
         $legacyFilters = ['view' => 'students', 'class' => $f['classes'][1]->id, 'program' => 'Chinese', 'session' => 'Evening'] + $year;
         $this->get(route('timetables.index', $legacyFilters))->assertOk()

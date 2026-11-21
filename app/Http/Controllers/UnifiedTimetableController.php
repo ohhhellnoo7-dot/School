@@ -44,13 +44,15 @@ class UnifiedTimetableController extends Controller
         $timetableProgram = $teacherId ? $user->program : $request->input('program');
         $teacherProgram = $view === 'teachers' ? $timetableProgram : null;
         $request->validate(['subject' => 'nullable|string|max:255']);
-        $subjectSearch = $timetableProgram === 'Khmer' ? $request->input('subject') : null;
-        $subjectChoices = $timetableProgram === 'Khmer'
-            ? Subject::whereHas('schoolClass', fn ($q) => $q->where('program', 'Khmer'))
-                ->when($teacherId, fn ($q) => $q->where(fn ($q) => $q->where('teacher_id', $teacherId)
-                    ->orWhereIn('id', (clone $query)->select('subject_id'))))
-                ->distinct()->orderBy('name')->pluck('name')
-            : collect();
+        $subjectSearch = $teacherId || $timetableProgram === 'Khmer' ? $request->input('subject') : null;
+        $subjectChoices = match (true) {
+            (bool) $teacherId => Subject::whereIn('id', (clone $query)->select('subject_id'))->distinct()->orderBy('name')->pluck('name'),
+            $timetableProgram === 'Khmer' => Subject::whereHas('schoolClass', fn ($q) => $q->where('program', 'Khmer'))->distinct()->orderBy('name')->pluck('name'),
+            default => collect(),
+        };
+        if ($teacherId && $subjectSearch) {
+            $query->whereHas('subject', fn ($q) => $q->where('name', $subjectSearch));
+        }
         $availableTeacherSessions = \App\Support\ProgramSessions::for($teacherProgram);
         $teacherSession = $teacherProgram && ! $legacyTeacherView ? $request->input('session') : null;
         if ($teacherSession) $request->validate(['session' => \Illuminate\Validation\Rule::in($availableTeacherSessions)]);
@@ -65,7 +67,10 @@ class UnifiedTimetableController extends Controller
         if ($view === 'teachers') {
             abort_if($restricted, 404);
             $programTeacherIds = $teachers->modelKeys();
-            if ($teacherSession || $subjectSearch) {
+            if ($teacherId && $teacherSession) {
+                $query->whereHas('schoolClass', fn ($q) => $q->where('session', $teacherSession));
+            }
+            if (! $teacherId && ($teacherSession || $subjectSearch)) {
                 if ($teacherSession) $query->whereHas('schoolClass', fn ($q) => $q->where('session', $teacherSession));
                 $matchingLessons = clone $query;
                 if ($subjectSearch) $matchingLessons->whereHas('subject', fn ($q) => $q->where('name', $subjectSearch));
@@ -96,7 +101,6 @@ class UnifiedTimetableController extends Controller
             if ($selected) $query->where('teacher_id', $selected); else $query->whereRaw('1 = 0');
         } elseif ($view === 'classrooms') {
             $requestedRoom = $request->integer('classroom');
-            abort_if($teacherId && $requestedRoom && ! $rooms->contains('id', $requestedRoom), 404);
             if ($restricted) {
                 $allowed = \App\Models\ClassroomBooking::whereIn('class_group_id', $classes->pluck('class_group_id'))->pluck('classroom_id')->merge(Schedule::whereIn('school_class_id', $classes->modelKeys())->pluck('classroom_id'));
                 abort_if($requestedRoom && ! $allowed->contains($requestedRoom), 404);

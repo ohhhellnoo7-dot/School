@@ -72,7 +72,12 @@
         if (field?.name === 'program') {
             for (const name of ['teacher', 'class', 'classroom', 'session', 'grade', 'subject']) filters.delete(name);
         }
-        if (field?.name === 'subject') filters.delete('teacher');
+        if (field?.name === 'subject') {
+            filters.delete('teacher');
+            @if($teacherId)
+            filters.delete('classroom');
+            @endif
+        }
 
         const url = new URL(form.action);
         url.search = filters.toString();

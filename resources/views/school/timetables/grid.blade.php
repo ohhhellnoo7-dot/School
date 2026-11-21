@@ -5,7 +5,7 @@
 @if(!empty($curriculum['missing']))<div class="alert alert-warning">Incomplete timetable: required curriculum hours are missing for {{ implode(', ',$curriculum['missing']) }}. Check teacher qualifications, working hours, workload limits, and classroom reservations before generating the remaining lessons.</div>@endif
 @if(!empty($curriculum['excess']))<div class="alert alert-warning">Scheduled hours exceed the weekly curriculum for {{ implode(', ', $curriculum['excess']) }}. Review these lessons against Scheduling Settings.</div>@endif
 @if(!empty($teacherId) && $lessons->isEmpty())<p class="alert alert-info">{{ __('You have no lessons scheduled for this selection.') }}</p>@endif
-@if(($view ?? null) === 'teachers' && !empty($subjectSearch))<p class="small text-secondary px-3 pt-3">{{ $subjectSearch }} lessons are highlighted. Other subjects remain visible in muted cards and still count as busy time.</p>@endif
+@if(empty($teacherId) && ($view ?? null) === 'teachers' && !empty($subjectSearch))<p class="small text-secondary px-3 pt-3">{{ $subjectSearch }} lessons are highlighted. Other subjects remain visible in muted cards and still count as busy time.</p>@endif
 @php
     $studentSession = ($view ?? null) === 'students' ? $classes->firstWhere('id', $selected)?->session : null;
     $sessionGroups = collect($periods)->groupBy(function ($period) use ($studentSession) {
