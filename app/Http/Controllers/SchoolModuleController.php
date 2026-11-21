@@ -180,6 +180,16 @@ class SchoolModuleController extends Controller
         if ($module === 'attendance' && $request->filled('date')) {
             $query->whereDate('date', $request->date);
         }
+        $attendanceClasses = null;
+        if ($module === 'attendance' && $request->user()->role === 'teacher') {
+            $filters = $request->validate(['class' => 'nullable|integer', 'session' => 'nullable|in:Morning,Afternoon,Evening']);
+            $attendanceClasses = SchoolClass::scheduledForTeacher($request->user())->orderBy('name')->orderBy('section')->orderBy('session')->get();
+            $matchingClasses = fn ($classes) => $classes->scheduledForTeacher($request->user())
+                ->when($filters['class'] ?? null, fn ($classes, $id) => $classes->where('school_classes.id', $id))
+                ->when($filters['session'] ?? null, fn ($classes, $session) => $classes->where('school_classes.session', $session));
+            $query->whereHas('student.studyClasses', $matchingClasses)
+                ->with(['student.studyClasses' => $matchingClasses]);
+        }
         if ($module === 'classes' && $request->filled('teacher')) {
             $query->where('teacher_id', $request->teacher);
         }
@@ -216,6 +226,7 @@ class SchoolModuleController extends Controller
         $uniqueClassCount = $module === 'classes' ? (clone $query)->select('name', 'section')->distinct()->get()->count() : null;
 
         return view('school.modules.index', ['module' => $module, 'meta' => $meta,
+            'attendanceClasses' => $attendanceClasses,
             'uniqueClassCount' => $uniqueClassCount,
             'parentGrades' => $parentGrades,
             'parentSummary' => $parentSummary,
@@ -224,7 +235,7 @@ class SchoolModuleController extends Controller
             'teacherSummary' => $teacherSummary,
             'teacherFilterClasses' => $teacherFilterClasses,
             'records' => $query->orderBy($sort, $request->input('direction', 'desc'))->orderBy('id')->paginate(15)->withQueryString(),
-            'options' => SchoolModules::options($request->user())]);
+            'options' => SchoolModules::options($request->user(), $module)]);
     }
 
     public function show(Request $request, string $module, int $id)
@@ -238,7 +249,7 @@ class SchoolModuleController extends Controller
             return $this->classTimetable($request, $record);
         }
 
-        return view('school.modules.show', compact('module', 'meta', 'record') + ['options' => SchoolModules::options($request->user())]);
+        return view('school.modules.show', compact('module', 'meta', 'record') + ['options' => SchoolModules::options($request->user(), $module)]);
     }
 
     public function teacherTimetable(Request $request, User $teacher)
@@ -309,7 +320,7 @@ class SchoolModuleController extends Controller
         if ($module === 'teachers') return app(TeacherManagementController::class)->form();
         if ($module === 'schedules') return app(UnifiedTimetableController::class)->form($request);
 
-        return view('school.modules.form', compact('module', 'meta', 'record') + ['options' => SchoolModules::options($request->user())]);
+        return view('school.modules.form', compact('module', 'meta', 'record') + ['options' => SchoolModules::options($request->user(), $module)]);
     }
 
     public function edit(Request $request, string $module, int $id)
@@ -325,7 +336,7 @@ class SchoolModuleController extends Controller
         if ($record instanceof Schedule && $record->schoolClass?->program === 'Khmer' && $record->schoolClass?->class_group_id) return app(UnifiedTimetableController::class)->form($request, $record);
         $this->authorizeTeacherGrade($request, $record);
 
-        return view('school.modules.form', compact('module', 'meta', 'record') + ['options' => SchoolModules::options($request->user())]);
+        return view('school.modules.form', compact('module', 'meta', 'record') + ['options' => SchoolModules::options($request->user(), $module)]);
     }
 
     public function store(Request $request, string $module)
@@ -442,7 +453,7 @@ class SchoolModuleController extends Controller
         $rules = [];
         $meta = SchoolModules::get($module);
         $optional = ['phone', 'notes', 'remarks', 'paid_at', 'teacher_id', 'profile_number', 'gender', 'address', 'qualification', 'hire_date', 'salary', 'status', 'program', 'session'];
-        $options = SchoolModules::options($request->user());
+        $options = SchoolModules::options($request->user(), $module);
         foreach ($meta['fields'] as $field => $type) {
             $rules[$field] = [in_array($field, $optional) || ($field === 'password' && $record->exists) ? 'nullable' : 'required'];
             if (is_array($type)) {

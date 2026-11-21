@@ -130,6 +130,14 @@ class SchoolMapController extends Controller
     public function scan(Request $request)
     {
         abort_unless(in_array($request->user()->role, ['administrator', 'teacher'], true), 403);
+        if ($request->user()->role === 'teacher' && today(config('classrooms.timezone'))->isWeekend()) {
+            return response()->json([
+                'success' => false,
+                'reason' => 'weekend',
+                'teacher_name' => $request->user()->name,
+                'message' => 'Work scans are available Monday through Friday. No attendance was recorded today.',
+            ], 422);
+        }
         $data = $request->validate([
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',

@@ -14,6 +14,40 @@ class AttendancePeopleTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_daily_attendance_uses_the_teachers_scheduled_classes(): void
+    {
+        $teacher = User::factory()->create(['role' => 'teacher', 'program' => 'Khmer']);
+        $other = User::factory()->create(['role' => 'teacher', 'program' => 'Khmer']);
+        $ownClass = SchoolClass::create(['name' => 'Own class', 'section' => 'A', 'program' => 'Khmer', 'session' => 'Afternoon', 'teacher_id' => $other->id]);
+        $otherClass = SchoolClass::create(['name' => 'Other class', 'section' => 'A', 'program' => 'Khmer', 'teacher_id' => $teacher->id]);
+        $subject = \App\Models\Subject::create(['name' => 'Mathematics', 'code' => 'MATH-ATT', 'school_class_id' => $ownClass->id, 'teacher_id' => $teacher->id]);
+        \App\Models\Schedule::create([
+            'subject_id' => $subject->id, 'day' => 'Monday', 'starts_at' => '13:00', 'ends_at' => '14:00', 'room' => 'A',
+            'academic_year' => \App\Support\AcademicYear::current(),
+        ]);
+        \App\Models\Subject::create(['name' => 'English', 'code' => 'ENG-ATT', 'school_class_id' => $otherClass->id, 'teacher_id' => $teacher->id]);
+        $ownStudent = Student::factory()->create(['name' => 'Own Class Student', 'school_class_id' => $ownClass->id]);
+        $otherStudent = Student::factory()->create(['name' => 'Other Class Student', 'school_class_id' => $otherClass->id]);
+        foreach ([$ownStudent, $otherStudent] as $student) {
+            $record = Attendance::create(['student_id' => $student->id, 'date' => today(), 'status' => 'present']);
+        }
+
+        $this->actingAs($teacher)->get(route('modules.index', 'attendance'))->assertOk()
+            ->assertSee($ownStudent->name)->assertDontSee($otherStudent->name)
+            ->assertSee('Own class A')->assertSee('Afternoon')->assertDontSee('Other class');
+        $this->get(route('modules.index', ['module' => 'attendance', 'class' => $ownClass->id, 'session' => 'Afternoon']))
+            ->assertOk()->assertSee($ownStudent->name)->assertSee('data-session="Afternoon"', false);
+        $this->get(route('modules.index', ['module' => 'attendance', 'class' => $ownClass->id, 'session' => 'Morning']))
+            ->assertOk()->assertDontSee($ownStudent->name)->assertDontSee('data-session="Afternoon"', false);
+        $this->get(route('modules.show', ['attendance', $record->id]))->assertNotFound();
+        $this->get(route('modules.create', 'attendance'))->assertOk()
+            ->assertSee($ownStudent->name)->assertDontSee($otherStudent->name);
+        $this->post(route('modules.store', 'attendance'), ['student_id' => $otherStudent->id, 'date' => today()->toDateString(), 'status' => 'present'])
+            ->assertSessionHasErrors('student_id');
+        $this->get(route('attendance.people', ['kind' => 'students', 'status' => 'present']))->assertOk()
+            ->assertSee($ownStudent->name)->assertDontSee($otherStudent->name);
+    }
+
     public function test_live_name_search_matches_only_the_start_for_students_and_teachers(): void
     {
         $admin = User::factory()->create(['role' => 'administrator']);

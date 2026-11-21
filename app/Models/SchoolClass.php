@@ -70,6 +70,18 @@ class SchoolClass extends Model
         return $query->whereHas('students', fn ($students) => $students->visibleTo($user));
     }
 
+    public function scopeScheduledForTeacher($query, User $teacher)
+    {
+        $scheduledClasses = Schedule::forTeachingTimetable($teacher)
+            ->forAcademicYear(\App\Support\AcademicYear::current())
+            ->whereNotNull('subject_id')
+            ->select('school_class_id');
+
+        return $query->where(fn ($classes) => $classes
+            ->whereIn('school_classes.id', $scheduledClasses)
+            ->orWhereIn('school_classes.shared_timetable_class_id', $scheduledClasses));
+    }
+
     public function subjects()
     {
         return $this->hasMany(Subject::class);

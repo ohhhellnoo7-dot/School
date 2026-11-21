@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\{Classroom, Schedule, SchoolClass, Student, Subject, User};
 use App\Services\{LessonManagementService, RotationTimetableGenerator, TeacherManagementService, TimetableDiagnostics, UnifiedTimetableGenerator};
-use App\Support\TimetableGrid;
+use App\Support\{AcademicYear, TimetableGrid};
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -17,15 +17,12 @@ class UnifiedTimetableController extends Controller
         $user = $request->user();
         $restricted = in_array($user->role, ['student', 'parent'], true);
         $teacherId = $user->role === 'teacher' ? $user->id : null;
-        $academicYear = $request->input('academic_year') ?: now('Asia/Phnom_Penh')->year.'-'.(now('Asia/Phnom_Penh')->year+1);
+        $academicYear = $request->input('academic_year') ?: AcademicYear::current();
         $query = Schedule::with(['subject', 'teacher', 'classroom', 'schoolClass.classGroup'])
-            ->where(fn ($q) => $q->where('academic_year', $academicYear)->orWhereNull('academic_year'));
+            ->forAcademicYear($academicYear);
         $classQuery = SchoolClass::query()->when($restricted, fn ($q) => $q->whereIn('id', SchoolClass::enrolledFor($user)->select('school_classes.id')));
         if ($teacherId) {
-            $query->where('schedules.teacher_id', $teacherId);
-            if ($user->program) {
-                $query->whereHas('schoolClass', fn ($q) => $q->where('program', $user->program));
-            }
+            $query->forTeachingTimetable($user);
             $scheduledClasses = (clone $query)->select('school_class_id');
             $classQuery->where(function ($q) use ($scheduledClasses) {
                 $q->whereIn('id', $scheduledClasses)

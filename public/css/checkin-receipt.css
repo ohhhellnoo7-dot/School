@@ -286,6 +286,74 @@
 .checkin-failure--session .checkin-failure-retry>i{animation:none}
 @keyframes session-clock-sway{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
 @media(prefers-reduced-motion:reduce){.checkin-failure--session .checkin-failure-art>i{animation:none}}
+
+.scan-dialog--failed .checkin-failure--weekend {
+    padding: clamp(104px, 23vw, 155px) clamp(16px, 5vw, 36px) 38px;
+    background: linear-gradient(180deg, #b7f3fa 20%, #f1faff 57%, #d6f7fb);
+}
+.scan-dialog--failed .checkin-failure--weekend::before {
+    height: clamp(176px, 35vw, 252px);
+    background: linear-gradient(0deg, #d6f7fb, transparent 44%), url('../images/school-hero.png') center 42% / cover no-repeat;
+}
+.scan-dialog--failed .checkin-failure--weekend .checkin-failure-art {
+    position: relative;
+    width: 108px;
+    height: 100px;
+    margin: 0 auto 10px;
+    border: 4px solid #fff;
+    border-radius: 22px;
+    color: #217abd;
+    background: linear-gradient(#f54148 0 23%, #fbfdff 24% 100%);
+    box-shadow: 0 10px 22px #164d7360;
+}
+.checkin-failure--weekend .checkin-failure-art > i {
+    margin-top: 10px;
+    font-size: 51px;
+    animation: none;
+}
+.checkin-failure--weekend .checkin-failure-art > .weekend-clock {
+    position: absolute;
+    right: -16px;
+    bottom: -8px;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border: 4px solid #ffb400;
+    border-radius: 50%;
+    background: #fff9eb;
+    color: #173e72;
+    font-size: 28px;
+    box-shadow: 0 4px 12px #855b263d;
+}
+.scan-dialog--failed .checkin-failure--weekend .checkin-failure-title {
+    color: #094b63;
+    font-size: clamp(36px, 8vw, 54px);
+    font-weight: 800;
+}
+.scan-dialog--failed .checkin-failure--weekend .checkin-failure-subtitle {
+    max-width: 38ch;
+    margin: 0 auto 22px;
+    font-size: clamp(14px, 3vw, 17px);
+}
+.scan-dialog--failed .checkin-failure--weekend .checkin-failure-identity {
+    margin-bottom: 22px;
+    border: 1px solid #bce7fa;
+    border-radius: 22px;
+    background: linear-gradient(135deg, #fff, #e0f4fb);
+    box-shadow: 0 8px 20px #17758e24;
+}
+.checkin-failure--weekend .checkin-session-emoji { color: #4772aa; }
+.scan-dialog--failed .checkin-failure--weekend .checkin-failure-retry {
+    width: min(100%, 440px);
+    padding: 13px 18px;
+    background: linear-gradient(165deg, #10cacc, #007782);
+    box-shadow: 0 8px 22px #00859152;
+}
+.checkin-failure--weekend .weekend-arrow { position: absolute; right: 16px; }
+@media (max-width: 380px) {
+    .checkin-failure--weekend .weekend-arrow { display: none; }
+}
 /* Session greetings appear only for eligible arrivals and completed departures. */
 .checkin-encouragement{display:flex;align-items:center;gap:10px;margin:0 0 16px;padding:12px 14px;border:1px solid #c9eccc;border-radius:16px;background:linear-gradient(125deg,#f4fff2,#effaff);color:#27583e;text-align:left;animation:receipt-rise .4s ease-out both}
 .checkin-encouragement-icon{flex:0 0 28px;font-size:25px;line-height:1;animation:checkin-chill-sway 3s ease-in-out infinite}

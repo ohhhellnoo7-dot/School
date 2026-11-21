@@ -12,6 +12,31 @@ class SchoolMapTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-20 10:00', config('classrooms.timezone')));
+    }
+
+    public function test_weekend_work_scans_do_not_record_attendance(): void
+    {
+        [$admin, , $scan] = $this->siteAndScan();
+        $teacher = User::factory()->create(['role' => 'teacher', 'status' => 'active']);
+        foreach (['2026-11-21', '2026-11-22'] as $date) {
+            $this->travelTo(\Illuminate\Support\Carbon::parse($date.' 11:34', config('classrooms.timezone')));
+            $scan['sampled_at'] = now()->toIso8601String();
+            foreach (['check_in', 'check_out'] as $action) {
+                $this->actingAs($teacher)->postJson(route('school.map.scan'), $scan + ['action' => $action])
+                    ->assertUnprocessable()->assertJsonPath('success', false)->assertJsonPath('reason', 'weekend');
+            }
+            $this->actingAs($admin)->postJson(route('school.map.scan'), $scan)->assertOk()->assertJsonPath('test_only', true);
+        }
+        $this->assertDatabaseCount('teacher_attendances', 0);
+        $this->assertDatabaseCount('teacher_session_attendances', 0);
+        $this->assertDatabaseCount('school_location_check_ins', 0);
+    }
+
     public function test_only_administrators_can_edit_saved_location_radius(): void
     {
         $admin = User::factory()->create(['role' => 'administrator']);

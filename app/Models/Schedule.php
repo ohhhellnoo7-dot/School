@@ -54,6 +54,18 @@ class Schedule extends Model
         return $this->belongsTo(Subject::class);
     }
 
+    public function scopeForAcademicYear($query, string $year)
+    {
+        return $query->where(fn ($lessons) => $lessons->where('academic_year', $year)->orWhereNull('academic_year'));
+    }
+
+    public function scopeForTeachingTimetable($query, User $teacher)
+    {
+        return $query->where('schedules.teacher_id', $teacher->id)
+            ->when($teacher->program, fn ($lessons, string $program) => $lessons
+                ->whereHas('schoolClass', fn ($classes) => $classes->where('program', $program)));
+    }
+
     public function schoolClass()
     {
         return $this->belongsTo(SchoolClass::class)->withoutGlobalScope('unmerged');

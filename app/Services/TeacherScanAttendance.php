@@ -25,6 +25,10 @@ class TeacherScanAttendance
 
     public function sessions(User $teacher, string $date): Collection
     {
+        if (Carbon::parse($date)->isWeekend()) {
+            return collect();
+        }
+
         $settings = \App\Models\AttendanceSessionSetting::where('updated_at', '<=', Carbon::parse($date)->endOfDay())->get()->keyBy('session');
         return Schedule::with('schoolClass')->where('teacher_id', $teacher->id)
             ->where('day', Carbon::parse($date)->format('l'))

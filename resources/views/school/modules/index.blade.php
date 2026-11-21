@@ -75,7 +75,7 @@
 @endif
 <section class="panel directory-panel">
 <div class="panel-header"><h2>@if($module === 'parents')<i class="bi bi-people" aria-hidden="true"></i>@endif{{ $meta['title'] }} <span class="badge text-bg-light">{{ $module === 'classes' ? $uniqueClassCount : $records->total() }}</span></h2>@if($module === 'classes')<span class="small text-secondary">{{ $records->total() }} program / session entries · Classes counted by grade and section</span>@endif</div>
-<form class="filter-grid d-flex flex-wrap gap-2 px-4 pb-3" method="get">
+<form class="filter-grid d-flex flex-wrap gap-2 px-4 pb-3" method="get" @if(isset($attendanceClasses)) id="attendance-filters" @endif>
     @if($module === 'parents')
         <div><label for="parent-program" class="form-label">{{ __('Program') }}</label><select id="parent-program" name="program" class="form-select"><option value="">{{ __('All programs') }}</option>@foreach(['Khmer', 'English', 'Chinese'] as $program)<option value="{{ $program }}" @selected(request('program') === $program)>{{ $program }}</option>@endforeach</select></div>
         <div><label for="parent-session" class="form-label">{{ __('Session') }}</label><select id="parent-session" name="session" class="form-select"><option value="">{{ __('All sessions') }}</option>@foreach(['Morning', 'Afternoon', 'Evening'] as $session)<option value="{{ $session }}" @selected(request('session') === $session)>{{ $session }}</option>@endforeach</select></div>
@@ -93,12 +93,20 @@
     @if($module === 'subjects')<div><label for="subject-class" class="form-label">{{ __('School class') }}</label><select id="subject-class" class="form-select" name="class"><option value="">{{ __('All grades / classes') }}</option>@foreach($options['class'] as $id => $label)<option value="{{ $id }}" @selected(request('class') == $id)>{{ $label }}</option>@endforeach</select></div>@endif
     @if(in_array($module, ['classes', 'subjects']))<div><label for="teacher" class="form-label">{{ __('Teacher') }}</label><select class="form-select" id="teacher" name="teacher"><option value="">All teachers</option>@foreach($options['teacher'] as $id => $name)<option value="{{ $id }}" @selected(request('teacher') == $id)>{{ $name }}</option>@endforeach</select></div>@endif
     @if($module === 'attendance')<div><label class="form-label" for="date">Date</label><input class="form-control" type="date" name="date" id="date" value="{{ request('date') }}"></div>@endif
+    @if(isset($attendanceClasses))
+    <div><label for="attendance-class" class="form-label">{{ __('Class') }}</label><select class="form-select" id="attendance-class" name="class"><option value="">{{ __('All classes') }}</option>@foreach($attendanceClasses->when(request('session'), fn ($classes, $session) => $classes->where('session', $session)) as $class)<option value="{{ $class->id }}" data-session="{{ $class->session }}" @selected(request('class') == $class->id)>{{ $class->label }}</option>@endforeach</select></div>
+    <div><label for="attendance-session" class="form-label">{{ __('Session') }}</label><select class="form-select" id="attendance-session" name="session"><option value="">{{ __('All sessions') }}</option>@foreach($attendanceClasses->pluck('session')->filter()->unique() as $session)<option value="{{ $session }}" @selected(request('session') === $session)>{{ __($session) }}</option>@endforeach</select></div>
+    @endif
     <div><label for="sort" class="form-label">{{ __('Sort by') }}</label><select class="form-select" name="sort" id="sort">@foreach(['id' => 'number'] + $columns as $field => $type)<option value="{{ $field }}" @selected(request('sort', 'id') === $field)>{{ \Illuminate\Support\Str::headline(str_replace('_id', '', $field)) }}</option>@endforeach</select></div>
     <div><label for="direction" class="form-label">{{ __('Order') }}</label><select class="form-select" id="direction" name="direction"><option value="desc" @selected(request('direction', 'desc') === 'desc')>{{ __('Descending') }}</option><option value="asc" @selected(request('direction') === 'asc')>{{ __('Ascending') }}</option></select></div>
-    <div class="d-flex align-items-end gap-2"><button class="btn btn-outline-secondary">{{ $module === 'teachers' ? 'Filter' : 'Apply' }}</button><a class="btn btn-light" href="{{ route('modules.index', $module) }}">{{ __('Reset') }}</a></div>
+    <div class="d-flex align-items-end gap-2">@unless(isset($attendanceClasses))<button class="btn btn-outline-secondary">{{ $module === 'teachers' ? 'Filter' : 'Apply' }}</button>@endunless<a class="btn btn-light" href="{{ route('modules.index', $module) }}">{{ __('Reset') }}</a></div>
 </form>
 <div class="table-responsive"><table class="table table-hover"><thead><tr>@if($recordIsPerson = in_array($module, ['teachers', 'parents', 'users']))<th>{{ __('Profile') }}</th>@endif<th>ID</th>
-@foreach($columns as $field => $type)<th>{{ \Illuminate\Support\Str::headline(str_replace('_id', '', $field)) }}</th>@endforeach
+@foreach($columns as $field => $type)
+<th>{{ \Illuminate\Support\Str::headline(str_replace('_id', '', $field)) }}</th>
+@if($module === 'attendance' && $field === 'student_id')<th>{{ __('Gender') }}</th>@endif
+@endforeach
+@if(isset($attendanceClasses))<th>{{ __('Class') }} / {{ __('Session') }}</th>@endif
 @if($module === 'subjects')<th>{{ __('Assignment') }}</th>@endif
 @if($module === 'classes')<th>{{ __('Students') }}</th>@endif
 @if($module === 'teachers')<th>{{ __('Subjects') }}</th>@endif
@@ -107,7 +115,22 @@
 @if($module === 'grades')<th>Percentage</th><th>{{ __('Grade') }}</th>@endif
 <th>{{ __('Actions') }}</th></tr></thead><tbody>
 @forelse($records as $record)<tr>@if($recordIsPerson)<td>@include('school.partials.avatar', ['person' => $record])</td>@endif<td>{{ $record->id }}</td>
-@foreach($columns as $field => $type)<td class="field-{{ $field }}" style="min-width:100px;max-width:350px">@if($module === 'classes' && $field === 'name')<a href="{{ route('classes.timetable', $record->id) }}">{{ $record->name }}</a>@elseif($module === 'teachers' && $field === 'name')<a href="{{ route('teachers.schedule', $record) }}">{{ $record->name }}</a>@else @include('school.modules.value') @endif</td>@endforeach
+@foreach($columns as $field => $type)<td class="field-{{ $field }}" style="min-width:100px;max-width:350px">@if($module === 'classes' && $field === 'name')<a href="{{ route('classes.timetable', $record->id) }}">{{ $record->name }}</a>@elseif($module === 'teachers' && $field === 'name')<a href="{{ route('teachers.schedule', $record) }}">{{ $record->name }}</a>@else @include('school.modules.value') @endif</td>
+@if($module === 'attendance' && $field === 'student_id')
+<td class="text-nowrap">
+    @php
+        $gender = $record->student?->gender;
+    @endphp
+    @if(in_array($gender, ['male', 'female'], true))
+        <span class="attendance-gender attendance-gender--{{ $gender }}">
+            <i class="bi bi-gender-{{ $gender }}" aria-hidden="true"></i> {{ __(ucfirst($gender)) }}
+        </span>
+    @else
+        {{ $gender ? __(ucfirst($gender)) : __('Not provided') }}
+    @endif
+</td>
+@endif
+@endforeach
 @if($module === 'subjects')<td><span class="status-badge {{ $record->teacher ? 'active' : 'pending' }}"><i class="bi bi-{{ $record->teacher ? 'check-circle-fill' : 'clock' }} me-1" aria-hidden="true"></i>{{ $record->teacher ? __('Assigned') : __('Unassigned') }}</span></td>@endif
 @if($module === 'classes')<td>{{ $record->students_count }} / {{ $record->capacity }} @if($record->capacity > 0)<meter class="class-capacity" min="0" max="{{ $record->capacity }}" value="{{ $record->students_count }}" aria-label="{{ $record->students_count }} students; capacity {{ $record->capacity }}"></meter>@endif</td>@endif
 @if($module === 'teachers')<td>{{ $record->subjects->pluck('name')->unique()->join(', ') ?: 'Not assigned' }}</td>@endif
@@ -136,6 +159,13 @@
 </td>
 @endif
 @if($module === 'fees')<td>${{ number_format($record->balance, 2) }}</td><td>@include('school.partials.status', ['status' => $record->payment_status])</td>@endif
+@if(isset($attendanceClasses))
+<td>
+    @foreach($record->student->studyClasses as $class)
+        <div>{{ $class->name }} {{ $class->section }} <span class="text-secondary">&middot; {{ __($class->session ?: 'Not specified') }}</span></div>
+    @endforeach
+</td>
+@endif
 @if($module === 'grades')<td>{{ round($record->percentage, 1) }}%</td><td>@include('school.partials.status', ['status' => $record->letter_grade, 'prefix' => 'grade-'])</td>@endif
 <td><div class="d-flex gap-2"><a class="btn btn-sm btn-light" href="{{ route('modules.show', [$module, $record->id]) }}" aria-label="View record {{ $record->id }}"><i class="bi bi-eye"></i></a>
 @if($module === 'teachers')<a class="btn btn-sm btn-outline-secondary" href="{{ route('teachers.schedule', $record) }}">Schedule</a>@endif
@@ -145,6 +175,30 @@
 @empty<tr><td colspan="{{ ($recordIsPerson ? 1 : 0) + count($columns) + 5 }}"><div class="empty-state">No records found. Try another filter.</div></td></tr>@endforelse
 </tbody></table></div><div class="p-3">{{ $records->links() }}</div></section>
 @endsection
+
+@if(isset($attendanceClasses))
+@push('scripts')
+<script>
+    const attendanceFilters = document.getElementById('attendance-filters');
+    attendanceFilters.addEventListener('change', (event) => {
+        const classFilter = attendanceFilters.elements.namedItem('class');
+        if (event.target.name === 'session' && event.target.value && classFilter.value
+            && classFilter.selectedOptions[0]?.dataset.session !== event.target.value) {
+            classFilter.value = '';
+        }
+        if (event.target.matches('select, input[type="date"]')) {
+            attendanceFilters.requestSubmit();
+        }
+    });
+    attendanceFilters.elements.search.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && !event.isComposing) {
+            event.preventDefault();
+            attendanceFilters.requestSubmit();
+        }
+    });
+</script>
+@endpush
+@endif
 @if($module === 'teachers')
 @push('scripts')
 <script src="{{ asset('js/teacher-filters.js') }}?v={{ filemtime(public_path('js/teacher-filters.js')) }}"></script>

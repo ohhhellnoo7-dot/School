@@ -11,3 +11,14 @@
 
 .stat-breakdown{position:relative}.stat-breakdown-trigger{border:0;cursor:pointer}.stat-breakdown-trigger:focus-visible{outline:2px solid var(--green);outline-offset:3px}.stat-breakdown-menu{display:none;position:absolute;top:100%;right:0;width:240px;max-width:calc(100vw - 40px);padding:16px;background:var(--bs-body-bg,#fff);color:var(--ink);border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 30px #00000018;z-index:1030;font-size:12px}.stat-breakdown:hover .stat-breakdown-menu,.stat-breakdown:focus-within .stat-breakdown-menu{display:block}.stat-breakdown-menu dt,.stat-breakdown-menu dd{font-size:12px}
 .stat-card:has(.stat-breakdown){position:relative}.stat-card .stat-breakdown{position:static}.stat-card .stat-breakdown-menu{top:58px;right:12px;max-width:calc(100% - 24px)}.stat-card .stat-breakdown:before{content:'';position:absolute;top:50px;right:12px;width:65px;height:12px;display:none}.stat-card .stat-breakdown:hover:before{display:block}
+
+.attendance-gender {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .25rem .55rem;
+    border-radius: .5rem;
+    font-weight: 600;
+}
+.attendance-gender--male { color: #154d99; background-color: #e0edff; }
+.attendance-gender--female { color: #9e235f; background-color: #fce4f0; }

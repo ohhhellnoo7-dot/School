@@ -94,7 +94,7 @@ class DashboardController extends Controller
         $reportDate = Carbon::parse($validated['date'] ?? today()->toDateString())->startOfDay();
         $students = Student::visibleTo($user);
         $attendanceSession = AttendanceSession::selected($request);
-        $attendanceStudents = AttendanceSession::students(clone $students, $attendanceSession);
+        $attendanceStudents = AttendanceSession::students(Student::visibleForAttendance($user), $attendanceSession);
         $ids = (clone $attendanceStudents)->select('id');
         $attendance = Attendance::whereIn('student_id', $ids)->whereDate('date', $reportDate);
         $fees = Fee::whereIn('student_id', (clone $students)->select('id'))->where('currency', 'USD');
@@ -216,7 +216,7 @@ class DashboardController extends Controller
                 ->when($filters['program'] ?? null, fn ($q, $program) => $q->where('program', $program))
                 ->when($filters['search'] ?? null, fn ($q, $search) => $q->whereHas('teacher', fn ($teacher) => $nameMatch($teacher, $search)));
         } else {
-            $students = AttendanceSession::students(Student::visibleTo($user), $session)
+            $students = AttendanceSession::students(Student::visibleForAttendance($user), $session)
                 ->when($filters['program'] ?? null, fn ($q, $program) => $q->whereHas('studyClasses', fn ($classes) => $classes->where('program', $program)))
                 ->when($filters['search'] ?? null, $nameMatch)
                 ->when($filters['letter'] ?? null, fn ($q, $letter) => $q->whereRaw('UPPER(LTRIM(name)) LIKE ?', [$letter.'%']));

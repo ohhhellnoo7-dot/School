@@ -88,7 +88,8 @@ class SchoolModules
             'announcements' => $query->whereIn('audience', ['all', $user->role])->whereDate('published_at', '<=', today()),
             'classes' => $query->whereIn('id', SchoolClass::enrolledFor($user)->select('school_classes.id'))->when($user->role === 'teacher', fn ($q) => $q->orWhere('teacher_id', $user->id)->orWhereIn('id', self::subjects($user)->select('school_class_id'))->orWhereIn('id', Schedule::where('teacher_id',$user->id)->select('school_class_id'))->orWhereIn('shared_timetable_class_id', Schedule::where('teacher_id',$user->id)->select('school_class_id'))),
             'subjects' => self::subjects($user),
-            'attendance', 'fees' => $query->whereIn('student_id', Student::visibleTo($user)->select('id')),
+            'attendance' => $query->whereIn('student_id', Student::visibleForAttendance($user)->select('id')),
+            'fees' => $query->whereIn('student_id', Student::visibleTo($user)->select('id')),
             'grades' => $query->whereIn('student_id', Student::visibleTo($user)->select('id'))->when($user->role === 'teacher', fn ($q) => $q->whereHas('examination', fn ($exam) => $exam->whereIn('subject_id', self::subjects($user)->select('id')))),
             'schedules' => $user->role === 'teacher'
                 ? $query->where('teacher_id', $user->id)
@@ -98,12 +99,14 @@ class SchoolModules
         };
     }
 
-    public static function options(User $user): array
+    public static function options(User $user, ?string $module = null): array
     {
+        $students = $module === 'attendance' ? Student::visibleForAttendance($user) : Student::visibleTo($user);
+
         return [
             'teacher' => User::where('role', 'teacher')->orderBy('name')->pluck('name', 'id'),
             'class' => SchoolClass::orderBy('name')->get()->mapWithKeys(fn ($c) => [$c->id => $c->label]),
-            'student' => Student::visibleTo($user)->orderBy('name')->get()->mapWithKeys(fn ($s) => [$s->id => $s->name.' · '.$s->student_number]),
+            'student' => $students->orderBy('name')->get()->mapWithKeys(fn ($s) => [$s->id => $s->name.' · '.$s->student_number]),
             'subject' => self::subjects($user)->with('schoolClass')->get()->mapWithKeys(fn ($s) => [$s->id => $s->name.' · '.$s->schoolClass->label]),
             'exam' => Examination::with('subject')->whereIn('subject_id', self::subjects($user)->select('id'))->get()->mapWithKeys(fn ($e) => [$e->id => $e->name.' · '.$e->subject->name]),
         ];

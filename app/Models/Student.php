@@ -128,4 +128,13 @@ class Student extends Model
             default => $query->where('user_id', $user->id),
         };
     }
+
+    public function scopeVisibleForAttendance(Builder $query, User $user): Builder
+    {
+        if ($user->role !== 'teacher') {
+            return $query->visibleTo($user);
+        }
+
+        return $query->whereHas('studyClasses', fn (Builder $classes) => $classes->scheduledForTeacher($user));
+    }
 }

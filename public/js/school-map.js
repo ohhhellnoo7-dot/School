@@ -193,8 +193,10 @@
         result.classList.remove('p-3', 'border', 'rounded-3', 'text-success', 'text-danger');
         const card = document.createElement('article');
         card.className = 'checkin-failure';
-        const outsideSession = data.reason === 'outside_session';
+        const weekend = data.reason === 'weekend';
+        const outsideSession = weekend || data.reason === 'outside_session';
         if (outsideSession) card.classList.add('checkin-failure--session');
+        if (weekend) card.classList.add('checkin-failure--weekend');
         const art = document.createElement('div');
         art.className = 'checkin-failure-art';
         art.setAttribute('aria-hidden', 'true');
@@ -203,8 +205,13 @@
         if (outsideSession) {
             art.replaceChildren();
             const clock = document.createElement('i');
-            clock.className = 'bi bi-clock-history';
+            clock.className = weekend ? 'bi bi-calendar-week' : 'bi bi-clock-history';
             art.append(clock);
+            if (weekend) {
+                const badge = document.createElement('i');
+                badge.className = 'bi bi-clock weekend-clock';
+                art.append(badge);
+            }
         }
         const add = (tag, className, text, parent = card) => {
             const node = document.createElement(tag);
@@ -215,7 +222,7 @@
         };
         const heading = add('h2', 'checkin-failure-title', data.action === 'check_out' ? 'Check-out ' : 'Check-in ');
         add('span', '', 'Failed!', heading);
-        if (outsideSession) heading.textContent = 'Outside Session Hours';
+        if (outsideSession) heading.textContent = weekend ? 'Weekend' : 'Outside Session Hours';
         const outside = data.distance_meters !== undefined;
         add('p', 'checkin-failure-subtitle', data.message || 'The location check could not be completed.');
         const profile = document.querySelector('.profile-link');
@@ -240,7 +247,11 @@
         crying.innerHTML = '<svg viewBox="0 0 64 72" fill="none"><defs><radialGradient id="crying-face" cx=".35" cy=".25" r=".8"><stop stop-color="#fff296"/><stop offset=".65" stop-color="#ffd044"/><stop offset="1" stop-color="#f2a51e"/></radialGradient></defs><g class="crying-face"><circle cx="32" cy="30" r="26" fill="url(#crying-face)" stroke="#e9a42a"/><path d="M15 20q6 1 10-5m14 0q4 6 10 5" stroke="#895122" stroke-width="3" stroke-linecap="round"/><path d="M16 29q4-6 9 0m14 0q5-6 9 0" stroke="#613e29" stroke-width="3" stroke-linecap="round"/><ellipse cx="32" cy="43" rx="6" ry="7" fill="#73432c"/><path d="M29 47q3-3 6 0" stroke="#f6928c" stroke-width="3" stroke-linecap="round"/></g><g fill="#36bdff" stroke="#d2f6ff" stroke-width="1"><path class="crying-tear crying-tear--left" d="M20 29c-1 4-4 7-4 10a4 4 0 0 0 8 0c0-3-3-6-4-10Z"/><path class="crying-tear crying-tear--right" d="M44 29c-1 4-4 7-4 10a4 4 0 0 0 8 0c0-3-3-6-4-10Z"/></g></svg>';
         if (outsideSession) {
             crying.textContent = '🕒';
-            person.querySelector('small').textContent = 'Waiting for your next session';
+            person.querySelector('small').textContent = weekend ? 'No work scan today' : 'Waiting for your next session';
+            if (weekend) {
+                crying.replaceChildren();
+                add('i', 'bi bi-calendar-x', '', crying);
+            }
         }
         if (outside && !outsideSession) {
             const details = add('dl', 'checkin-failure-details', '');
@@ -279,6 +290,7 @@
             retry.replaceChildren();
             add('i', 'bi bi-calendar3', '', retry).setAttribute('aria-hidden', 'true');
             add('span', '', 'View Timetable', retry);
+            if (weekend) add('i', 'bi bi-chevron-right weekend-arrow', '', retry).setAttribute('aria-hidden', 'true');
             retry.addEventListener('click', event => {
                 event.stopImmediatePropagation();
                 window.location.assign(dialog.dataset.timetableUrl);
