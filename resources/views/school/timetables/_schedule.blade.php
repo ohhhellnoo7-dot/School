@@ -1,3 +1,4 @@
+@unless(auth()->user()->role === 'parent')
 <nav class="timetable-view-tabs d-flex gap-2 mb-3 flex-wrap" aria-label="{{ __('Schedule views') }}">
     @if($teacherId)
     <a class="btn {{ $view === 'teachers' ? 'btn-primary' : 'btn-outline-secondary' }}" href="{{ route('timetables.index', ['view'=>'teachers','academic_year'=>$academicYear,'subject'=>$subjectSearch]) }}" @if($view === 'teachers') aria-current="page" @endif><i class="bi bi-person-workspace" aria-hidden="true"></i> {{ __('Teacher schedule') }}</a>
@@ -43,6 +44,10 @@
 @endif
 @elseif($view === 'classrooms')<label><span class="timetable-filter-label"><i class="bi bi-building" aria-hidden="true"></i>{{ __('Physical classroom') }}</span><select class="form-select" name="classroom">@forelse($rooms as $room)<option value="{{ $room->id }}" @selected($selected === $room->id)>{{ $room->room_number }} — {{ $room->name }}</option>@empty<option value="">{{ __('No classrooms in this program') }}</option>@endforelse</select></label>
 @else<label><span class="timetable-filter-label"><i class="bi bi-mortarboard" aria-hidden="true"></i>{{ __('Grade') }}</span><select class="form-select" name="grade"><option value="">{{ __('All grades') }}</option>@foreach(range(1,12) as $grade)<option @selected(request('grade') == $grade)>{{ $grade }}</option>@endforeach</select></label><label><span class="timetable-filter-label"><i class="bi bi-people" aria-hidden="true"></i>{{ __('Class and cohort') }}</span><select class="form-select" name="class">@foreach($studentClasses ?? $classes as $class)<option value="{{ $class->id }}" @selected($selected === $class->id)>{{ $class->label }}</option>@endforeach</select></label><label><span class="timetable-filter-label"><i class="bi bi-clock" aria-hidden="true"></i>{{ __('Session') }}</span><select class="form-select" name="session"><option value="">{{ __('All sessions') }}</option>@foreach(['Morning','Afternoon','Evening'] as $session)<option @selected(request('session') === $session)>{{ $session }}</option>@endforeach</select></label>@endif</form>
+@endunless
+@if(auth()->user()->role === 'parent')
+    @include('school.timetables._parent-metrics')
+@endif
 @if($view === 'teachers' && ($selectedTeacher = $teachers->firstWhere('id', $selected))?->program === 'English')
 @php($workingMinutes = app(\App\Services\TeacherManagementService::class)->periods($selectedTeacher)->where('unavailable', false)->sum(fn ($p) => \App\Services\TeacherManagementService::duration($p->start_time, $p->end_time)))
 <div class="panel p-3 mb-3 d-flex gap-3 align-items-center flex-wrap">
@@ -60,5 +65,18 @@
             </div>
         @endif
     </header>
-    <div id="shared-timetable">@include('school.timetables.grid')</div>
+    @if(auth()->user()->role === 'parent')
+        <div class="parent-timetable-display" role="group" aria-label="{{ __('Timetable display') }}">
+            <button type="button" class="btn" data-schedule-display-option="weekly" aria-pressed="true"><i class="bi bi-calendar-week" aria-hidden="true"></i> {{ __('Weekly View') }}</button>
+            <button type="button" class="btn" data-schedule-display-option="list" aria-pressed="false"><i class="bi bi-list-ul" aria-hidden="true"></i> {{ __('List View') }}</button>
+        </div>
+    @endif
+    <div id="shared-timetable">
+        @if(auth()->user()->role === 'parent')
+            <div class="parent-timetable-weekly">@include('school.timetables.grid')</div>
+            @include('school.timetables._parent-list')
+        @else
+            @include('school.timetables.grid')
+        @endif
+    </div>
 </section>

@@ -159,9 +159,9 @@ class UnifiedTimetableController extends Controller
         }
         $breaks = $view === 'teachers' && $selected ? app(TeacherManagementService::class)->breaks(User::findOrFail($selected)) : collect();
         $repair = app(\App\Services\SchoolRoomAssignmentRepair::class);
-        $roomIssues = $user->role === 'student' ? [] : $lessons->mapWithKeys(fn ($entry)=>[$entry->id=>$repair->describe($entry)])->all();
+        $roomIssues = $restricted ? [] : $lessons->mapWithKeys(fn ($entry)=>[$entry->id=>$repair->describe($entry)])->all();
         $curriculum = null;
-        if ($user->role !== 'student' && ! $teacherId && $view === 'students' && ($cohort = $classes->firstWhere('id',$selected))) {
+        if (! $restricted && ! $teacherId && $view === 'students' && ($cohort = $classes->firstWhere('id',$selected))) {
             $subjects = $cohort->timetableOwner()->subjects;
             $unknown = $subjects->isEmpty() || $subjects->contains(fn ($s)=>$s->required_weekly_minutes === null);
             $missing = $subjects->filter(fn ($s)=>$s->required_weekly_minutes !== null && $lessons->where('subject_id',$s->id)->sum(fn ($entry)=>TeacherManagementService::duration($entry->starts_at,$entry->ends_at)) < $s->required_weekly_minutes)->pluck('name')->all();

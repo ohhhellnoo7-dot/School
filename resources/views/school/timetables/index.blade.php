@@ -4,15 +4,15 @@
 @if(auth()->user()->role === 'administrator')<a class="btn btn-outline-primary mb-3" href="{{ route('khmer-curriculum.index') }}">Khmer subjects and study streams</a>@endif
 
 <link href="{{ asset('css/unified-timetable.css') }}?v={{ filemtime(public_path('css/unified-timetable.css')) }}" rel="stylesheet">
-<div class="timetable-workspace">
+<div class="timetable-workspace {{ auth()->user()->role === 'parent' ? 'parent-timetable' : '' }}">
 <x-scholar-hero tag="section" class="unified-timetable-hero">
     <div class="timetable-hero-copy">
         <div class="timetable-hero-heading"><span class="timetable-hero-icon"><i class="bi bi-calendar-week" aria-hidden="true"></i></span><div><span class="timetable-eyebrow">{{ __('Plan the school week') }}</span><h1>{{ __('School') }} <span>{{ __('Timetables') }}</span></h1></div></div>
-        <p>{{ __('One lesson, three connected schedules.') }} <span class="timetable-timezone"><i class="bi bi-geo-alt" aria-hidden="true"></i> Asia/Phnom_Penh</span></p>
+        <p>{{ __(auth()->user()->role === 'parent' ? 'View the weekly class schedules for your linked children.' : 'One lesson, three connected schedules.') }} <span class="timetable-timezone"><i class="bi bi-geo-alt" aria-hidden="true"></i> Asia/Phnom_Penh</span></p>
         @if(auth()->user()->role === 'administrator')<div class="timetable-hero-actions d-flex gap-2 flex-wrap"><a class="btn btn-primary" href="{{ route('timetables.lessons.create') }}"><i class="bi bi-plus-lg" aria-hidden="true"></i> {{ __('Add lesson') }}</a><a class="btn btn-outline-secondary" href="{{ route('timetables.diagnostics') }}"><i class="bi bi-tools" aria-hidden="true"></i> {{ __('Diagnostics & Khmer replacement') }}</a><a class="btn btn-outline-secondary" href="{{ route('timetables.rooms.review') }}"><i class="bi bi-layers" aria-hidden="true"></i> {{ __('Review physical room assignments') }}</a></div>@endif
     </div>
 </x-scholar-hero>
-<div id="timetable-schedule">
+<div id="timetable-schedule" data-schedule-display="weekly">
     @include('school.timetables._schedule')
 </div>
 <p id="timetable-filter-status" class="text-danger" role="status"></p>
@@ -27,6 +27,7 @@
     const schedule = document.getElementById('timetable-schedule');
     const status = document.getElementById('timetable-filter-status');
     const dataUrl = @json(route('timetables.data'));
+    const parentView = schedule.closest('.parent-timetable') !== null;
     let pending;
     let refresh;
 
@@ -53,7 +54,8 @@
             const restoreFocus = field && document.activeElement === field;
             schedule.innerHTML = html;
             history.replaceState(history.state, '', url);
-            if (restoreFocus) schedule.querySelector('.timetable-filters').elements.namedItem(field.name)?.focus();
+            if (restoreFocus) schedule.querySelector(field.form.matches('[data-parent-cohort]') ? '[data-parent-cohort]' : '.timetable-filters')?.elements.namedItem(field.name)?.focus();
+            syncDisplay();
         } catch (error) {
             if (!request.signal.aborted) {
                 status.textContent = @json(__('Could not load the schedule. Change a filter to try again.'));
@@ -86,16 +88,28 @@
 
     schedule.addEventListener('change', event => {
         const field = event.target;
-        if (field.form?.matches('.timetable-filters')) applyFilters(field.form, field);
+        if (field.form?.matches('.timetable-filters, [data-parent-cohort]')) applyFilters(field.form, field);
     });
 
     schedule.addEventListener('submit', event => {
-        if (!event.target.matches('.timetable-filters')) return;
+        if (!event.target.matches('.timetable-filters, [data-parent-cohort]')) return;
         event.preventDefault();
         applyFilters(event.target, document.activeElement);
     });
 
+    function syncDisplay() {
+        schedule.querySelectorAll('[data-schedule-display-option]').forEach(button => {
+            button.setAttribute('aria-pressed', String(button.dataset.scheduleDisplayOption === schedule.dataset.scheduleDisplay));
+        });
+    }
+
     schedule.addEventListener('click', event => {
+        const display = event.target.closest('[data-schedule-display-option]');
+        if (display) {
+            schedule.dataset.scheduleDisplay = display.dataset.scheduleDisplayOption;
+            syncDisplay();
+            return;
+        }
         const link = event.target.closest('[data-teacher-session-menu] a');
         if (!link || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         event.preventDefault();
@@ -109,13 +123,28 @@
         try {
             const url = new URL(dataUrl);
             url.search = location.search;
+            if (parentView) url.searchParams.set('fragment', '1');
             const response = await fetch(url, {
                 headers: { Accept: 'application/json' },
                 signal: request.signal,
             });
             if (!response.ok) return;
             const { html } = await response.json();
-            if (!request.signal.aborted) document.getElementById('shared-timetable').innerHTML = html;
+            if (request.signal.aborted) return;
+            const shared = document.getElementById('shared-timetable');
+            if (!parentView) {
+                shared.innerHTML = html;
+                return;
+            }
+            const fragment = document.createElement('template');
+            fragment.innerHTML = html;
+            for (const selector of ['[data-parent-timetable-metrics]', '#shared-timetable']) {
+                const next = fragment.content.querySelector(selector);
+                if (next) schedule.querySelector(selector)?.replaceWith(next);
+            }
+            const details = schedule.querySelector('.timetable-schedule-details');
+            const nextDetails = fragment.content.querySelector('.timetable-schedule-details');
+            if (details && nextDetails && !details.contains(document.activeElement)) details.replaceWith(nextDetails);
         } catch {
             // The next interval will retry.
         } finally {

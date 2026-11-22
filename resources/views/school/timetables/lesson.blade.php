@@ -1,3 +1,6 @@
+@if(auth()->user()->role === 'parent')
+    @include('school.timetables._parent-lesson')
+@else
 @php($mutedSubject = !empty($subjectSearch) && $entry->subject?->name !== $subjectSearch)
 <article data-lesson-id="{{ $entry->id }}" class="shared-lesson {{ $mutedSubject ? 'lesson-other-subject' : '' }} {{ \App\Services\TeacherManagementService::duration($entry->starts_at,$entry->ends_at) === 120 ? 'two-hour-entry' : '' }}">
 @if($mutedSubject)<span class="lesson-other-subject-label">{{ __('Busy · Other subject') }}</span>@endif
@@ -18,3 +21,4 @@
 @if(auth()->user()->role === 'administrator')<a href="{{ route('timetables.lessons.edit',$entry) }}">Edit lesson</a>@endif
 @endif
 </article>
+@endif

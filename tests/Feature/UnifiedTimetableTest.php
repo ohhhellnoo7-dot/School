@@ -597,6 +597,12 @@ class UnifiedTimetableTest extends TestCase
             $this->post(route('timetables.lessons.store'), $this->data($f))->assertForbidden();
             $this->get(route('timetables.data', ['view' => 'students', 'class' => $f['classes'][1]->id]))->assertNotFound();
         }
+        $this->actingAs($f['parent'])->get(route('timetables.index'))->assertOk()
+            ->assertDontSee(['timetable-view-tabs', 'class="panel timetable-filters'], false)->assertSee('Weekly schedule');
+        $fragment = $this->getJson(route('timetables.data', ['fragment' => 1]))->assertOk()->json('html');
+        $this->assertStringNotContainsString('timetable-view-tabs', $fragment);
+        $this->assertStringNotContainsString('timetable-filters', $fragment);
+        $this->assertStringContainsString('data-lesson-id="'.$own->id.'"', $fragment);
     }
 
     public function test_conflicts_invalid_duration_and_unqualified_teacher_are_rejected_on_save(): void
