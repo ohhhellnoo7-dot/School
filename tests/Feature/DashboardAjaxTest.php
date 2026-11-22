@@ -43,6 +43,7 @@ class DashboardAjaxTest extends TestCase
         $this->actingAs($admin)->get('/dashboard')->assertOk()
             ->assertSee(['Monthly Attendance Trend', 'November 2026', 'No attendance recorded', '60%'])
             ->assertSee(['Average Attendance', 'Highest Day', 'Lowest Day', 'Days in Month', '53.3%', '30 days'])
+            ->assertSee(['Monthly attendance breakdown', '7 records', '42.9%'])
             ->assertSee(['data-attendance-mode="combined"', 'data-attendance-mode="area"', 'data-attendance-mode="column"'], false)
             ->assertSeeInOrder(['2026-11-01', '2026-11-16', '2026-11-30']);
         $this->getJson('/dashboard/data')->assertOk()

@@ -11,6 +11,9 @@
     $studentLabel = match ($role) { 'administrator' => 'Total students', 'teacher' => 'Students in my classes', 'parent' => 'My children', default => 'My student profile' };
     $scope = match ($role) { 'administrator', 'teacher' => null, 'parent' => 'These figures cover your linked children and their classes.', default => 'These figures cover your linked student profile and class.' };
     $weeklyQuery = array_filter($monthlyAttendance['filters']);
+    $monthlyStatusCounts = collect(\App\Services\MonthlyStudentAttendance::STATUSES)
+        ->mapWithKeys(fn ($status) => [$status => $monthlyAttendance['days']->sum("counts.$status")]);
+    $monthlyRecordCount = $monthlyStatusCounts->sum();
 @endphp
 
 @if($role !== 'administrator' && $studentCount === 0)
@@ -249,7 +252,33 @@
                     </div>
                 @endforeach
             </dl>
-        </div></section></div>
+        </div>
+        <section class="dashboard-monthly-breakdown" aria-labelledby="monthly-breakdown-title">
+            <header>
+                <div>
+                    <h3 id="monthly-breakdown-title">{{ __('Monthly attendance breakdown') }}</h3>
+                    <p>{{ $monthlyAttendance['monthStart']->translatedFormat('F Y') }}</p>
+                </div>
+                <span class="dashboard-monthly-records">{{ trans_choice(':count record|:count records', $monthlyRecordCount, ['count' => number_format($monthlyRecordCount)]) }}</span>
+            </header>
+            @if($monthlyRecordCount)
+                <dl>
+                    @foreach($monthlyStatusCounts as $status => $count)
+                        @php($share = round(100 * $count / $monthlyRecordCount, 1))
+                        <div class="dashboard-monthly-status" data-status="{{ $status }}">
+                            <dt>{{ __(ucfirst($status)) }}</dt>
+                            <dd><strong>{{ number_format($count) }}</strong><span>{{ number_format($share, 1) }}%</span></dd>
+                            <dd class="dashboard-monthly-status-track" aria-hidden="true">
+                                <span style="width: {{ $share }}%"></span>
+                            </dd>
+                        </div>
+                    @endforeach
+                </dl>
+            @else
+                <p class="dashboard-monthly-empty">{{ __('No attendance records for the selected filters.') }}</p>
+            @endif
+        </section>
+    </section></div>
 </div>
 @endunless
 @unless($isTeacher)
