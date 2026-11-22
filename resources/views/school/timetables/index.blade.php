@@ -52,9 +52,10 @@
             if (request.signal.aborted) return;
 
             const restoreFocus = field && document.activeElement === field;
+            const filterSelector = field?.form?.matches('[data-parent-cohort]') ? '[data-parent-cohort]' : '.timetable-filters';
             schedule.innerHTML = html;
             history.replaceState(history.state, '', url);
-            if (restoreFocus) schedule.querySelector(field.form.matches('[data-parent-cohort]') ? '[data-parent-cohort]' : '.timetable-filters')?.elements.namedItem(field.name)?.focus();
+            if (restoreFocus) schedule.querySelector(filterSelector)?.elements.namedItem(field.name)?.focus();
             syncDisplay();
         } catch (error) {
             if (!request.signal.aborted) {
@@ -138,10 +139,13 @@
             }
             const fragment = document.createElement('template');
             fragment.innerHTML = html;
+            const scrollLeft = shared.querySelector('.timetable-scroll')?.scrollLeft ?? 0;
             for (const selector of ['[data-parent-timetable-metrics]', '#shared-timetable']) {
                 const next = fragment.content.querySelector(selector);
                 if (next) schedule.querySelector(selector)?.replaceWith(next);
             }
+            const scroller = schedule.querySelector('.timetable-scroll');
+            if (scroller) scroller.scrollLeft = scrollLeft;
             const details = schedule.querySelector('.timetable-schedule-details');
             const nextDetails = fragment.content.querySelector('.timetable-schedule-details');
             if (details && nextDetails && !details.contains(document.activeElement)) details.replaceWith(nextDetails);

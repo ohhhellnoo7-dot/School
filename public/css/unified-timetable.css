@@ -141,3 +141,118 @@
 .timetable-schedule-details dt { color: var(--text-secondary); font-size: 10px; font-weight: 600; margin-bottom: 4px; }
 .timetable-schedule-details dd { color: var(--text-primary); font-size: 12px; font-weight: 700; margin: 0; overflow-wrap: anywhere; }
 @media (max-width: 767px) { .timetable-schedule-details { flex-basis: 100%; } }
+
+:root:root:root:root .parent-timetable.timetable-workspace .unified-timetable-hero {
+    min-height: 13rem;
+    padding: 1.6rem 1.25rem 3.8rem;
+    background-position: center, right 44%;
+}
+:root:root:root:root .parent-timetable.timetable-workspace .unified-timetable-hero p { margin: .65rem 0 0 5.5rem; font-size: .91rem; }
+.parent-timetable-metrics {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: clamp(.4rem, 1.25vw, 1rem);
+    margin: -3.85rem clamp(.6rem, 2vw, 2rem) 1rem;
+}
+.parent-timetable-metrics > div {
+    --metric-tint: #16a990;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-content: center;
+    align-items: center;
+    gap: .12rem .65rem;
+    padding: clamp(.45rem, .9vw, .8rem);
+    border: 1px solid var(--surface-raised);
+    border-radius: 1rem;
+    background: linear-gradient(130deg, var(--surface-raised), color-mix(in srgb, var(--metric-tint) 9%, var(--surface-raised)));
+    box-shadow: 0 5px 12px #16496113;
+}
+.parent-timetable-metrics [data-tone="cyan"] { --metric-tint: #0095b6; }
+.parent-timetable-metrics [data-tone="gold"] { --metric-tint: #d58f17; }
+.parent-timetable-metrics [data-tone="blue"] { --metric-tint: #6258e9; }
+.parent-timetable-metrics [data-tone="purple"] { --metric-tint: #8d4de0; }
+.parent-timetable-metrics i {
+    grid-row: span 2;
+    display: grid;
+    place-items: center;
+    width: clamp(2.2rem, 3.6vw, 3.8rem);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    color: var(--metric-tint);
+    background: color-mix(in srgb, var(--metric-tint) 10%, var(--surface-raised));
+    font-size: clamp(1.15rem, 2vw, 1.95rem);
+    box-shadow: 0 3px 8px #17405a10;
+}
+.parent-timetable-metrics dt { grid-column: 2; grid-row: 2; color: var(--text-secondary); font-size: .83rem; font-weight: 600; }
+.parent-timetable-metrics dd { grid-column: 2; grid-row: 1; margin: 0; font-size: clamp(1.02rem, 1.55vw, 1.5rem); font-weight: 850; }
+.parent-timetable .timetable-calendar-toolbar { padding: clamp(.8rem, 1.3vw, 1.35rem); gap: .85rem; }
+.parent-timetable .timetable-calendar-toolbar .timetable-schedule-details { gap: .65rem; }
+.parent-timetable .timetable-schedule-details dd { margin: 0; }
+.parent-timetable .timetable-schedule-details dd:not(:has(form)), .parent-timetable .timetable-schedule-details select {
+    display: block;
+    padding: .38rem .65rem;
+    border: 1px solid var(--border-color);
+    border-radius: 2rem;
+    background-color: var(--surface-raised);
+    font-size: .78rem;
+    font-weight: 700;
+}
+.parent-timetable .timetable-schedule-details select { padding-inline-end: 2rem; }
+.parent-timetable-display { display: flex; gap: .4rem; padding: .65rem .8rem 0; }
+:root:root:root:root .parent-timetable-display .btn {
+    min-height: 2.35rem;
+    padding: .35rem .85rem;
+    border: 1px solid var(--border-color);
+    border-radius: 2rem;
+    background: var(--surface-raised);
+    color: var(--text-primary);
+    font-size: .8rem;
+    font-weight: 750;
+}
+:root:root:root:root .parent-timetable-display .btn[aria-pressed="true"] { background: #007c88; color: white; border-color: #007c88; }
+.parent-timetable-display .btn i { margin-inline-end: .3rem; }
+.parent-timetable-list, [data-schedule-display="list"] .parent-timetable-weekly { display: none; }
+[data-schedule-display="list"] .parent-timetable-list { display: grid; gap: .8rem; padding: .9rem; }
+.parent-timetable-list h3 { margin: 0 0 .4rem; font-size: .96rem; font-weight: 800; }
+.parent-timetable-list ul { display: grid; gap: .4rem; margin: 0; padding: 0; list-style: none; }
+.parent-timetable .shared-timetable { min-width: 710px; border: 1px solid var(--border-color); border-radius: 1rem; border-spacing: 0; }
+:root:root:root:root .timetable-workspace.parent-timetable .shared-timetable thead th { padding: .7rem; font-size: .82rem; }
+:root:root:root:root .timetable-workspace.parent-timetable .shared-timetable .timetable-session-heading th { padding: .35rem .7rem; border-radius: 0; }
+:root:root:root:root .timetable-workspace.parent-timetable .shared-timetable .session-morning th { background: color-mix(in srgb, #ffb433 14%, var(--surface)); }
+:root:root:root:root .timetable-workspace.parent-timetable .shared-timetable tbody th[scope='row'] { padding: .6rem .35rem; border-radius: 0; background: transparent; }
+:root:root:root:root .timetable-workspace.parent-timetable .shared-timetable td { padding: .25rem .45rem; }
+.parent-timetable-lesson {
+    --subject-accent: #008f91;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .3rem .7rem;
+    min-height: 2.6rem;
+    padding: .45rem .55rem;
+    border-radius: .55rem;
+    background: color-mix(in srgb, var(--subject-accent) 12%, var(--surface-raised));
+    color: var(--text-primary);
+    font-size: .82rem;
+}
+.parent-timetable-lesson[data-tone="blue"] { --subject-accent: #246ff3; }
+.parent-timetable-lesson[data-tone="pink"] { --subject-accent: #e84186; }
+.parent-timetable-lesson[data-tone="green"] { --subject-accent: #39964c; }
+.parent-timetable-lesson[data-tone="purple"] { --subject-accent: #8657eb; }
+.parent-timetable-lesson[data-tone="sky"] { --subject-accent: #158dc5; }
+.parent-timetable-lesson[data-tone="gold"] { --subject-accent: #c99114; }
+.parent-timetable-lesson strong { display: inline-flex; align-items: center; gap: .45rem; font-weight: 750; }
+.parent-timetable-lesson strong i { color: var(--subject-accent); font-size: 1.15rem; }
+.parent-timetable-lesson small, .parent-timetable-lesson span, .parent-timetable-empty { color: var(--text-secondary); }
+.parent-timetable-empty { display: block; text-align: center; padding: .55rem; }
+@media (max-width: 1040px) {
+    .parent-timetable-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+    .parent-timetable-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    :root:root:root:root .parent-timetable.timetable-workspace .unified-timetable-hero p { margin-inline-start: 0; }
+}
+@media print {
+    .parent-timetable-metrics, .parent-timetable-display { display: none !important; }
+}

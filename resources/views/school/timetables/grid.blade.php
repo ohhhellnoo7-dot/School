@@ -19,7 +19,7 @@
 @foreach($sessionGroups as $sessionName => $sessionPeriods)
 <tbody class="timetable-session-group" aria-label="{{ $sessionName }} schedule">
 <tr class="timetable-session-heading session-{{ strtolower($sessionName) }}"><th colspan="6" scope="rowgroup"><span class="timetable-session-title"><i class="bi bi-{{ $sessionIcons[$sessionName] }}" aria-hidden="true"></i> {{ $sessionName }} schedule</span><span class="timetable-session-hours">{{ $sessionPeriods->first()[0] }}–{{ $sessionPeriods->last()[1] }}</span></th></tr>
-@foreach($sessionPeriods as $index => [$from,$to])<tr class="timetable-hour-row"><th scope="row"><strong>{{ $from }}</strong><br>{{ $to }}</th>
+@foreach($sessionPeriods as $index => [$from,$to])<tr class="timetable-hour-row"><th scope="row"><strong>{{ $from }}</strong>@if(auth()->user()->role === 'parent') &ndash; @else<br>@endif{{ $to }}</th>
 @foreach(\App\Services\TeacherManagementService::DAYS as $day)
 @php
     $cell = $cells[$day][$index] ?? null;
@@ -38,6 +38,7 @@
 <td class="timetable-hour-cell day-{{ strtolower($day) }}">
 @if($cell && $cell['lessons']->count() > 1)<article class="timetable-conflict-card"><strong>CONFLICT DETECTED</strong><p>{{ $cell['lessons']->count() }} lessons assigned</p>@if(auth()->user()->role === 'administrator')<a href="{{ route('timetables.conflicts', $cell['lessons']->first()) }}">View Conflict</a>@endif</article>
 @elseif($cell)@include('school.timetables.lesson', ['entry'=>$cell['lessons']->first(), 'continuation' => $continuation])
+@elseif(auth()->user()->role === 'parent')<span class="parent-timetable-empty" aria-label="{{ __('No lesson scheduled') }}">&mdash;</span>
 @else @php($free = $breaks->first(fn ($b) => $b->weekday === $day && substr($b->start_time,0,5) === $from))<span class="text-secondary">{{ $free ? 'Designated teacher free period' : ((empty($teacherId) && ($view ?? null) === 'students' && $classes->firstWhere('id', $selected)?->program === 'Khmer') ? 'INCOMPLETE: required lesson missing' : 'No lesson scheduled') }}</span>@endif
 </td>@endforeach</tr>@endforeach
 </tbody>

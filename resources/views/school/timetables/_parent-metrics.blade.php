@@ -2,7 +2,7 @@
     $teachingLessons = $lessons->reject(fn ($lesson) => $lesson->isRelaxation());
     $minutes = $teachingLessons->sum(fn ($lesson) => \App\Services\TeacherManagementService::duration($lesson->starts_at, $lesson->ends_at));
     $hours = trim(implode(' ', array_filter([
-        intdiv($minutes, 60) ? __(':count hrs', ['count' => intdiv($minutes, 60)]) : null,
+        intdiv($minutes, 60) ? trans_choice(':count hr|:count hrs', intdiv($minutes, 60)) : null,
         $minutes % 60 ? __(':count min', ['count' => $minutes % 60]) : null,
     ]))) ?: __('0 hrs');
     $metrics = [
