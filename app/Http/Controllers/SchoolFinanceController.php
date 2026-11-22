@@ -261,6 +261,12 @@ class SchoolFinanceController extends Controller
             $query->onlyTrashed();
         }
         $all = $query->orderByDesc('id')->get();
+        $isParent = $request->user()->role === 'parent';
+        $latestReceipt = $isParent ? $all->flatMap->payments
+            ->sortBy([['paid_on', 'desc'], ['id', 'desc']])->first() : null;
+        if ($isParent) {
+            $all->loadMissing(['student.schoolClass', 'student.user']);
+        }
         $summary = $service->summary($all);
         $studentSummaries = $request->user()->role === 'administrator' ? collect() : $all->groupBy('student_id')->map(fn ($invoices) => [
             'student' => $invoices->first()->student,
@@ -297,7 +303,7 @@ class SchoolFinanceController extends Controller
             ->whereDate('effective_from', '<=', today())->where(fn ($q) => $q->whereNull('effective_until')->orWhereDate('effective_until', '>=', today()))
             ->orderBy('program')->orderBy('grade')->get()->groupBy(fn ($rate) => implode('|', [$rate->program, $rate->academic_year, $rate->currency, $rate->monthly_tuition, $rate->billable_months, $rate->quarterly_tuition, $rate->packageMonths(), json_encode($rate->session_prices)]));
 
-        return view('school.finance.index', compact('fees', 'summary', 'studentSummaries', 'programRates') + ['records' => $fees]);
+        return view('school.finance.index', compact('fees', 'summary', 'studentSummaries', 'programRates', 'latestReceipt') + ['records' => $fees]);
     }
 
     public function invoice(Request $request, int $fee)

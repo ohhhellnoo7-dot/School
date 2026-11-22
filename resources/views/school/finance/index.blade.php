@@ -2,20 +2,39 @@
 @section('title', 'School Fees & Payments')
 @section('finance-title', request()->attributes->get('finance_archive') ? 'Archived invoices' : 'School Fees & Payments')
 @section('content')
-@include('school.finance._nav')
+@php
+    $isParent = auth()->user()->role === 'parent';
+    $exportInvoicesUrl = route('finance.export', request()->query() + ['archived' => request()->attributes->get('finance_archive') ? 1 : null]);
+@endphp
+@if($isParent)
+    <div class="parent-fees-page">
+        @include('school.finance._parent-header')
+@else
+    @include('school.finance._nav')
+@endif
 @if(request()->attributes->get('finance_archive'))
 <div class="alert alert-info"><p>Archived invoices are preserved history only. Newly paid invoices appear in Invoices &amp; payments.</p><a class="btn btn-primary" href="{{ route('finance.index') }}#invoice-list">View current invoices &amp; payments</a></div>
 
 @endif
 
-@if($studentSummaries->isNotEmpty())<div class="finance-summary-grid mb-4">@foreach($studentSummaries as $studentSummary)<section class="panel p-4"><h2 class="h5">{{ $studentSummary['student']->name }}</h2><p class="form-text">{{ $studentSummary['student']->student_number }}</p>@foreach($studentSummary['currencies'] as $currency => $balance)<p>Remaining balance: <strong>{{ \App\Support\Money::display($balance['balance']) }} {{ $currency }}</strong></p><p>Next unpaid due date: <strong>{{ $balance['next_due'] ?: 'No unpaid invoices' }}</strong></p>@endforeach</section>@endforeach</div>@endif
+@if(!$isParent && $studentSummaries->isNotEmpty())<div class="finance-summary-grid mb-4">@foreach($studentSummaries as $studentSummary)<section class="panel p-4"><h2 class="h5">{{ $studentSummary['student']->name }}</h2><p class="form-text">{{ $studentSummary['student']->student_number }}</p>@foreach($studentSummary['currencies'] as $currency => $balance)<p>Remaining balance: <strong>{{ \App\Support\Money::display($balance['balance']) }} {{ $currency }}</strong></p><p>Next unpaid due date: <strong>{{ $balance['next_due'] ?: 'No unpaid invoices' }}</strong></p>@endforeach</section>@endforeach</div>@endif
 @if(!request()->attributes->get('finance_archive') || $fees->isNotEmpty())
 @include('school.finance._summary')
 @endif
-@if(auth()->user()->role !== 'parent' && !request()->attributes->get('finance_archive'))
+@if($isParent)
+    @include('school.finance._parent-progress')
+@elseif(!request()->attributes->get('finance_archive'))
     @include('school.finance._program-tuition')
 @endif
-<section class="panel mb-4" id="invoice-list"><div class="panel-header"><h2>{{ request()->attributes->get('finance_archive') ? 'Archived invoices' : 'Invoices & balances' }} <small>({{ $fees->total() }})</small></h2><a class="btn btn-outline-primary" href="{{ route('finance.export', request()->query() + ['archived' => request()->attributes->get('finance_archive') ? 1 : null]) }}">Export filtered invoices (CSV)</a></div><div class="panel-body"><form method="get" action="{{ url()->current() }}#invoice-list" class="finance-filters invoice-filters" data-invoice-filters>
+<section class="panel mb-4" id="invoice-list">
+@if($isParent)
+    <header class="panel-header parent-fees-invoice-header">
+        <h2><span class="parent-fees-section-icon"><i class="bi bi-receipt" aria-hidden="true"></i></span> {{ __('Invoices & Balances') }} ({{ $fees->total() }})</h2>
+        @include('school.finance._parent-invoice-filters')
+        <a class="btn btn-outline-primary" href="{{ $exportInvoicesUrl }}"><i class="bi bi-download" aria-hidden="true"></i> {{ __('Export Filtered Invoices (CSV)') }}</a>
+    </header>
+@else
+<div class="panel-header"><h2>{{ request()->attributes->get('finance_archive') ? 'Archived invoices' : 'Invoices & balances' }} <small>({{ $fees->total() }})</small></h2><a class="btn btn-outline-primary" href="{{ $exportInvoicesUrl }}">Export filtered invoices (CSV)</a></div><div class="panel-body"><form method="get" action="{{ url()->current() }}#invoice-list" class="finance-filters invoice-filters" data-invoice-filters>
 <div><label class="form-label" for="search">{{ auth()->user()->role === 'administrator' ? 'Parent or student' : 'Student' }}</label><input class="form-control" id="search" name="search" value="{{ request('search') }}" placeholder="Name or student number" enterkeyhint="search"></div>
 <div><label class="form-label" for="program">Program</label><select class="form-select" id="program" name="program"><option value="">All programs</option>@foreach(['Khmer', 'English', 'Chinese', 'Japan'] as $program)<option value="{{ $program }}" @selected(request('program') === $program)>{{ $program === 'Japan' ? 'Japanese' : $program }}</option>@endforeach</select></div>
 <div><label class="form-label" for="grade">Grade</label><select class="form-select" id="grade" name="grade"><option value="">All grades</option>@foreach(range(1,12) as $grade)<option @selected((string) request('grade') === (string) $grade)>{{ $grade }}</option>@endforeach</select></div>
@@ -36,6 +55,7 @@
 <a class="btn btn-light invoice-filter-reset" href="{{ url()->current() }}#invoice-list">{{ __('Reset') }}</a>
 <button type="submit" hidden>{{ __('Search invoices') }}</button>
 </form><p class="form-text mb-0">Summary cards follow the search, program, grade and academic year. Status and paid period filter the invoice list.</p></div>
+@endif
 <div class="table-responsive"><table class="table"><thead><tr><th>Invoice / student</th><th>Program / year</th><th>Net billed</th><th>Paid</th><th>Balance</th><th>Due date</th><th>Status</th><th>View</th></tr></thead><tbody>@forelse($fees as $fee)<tr><td><a href="{{ route('finance.invoice', $fee) }}">{{ $fee->display_number }}</a><br>{{ $fee->student->name }} <small>{{ $fee->student->student_number }}</small>
 @if(auth()->user()->role === 'administrator' && $fee->student->parent?->role === 'parent')
     <small class="d-block text-secondary">{{ __('Parent: :name', ['name' => $fee->student->parent->name]) }}</small>
@@ -47,10 +67,11 @@ No archived invoices match these filters. Newly paid invoices are in the current
 No invoices match these filters. <a href="{{ route('finance.index') }}#invoice-list">Clear filters</a>
 @endif
 </td></tr>@endforelse</tbody></table></div><div class="p-3">{{ $fees->links() }}</div></section>
+@if($isParent)</div>@endif
 @endsection
 
 @push('scripts')
-    @if($summary)
+    @if($summary && auth()->user()->role !== 'parent')
         <script src="{{ asset('vendor/chart/chart.umd.min.js') }}" defer></script>
     @endif
     <script src="{{ asset('js/finance-overview.js') }}?v={{ filemtime(public_path('js/finance-overview.js')) }}" defer></script>

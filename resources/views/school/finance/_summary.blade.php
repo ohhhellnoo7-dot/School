@@ -27,6 +27,7 @@
             @endforeach
         </dl>
 
+        @unless(auth()->user()->role === 'parent')
         <div class="finance-collection-grid">
             <section class="panel finance-collection-panel" data-finance-trend>
                 <header class="finance-collection-header">
@@ -103,6 +104,7 @@
                 <p class="finance-progress-percent">{{ __('No net amount billed') }}</p>
             @endif
         </section>
+        @endunless
     </section>
 @empty
     <div class="panel p-4 mb-4">{{ __('No invoices match these filters.') }}</div>

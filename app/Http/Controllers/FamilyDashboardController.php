@@ -8,6 +8,7 @@ use App\Models\Schedule;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\User;
+use App\Services\MonthlyStudentAttendance;
 use App\Support\AcademicYear;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
@@ -66,6 +67,24 @@ class FamilyDashboardController extends Controller
         return view('school.family.index', compact('guardian', 'children', 'childCount', 'search', 'classes', 'subjects', 'upcoming', 'announcements', 'showAllUpdates') + ['myChildren' => true]);
     }
 
+    public function parentAttendance(Request $request)
+    {
+        $guardian = $request->user();
+        abort_unless($guardian->role === 'parent', 403);
+        $filters = $request->validate(['child' => 'nullable|integer|min:1', 'date' => 'nullable|date_format:Y-m-d']);
+        $child = $filters['child'] ?? $guardian->children()->orderBy('name')->orderBy('id')->first()?->id;
+        if (! $child) {
+            return view('school.family.parent-attendance', ['guardian' => $guardian, 'student' => null, 'myChildren' => true]);
+        }
+
+        $request->merge(['tab' => 'attendance']);
+        if (! $request->filled('month') && isset($filters['date'])) {
+            $request->merge(['month' => substr($filters['date'], 0, 7)]);
+        }
+
+        return $this->show($request, (int) $child);
+    }
+
     public function show(Request $request, int $child)
     {
         $guardian = $request->user();
@@ -80,6 +99,7 @@ class FamilyDashboardController extends Controller
             'period' => 'nullable|regex:/^\d{4}-[12]$/',
         ]);
         $tab = $filters['tab'] ?? 'overview';
+        $parentAttendance = $tab === 'attendance' && $guardian->role === 'parent';
         $weekday = now()->format('l');
         $day = $filters['day'] ?? (in_array($weekday, TimetableController::DAYS, true) ? $weekday : 'Monday');
         $classes = $this->classes($student);
@@ -87,7 +107,7 @@ class FamilyDashboardController extends Controller
         $siblings = $guardian->children()->orderBy('name')->get(['students.id', 'students.name']);
 
         $details = match ($tab) {
-            'attendance' => $this->attendance($student, $filters['month'] ?? now()->format('Y-m')),
+            'attendance' => $this->attendance($student, $filters['month'] ?? now()->format('Y-m'), $parentAttendance),
             'timetable' => [
                 'days' => TimetableController::DAYS,
                 'day' => $day,
@@ -100,7 +120,8 @@ class FamilyDashboardController extends Controller
             default => ['academicYear' => AcademicYear::current()],
         };
 
-        return view('school.family.show', compact('guardian', 'student', 'classes', 'siblings', 'tab') + $details + ['myChildren' => true]);
+        return view($parentAttendance ? 'school.family.parent-attendance' : 'school.family.show',
+            compact('guardian', 'student', 'classes', 'siblings', 'tab') + $details + ['myChildren' => true]);
     }
 
     public function edit(Request $request, int $child)
@@ -149,17 +170,33 @@ class FamilyDashboardController extends Controller
         return collect([$student->schoolClass])->filter()->concat($student->studyClasses)->unique('id');
     }
 
-    private function attendance(Student $student, string $month): array
+    private function attendance(Student $student, string $month, bool $withTrend = false): array
     {
         $start = CarbonImmutable::createFromFormat('!Y-m', $month);
-        $records = $student->attendances()->whereDate('date', '>=', $start)
+        $history = $student->attendances()->whereDate('date', '>=', $withTrend ? $start->subMonths(4) : $start)
             ->whereDate('date', '<', $start->addMonth())->latest('date')->get();
+        $records = $history->filter(fn ($record) => $record->date->format('Y-m') === $month);
         $counts = $records->countBy('status');
         $recorded = $counts->only(['present', 'late', 'absent', 'excused'])->sum();
+
+        $trend = [];
+        if ($withTrend) {
+            $months = $history->groupBy(fn ($record) => $record->date->format('Y-m'));
+            foreach (range(4, 0) as $offset) {
+                $date = $start->subMonths($offset);
+                $rows = $months->get($date->format('Y-m'), collect())->whereIn('status', MonthlyStudentAttendance::STATUSES);
+                $trend[] = [
+                    'month' => $date->translatedFormat('M'),
+                    'label' => $date->translatedFormat('F Y'),
+                    'rate' => $rows->isEmpty() ? null : round(100 * $rows->whereIn('status', ['present', 'late'])->count() / $rows->count(), 1),
+                ];
+            }
+        }
 
         return [
             'month' => $start, 'records' => $records->keyBy(fn ($record) => $record->date->toDateString()),
             'counts' => $counts, 'rate' => $recorded ? round(100 * ($counts->get('present', 0) + $counts->get('late', 0)) / $recorded) : null,
+            'trend' => $trend,
         ];
     }
 

@@ -28,6 +28,7 @@ class SchoolModuleController extends Controller
     public function index(Request $request, string $module)
     {
         if ($module === 'fees') return app(SchoolFinanceController::class)->index($request, app(\App\Services\SchoolFinanceService::class));
+        if ($module === 'attendance' && $request->user()->role === 'parent') return app(FamilyDashboardController::class)->parentAttendance($request);
         if ($module === 'teachers' && $request->user()->role === 'administrator') return app(TeacherManagementController::class)->index($request, app(\App\Services\TeacherManagementService::class));
         $meta = SchoolModules::get($module);
         $query = SchoolModules::query($module, $request->user());
