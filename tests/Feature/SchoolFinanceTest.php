@@ -179,7 +179,9 @@ class SchoolFinanceTest extends TestCase
         $this->post(route('finance.pay', $fa), [])->assertForbidden();
         $this->get(route('finance.settings'))->assertForbidden();
         $this->actingAs($a['actor']);
-        $this->get(route('finance.index'))->assertOk()->assertSee('USD overview')->assertSee('KHR overview');
+        $this->get(route('finance.index'))->assertOk()
+            ->assertSee(['USD overview', 'KHR overview', 'Monthly Fee Collection', 'Collected by Program', 'Collection Progress'])
+            ->assertSee(['data-finance-months', 'data-finance-programs', 'data-finance-mode="column"', 'data-finance-mode="area"'], false);
         $this->get(route('finance.settings'))->assertOk();
         $this->get(route('finance.billing', ['student' => $a['student']->id]))->assertOk();
         $this->get(route('reports'))->assertOk();
@@ -295,6 +297,8 @@ class SchoolFinanceTest extends TestCase
         $this->assertSame('active', $e['structure']->fresh()->status);
         $this->post(route('finance.approve', $revised))->assertSessionHasNoErrors();
         $this->assertSame('inactive', $e['structure']->fresh()->status);
+        $this->get(route('finance.settings'))->assertOk()
+            ->assertSeeInOrder(['>Active</span>', 'Replaced by #'.$revised->id], false);
         $this->assertSame('25.00', $fee->fresh()->amount);
         $this->postJson(route('finance.pay', $fee), ['amount' => 10.25, 'request_key' => (string) Str::uuid(), 'paid_on' => today()->toDateString(), 'method' => 'cash'])->assertRedirect();
         $this->assertSame('14.75', $fee->fresh()->balance);

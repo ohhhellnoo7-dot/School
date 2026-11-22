@@ -163,6 +163,20 @@ class SchoolFinanceController extends Controller
             $durationCounts[$months] = $families->filter(fn ($family) => $family['paidDurations']->contains($months))->count();
         }
         $durationCounts['not_paid'] = $families->where('noYearPayments', true)->count();
+        $chartCounts = $families->countBy(fn ($family) => $family['noYearPayments']
+            ? 'not_paid'
+            : ($family['paidDurations']->max() ?? 'other'));
+        $familyFinance = [];
+        foreach ($families as $family) {
+            foreach ($family['currencies'] as $currency => $totals) {
+                foreach (['billed', 'paid', 'balance', 'overdue'] as $key) {
+                    $familyFinance[$currency][$key] = ($familyFinance[$currency][$key] ?? 0) + $totals[$key];
+                }
+                foreach ($totals['trend'] as $month => $amount) {
+                    $familyFinance[$currency]['trend'][$month] = ($familyFinance[$currency]['trend'][$month] ?? 0) + $amount;
+                }
+            }
+        }
         if ($request->filled('duration')) {
             $families = $families->filter(fn ($family) => $filters['duration'] === 'not_paid' ? $family['noYearPayments'] : $family['paidDurations']->contains((int) $filters['duration']));
         }
@@ -183,7 +197,7 @@ class SchoolFinanceController extends Controller
             $bulkPlan = app(\App\Services\BulkTuitionPaymentService::class)->preview($months);
         }
 
-        return view('school.finance.parents', compact('families', 'counts', 'unlinked', 'paymentSchedules', 'bulkPlan', 'paymentYear', 'durationCounts'));
+        return view('school.finance.parents', compact('families', 'counts', 'unlinked', 'paymentSchedules', 'bulkPlan', 'paymentYear', 'durationCounts', 'chartCounts', 'familyFinance'));
     }
 
     private function visible(Request $request)
@@ -279,11 +293,22 @@ class SchoolFinanceController extends Controller
     public function settings(Request $request)
     {
         $edit = $request->filled('version') ? FeeStructure::findOrFail($request->integer('version')) : null;
-        $structures = FeeStructure::orderByDesc('id')->paginate(30);
+        $structures = FeeStructure::orderByRaw("CASE status WHEN 'active' THEN 0 WHEN 'draft' THEN 1 ELSE 2 END")
+            ->orderByDesc('id')->paginate(30);
+        $inactive = $structures->getCollection()->where('status', 'inactive')->keyBy('id');
+        $replacements = FeeStructure::whereIn('supersedes_id', $inactive->keys())
+            ->whereNotNull('approved_at')->orderByDesc('approved_at')->orderByDesc('id')->get()
+            ->filter(function (FeeStructure $replacement) use ($inactive) {
+                $previous = $inactive[$replacement->supersedes_id];
+
+                return $replacement->program === $previous->program
+                    && $replacement->grade === $previous->grade
+                    && $replacement->academic_year === $previous->academic_year;
+            })->groupBy('supersedes_id')->map->first();
         $audits = DB::table('finance_audits')->leftJoin('users', 'users.id', '=', 'finance_audits.actor_id')
             ->select('finance_audits.*', 'users.name as actor_name')->orderByDesc('finance_audits.id')->limit(30)->get();
 
-        return view('school.finance.settings', compact('structures', 'edit', 'audits'));
+        return view('school.finance.settings', compact('structures', 'edit', 'audits', 'replacements'));
     }
 
     public function saveStructure(Request $request, SchoolFinanceService $service)

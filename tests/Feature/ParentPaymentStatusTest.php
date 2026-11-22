@@ -39,7 +39,11 @@ class ParentPaymentStatusTest extends TestCase
         $waiver = $this->invoice($waived, '25.00', '0.00');
         app(SchoolFinanceService::class)->adjust($waiver, ['kind' => 'waiver', 'amount' => '25.00', 'request_key' => (string) Str::uuid(), 'reason' => 'Full scholarship'], $admin);
         Student::factory()->create(['parent_id' => $unbilled->id]);
-        $response = $this->actingAs($admin)->get(route('finance.parents'))->assertOk();
+        $response = $this->actingAs($admin)->get(route('finance.parents'))->assertOk()
+            ->assertSee(['Monthly Fee Collection', 'Payment Status (Parents)', 'Fee Balance Overview', 'Family Fee Balances']);
+        $this->assertSame(5, $response->viewData('chartCounts')['not_paid']);
+        $this->assertSame(32500, $response->viewData('familyFinance')['USD']['billed']);
+        $this->assertSame(12500, $response->viewData('familyFinance')['USD']['balance']);
         $families = collect($response->viewData('families')->items())->keyBy(fn ($row) => $row['parent']->id);
         foreach ([$paid->id => 'paid', $partial->id => 'partially_paid', $unpaid->id => 'unpaid', $waived->id => 'waived', $unbilled->id => 'no_invoices'] as $id => $status) {
             $this->assertSame($status, $families[$id]['status']);

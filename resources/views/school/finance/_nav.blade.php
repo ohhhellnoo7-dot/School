@@ -1,16 +1,70 @@
-<x-scholar-hero tag="div" class="page-heading finance-hero"><div><div class="eyebrow">SCHOOL FINANCE</div><h1>@yield('finance-title', 'School Fees & Payments')</h1><p>Clear balances. Separate programs. Every payment accounted for.</p></div><div class="d-flex gap-2 flex-wrap"><a class="btn btn-outline-primary" href="{{ route('finance.index') }}#invoice-list">Invoices & payments</a>
-@if(auth()->user()->role === 'administrator')
-@php($bulkState = app(\App\Services\BulkTuitionPaymentService::class)->availability())
-<div class="dropdown"><button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bulk-pay
-@disabled($bulkState['locked'])
-@if($bulkState['locked']) data-unlock-at="{{ $bulkState['next_on']->toIso8601String() }}" title="Next payment: {{ $bulkState['next_on']->format('d F Y') }}"
-@endif><i class="bi bi-wallet2" aria-hidden="true"></i> Pay</button><ul class="dropdown-menu">
-@foreach([1,6,12] as $months)<li><a class="dropdown-item" data-quick-pay href="{{ route('finance.bulk.preview',['months'=>$months]) }}">Pay {{ $months }} {{ $months === 1 ? 'month' : 'months' }} &middot; all families</a></li>
-@endforeach</ul>
-@if($bulkState['locked'])<small class="d-block mt-1" data-bulk-next><a href="{{ route('finance.bulk.preview') }}">Next: {{ $bulkState['next_on']->format('d M Y') }}</a></small>
-@endif</div>
-<a class="btn btn-outline-secondary" href="{{ route('finance.archive') }}">Archived fees</a><a class="btn btn-outline-primary" href="{{ route('finance.parents') }}">Parent payment status</a><a class="btn btn-outline-primary" href="{{ route('finance.billing') }}">Issue invoices</a><a class="btn btn-primary" href="{{ route('finance.settings') }}">Fee settings</a>
-@endif</div></x-scholar-hero>
+@php
+    $tabs = [
+        'finance.index' => ['Invoices & payments', 'receipt', 'View invoice balances, payments, and receipts.'],
+        'finance.archive' => ['Archived fees', 'archive', 'Look up archived invoices and payment history.'],
+        'finance.parents' => ['Parent payment status', 'person-check', 'Review each family’s balances and next payment dates.'],
+    ];
+    $currentTab = match (true) {
+        request()->routeIs('finance.bulk.*') => 'pay',
+        request()->routeIs('finance.tuition.*') => 'finance.settings',
+        request()->routeIs('finance.parents.*') => 'finance.parents',
+        request()->routeIs('finance.invoice', 'finance.receipt') => 'finance.index',
+        default => request()->route()?->getName(),
+    };
+    $note = match ($currentTab) {
+        'pay' => 'Review and record tuition payments for all families.',
+        'finance.billing' => 'Create invoices using approved fee settings.',
+        'finance.settings' => 'Review tuition rates, approve revisions, and see which versions they replaced.',
+        default => $tabs[$currentTab][2] ?? null,
+    };
+    $isFinanceAdmin = auth()->user()->role === 'administrator';
+    $bulkState = $isFinanceAdmin ? app(\App\Services\BulkTuitionPaymentService::class)->availability() : null;
+@endphp
+
+<div class="page-heading finance-hero">
+    <div class="finance-hero-copy">
+        @if($currentTab === 'finance.parents')
+            <span class="finance-hero-wallet"><i class="bi bi-wallet2" aria-hidden="true"></i></span>
+        @endif
+        <div class="eyebrow">SCHOOL FINANCE</div>
+        <h1>@yield('finance-title', 'School Fees & Payments')</h1>
+        @if($note)
+            <p>{{ __($note) }}</p>
+        @endif
+    </div>
+    <nav class="finance-hero-nav" aria-label="{{ __('School finance') }}">
+        @foreach($tabs as $route => [$label, $icon])
+            @continue(! $loop->first && ! $isFinanceAdmin)
+            <a class="btn btn-outline-primary" href="{{ route($route) }}{{ $loop->first ? '#invoice-list' : '' }}"
+                @if($currentTab === $route) aria-current="page" @endif>
+                <i class="bi bi-{{ $icon }}" aria-hidden="true"></i> {{ __($label) }}
+            </a>
+            @if($loop->first && $bulkState)
+                <div class="dropdown">
+                    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bulk-pay
+                        @if($currentTab === 'pay') aria-current="page" @endif
+                        @if($bulkState['locked']) data-unlock-at="{{ $bulkState['next_on']->toIso8601String() }}" @endif>
+                        <i class="bi bi-credit-card" aria-hidden="true"></i> {{ __('Pay') }}
+                    </button>
+                    <ul class="dropdown-menu">
+                        @if($bulkState['locked'])
+                            <li data-bulk-next><span class="dropdown-item-text">{{ __('Bulk payments reopen on :date.', ['date' => $bulkState['next_on']->translatedFormat('d M Y')]) }}</span></li>
+                        @endif
+                        <li><a class="dropdown-item" href="{{ route('finance.bulk.preview') }}">{{ __('View bulk payment details') }}</a></li>
+                        @foreach([1, 6, 12] as $months)
+                            <li data-bulk-option @if($bulkState['locked']) hidden @endif>
+                                <a class="dropdown-item" data-quick-pay href="{{ route('finance.bulk.preview', ['months' => $months]) }}">{{ trans_choice('Pay :count month|Pay :count months', $months) }} &middot; {{ __('all families') }}</a>
+                            </li>
+                        @endforeach
+                    </ul>
+                    @if($bulkState['locked'])
+                        <small class="d-block mt-1" data-bulk-next><a href="{{ route('finance.bulk.preview') }}">{{ __('Next: :date', ['date' => $bulkState['next_on']->translatedFormat('d M Y')]) }}</a></small>
+                    @endif
+                </div>
+            @endif
+        @endforeach
+    </nav>
+</div>
 
 @once
 @push('scripts')
@@ -52,10 +106,11 @@
     }));
     const unlock = () => document.querySelectorAll('[data-bulk-pay][data-unlock-at]').forEach(button => {
         if (Date.now() >= Date.parse(button.dataset.unlockAt)) {
-            button.disabled = false;
             button.removeAttribute('title');
             button.removeAttribute('data-unlock-at');
-            button.closest('.dropdown').querySelector('[data-bulk-next]')?.remove();
+            const dropdown = button.closest('.dropdown');
+            dropdown.querySelectorAll('[data-bulk-next]').forEach(note => note.remove());
+            dropdown.querySelectorAll('[data-bulk-option]').forEach(option => { option.hidden = false; });
         }
     });
     window.addEventListener('focus', unlock);

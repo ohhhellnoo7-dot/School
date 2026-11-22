@@ -28,11 +28,13 @@ No invoices match these filters. <a href="{{ route('finance.index') }}#invoice-l
 @endif
 </td></tr>@endforelse</tbody></table></div><div class="p-3">{{ $fees->links() }}</div></section>
 @if(!request()->attributes->get('finance_archive'))
-<section class="panel mb-4"><div class="panel-header"><h2>Current program tuition</h2>@if(auth()->user()->role === 'administrator')<a class="btn btn-outline-primary" href="{{ route('finance.tuition.edit') }}"><i class="bi bi-pencil-square" aria-hidden="true"></i> Edit tuition</a>@endif</div><div class="table-responsive"><table class="table"><thead><tr><th>Program</th><th>Grades / levels</th><th>Session</th><th>Monthly tuition</th><th>6 months</th><th>Annual tuition</th><th>Billable months / year</th><th>Actions</th></tr></thead><tbody>@forelse($programRates as $rates)
-@php($rate = $rates->first())
-@foreach($rate->ratesForSessions(\App\Models\Program::sessionMap()[$rate->program] ?? ['Morning','Afternoon','Evening']) as $price)
-<tr><td>{{ $rate->program === 'Japan' ? 'Japanese' : $rate->program }}</td><td>{{ $rates->pluck('grade')->unique()->sort()->join(', ') }}</td><td>{{ implode(' / ', $price['sessions']) }}</td><td>{{ $price['monthly'] }} {{ $rate->currency }}</td><td>{{ $price['six_month'] }} {{ $rate->currency }} @if($price['package'])<small class="d-block">Package price</small>@endif</td><td>{{ $price['annual'] }} {{ $rate->currency }}</td><td>{{ $rate->billable_months }} months &middot; {{ $rate->academic_year }}</td><td>@if(auth()->user()->role === 'administrator')<a class="btn btn-sm btn-outline-primary" href="{{ route('finance.tuition.edit', ['structure' => $rate->id, 'grades' => $rates->pluck('grade')->all()]) }}"><i class="bi bi-pencil" aria-hidden="true"></i> Edit</a>@else&mdash;@endif</td></tr>
-@endforeach
-@empty<tr><td colspan="8" class="p-4">No approved program tuition configured yet. @if(auth()->user()->role === 'administrator')<a href="{{ route('finance.settings') }}">Review program fee settings</a>.@endif</td></tr>@endforelse</tbody></table></div><p class="form-text px-4">Approved tuition prices. Discounts and additional charges are shown on individual invoices. Historical archived fees are excluded.</p></section>
+@include('school.finance._program-tuition')
 @endif
 @endsection
+
+@if($summary)
+    @push('scripts')
+        <script src="{{ asset('vendor/chart/chart.umd.min.js') }}" defer></script>
+        <script src="{{ asset('js/finance-overview.js') }}?v={{ filemtime(public_path('js/finance-overview.js')) }}" defer></script>
+    @endpush
+@endif

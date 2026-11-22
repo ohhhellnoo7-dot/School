@@ -80,7 +80,10 @@ class BulkTuitionPaymentTest extends TestCase
         $response = $this->post(route('finance.bulk.pay'), $data)->assertSessionHasNoErrors()->assertRedirect(route('finance.parents'))->assertSessionHas('bulk_payment_run_id');
         $this->assertSame(2, Fee::count());
         $this->assertSame(2, FeePayment::count());
-        $this->get(route('finance.parents'))->assertOk()->assertSee('Fully paid')->assertSee('40.00 USD')->assertSee('1 invoice')->assertSee('View saved invoices');
+        $this->get(route('finance.parents'))->assertOk()->assertSee('Fully paid')->assertSee('40.00 USD')->assertSee('1 invoice')->assertSee('View saved invoices')
+            ->assertSee('Bulk payments reopen on 07 Dec 2026.')
+            ->assertSee('data-bulk-option  hidden', false)
+            ->assertSee('aria-current="page"', false);
         $this->get(route('finance.index'))->assertOk()->assertSee(Fee::first()->invoice_number);
         $this->assertTrue(Fee::get()->every(fn ($fee) => $fee->balanceCents() === 0));
         $this->post(route('finance.bulk.pay'), $data)->assertSessionHasNoErrors();
