@@ -20,6 +20,29 @@ class SchoolFinanceTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_admin_can_save_and_restore_a_program_picture(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('local');
+        $enrollment = $this->setupEnrollment();
+        $program = \App\Models\Program::where('name', $enrollment['structure']->program)->firstOrFail();
+        $url = route('finance.programs.banner.update', ['program' => $program->name]);
+        $picture = \Illuminate\Http\UploadedFile::fake()->createWithContent('banner.gif', base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'));
+
+        $this->actingAs($enrollment['actor'])->post($url, ['action' => 'save', 'banner' => $picture])
+            ->assertRedirect(route('finance.index').'#current-program-tuition')->assertSessionHasNoErrors();
+        $stored = $program->fresh()->tuition_banner;
+        \Illuminate\Support\Facades\Storage::disk('local')->assertExists($stored);
+        $this->get($url)->assertOk()->assertHeader('Content-Type', 'image/gif');
+        $this->get(route('finance.index'))->assertOk()->assertSee('Customize', false)->assertSee($url, false);
+        $this->actingAs(User::factory()->create(['role' => 'parent']))->post($url, ['action' => 'reset'])->assertForbidden();
+
+        $this->actingAs($enrollment['actor'])->post($url, ['action' => 'reset'])
+            ->assertRedirect(route('finance.index').'#current-program-tuition');
+        $this->assertNull($program->fresh()->tuition_banner);
+        \Illuminate\Support\Facades\Storage::disk('local')->assertMissing($stored);
+        $this->get($url)->assertNotFound();
+    }
+
     public function test_paid_monthly_invoice_renews_one_month_after_payment_without_billing_calendar(): void
     {
         $fee = new Fee(['payment_plan' => 'monthly', 'amount' => '25.00', 'paid' => '25.00', 'due_date' => '2026-11-10']);

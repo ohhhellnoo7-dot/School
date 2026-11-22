@@ -197,6 +197,7 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent', \App\Htt
         Route::get('/export', [\App\Http\Controllers\SchoolFinanceController::class, 'export'])->name('export');
         Route::get('/invoices/{fee}', [\App\Http\Controllers\SchoolFinanceController::class, 'invoice'])->whereNumber('fee')->name('invoice');
         Route::get('/receipts/{payment}', [\App\Http\Controllers\SchoolFinanceController::class, 'receipt'])->whereNumber('payment')->name('receipt');
+        Route::get('/programs/{program:name}/banner', [\App\Http\Controllers\TuitionBannerController::class, 'show'])->name('programs.banner');
         Route::middleware('role:administrator')->group(function () {
             Route::post('/parents/{parent}/next-payment', [\App\Http\Controllers\SchoolFinanceController::class, 'parentReminder'])->name('parents.next-payment');
             Route::get('/parents/{parent}/details', [\App\Http\Controllers\SchoolFinanceController::class, 'parentDetails'])->name('parents.details');
@@ -205,6 +206,7 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent', \App\Htt
             Route::get('/payments/bulk/{run}', [\App\Http\Controllers\BulkTuitionPaymentController::class, 'show'])->name('bulk.show');
             Route::get('/tuition/edit', [\App\Http\Controllers\TuitionRateController::class, 'edit'])->name('tuition.edit');
             Route::post('/tuition', [\App\Http\Controllers\TuitionRateController::class, 'save'])->name('tuition.save');
+            Route::post('/programs/{program:name}/banner', [\App\Http\Controllers\TuitionBannerController::class, 'update'])->name('programs.banner.update');
             Route::get('/archive', [\App\Http\Controllers\SchoolFinanceController::class, 'archive'])->name('archive');
             Route::get('/parents', [\App\Http\Controllers\SchoolFinanceController::class, 'parents'])->name('parents');
             Route::get('/settings', [\App\Http\Controllers\SchoolFinanceController::class, 'settings'])->name('settings');

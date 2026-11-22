@@ -1053,47 +1053,132 @@ html.pd-drawer-open {
 
 .finance-tuition-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
     align-items: start;
-    gap: .9rem;
+    gap: .85rem;
     padding: 0 clamp(.75rem, 1.5vw, 1.5rem) 1rem;
 }
 .finance-tuition-card {
-    --tuition-accent: #009a84;
-    border: 1px solid var(--border-color);
-    border-radius: 1.1rem;
-    background: var(--surface-raised);
+    --tuition-accent: #21853c;
+    --tuition-art-row: 100%;
+    --tuition-tint: color-mix(in srgb, var(--tuition-accent) 12%, var(--surface-raised));
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--tuition-accent) 23%, var(--border-color));
+    border-radius: 1.25rem;
+    background: linear-gradient(160deg, var(--surface-raised) 42%, color-mix(in srgb, var(--tuition-accent) 6%, var(--surface-raised)));
+    box-shadow: 0 3px 9px #15304b14;
 }
-.finance-tuition-card[data-tone="blue"] { --tuition-accent: #178ecf; }
-.finance-tuition-card[data-tone="rose"] { --tuition-accent: #dc6576; }
-.finance-tuition-card[data-tone="violet"] { --tuition-accent: #8962dc; }
-.finance-tuition-card h3 {
+.finance-tuition-card[data-tone="blue"] { --tuition-accent: #2568c4; --tuition-art-row: 33.333%; }
+.finance-tuition-card[data-tone="rose"] { --tuition-accent: #cc3054; --tuition-art-row: 0%; }
+.finance-tuition-card[data-tone="violet"] { --tuition-accent: #7249ba; --tuition-art-row: 66.667%; }
+.finance-tuition-banner {
+    position: relative;
+    isolation: isolate;
     display: flex;
-    gap: .6rem;
     align-items: center;
+    gap: .65rem;
+    min-height: 6.25rem;
+    padding: 2rem .95rem .65rem;
+    background: var(--tuition-tint);
+}
+.finance-tuition-art {
+    position: absolute;
+    z-index: -1;
+    inset: 0 0 auto;
+    aspect-ratio: 4;
+    background: url('../images/tuition-landmarks.png') 50% var(--tuition-art-row) / 100% 400% no-repeat;
+    mask-image: linear-gradient(#000 63%, transparent);
+}
+.finance-tuition-banner > i {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.65rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--tuition-accent);
+    box-shadow: 0 2px 5px #15304b20;
+    color: #fff;
+    font-size: 1.25rem;
+}
+.finance-tuition-banner > div { padding: .22rem .4rem; border-radius: .5rem; background: color-mix(in srgb, var(--tuition-tint) 90%, transparent); }
+.finance-tuition-banner h3 { margin: 0; font-size: 1.18rem; font-weight: 850; }
+.finance-tuition-banner p { margin: .15rem 0 0; color: var(--text-secondary); font-size: .76rem; font-weight: 650; }
+.finance-tuition-tier { padding: .75rem .9rem .85rem; }
+.finance-tuition-tier h4 { margin: 0; font-size: .89rem; font-weight: 800; }
+.finance-tuition-tier h4 i, .finance-tuition-session dt i { color: var(--tuition-accent); margin-inline-end: .35rem; }
+.finance-tuition-tier > p { margin: .15rem 0 .4rem; color: var(--text-secondary); font-size: .73rem; }
+.finance-tuition-session + .finance-tuition-session { margin-top: .6rem; }
+.finance-tuition-session h5 {
     margin: 0;
-    padding: .75rem 1rem;
-    border-radius: 1.05rem 1.05rem 0 0;
-    background: color-mix(in srgb, var(--tuition-accent) 12%, var(--surface));
-    font-size: 1.1rem;
-    font-weight: 800;
+    padding: .28rem .45rem;
+    border-radius: .4rem;
+    background: var(--tuition-tint);
+    color: var(--text-secondary);
+    font-size: .73rem;
+    font-weight: 700;
 }
-.finance-tuition-card h3 i { color: var(--tuition-accent); }
-.finance-tuition-tier { padding: .8rem clamp(.65rem, 1vw, 1rem); border-top: 1px solid var(--border-color); }
-.finance-tuition-tier header { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
-.finance-tuition-tier h4 { margin: 0; font-size: .92rem; font-weight: 750; }
-.finance-tuition-tier header p { margin: .15rem 0 0; color: var(--text-secondary); font-size: .78rem; }
-.finance-tuition-tier header .btn { flex: none; }
-.finance-tuition-session {
-    margin-top: .65rem;
-    padding: .55rem .65rem;
-    border-radius: .65rem;
-    background: color-mix(in srgb, var(--tuition-accent) 6%, var(--surface));
+.finance-tuition-session dl { margin: .15rem 0 0; }
+.finance-tuition-session dl > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: .15rem .45rem;
+    align-items: baseline;
+    padding: .35rem .25rem;
+    border-bottom: 1px solid var(--border-color);
+    font-size: .82rem;
 }
-.finance-tuition-session h5 { margin: 0 0 .45rem; color: var(--text-secondary); font-size: .8rem; font-weight: 700; }
-.finance-tuition-session h5 i { margin-inline-end: .25rem; }
-.finance-tuition-session dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .4rem; margin: 0; }
-.finance-tuition-session dt { margin-bottom: .1rem; color: var(--text-secondary); font-size: .75rem; font-weight: 550; }
-.finance-tuition-session dd { margin: 0; font-size: clamp(.83rem, 1.15vw, 1.02rem); font-weight: 750; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.finance-tuition-session dt { font-weight: 650; }
+.finance-tuition-session dd { margin: 0; font-size: .92rem; text-align: end; font-weight: 800; font-variant-numeric: tabular-nums; }
 .finance-tuition-session dd small, .finance-tuition-session .finance-tuition-package { font-size: .68rem; }
-.finance-tuition-session .finance-tuition-package { color: var(--text-secondary); font-weight: 500; }
+.finance-tuition-session .finance-tuition-package { grid-column: 2; color: var(--text-secondary); font-weight: 500; }
+.finance-tuition-actions { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .75rem; }
+.finance-tuition-actions .btn { flex: 1 0 auto; border-radius: 2rem; font-weight: 750; }
+.finance-tuition-actions .finance-tuition-manage { background: var(--tuition-accent); border-color: var(--tuition-accent); }
+.finance-tuition-actions .finance-tuition-manage :is(i, .bi) { color: inherit; }
+.finance-tuition-actions .finance-tuition-manage:is(:hover, :focus-visible) { background: color-mix(in srgb, var(--tuition-accent) 85%, black); }
+.finance-tuition-more { border-top: 1px solid var(--border-color); }
+.finance-tuition-more summary { padding: .55rem .9rem; font-size: .77rem; font-weight: 700; }
+.finance-tuition-more summary small { color: var(--text-secondary); font-weight: 500; }
+
+#current-program-tuition { scroll-margin-top: 6.5rem; }
+.finance-tuition-banner[data-tuition-customize] { cursor: pointer; }
+.finance-tuition-custom-art {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.finance-tuition-customize {
+    position: absolute;
+    top: .4rem;
+    inset-inline-end: .4rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .18rem .48rem;
+    border: 1px solid var(--border-color);
+    border-radius: 1rem;
+    background: var(--surface-raised);
+    color: var(--text-secondary);
+    font-size: .69rem;
+    font-weight: 700;
+}
+.finance-tuition-customize:hover { color: var(--action); }
+.tuition-banner-dialog {
+    width: min(31rem, calc(100vw - 2rem));
+    max-height: calc(100dvh - 2rem);
+    padding: 1.2rem;
+    border: 1px solid var(--border-color);
+    border-radius: 1rem;
+    background: var(--surface-raised);
+    color: var(--ink, inherit);
+    box-shadow: 0 16px 48px #17355036;
+}
+.tuition-banner-dialog::backdrop { background: #051b32a0; }
+.tuition-banner-dialog h2 { margin: 0 0 .85rem; font-size: 1.25rem; }
+.tuition-banner-dialog h2 span { color: var(--action); }
+.tuition-banner-dialog img { width: 100%; height: 8rem; margin-bottom: .75rem; border-radius: .65rem; object-fit: cover; }
+.tuition-banner-dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .45rem; }
