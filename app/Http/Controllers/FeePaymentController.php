@@ -13,7 +13,7 @@ class FeePaymentController extends Controller
 {
     public function show(Request $request, int $fee)
     {
-        $fee = SchoolModules::query('fees', $request->user())->with('student')->findOrFail($fee);
+        $fee = SchoolModules::query('fees', $request->user())->with(['student.user', 'items', 'adjustments', 'payments'])->findOrFail($fee);
 
         return view('school.fee-payment', ['fee' => $fee, 'hasQr' => Storage::disk('local')->exists('payments/school-qr.png')]);
     }

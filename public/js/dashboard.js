@@ -8,6 +8,7 @@
     let latestPayload;
     let pending = false;
     let sessionExpired = false;
+    const weeklyFiltersAreEditing = () => content.querySelector('[data-weekly-filters]:focus-within, [data-weekly-filters][data-dirty]');
 
     function renderCharts(payload) {
         if (typeof Chart === 'undefined') return;
@@ -25,7 +26,53 @@
             if (canvas) charts.push(new Chart(canvas, config));
         };
         const options = {maintainAspectRatio: false, animation: false, plugins: {legend: {display: false}}};
-        create('enrollmentChart', {type: 'line', data: {labels: data.labels, datasets: [{label: 'New students', data: data.enrollment, borderColor: color('line', night ? '#a5afff' : '#4c4fff'), backgroundColor: color('fill', night ? '#8899ff25' : '#5b67ff25'), fill: true, borderWidth: 2.5, tension: .4, pointRadius: 3}]}, options: {...options, scales: axes()}});
+        const weeklyCanvas = content.querySelector('#weeklyAttendanceChart');
+        if (weeklyCanvas && data.weeklyAttendance) {
+            const days = data.weeklyAttendance;
+            const line = palette.getPropertyValue('--action').trim() || color('line', '#007c89');
+            const surface = palette.getPropertyValue('--surface').trim() || '#fff';
+            const percent = new Intl.NumberFormat(document.documentElement.lang || undefined, {maximumFractionDigits: 2});
+            const weeklyAxes = axes();
+            create('weeklyAttendanceChart', {
+                type: 'line',
+                data: {labels: days.map(day => day.label), datasets: [{
+                    label: weeklyCanvas.dataset.chartLabel,
+                    data: days.map(day => day.rate),
+                    borderColor: line,
+                    fill: false,
+                    spanGaps: false,
+                    cubicInterpolationMode: 'monotone',
+                    borderWidth: 3,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointHitRadius: 12,
+                    pointBackgroundColor: line,
+                    pointBorderColor: surface,
+                    pointBorderWidth: 2,
+                }]},
+                options: {
+                    ...options,
+                    layout: {padding: {top: 10, right: 10}},
+                    interaction: {mode: 'nearest', intersect: true},
+                    scales: {
+                        x: {...weeklyAxes.x, offset: true, ticks: {
+                            autoSkip: false,
+                            maxRotation: 0,
+                            callback(value) {
+                                return this.chart.width < 440 ? days[value].shortLabel : days[value].label;
+                            },
+                        }},
+                        y: {...weeklyAxes.y, min: 0, max: 100, ticks: {stepSize: 25, callback: value => `${value}%`}},
+                    },
+                    plugins: {...options.plugins, tooltip: {
+                        callbacks: {
+                            label: ({parsed}) => `${weeklyCanvas.dataset.chartLabel}: ${percent.format(parsed.y)}%`,
+                            afterLabel: ({dataIndex}) => `${days[dataIndex].attended} / ${days[dataIndex].recorded} ${weeklyCanvas.dataset.attendedLabel}`,
+                        },
+                    }},
+                },
+            });
+        }
         const doughnut = (id, labels, values, colors) => create(id, {type: 'doughnut', data: {labels, datasets: [{data: values, backgroundColor: colors, borderWidth: 0, borderRadius: 5}]}, options: {...options, cutout: '77%'}});
         doughnut('attendanceChart', ['Present', 'Absent', 'Late', 'Excused'], data.attendance, [color('present', '#13ca78'), color('absent', '#ff707d'), color('late', '#ffcb45'), color('excused', '#aeb9cd')]);
         const teacherValues = data.teacherAttendance || [0, 0, 0, 0];
@@ -70,7 +117,7 @@
     }
 
     async function refresh() {
-        if (pending || document.hidden || sessionExpired || content.querySelector('.attendance-actions[open]')) return;
+        if (pending || document.hidden || sessionExpired || weeklyFiltersAreEditing() || content.querySelector('.attendance-actions[open]')) return;
         pending = true;
         button.disabled = true;
         content.setAttribute('aria-busy', 'true');
@@ -79,10 +126,10 @@
         const timeout = setTimeout(() => controller.abort(), 15000);
         try {
             const url = new URL(content.dataset.url, window.location.origin);
-            const selectedDate = new URLSearchParams(window.location.search).get('date');
-            if (selectedDate) url.searchParams.set('date', selectedDate);
-            const selectedSession = new URLSearchParams(window.location.search).get('session');
-            if (selectedSession) url.searchParams.set('session', selectedSession);
+            const selected = new URLSearchParams(window.location.search);
+            for (const key of ['date', 'session', 'attendance_week', 'weekly_program', 'weekly_grade', 'weekly_class', 'weekly_session']) {
+                if (selected.get(key)) url.searchParams.set(key, selected.get(key));
+            }
             const response = await fetch(url, {
                 headers: {'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
                 credentials: 'same-origin', cache: 'no-store', signal: controller.signal
@@ -95,6 +142,10 @@
             if (!response.ok) throw new Error('Dashboard request failed');
             const payload = await response.json();
             if (typeof payload.html !== 'string' || !payload.charts) throw new Error('Invalid dashboard response');
+            if (weeklyFiltersAreEditing()) {
+                status.textContent = 'Dashboard refresh paused while editing attendance filters.';
+                return;
+            }
             charts.forEach(chart => chart.destroy());
             charts = [];
             const calendar = content.querySelector('#dashboard-khmer-calendar');
@@ -145,6 +196,8 @@
         }
     });
     content.addEventListener('change', event => {
+        const weeklyFilters = event.target.closest('[data-weekly-filters]');
+        if (weeklyFilters) weeklyFilters.dataset.dirty = '';
         if ((event.target.id === 'attendance-report-date' && event.target.value) || event.target.id === 'attendance-report-session') {
             event.target.form.requestSubmit();
         }

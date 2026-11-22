@@ -1,17 +1,114 @@
 @extends('school.layout')
 @section('title', 'Student profile')
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/student-profile.css') }}?v={{ filemtime(public_path('css/student-profile.css')) }}">
+@endpush
+
 @section('content')
-<div class="page-heading"><div><div class="eyebrow">STUDENT PROFILE · {{ $student->student_number }}</div><h1>{{ $student->name }}</h1><p><a href="{{ route('classes.timetable', $student->school_class_id) }}">{{ $student->schoolClass->label }} - View weekly schedule</a></p></div><div class="d-flex gap-2"><a href="{{ route('students.index') }}" class="btn btn-outline-secondary">Back</a>@can('update', $student)<a class="btn btn-primary" href="{{ route('students.edit', $student) }}"><i class="bi bi-pencil me-2"></i>{{ __('Edit profile') }}</a>@endcan</div></div>
-@include('school.students._enrolled-sessions')
-@if(auth()->user()->role === 'administrator')
-<div class="mb-4"><a class="btn btn-outline-primary" href="{{ route('students.enrollment-payment', $student) }}">Enrollment payment / receipt</a></div>
-@endif
-<div class="row g-4"><div class="col-lg-4"><section class="panel p-4"><div class="text-center border-bottom pb-4 mb-4">@include('school.partials.avatar', ['person' => $student, 'size' => 90])<h2 class="h5 mt-3">{{ $student->name }}</h2><span class="status-badge {{ $student->status }}">{{ __(ucfirst($student->status)) }}</span></div><dl class="profile-detail mb-0">@foreach(['email' => 'Email', 'phone' => 'Phone', 'gender' => 'Gender', 'address' => 'Address', 'guardian_name' => 'Guardian', 'guardian_phone' => 'Guardian phone', 'guardian_relationship' => 'Relationship'] as $field => $label)<dt>{{ __($label) }}</dt><dd>@if($field === 'guardian_name' && $student->parent)@include('school.partials.avatar', ['person' => $student->parent])@endif{{ $student->$field ?: '—' }}</dd>@endforeach<dt>Date of birth / age</dt><dd>{{ $student->date_of_birth->format('M d, Y') }} · {{ $student->date_of_birth->age }} years</dd><dt>Enrolled</dt><dd>{{ $student->enrollment_date->format('M d, Y') }}</dd></dl></section></div>
-<div class="col-lg-8">
-<div id="monthly-attendance">@include('school.students._monthly-attendance')</div>
-<p id="monthly-attendance-status" class="text-danger" role="status"></p>
-<section class="panel mb-4"><div class="panel-header"><h2>Examination results</h2></div><div class="table-responsive"><table class="table"><thead><tr><th>Examination</th><th>{{ __('Subject') }}</th><th>Marks</th><th>Percentage</th><th>{{ __('Grade') }}</th></tr></thead><tbody>@forelse($student->grades as $grade)<tr><td>{{ $grade->examination->name }}</td><td>{{ $grade->examination->subject->name }}</td><td>{{ $grade->marks }} / {{ $grade->examination->total_marks }}</td><td><strong>{{ round($grade->marks / $grade->examination->total_marks * 100, 1) }}%</strong></td><td>@include('school.partials.status', ['status' => $grade->letter_grade, 'prefix' => 'grade-'])</td></tr>@empty<tr><td colspan="4" class="p-4 text-center">No results published yet.</td></tr>@endforelse</tbody></table></div></section>
-@if(in_array(auth()->user()->role, ['administrator', 'parent', 'student']))<section class="panel"><div class="panel-header"><h2>School fees · USD</h2><span class="text-secondary small">Balance: ${{ number_format($student->fees->sum('amount') - $student->fees->sum('paid'), 2) }}</span></div><div class="table-responsive"><table class="table"><thead><tr><th>Description</th><th>Amount</th><th>Paid</th><th>Due</th><th>{{ __('Status') }}</th><th>Balance</th></tr></thead><tbody>@forelse($student->fees as $fee)<tr><td>{{ $fee->description }} <a href="{{ route('fees.pay', $fee->id) }}">Payment details / QR</a></td><td>${{ number_format($fee->amount,2) }}</td><td>${{ number_format($fee->paid,2) }}</td><td>{{ $fee->due_date->format('M d, Y') }}</td><td>@include('school.partials.status', ['status' => $fee->payment_status])</td><td>${{ number_format($fee->balance, 2) }}</td></tr>@empty<tr><td colspan="4" class="p-4 text-center">No fees assigned.</td></tr>@endforelse</tbody></table></div></section>@endif</div></div>
+<div class="student-profile-page">
+    <header class="student-profile-banner">
+        <img src="{{ asset('images/enrollment-payment-hero.png') }}" alt="">
+        <div class="student-profile-banner-content">
+            <nav class="student-profile-links" aria-label="{{ __('Student profile actions') }}">
+                <a href="{{ route('students.index') }}"><i class="bi bi-arrow-left" aria-hidden="true"></i> {{ __('Students') }}</a>
+                @if(auth()->user()->role === 'administrator')
+                    <a href="{{ route('students.enrollment-payment', $student) }}"><i class="bi bi-receipt" aria-hidden="true"></i> {{ __('Enrollment payment / Receipt') }}</a>
+                @endif
+            </nav>
+            <h1>{{ __('Student profile') }}</h1>
+            <p>{{ __('View student information, attendance, examination results, and school fee details.') }}</p>
+        </div>
+    </header>
+
+    <div class="student-profile-grid">
+        <aside class="student-profile-card student-identity" aria-labelledby="student-identity-heading">
+            <div class="student-identity-header">
+                @can('update', $student)
+                    <a class="student-profile-control student-profile-edit" href="{{ route('students.edit', $student) }}" aria-label="{{ __('Edit profile') }}" title="{{ __('Edit profile') }}"><i class="bi bi-pencil" aria-hidden="true"></i></a>
+                @endcan
+                <div class="student-profile-avatar">@include('school.partials.avatar', ['person' => $student, 'size' => 118])</div>
+                <h2 id="student-identity-heading">{{ $student->name }}</h2>
+                <p>{{ $student->student_number }}</p>
+                @include('school.partials.status', ['status' => $student->status])
+            </div>
+
+            <dl class="student-profile-details">
+                @foreach([
+                    [__('Email'), $student->email, 'envelope'],
+                    [__('Phone'), $student->phone, 'telephone'],
+                    [__('Gender'), __(ucfirst($student->gender ?? '')), 'person'],
+                    [__('Address'), $student->address, 'house-door'],
+                    [__('Date of birth / age'), $student->date_of_birth ? $student->date_of_birth->translatedFormat('M d, Y').' · '.__(':age years', ['age' => $student->date_of_birth->age]) : null, 'calendar-event'],
+                    [__('Enrolled'), $student->enrollment_date?->translatedFormat('M d, Y'), 'calendar-check'],
+                ] as [$label, $value, $icon])
+                    <div>
+                        <i class="bi bi-{{ $icon }} student-profile-glyph" aria-hidden="true"></i>
+                        <dt>{{ $label }}</dt><dd>{{ $value ?: '—' }}</dd>
+                    </div>
+                @endforeach
+            </dl>
+
+            <section class="student-guardian" aria-labelledby="student-guardian-heading">
+                <h3 id="student-guardian-heading"><i class="bi bi-people" aria-hidden="true"></i> {{ __('Guardian information') }}</h3>
+                <div class="student-guardian-name">
+                    @if($student->parent)
+                        @include('school.partials.avatar', ['person' => $student->parent, 'size' => 42])
+                    @else
+                        <i class="bi bi-person student-profile-glyph" aria-hidden="true"></i>
+                    @endif
+                    <strong>{{ $student->guardian_name ?: '—' }}</strong>
+                    <span>{{ $student->guardian_relationship ?: __('Guardian') }}</span>
+                </div>
+                <dl class="student-profile-details">
+                    <div>
+                        <i class="bi bi-telephone student-profile-glyph" aria-hidden="true"></i>
+                        <dt>{{ __('Guardian phone') }}</dt><dd>{{ $student->guardian_phone ?: '—' }}</dd>
+                    </div>
+                </dl>
+            </section>
+            @if($student->schoolClass)
+                <a class="student-profile-schedule" href="{{ route('classes.timetable', $student->schoolClass) }}">
+                    <i class="bi bi-calendar-week" aria-hidden="true"></i> {{ $student->schoolClass->label }} · {{ __('View weekly schedule') }}
+                </a>
+            @endif
+        </aside>
+
+        <div class="student-profile-records">
+            <div id="monthly-attendance">@include('school.students._monthly-attendance')</div>
+            <p id="monthly-attendance-status" class="text-danger" role="status"></p>
+
+            <section class="student-profile-card student-profile-exams" aria-labelledby="student-exams-heading">
+                <div class="student-profile-card-title">
+                    <h2 id="student-exams-heading"><i class="bi bi-mortarboard" aria-hidden="true"></i> {{ __('Examination results') }}</h2>
+                </div>
+                <div class="student-profile-table-wrap">
+                    <table class="student-profile-table" aria-labelledby="student-exams-heading">
+                        <thead><tr><th scope="col">{{ __('Examination') }}</th><th scope="col">{{ __('Subject') }}</th><th scope="col">{{ __('Marks') }}</th><th scope="col">{{ __('Percentage') }}</th><th scope="col">{{ __('Grade') }}</th></tr></thead>
+                        <tbody>
+                            @forelse($student->grades as $grade)
+                                <tr>
+                                    <td>{{ $grade->examination->name }}</td><td>{{ $grade->examination->subject->name }}</td>
+                                    <td>{{ $grade->marks }} / {{ $grade->examination->total_marks }}</td>
+                                    <td><strong>{{ round($grade->marks / $grade->examination->total_marks * 100, 1) }}%</strong></td>
+                                    <td>@include('school.partials.status', ['status' => $grade->letter_grade, 'prefix' => 'grade-'])</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="5"><div class="student-profile-empty"><i class="bi bi-clipboard2-check" aria-hidden="true"></i> {{ __('No results published yet.') }}</div></td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            @if(in_array(auth()->user()->role, ['administrator', 'parent', 'student']))
+                @include('school.students._profile-fees')
+            @endif
+        </div>
+    </div>
+
+    <div class="student-profile-sessions">@include('school.students._enrolled-sessions')</div>
+</div>
 @endsection
 
 @push('scripts')

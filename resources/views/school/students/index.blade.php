@@ -1,11 +1,11 @@
 @extends('school.layout')
-@section('title', auth()->user()->role === 'parent' ? __('My children') : __('Students'))
+@section('title', __('Students'))
 @section('content')
 <x-scholar-hero tag="section" class="student-hero school-hero" aria-labelledby="student-page-title">
     <img src="{{ asset('images/student-community.png') }}" alt="" width="2048" height="768" fetchpriority="high">
     <div class="student-hero-copy">
         <div class="eyebrow">{{ __('OUR SCHOOL COMMUNITY') }}</div>
-        <h1 id="student-page-title">{{ auth()->user()->role === 'parent' ? __('My children') : __('Students') }}</h1>
+        <h1 id="student-page-title">{{ __('Students') }}</h1>
         <p>{{ __('Every student has a story. Help them write a great one.') }}</p>
     </div>
     @can('create', \App\Models\Student::class)<a href="{{ route('students.create') }}" class="btn btn-primary hero-enroll"><i class="bi bi-plus-lg me-2" aria-hidden="true"></i>{{ __('Enroll student') }}</a>@endcan

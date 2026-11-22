@@ -55,7 +55,7 @@
     </div>
     <div class="timetable-session-summary">
         <span>{{ $schoolClass->session ?: 'Session not assigned' }}</span>
-        @if(in_array($schoolClass->session, ['Morning', 'Afternoon'], true))
+        @if($periods && in_array($schoolClass->session, ['Morning', 'Afternoon'], true))
             <strong>{{ $periods[0][0] }}–{{ $periods[count($periods) - 1][1] }}</strong>
         @endif
     </div>

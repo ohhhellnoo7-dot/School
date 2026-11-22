@@ -85,6 +85,7 @@ class SchoolModuleController extends Controller
             ];
         }
         $parentSummary = null;
+        $parentAttendanceDate = null;
         if ($module === 'parents') {
             $parentSummary = [
                 'total' => (clone $query)->count(),
@@ -92,7 +93,13 @@ class SchoolModuleController extends Controller
                 'female' => (clone $query)->where('gender', 'female')->count(),
                 'unspecified' => (clone $query)->where(fn ($q) => $q->whereNull('gender')->orWhere('gender', '')->orWhereNotIn('gender', ['male', 'female']))->count(),
             ];
-            $request->validate(['gender' => 'nullable|in:male,female,other,unspecified']);
+            $parentFilters = $request->validate([
+                'gender' => 'nullable|in:male,female,other,unspecified',
+                'date' => 'nullable|date_format:Y-m-d',
+            ]);
+            $parentAttendanceDate = isset($parentFilters['date'])
+                ? today()->setDateFrom($parentFilters['date'])
+                : today();
             if ($request->gender === 'unspecified') {
                 $query->where(fn ($q) => $q->whereNull('gender')->orWhere('gender', '')->orWhereNotIn('gender', ['male', 'female']));
             } elseif ($request->filled('gender')) {
@@ -224,7 +231,7 @@ class SchoolModuleController extends Controller
             $query->with(['subjects', 'children.user']);
         }
         if ($module === 'parents') {
-            $query->with(['children.attendances' => fn ($q) => $q->whereDate('date', today())]);
+            $query->with(['children.attendances' => fn ($q) => $q->whereDate('date', $parentAttendanceDate)]);
         }
         if (in_array($module, ['attendance', 'grades', 'fees'])) {
             $query->with('student.user');
@@ -249,6 +256,7 @@ class SchoolModuleController extends Controller
             'uniqueClassCount' => $uniqueClassCount,
             'parentGrades' => $parentGrades,
             'parentSummary' => $parentSummary,
+            'parentAttendanceDate' => $parentAttendanceDate,
             'subjectSummary' => $subjectSummary,
             'classSummary' => $classSummary,
             'teacherSummary' => $teacherSummary,

@@ -11,6 +11,7 @@ use App\Models\Student;
 use App\Models\User;
 use App\Support\Money;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -56,7 +57,10 @@ class SchoolFinanceService
                 $this->fail('Only draft fee versions can be approved.');
             }
             $issuedVersions = FeeStructure::where('academic_year', $structure->academic_year)->where('program', $structure->program)->where('grade', $structure->grade)
-                ->whereIn('id', Fee::whereNotNull('fee_structure_id')->select('fee_structure_id'))->get();
+                ->where(fn ($query) => $query
+                    ->whereIn('id', Fee::whereNotNull('fee_structure_id')->select('fee_structure_id'))
+                    ->orWhereIn('id', DB::table('invoice_periods')->whereNotNull('fee_structure_id')->select('fee_structure_id')))
+                ->get();
             foreach ($issuedVersions as $issued) {
                 if ($issued->starts_on->format('Y-m-d') !== $structure->starts_on->format('Y-m-d') || $issued->billable_months !== $structure->billable_months || $issued->currency !== $structure->currency) {
                     $this->fail('Once invoices are issued, keep the year billing calendar, month count and currency unchanged. Create next-year settings to change them.');
@@ -141,6 +145,40 @@ class SchoolFinanceService
 
             return $result;
         });
+    }
+
+    /** Called within the enrollment checkout finance lock using the current unbilled quote. */
+    public function issueCombinedEnrollment(Student $student, Collection $rows, User $actor): Fee
+    {
+        if ($student->fees()->whereNull('invoice_number')->where('legacy_reviewed', false)->exists()) {
+            $this->fail('Review this student\'s historical fees first. Map previous tuition to billing months or mark non-tuition charges so old fees cannot be billed twice.');
+        }
+
+        $items = $rows->flatMap(fn ($row) => array_map(fn ($item) => [
+            'description' => $row['label'].' — '.$item['description'],
+            'amount' => $item['amount'],
+        ], $row['items']));
+        $years = $rows->pluck('rate.academic_year')->unique();
+        $fee = $student->fees()->create([
+            'invoice_number' => 'INV-'.Str::upper((string) Str::uuid()),
+            'description' => 'Combined enrollment tuition',
+            'amount' => Money::decimal($items->sum(fn ($item) => Money::cents($item['amount']))),
+            'currency' => $rows->first()['rate']->currency,
+            'academic_year' => $years->count() === 1 ? $years->first() : null,
+            'due_date' => $rows->map(fn ($row) => $row['rate']->starts_on->copy()->startOfMonth()
+                ->addMonthsNoOverflow($row['month'] - 1)->day($row['rate']->due_day))->min(),
+            'payment_plan' => 'monthly', 'paid' => '0.00', 'opening_paid' => '0.00',
+            'issued_by' => $actor->id, 'legacy_reviewed' => true,
+        ]);
+        $fee->items()->createMany($items->all());
+        $periods = $rows->map(fn ($row) => [
+            'fee_id' => $fee->id, 'student_id' => $student->id, 'academic_year' => $row['rate']->academic_year,
+            'enrollment_key' => $row['key'], 'month_index' => $row['month'], 'fee_structure_id' => $row['rate']->id,
+        ])->all();
+        DB::table('invoice_periods')->insert($periods);
+        $this->audit($actor, 'issue_invoice', 'fee', $fee->id, ['periods' => $periods, 'amount' => $fee->amount]);
+
+        return $fee;
     }
 
     public function quoteItems(FeeStructure $structure, ?string $session, array $indices, bool $firstInvoice, string $plan): array

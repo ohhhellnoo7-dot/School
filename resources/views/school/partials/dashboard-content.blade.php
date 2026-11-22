@@ -10,6 +10,7 @@
     $subjectLabel = match ($role) { 'administrator' => 'Total subjects', 'parent' => $childrenLabel.' subjects', default => 'My subjects' };
     $studentLabel = match ($role) { 'administrator' => 'Total students', 'teacher' => 'Students in my classes', 'parent' => 'My children', default => 'My student profile' };
     $scope = match ($role) { 'administrator', 'teacher' => null, 'parent' => 'These figures cover your linked children and their classes.', default => 'These figures cover your linked student profile and class.' };
+    $weeklyQuery = array_filter($weeklyAttendance['filters']);
 @endphp
 
 @if($role !== 'administrator' && $studentCount === 0)
@@ -20,6 +21,7 @@
     <div>
         <h1>Good {{ now('Asia/Phnom_Penh')->hour < 12 ? 'morning' : (now('Asia/Phnom_Penh')->hour < 18 ? 'afternoon' : 'evening') }}, {{ auth()->user()->name }} <span aria-hidden="true">&#128075;</span></h1>
         <a class="btn btn-outline-secondary mt-2" href="{{ route('modules.index', 'assignments') }}">{{ __('View assignments') }}</a>
+        <a class="btn btn-outline-secondary mt-2" href="{{ route('students.index', ['my_children' => 1]) }}"><i class="bi bi-person-heart me-2" aria-hidden="true"></i>{{ __('My children') }}</a>
     </div>
 </x-scholar-hero>
 <section class="student-attendance-hero teacher-dashboard-hero windy-only" aria-labelledby="teacher-dashboard-heading">
@@ -34,12 +36,15 @@
             <p>{{ __('Manage your teaching schedule and attendance.') }}</p>
         </div>
     </div>
-    <a class="btn btn-light" href="{{ route('modules.index', 'assignments') }}"><i class="bi bi-journal-bookmark me-2" aria-hidden="true"></i>{{ __('View assignments') }}</a>
+    <div class="teacher-dashboard-actions d-flex flex-wrap gap-2">
+        <a class="btn btn-light" href="{{ route('modules.index', 'assignments') }}"><i class="bi bi-journal-bookmark me-2" aria-hidden="true"></i>{{ __('View assignments') }}</a>
+        <a class="btn btn-light" href="{{ route('teachers.schedule', auth()->id()) }}"><i class="bi bi-calendar-week me-2" aria-hidden="true"></i>{{ __('My teaching schedule') }}</a>
+        <a class="btn btn-light" href="{{ route('students.index', ['my_children' => 1]) }}"><i class="bi bi-person-heart me-2" aria-hidden="true"></i>{{ __('My children') }}</a>
+    </div>
 </section>
 @else
 <x-scholar-hero tag="div" class="page-heading dashboard-heading school-hero">
-    @include('school.partials.windy-landscape', ['placement' => 'hero'])
-    <div><h1><span class="windy-original">Good {{ now('Asia/Phnom_Penh')->hour < 12 ? 'morning' : (now('Asia/Phnom_Penh')->hour < 18 ? 'afternoon' : 'evening') }}, {{ auth()->user()->name }} <span aria-hidden="true">&#128075;</span></span><span class="windy-only">Welcome back, {{ auth()->user()->name }}</span></h1>
+    <div class="dashboard-welcome"><h1><span class="windy-original">Good {{ now('Asia/Phnom_Penh')->hour < 12 ? 'morning' : (now('Asia/Phnom_Penh')->hour < 18 ? 'afternoon' : 'evening') }}, {{ auth()->user()->name }} <span aria-hidden="true">&#128075;</span></span><span class="windy-only">Welcome back, {{ auth()->user()->name }}</span></h1>
             <p><span class="windy-original">Here's what's happening at Greenfield Academy today.</span><span class="windy-only">Here's what's happening at your school today.</span></p>
     </div>
     @if($role === 'administrator' && $reportDate->isToday())
@@ -116,17 +121,12 @@
 </x-scholar-hero>
 @endif
 
-@if(in_array($role, ['administrator', 'teacher'], true))
-    @include('school.partials.windy-dashboard-attendance')
-@endif
-
 <div class="row g-3 dashboard-metrics">
-    @foreach([[$studentLabel, $studentCount, 'people', '🎓'], [$teacherLabel, $teacherCount, 'person-workspace', '👨‍🏫'], [$classLabel, $classCount, 'building', '🏫'], [$subjectLabel, $subjectCount, 'book', '📚']] as [$label, $value, $icon, $illustration])
-    @continue($isTeacher && $icon === 'person-workspace')
-    <div class="col-6 {{ $isTeacher ? 'col-md-4' : 'col-md-3' }}"><div class="dashboard-metric {{ $isTeacher ? 'teacher-dashboard-metric teacher-dashboard-metric--'.$icon : '' }}">
+    @foreach([[$studentLabel, $studentCount, 'people', '🎓'], [$teacherLabel, $teacherCount, 'person-workspace', '👨‍🏫'], [$classLabel, $classCount, 'building', '🏫'], ['My children', $staffChildCount, 'family', "\u{1F46A}"], [$subjectLabel, $subjectCount, 'book', '📚']] as [$label, $value, $icon, $illustration])
+    @continue(($isTeacher && $icon === 'person-workspace') || ($icon === 'family' && !$staffChildCount))
+    <div class="{{ $staffChildCount ? ($isTeacher ? 'col-12 col-md-6 col-xl-3' : 'col-6 col-md-4 col-xl') : ($isTeacher ? 'col-12 col-md-4' : 'col-6 col-md-3') }}"><div class="dashboard-metric {{ $isTeacher ? 'teacher-dashboard-metric' : '' }}">
         @if($isTeacher)
-            <span class="dashboard-metric-icon windy-only"><i class="bi bi-{{ $icon }}" aria-hidden="true"></i></span>
-            <span class="dashboard-metric-icon windy-original"><span aria-hidden="true">{{ $illustration }}</span></span>
+            <span class="dashboard-metric-icon"><span aria-hidden="true">{{ $illustration }}</span></span>
         @elseif(isset($programBreakdowns[$icon]))
             <div class="stat-breakdown">
                 <button type="button" class="dashboard-metric-icon stat-breakdown-trigger" aria-label="{{ __($label) }} by program" aria-describedby="breakdown-{{ $icon }}"><span aria-hidden="true">{{ $illustration }}</span></button>
@@ -182,9 +182,10 @@
         <div><h2>Daily attendance</h2><p>{{ $reportDate->format('l, F j, Y') }} <span class="attendance-date-badge">{{ $reportDate->isToday() ? 'Today' : ($reportDate->isYesterday() ? 'Yesterday' : 'History') }}</span></p></div>
     </div>
     <form method="get" action="{{ route('dashboard') }}" class="attendance-filters">
+        @foreach($weeklyQuery as $key => $value)<input type="hidden" name="{{ $key }}" value="{{ $value }}">@endforeach
         <div class="attendance-shortcuts" aria-label="Quick report dates">
-            <a class="{{ $reportDate->isYesterday() ? 'is-selected' : '' }}" href="{{ route('dashboard', ['date' => today()->subDay()->toDateString(), 'session' => $attendanceSession]) }}" @if($reportDate->isYesterday()) aria-current="date" @endif>Yesterday</a>
-            <a class="{{ $reportDate->isToday() ? 'is-selected' : '' }}" href="{{ route('dashboard', array_filter(['session' => $attendanceSession])) }}" @if($reportDate->isToday()) aria-current="date" @endif>Today</a>
+            <a class="{{ $reportDate->isYesterday() ? 'is-selected' : '' }}" href="{{ route('dashboard', ['date' => today()->subDay()->toDateString(), 'session' => $attendanceSession] + $weeklyQuery) }}" @if($reportDate->isYesterday()) aria-current="date" @endif>Yesterday</a>
+            <a class="{{ $reportDate->isToday() ? 'is-selected' : '' }}" href="{{ route('dashboard', array_filter(['session' => $attendanceSession]) + $weeklyQuery) }}" @if($reportDate->isToday()) aria-current="date" @endif>Today</a>
         </div>
         <div class="attendance-session-field">
             <label for="attendance-report-session">Session</label>
@@ -227,7 +228,7 @@
 @endif
 @unless($isTeacher)
 <div class="row g-3 dashboard-feature-row">
-    <div class="col-lg-8"><section class="panel h-100"><div class="panel-header"><div><h2>Student enrollment</h2><p>A growing community of bright minds</p></div><span class="date-pill py-1">Last 6 months <i class="bi bi-chevron-down ms-2"></i></span></div><div class="chart-wrap"><canvas id="enrollmentChart" role="img" aria-label="Monthly student enrollment chart"></canvas></div></section></div>
+    <div class="col-lg-8">@include('school.partials.weekly-attendance-trend')</div>
     <div class="col-lg-4"><section class="panel h-100"><div class="panel-header"><div class="dashboard-panel-title"><span aria-hidden="true">&#128101;</span><div><h2>Students by gender</h2><p>Different perspectives. Shared possibilities.</p></div></div></div>@php($genderTotal = collect($charts['gender'])->sum())
         <div class="dashboard-gender">
             <div class="chart-wrap small">
@@ -261,5 +262,8 @@
     <div class="{{ $isTeacher ? 'col-12 col-lg-6' : 'col-lg-4' }}"><section class="panel h-100"><div class="panel-header"><div class="dashboard-panel-title"><span aria-hidden="true">&#128227;</span><div><h2>School announcements</h2><p>Stay in the loop</p></div></div><a href="{{ route('modules.index', 'announcements') }}" aria-label="View announcements"><i class="bi bi-arrow-up-right"></i></a></div><div class="panel-body pt-0">@forelse($announcements as $announcement)<article class="announcement"><span class="announcement-icon"><i class="bi bi-megaphone"></i></span><div><h3>{{ $announcement->title }}</h3><p>{{ \Illuminate\Support\Str::limit($announcement->body, 110) }}</p><small><i class="bi bi-clock me-1"></i>{{ $announcement->published_at->format('M d, Y') }}</small></div></article>@empty<div class="empty-state py-4">You're all caught up. No announcements yet.</div>@endforelse</div></section></div>
 </div>
 
+@if($isTeacher)
+    <div class="mt-3">@include('school.partials.weekly-attendance-trend')</div>
+@endif
 
 @endif

@@ -115,6 +115,7 @@
 :root:root:root:root :where(.school-nav a i) {font-size:17px;width:20px;flex-shrink:0;text-align:center;color:inherit}
 :root:root:root:root :where(.school-nav a:hover,.school-nav a.active) {background:var(--sidebar-active);color:var(--sidebar-heading)}
 :root:root:root:root :where(.school-nav a.active) {font-weight:700;box-shadow:none}
+:root:root:root:root .school-nav--pinned {flex:0 0 auto;overflow:visible;padding-block-end:4px}
 .school-nav a.active:before {content:'';position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:3px;background:var(--primary)}
 :root:root:root:root :where(.school-switch) {display:flex;align-items:center;gap:10px;flex-shrink:0;margin:12px 14px 16px;padding:13px 12px;background:color-mix(in srgb,var(--sidebar-heading) 4%,var(--sidebar-bg));border:1px solid color-mix(in srgb,var(--sidebar-text) 18%,var(--sidebar-bg));border-radius:12px}
 :root:root:root:root :where(.school-switch strong) {display:block;font-size:12px;color:var(--sidebar-heading)}

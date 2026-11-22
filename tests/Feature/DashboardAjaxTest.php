@@ -20,6 +20,47 @@ class DashboardAjaxTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_weekly_attendance_reports_real_totals_gaps_and_matching_enrollments(): void
+    {
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-18 09:00'));
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $parent = User::factory()->create(['role' => 'parent']);
+        $morning = SchoolClass::create(['name' => 'Grade 7', 'section' => 'A', 'program' => 'Khmer', 'session' => 'Morning']);
+        $afternoon = SchoolClass::create(['name' => 'Grade 8', 'section' => 'B', 'program' => 'English', 'session' => 'Afternoon']);
+        foreach (['present', 'late', 'absent', 'excused'] as $status) {
+            $student = Student::factory()->create(['school_class_id' => $morning->id, 'parent_id' => $status === 'late' ? $parent->id : null]);
+            Attendance::create(['student_id' => $student->id, 'date' => '2026-11-16', 'status' => $status]);
+            if ($status !== 'excused') {
+                Attendance::create(['student_id' => $student->id, 'date' => '2026-11-20', 'status' => $status]);
+            }
+            if ($status === 'absent') {
+                Attendance::create(['student_id' => $student->id, 'date' => '2026-11-18', 'status' => 'absent']);
+                Attendance::create(['student_id' => $student->id, 'date' => '2026-11-09', 'status' => 'present']);
+            }
+        }
+        $different = Student::factory()->create(['school_class_id' => $afternoon->id]);
+        Attendance::create(['student_id' => $different->id, 'date' => '2026-11-16', 'status' => 'present']);
+        $this->actingAs($admin)->get('/dashboard')->assertOk()
+            ->assertSee(['Weekly Attendance Trend', 'Previous Week', 'This Week', 'Next Week', 'No attendance recorded', '60%'])
+            ->assertSeeInOrder(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']);
+        $this->getJson('/dashboard/data')->assertOk()
+            ->assertJsonPath('charts.weeklyAttendance.0.rate', 60)
+            ->assertJsonPath('charts.weeklyAttendance.1.rate', null)
+            ->assertJsonPath('charts.weeklyAttendance.2.rate', 0)
+            ->assertJsonPath('charts.weeklyAttendance.2.recorded', 1)
+            ->assertJsonPath('charts.weeklyAttendance.4.rate', 66.67);
+        $this->getJson('/dashboard/data?date=2026-11-18&weekly_program=Khmer&weekly_grade=7&weekly_class='.$morning->id.'&weekly_session=Morning')
+            ->assertOk()->assertJsonPath('charts.weeklyAttendance.0.rate', 50)
+            ->assertJsonPath('charts.weeklyAttendance.0.attended', 2)->assertJsonPath('summary.attendanceCount', 1);
+        $this->getJson('/dashboard/data?weekly_program=Khmer&weekly_session=Afternoon')
+            ->assertOk()->assertJsonPath('charts.weeklyAttendance.0.rate', null);
+        $this->getJson('/dashboard/data?attendance_week=2026-11-11')->assertOk()
+            ->assertJsonPath('charts.weeklyAttendance.0.date', '2026-11-09')
+            ->assertJsonPath('charts.weeklyAttendance.0.rate', 100);
+        $this->actingAs($parent)->getJson('/dashboard/data')->assertOk()
+            ->assertJsonPath('charts.weeklyAttendance.0.rate', 100)->assertJsonPath('charts.weeklyAttendance.0.recorded', 1);
+    }
+
     public function test_teacher_dashboard_focuses_on_teaching_and_attendance_on_initial_load_and_refresh(): void
     {
         $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-16 09:00'));

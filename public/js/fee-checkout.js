@@ -10,7 +10,7 @@
         form.querySelector('[name="reference"]').disabled = !qr;
         const button = form.querySelector('[data-submit-payment]');
         button.disabled = qr && button.dataset.hasQr !== '1';
-        button.textContent = qr ? 'I have sent the payment — submit for review' : 'Cash handed over — submit for confirmation';
+        button.querySelector('[data-fee-button-label]').textContent = qr ? button.dataset.qrLabel : button.dataset.cashLabel;
     };
     form?.addEventListener('change', update);
     update();
@@ -18,7 +18,7 @@
         paymentForm.addEventListener('submit', () => {
             const button = paymentForm.querySelector('button');
             button.disabled = true;
-            button.textContent = 'Processing…';
+            button.querySelector('[data-fee-button-label]').textContent = button.dataset.processingLabel;
         });
     });
     window.addEventListener('pageshow', event => { if (event.persisted) window.location.reload(); });

@@ -1,6 +1,6 @@
-@php($photoUrl = $person->profile_photo_url)
-@if($photoUrl)
-<img class="{{ $avatarClass ?? 'student-avatar' }}" src="{{ $photoUrl }}" alt="{{ ($teacherIcon ?? false) ? '' : $person->name }}" loading="lazy" style="width:{{ $size ?? 36 }}px;height:{{ $size ?? 36 }}px;object-fit:cover;flex-shrink:0">
+@php($avatarPhoto = $photoUrl ?? $person->profile_photo_url)
+@if($avatarPhoto)
+<img class="{{ $avatarClass ?? 'student-avatar' }}" src="{{ $avatarPhoto }}" alt="{{ ($teacherIcon ?? false) ? '' : $person->name }}" loading="lazy" style="width:{{ $size ?? 36 }}px;height:{{ $size ?? 36 }}px;object-fit:cover;flex-shrink:0">
 @elseif($teacherIcon ?? false)
 @php($gender = strtolower(trim($person->gender ?? '')))
 <span class="{{ $avatarClass ?? 'student-avatar' }}" aria-hidden="true" style="width:{{ $size ?? 36 }}px;height:{{ $size ?? 36 }}px;flex-shrink:0">

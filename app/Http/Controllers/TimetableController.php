@@ -25,6 +25,7 @@ class TimetableController extends Controller
 
         $entries = Schedule::with(['subject.teacher', 'teacher'])
             ->where('school_class_id', $schoolClass->timetableOwnerId())
+            ->when($request->user()->role === 'student', fn ($query) => $query->forAcademicYear(\App\Support\AcademicYear::current()))
             ->orderBy('starts_at')
             ->get();
 
@@ -55,7 +56,8 @@ class TimetableController extends Controller
             'periods' => $periods,
             'slots' => $slots,
             'stats' => $stats,
-            'cancelled' => Schedule::withoutGlobalScope('active')->where('school_class_id', $schoolClass->id)->whereNotNull('cancelled_at')->orderByDesc('cancelled_at')->get(),
+            'cancelled' => $request->user()->role === 'student' ? collect()
+                : Schedule::withoutGlobalScope('active')->where('school_class_id', $schoolClass->id)->whereNotNull('cancelled_at')->orderByDesc('cancelled_at')->get(),
         ]);
     }
 

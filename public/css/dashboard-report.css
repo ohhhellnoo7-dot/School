@@ -77,3 +77,91 @@
 
 .attendance-action-menu .attendance-ratio { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px 12px; }
 .attendance-action-menu .attendance-ratio span:nth-child(4) { color:var(--info,#3686d9); }
+
+/* Weekly student attendance */
+.weekly-trend {
+    --weekly-edge: color-mix(in srgb, var(--primary) 12%, var(--border-color));
+    --weekly-soft: color-mix(in srgb, var(--surface-tint) 72%, var(--surface));
+    min-inline-size: 0;
+    height: 100%;
+    padding: clamp(.85rem, 1.3vw, 1.45rem);
+    border-color: var(--weekly-edge);
+    background: linear-gradient(145deg, var(--surface-raised), var(--weekly-soft));
+    scroll-margin-top: 6rem;
+}
+.weekly-trend-header, .weekly-trend-heading, .weekly-trend-nav {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+}
+.weekly-trend-header { justify-content: space-between; flex-wrap: wrap; gap: .85rem 1rem; }
+.weekly-trend-heading { min-width: 0; gap: .8rem; }
+.weekly-trend-heading h2 { margin: 0; font-size: clamp(1.14rem, 1.5vw, 1.7rem); font-weight: 800; }
+.weekly-trend-heading p, .weekly-trend-policy { margin: .2rem 0 0; color: var(--text-secondary); }
+.weekly-trend-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 3rem;
+    aspect-ratio: 1;
+    border-radius: 1rem;
+    background: var(--weekly-soft);
+    color: var(--action);
+    font-size: 1.48rem;
+}
+.weekly-trend-nav { flex-wrap: wrap; }
+.weekly-trend-nav .btn { white-space: nowrap; font-size: .86rem; padding-inline: .7rem; }
+.weekly-trend-filters {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, .75fr) minmax(0, 1.4fr) minmax(0, 1fr) auto;
+    align-items: end;
+    gap: .55rem;
+    margin-block: .95rem .5rem;
+}
+.weekly-trend-filters label { display: grid; gap: .25rem; min-width: 0; color: var(--text-secondary); font-size: .84rem; font-weight: 700; }
+.weekly-trend-filters .form-select, .weekly-trend-filters .btn { min-height: 2.45rem; font-size: .9rem; }
+.weekly-trend-filters .form-select { width: 100%; text-overflow: ellipsis; }
+.weekly-trend-chart { position: relative; height: clamp(12rem, 17vw, 19rem); min-width: 0; }
+.weekly-trend-empty {
+    position: absolute;
+    top: 49%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    padding: .65rem .9rem;
+    border: 1px solid var(--weekly-edge);
+    border-radius: 1rem;
+    background: var(--surface-raised);
+    color: var(--text-secondary);
+    text-align: center;
+    font-weight: 650;
+}
+.weekly-trend-empty i { color: var(--action); }
+.weekly-trend-days { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .4rem; padding: 0; margin: .6rem 0 .5rem; list-style: none; }
+.weekly-trend-days li {
+    display: grid;
+    align-content: start;
+    gap: .1rem;
+    min-width: 0;
+    padding: .44rem .3rem;
+    border: 1px solid var(--weekly-edge);
+    border-radius: .7rem;
+    background: var(--surface);
+    text-align: center;
+    font-size: .83rem;
+    overflow-wrap: anywhere;
+}
+.weekly-trend-days time { font-weight: 750; }
+.weekly-trend-days strong { color: var(--action); }
+.weekly-trend-days li > span { color: var(--text-secondary); font-size: .77rem; }
+.weekly-trend-policy { font-size: .8rem; }
+
+@media (max-width: 1199px) and (min-width: 992px), (max-width: 720px) {
+    .weekly-trend-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .weekly-trend-filters .btn { grid-column: 1 / -1; justify-self: end; }
+}
+@media (max-width: 440px) {
+    .weekly-trend-days { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .weekly-trend-nav { gap: .35rem; }
+    .weekly-trend-nav .btn { padding-inline: .45rem; font-size: .78rem; }
+}

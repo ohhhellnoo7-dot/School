@@ -84,9 +84,55 @@ class EnrollmentAccountsTest extends TestCase
     public function test_conflicting_role_rolls_back_new_accounts_and_student(): void
     {
         $this->administrator();
-        $this->post('/students', $this->enrollment(['guardian_email' => auth()->user()->email]))->assertSessionHasErrors('guardian_email');
+        $existingStudent = User::factory()->create();
+        $this->post('/students', $this->enrollment(['guardian_email' => $existingStudent->email]))->assertSessionHasErrors('guardian_email');
         $this->assertDatabaseCount('students', 0);
         $this->assertDatabaseMissing('users', ['email' => 'student@gmail.com']);
+    }
+
+    public function test_staff_can_keep_their_account_and_view_their_linked_children(): void
+    {
+        $admin = $this->administrator();
+        $teacher = User::factory()->create(['phone' => '012111111']);
+        $teacher->forceFill(['role' => 'teacher'])->save();
+        $password = $teacher->password;
+
+        $this->get('/students/create')->assertOk()
+            ->assertSee('Search employees by name')
+            ->assertSee('Uses existing password')
+            ->assertDontSee($password)
+            ->assertDontSee('data-employee-letter', false)
+            ->assertSee('data-name="'.e($teacher->name).'"', false)
+            ->assertSee($teacher->email);
+        $this->post('/students', $this->enrollment([
+            'guardian_email' => $teacher->email,
+            'guardian_relationship' => '__custom',
+            'guardian_custom_relationship' => 'Older sister',
+        ]))
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('enrollment_accounts', fn ($accounts) => $accounts[1]['password'] === null);
+        $child = Student::where('email', 'student@gmail.com')->firstOrFail();
+        $this->assertEquals($teacher->id, $child->parent_id);
+        $this->assertSame('Older sister', $child->guardian_relationship);
+        $this->assertSame('teacher', $teacher->fresh()->role);
+        $this->assertSame($password, $teacher->fresh()->password);
+        $this->assertSame('012111111', $teacher->fresh()->phone);
+
+        $this->post('/students', $this->enrollment([
+            'email' => 'other@gmail.com', 'guardian_email' => $admin->email, 'parent_id' => $admin->id,
+        ]))->assertSessionHasNoErrors();
+        $other = Student::where('email', 'other@gmail.com')->firstOrFail();
+        $this->assertEquals($admin->id, $other->parent_id);
+
+        $this->actingAs($teacher)->get('/dashboard')->assertOk()
+            ->assertSee(route('students.index', ['my_children' => 1]))
+            ->assertSeeInOrder(['My classes', "\u{1F46A}", 'My children</span><strong>1</strong>', 'My subjects'], false);
+        $this->get('/students?my_children=1')->assertOk()->assertSee('My Children')
+            ->assertSeeInOrder(['1 linked child', 'My teaching schedule', 'Your Child', 'Edit Profile'])
+            ->assertViewHas('children', fn ($children) => $children->count() === 1 && $children->first()->is($child));
+        $this->get(route('students.show', $child))->assertOk();
+        $this->get(route('students.show', $other))->assertForbidden();
+        $this->get(route('students.edit', $child))->assertForbidden();
     }
 
     public function test_generated_passwords_are_available_on_payment_redirect(): void

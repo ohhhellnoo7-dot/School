@@ -38,13 +38,18 @@ class UnifiedTimetableController extends Controller
         $studentClasses = null;
         $programs = \App\Models\Program::names();
         $request->validate(['program' => ['nullable', \Illuminate\Validation\Rule::in($programs)]]);
+        if ($user->role === 'student') {
+            $programs = $classes->pluck('program')->filter()->unique()->values()->all();
+        }
         $timetableProgram = $teacherId ? $user->program : $request->input('program');
         $teacherProgram = $view === 'teachers' ? $timetableProgram : null;
         $request->validate(['subject' => 'nullable|string|max:255']);
         $subjectSearch = $teacherId || $timetableProgram === 'Khmer' ? $request->input('subject') : null;
         $subjectChoices = match (true) {
             (bool) $teacherId => Subject::whereIn('id', (clone $query)->select('subject_id'))->distinct()->orderBy('name')->pluck('name'),
-            $timetableProgram === 'Khmer' => Subject::whereHas('schoolClass', fn ($q) => $q->where('program', 'Khmer'))->distinct()->orderBy('name')->pluck('name'),
+            $timetableProgram === 'Khmer' => Subject::whereHas('schoolClass', fn ($q) => $q->where('program', 'Khmer'))
+                ->when($user->role === 'student', fn ($q) => $q->whereIn('school_class_id', $classes->map->timetableOwnerId()->unique()))
+                ->distinct()->orderBy('name')->pluck('name'),
             default => collect(),
         };
         if ($teacherId && $subjectSearch) {
@@ -154,9 +159,9 @@ class UnifiedTimetableController extends Controller
         }
         $breaks = $view === 'teachers' && $selected ? app(TeacherManagementService::class)->breaks(User::findOrFail($selected)) : collect();
         $repair = app(\App\Services\SchoolRoomAssignmentRepair::class);
-        $roomIssues = $lessons->mapWithKeys(fn ($entry)=>[$entry->id=>$repair->describe($entry)])->all();
+        $roomIssues = $user->role === 'student' ? [] : $lessons->mapWithKeys(fn ($entry)=>[$entry->id=>$repair->describe($entry)])->all();
         $curriculum = null;
-        if (! $teacherId && $view === 'students' && ($cohort = $classes->firstWhere('id',$selected))) {
+        if ($user->role !== 'student' && ! $teacherId && $view === 'students' && ($cohort = $classes->firstWhere('id',$selected))) {
             $subjects = $cohort->timetableOwner()->subjects;
             $unknown = $subjects->isEmpty() || $subjects->contains(fn ($s)=>$s->required_weekly_minutes === null);
             $missing = $subjects->filter(fn ($s)=>$s->required_weekly_minutes !== null && $lessons->where('subject_id',$s->id)->sum(fn ($entry)=>TeacherManagementService::duration($entry->starts_at,$entry->ends_at)) < $s->required_weekly_minutes)->pluck('name')->all();

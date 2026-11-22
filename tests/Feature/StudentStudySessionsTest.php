@@ -38,8 +38,8 @@ class StudentStudySessionsTest extends TestCase
             $this->assertSame(1, $class->classGroup->students()->count());
             $this->get(route('classes.timetable', $class))->assertOk();
         }
-        $this->get(route('students.show', $student))->assertOk()->assertSee('Study sessions')->assertSee('Chinese');
-        $this->get(route('students.index', ['program' => 'English', 'session' => 'Afternoon']))->assertOk()->assertSee($student->name);
+        $this->followingRedirects()->get(route('students.show', $student))->assertOk()->assertSee('Study sessions')->assertSee('Chinese');
+        $this->followingRedirects()->get(route('students.index'))->assertOk()->assertSee($student->name);
         $this->get(route('timetables.index'))->assertOk();
     }
 
@@ -122,8 +122,7 @@ class StudentStudySessionsTest extends TestCase
         $url = route('classrooms.show', ['classroom' => $room, 'date' => '2026-11-02', 'time' => '13:30']);
         $this->actingAs(User::factory()->create(['role' => 'administrator']));
         $this->get($url)->assertOk()->assertSee('Roster Student')->assertSee($student->student_number)->assertSee('Roster Guardian')->assertSee('Other Family Child')->assertDontSee('Outside This Room');
-        foreach ([$account, $parent] as $viewer) {
-            $this->actingAs($viewer)->get($url)->assertOk()->assertSee('Roster Student')->assertSee('Roster Guardian')->assertDontSee('Other Family Child')->assertDontSee('Private Guardian Name')->assertDontSee('Outside This Room');
-        }
+        $this->actingAs($account)->get($url)->assertForbidden();
+        $this->actingAs($parent)->get($url)->assertOk()->assertSee('Roster Student')->assertSee('Roster Guardian')->assertDontSee('Other Family Child')->assertDontSee('Private Guardian Name')->assertDontSee('Outside This Room');
     }
 }

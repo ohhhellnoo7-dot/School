@@ -8,6 +8,11 @@ class ClassAttendance extends Model
 {
     protected $guarded = [];
 
+    public function schoolClass()
+    {
+        return $this->belongsTo(SchoolClass::class)->withoutGlobalScope('unmerged');
+    }
+
     public function setDateAttribute($value): void
     {
         $this->attributes['date'] = \Carbon\Carbon::parse($value)->toDateString();

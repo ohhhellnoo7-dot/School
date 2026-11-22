@@ -24,7 +24,9 @@ class ProfileTest extends TestCase
         Storage::fake('local');
         $user = User::factory()->create();
         $other = User::factory()->create();
-        $this->actingAs($user)->get('/profile')->assertOk()->assertSee('Choose profile photo');
+        $this->actingAs($user)->get('/profile')->assertOk()
+            ->assertSee(['Account Settings', 'Personal Information', 'Choose profile photo', 'Save changes'])
+            ->assertSee('class="as-form"', false);
         $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=');
         $data = ['name' => 'Updated Name', 'email' => $user->email, 'phone' => '012345678', 'address' => 'New address', 'role' => 'administrator', 'id' => $other->id];
         $this->put('/profile', $data + ['photo' => UploadedFile::fake()->createWithContent('avatar.png', $png)])

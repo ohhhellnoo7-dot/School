@@ -38,7 +38,7 @@ Route::middleware('guest')->group(function () {
     Route::view('/login', 'school.auth.login')->name('login');
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,1');
 });
-Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(function () {
+Route::middleware(['auth', 'role:administrator,teacher,student,parent', \App\Http\Middleware\StudentWorkspace::class])->group(function () {
     Route::get('/attendance-settings', [\App\Http\Controllers\AttendanceSessionSettingController::class, 'edit'])->middleware('role:administrator')->name('attendance-settings.edit');
     Route::put('/attendance-settings', [\App\Http\Controllers\AttendanceSessionSettingController::class, 'update'])->middleware('role:administrator')->name('attendance-settings.update');
     Route::get('/school/map', [\App\Http\Controllers\SchoolMapController::class, 'index'])->name('school.map');
@@ -111,6 +111,9 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent'])->group(
     Route::get('/students/{student}/photo', [ProfileController::class, 'studentPhoto'])->name('students.photo');
     Route::post('/students/{student}/attendance', [StudentController::class, 'saveAttendance'])->middleware('role:administrator')->name('students.attendance.store');
     Route::resource('/students', StudentController::class);
+    Route::get('/students/family/{child}', [\App\Http\Controllers\FamilyDashboardController::class, 'show'])->whereNumber('child')->name('students.family.show');
+    Route::get('/students/family/{child}/edit', [\App\Http\Controllers\FamilyDashboardController::class, 'edit'])->whereNumber('child')->name('students.family.edit');
+    Route::patch('/students/family/{child}', [\App\Http\Controllers\FamilyDashboardController::class, 'update'])->whereNumber('child')->name('students.family.update');
     Route::post('/students/{student}/study-sessions', [StudentController::class, 'registerSession'])->name('students.study-sessions.store');
     Route::get('/teachers/{teacher}/schedule', [SchoolModuleController::class, 'teacherTimetable'])->name('teachers.schedule');
     Route::get('/classes/{schoolClass}/timetable', [TimetableController::class, 'show'])->name('classes.timetable');

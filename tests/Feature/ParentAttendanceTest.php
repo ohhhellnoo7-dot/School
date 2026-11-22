@@ -80,5 +80,15 @@ class ParentAttendanceTest extends TestCase
             ->assertDontSee('Excused')
             ->assertViewHas('records', fn ($records) => $records->first()->children->every(fn ($child) =>
                 $child->relationLoaded('attendances') && $child->attendances->every(fn ($attendance) => $attendance->date->isToday())));
+
+        $yesterday = today()->subDay();
+        $this->get('/school/parents?date='.$yesterday->toDateString())->assertOk()
+            ->assertSee($yesterday->format('M d, Y'))
+            ->assertSee('Excused')
+            ->assertDontSee("Today's attendance")
+            ->assertViewHas('records', fn ($records) => $records->first()->children->every(fn ($child) =>
+                $child->attendances->count() === 1 && $child->attendances->first()->date->isSameDay($yesterday)));
+
+        $this->get('/school/parents?date=2026-02-30')->assertSessionHasErrors('date');
     }
 }

@@ -256,6 +256,11 @@ class SchoolFinanceController extends Controller
 
         $nextPaymentDate = app(\App\Services\InvoicePaymentSchedule::class)->nextDueDate($fee);
 
+        if ($request->user()->role === 'student') {
+            return response()->view('school.finance.student-invoice', compact('fee', 'nextPaymentDate'))
+                ->header('Cache-Control', 'private, no-store');
+        }
+
         return view('school.finance.invoice', compact('fee', 'structures', 'nextPaymentDate'));
     }
 

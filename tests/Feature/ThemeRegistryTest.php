@@ -60,7 +60,14 @@ class ThemeRegistryTest extends TestCase
             $user = User::factory()->create(['role' => $role]);
             $dashboard = $this->actingAs($user)->get(route('dashboard'))->assertOk()
                 ->assertSee('windy-landscape--sidebar', false)
-                ->assertSee('windy-turbine-rotor', false)->assertSee('Student attendance summary');
+                ->assertSee('windy-turbine-rotor', false);
+            if ($role === 'student') {
+                $dashboard->assertSee('Today’s lessons')->assertDontSee('Student attendance summary');
+                $this->followingRedirects()->get(route('modules.index', 'attendance'))->assertOk()
+                    ->assertSee('My attendance')->assertSee('Attendance Calendar')->assertDontSee(['Daily attendance', 'More filters']);
+                continue;
+            }
+            $dashboard->assertSee('Student attendance summary');
             $this->get(route('modules.index', 'attendance'))->assertOk()
                 ->assertSee('student-attendance-hero windy-only', false)
                 ->assertSee('Attendance list')->assertSee('More filters')->assertSee('All sessions');

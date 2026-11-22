@@ -19,6 +19,11 @@ class StudentController extends Controller
 {
     public function index(Request $request)
     {
+        $viewer = $request->user();
+        if ($viewer->role === 'parent' || (in_array($viewer->role, User::STAFF_ROLES, true) && $request->boolean('my_children'))) {
+            return app(FamilyDashboardController::class)->index($request);
+        }
+
         if ($request->input('program') === 'Chinese') {
             $request->merge(['session' => 'Evening']);
         }
@@ -35,7 +40,8 @@ class StudentController extends Controller
         $request->validate(['attendance_date' => 'nullable|date_format:Y-m-d|before_or_equal:today',
             'attendance_status' => 'nullable|in:present,absent,late,excused,unrecorded']);
         $attendanceDate = $request->input('attendance_date', today()->toDateString());
-        $studentQuery = Student::visibleTo($request->user())->with(['schoolClass', 'studyClasses', 'user', 'parent',
+        $visibleStudents = Student::visibleTo($viewer);
+        $studentQuery = (clone $visibleStudents)->with(['schoolClass', 'studyClasses', 'user', 'parent',
             'attendances' => fn ($query) => $query->whereDate('date', $attendanceDate)])
             ->search($request->input('search'))
             ->when($request->class || $request->program || $request->session, fn ($q) => $q->whereHas('studyClasses', fn ($classes) => $classes
@@ -59,7 +65,6 @@ class StudentController extends Controller
             })
             ->orderBy($request->input('sort', 'name'), $request->input('direction', 'asc'))->orderBy('id')->paginate(12)->withQueryString();
 
-        $visibleStudents = Student::visibleTo($request->user());
         $studentSummary = [
             'total' => (clone $visibleStudents)->count(),
             'male' => (clone $visibleStudents)->where('gender', 'male')->count(),
@@ -106,7 +111,7 @@ class StudentController extends Controller
 
     private function form(Student $student)
     {
-        return view('school.students.form', ['student' => $student, 'classes' => SchoolClass::where(fn ($q) => $q->whereNull('program')->orWhere('program', '!=', 'Chinese')->orWhere('session', 'Evening'))->orderBy('name')->get(), 'parents' => User::where('role', 'parent')->get(), 'accounts' => User::where('role', 'student')->get()]);
+        return view('school.students.form', ['student' => $student, 'classes' => SchoolClass::where(fn ($q) => $q->whereNull('program')->orWhere('program', '!=', 'Chinese')->orWhere('session', 'Evening'))->orderBy('name')->get(), 'parents' => User::whereIn('role', User::GUARDIAN_ROLES)->orderBy('name')->get(), 'accounts' => User::where('role', 'student')->get()]);
     }
 
     public function show(Request $request, Student $student)
@@ -132,7 +137,10 @@ class StudentController extends Controller
                 ->header('Cache-Control', 'no-store');
         }
 
-        $student->load(['schoolClass', 'studyClasses', 'user', 'parent', 'grades.examination.subject', 'fees']);
+        $student->load(['schoolClass', 'studyClasses', 'user', 'parent', 'grades.examination.subject']);
+        if (in_array($request->user()->role, ['administrator', 'parent', 'student'], true)) {
+            $student->load(['fees.adjustments', 'fees.items']);
+        }
 
         return view('school.students.show', $attendanceReport + [
             'classes' => SchoolClass::orderBy('program')->orderBy('name')->get()]);
@@ -183,7 +191,7 @@ class StudentController extends Controller
         $student = app(\App\Services\TeacherManagementService::class)->locked(function () use ($data, $request, $accountData, &$credentials) {
             $data['user_id'] = $this->enrollmentAccount($data['user_id'] ?? null, $data['email'], $data['name'], 'student', $accountData['student_password'] ?? null, $credentials);
             $data['parent_id'] = $this->enrollmentAccount($data['parent_id'] ?? null, $accountData['guardian_email'] ?? null, $data['guardian_name'], 'parent', $accountData['parent_password'] ?? null, $credentials);
-            $this->saveParentDetails($data['parent_id'], $data['guardian_phone'], $accountData);
+            $this->saveParentDetails($request, $data['parent_id'], $data['guardian_phone'], $accountData);
             $sequence = DB::table('student_number_sequences')->where('id', 1)->lockForUpdate()->first();
             $number = $sequence->last_number;
             do {
@@ -208,10 +216,17 @@ class StudentController extends Controller
         return redirect()->route('students.enrollment-payment', $student)->with('success', 'Student enrolled successfully. Choose how to pay the enrollment fee.')->with('enrollment_accounts', $credentials)->with('student_draft_clear', 'new');
     }
 
-    private function saveParentDetails(?int $parentId, string $phone, array $details): void
+    private function saveParentDetails(Request $request, ?int $parentId, string $phone, array $details): void
     {
         if (! $parentId) return;
         $parent = User::findOrFail($parentId);
+        if ($parent->role !== 'parent') {
+            if ($request->hasFile('parent_photo')) {
+                throw ValidationException::withMessages(['parent_photo' => 'Staff manage their profile photo through their school account.']);
+            }
+
+            return;
+        }
         $parent->phone = $phone;
         // Blank optional fields preserve details on an already linked account.
         if (! empty($details['guardian_gender'])) $parent->gender = $details['guardian_gender'];
@@ -250,7 +265,8 @@ class StudentController extends Controller
         if ($account && $email && strcasecmp($account->email, $email) !== 0) {
             throw ValidationException::withMessages([$field => 'The selected account must match this email.']);
         }
-        if ($account && ($account->role !== $role || ($role === 'student' && Student::where('user_id', $account->id)->exists()))) {
+        $eligibleRoles = $role === 'parent' ? User::GUARDIAN_ROLES : ['student'];
+        if ($account && (! in_array($account->role, $eligibleRoles, true) || ($role === 'student' && Student::where('user_id', $account->id)->exists()))) {
             throw ValidationException::withMessages([$field => 'This email or account is already used by another role or student.']);
         }
         $created = ! $account;
@@ -282,7 +298,7 @@ class StudentController extends Controller
         app(\App\Services\TeacherManagementService::class)->locked(function () use ($student, $data, $parentDetails, $request) {
             $student->update($data);
             $this->syncStudySessions($request, $student);
-            $this->saveParentDetails($student->parent_id, $data['guardian_phone'], $parentDetails);
+            $this->saveParentDetails($request, $student->parent_id, $data['guardian_phone'], $parentDetails);
         });
         $this->saveParentPhoto($request, $student);
 
@@ -316,14 +332,19 @@ class StudentController extends Controller
             'email' => ['required', 'email', 'max:255', Rule::unique('students')->ignore($student)],
             'phone' => ['nullable', 'string', 'max:30', Rule::unique('students', 'phone')->ignore($student)], 'address' => 'nullable|string|max:2000',
             'school_class_id' => 'required|exists:school_classes,id',
-            'parent_id' => ['nullable', Rule::exists('users', 'id')->where('role', 'parent')],
+            'parent_id' => ['nullable', Rule::exists('users', 'id')->whereIn('role', User::GUARDIAN_ROLES)->whereNull('archived_at')],
             'user_id' => ['nullable', Rule::exists('users', 'id')->where('role', 'student'), Rule::unique('students')->ignore($student)],
-            'guardian_relationship' => 'nullable|in:father,mother,guardian',
+            'guardian_relationship' => 'nullable|string|max:100',
+            'guardian_custom_relationship' => 'exclude_unless:guardian_relationship,__custom|required|string|max:100',
             'guardian_name' => 'required|string|max:255', 'guardian_phone' => 'required|string|max:30',
             'enrollment_date' => 'required|date', 'status' => 'required|in:active,inactive,graduated',
             'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'parent_photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
+        if (($data['guardian_relationship'] ?? null) === '__custom') {
+            $data['guardian_relationship'] = $data['guardian_custom_relationship'];
+            unset($data['guardian_custom_relationship']);
+        }
         unset($data['parent_photo']);
         if ($request->hasFile('parent_photo') && ! $request->filled('parent_id') && ($student || ! $request->filled('guardian_email'))) {
             throw ValidationException::withMessages(['parent_photo' => 'Enter a parent email or select a linked parent account before uploading their photo.']);

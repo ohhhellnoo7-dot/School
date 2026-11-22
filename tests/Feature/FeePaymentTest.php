@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Fee;
+use App\Models\FeeStructure;
+use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\User;
 use Database\Seeders\SchoolSeeder;
@@ -55,8 +57,12 @@ class FeePaymentTest extends TestCase
     public function test_enrollment_checkout_converts_to_khr_and_confirms_cash_once(): void
     {
         $admin = User::factory()->create(['role' => 'administrator']);
-        $student = Student::factory()->create();
-        $this->actingAs($admin)->get(route('students.enrollment-payment', $student))->assertOk()->assertSee('4,100 KHR');
+        $primary = SchoolClass::create(['name' => 'Grade 7', 'section' => 'A', 'program' => 'Khmer', 'session' => 'Morning']);
+        $additional = SchoolClass::create(['name' => 'Grade 8', 'section' => 'B', 'program' => 'English', 'session' => 'Afternoon']);
+        $student = Student::factory()->create(['school_class_id' => $primary->id]);
+        $student->studyClasses()->attach($additional);
+        $this->actingAs($admin)->get(route('students.enrollment-payment', $student))->assertOk()
+            ->assertSeeInOrder(['Khmer · Grade 7 A · Morning', 'English · Grade 8 B · Afternoon', '4,100 KHR']);
         $data = ['amount_usd' => '12.50', 'currency' => 'KHR', 'method' => 'cash'];
         $this->post(route('students.enrollment-payment.store', $student), $data)->assertSessionHasNoErrors();
         $this->post(route('students.enrollment-payment.store', $student), $data)->assertSessionHasNoErrors();
@@ -78,6 +84,77 @@ class FeePaymentTest extends TestCase
         $this->getJson(route('fees.status', $fee))->assertJson(['paid' => true]);
         $this->get(route('fees.pay', $fee))->assertOk()->assertSee('Payment confirmed.');
         $this->get(route('finance.receipt', $fee->payments()->sole()))->assertOk();
+    }
+
+    public function test_enrollment_checkout_uses_configured_session_tuition_and_bills_the_month_once(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $class = SchoolClass::create(['name' => 'Grade 5', 'section' => '', 'program' => 'English', 'session' => 'Afternoon']);
+        $student = Student::factory()->create(['school_class_id' => $class->id, 'enrollment_date' => today()]);
+        $rate = FeeStructure::create([
+            'academic_year' => today()->year.'-'.(today()->year + 1), 'program' => 'English', 'grade' => 5,
+            'currency' => 'USD', 'monthly_tuition' => '20.00', 'session_prices' => ['Afternoon' => ['monthly' => '35.00']],
+            'billable_months' => 12, 'semester_months' => 6, 'starts_on' => today()->startOfMonth(),
+            'effective_from' => today(), 'due_day' => 10, 'charges' => ['registration' => '5.00'],
+            'discount' => '0.00', 'status' => 'active', 'approved_at' => now(),
+        ]);
+
+        $checkout = route('students.enrollment-payment', $student);
+        $submit = route('students.enrollment-payment.store', $student);
+        $this->actingAs($admin)->get($checkout)->assertOk()->assertSee('35.00 USD')->assertSee('Total 40.00 USD')
+            ->assertDontSee('name="amount_usd"', false);
+        $this->post($submit, ['method' => 'cash', 'amount_usd' => '0.01'])->assertSessionHasNoErrors();
+        $invoice = $student->fees()->sole();
+        $this->assertSame('40.00', $invoice->amount);
+        $this->assertEquals($rate->id, $invoice->fee_structure_id);
+        $this->assertSame('cash', $invoice->checkout_method);
+        $this->assertDatabaseHas('invoice_periods', ['fee_id' => $invoice->id, 'month_index' => 1]);
+        $this->post($submit, ['method' => 'cash'])->assertRedirect(route('fees.pay', $invoice));
+        $this->get($checkout)->assertRedirect(route('fees.pay', $invoice));
+        $this->assertSame(1, $student->fees()->count());
+    }
+
+    public function test_enrollment_checkout_combines_program_rates_into_one_payable_invoice(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $khmer = SchoolClass::create(['name' => 'Grade 10', 'section' => 'D', 'program' => 'Khmer', 'session' => 'Afternoon']);
+        $english = SchoolClass::create(['name' => 'Grade 11', 'section' => '', 'program' => 'English', 'session' => 'Evening']);
+        $student = Student::factory()->create(['school_class_id' => $khmer->id, 'enrollment_date' => today()]);
+        $student->studyClasses()->attach($english->id);
+        $rateDefaults = [
+            'academic_year' => today()->year.'-'.(today()->year + 1), 'currency' => 'USD',
+            'billable_months' => 12, 'semester_months' => 6, 'starts_on' => today()->startOfMonth(),
+            'effective_from' => today(), 'due_day' => 10, 'charges' => [],
+            'discount' => '0.00', 'status' => 'active', 'approved_at' => now(),
+        ];
+        $khmerRate = FeeStructure::create($rateDefaults + ['program' => 'Khmer', 'grade' => 10, 'monthly_tuition' => '35.00']);
+        $englishRate = FeeStructure::create($rateDefaults + [
+            'program' => 'English', 'grade' => 11, 'monthly_tuition' => '30.00',
+            'session_prices' => ['Evening' => ['monthly' => '20.00']],
+        ]);
+
+        $checkout = route('students.enrollment-payment', $student);
+        $submit = route('students.enrollment-payment.store', $student);
+        $this->actingAs($admin)->get($checkout)->assertOk()->assertSeeInOrder([
+            'Khmer · Grade 10 D · Afternoon', '$35.00 USD', 'English · Grade 11 · Evening',
+            '$20.00 USD', 'Combined tuition', '$55.00 USD',
+        ]);
+        $this->post($submit, ['method' => 'cash'])->assertSessionHasNoErrors();
+        $invoice = $student->fees()->sole();
+        $this->assertSame('55.00', $invoice->amount);
+        $this->assertSame(2, $invoice->items()->count());
+        foreach ([$khmer->id => $khmerRate->id, $english->id => $englishRate->id] as $classId => $rateId) {
+            $this->assertDatabaseHas('invoice_periods', [
+                'fee_id' => $invoice->id, 'enrollment_key' => 'class:'.$classId, 'month_index' => 1, 'fee_structure_id' => $rateId,
+            ]);
+        }
+
+        $this->post($submit, ['method' => 'cash'])->assertRedirect(route('fees.pay', $invoice));
+        $this->get($checkout)->assertRedirect(route('fees.pay', $invoice));
+        $this->post(route('fees.checkout', $invoice), ['method' => 'cash'])->assertSessionHasNoErrors();
+        $this->post(route('fees.confirm', $invoice), ['request_key' => (string) Str::uuid(), 'verified' => '1'])->assertSessionHasNoErrors();
+        $this->assertSame('55.00', $invoice->fresh()->paid);
+        $this->assertSame(1, $student->fees()->count());
     }
 
     public function test_khqr_requires_uploaded_image_and_manual_verified_reference(): void

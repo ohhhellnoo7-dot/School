@@ -4,5 +4,8 @@
             <span class="windy-turbine-rotor"><i></i><i></i><i></i></span>
         </span>
     @endforeach
+    @if($placement === 'sidebar')
+        <span class="windy-bird-flock"><i></i><i></i><i></i></span>
+    @endif
     <span class="windy-hero-wind-streak"></span><span class="windy-hero-wind-streak"></span><span class="windy-hero-wind-streak"></span>
 </div>

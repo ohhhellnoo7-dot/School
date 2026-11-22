@@ -14,7 +14,8 @@ class StudentPolicy
     }
     public function view(User $user, Student $student): bool
     {
-        return Student::visibleTo($user)->whereKey($student->id)->exists();
+        return (in_array($user->role, User::STAFF_ROLES, true) && (int) $student->parent_id === (int) $user->id)
+            || Student::visibleTo($user)->whereKey($student->id)->exists();
     }
 
     public function create(User $user): bool
@@ -30,5 +31,11 @@ class StudentPolicy
     public function delete(User $user, Student $student): bool
     {
         return $user->role === 'administrator';
+    }
+
+    public function updateFamilyProfile(User $user, Student $student): bool
+    {
+        return in_array($user->role, User::GUARDIAN_ROLES, true)
+            && (int) $student->parent_id === (int) $user->id;
     }
 }

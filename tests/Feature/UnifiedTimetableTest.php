@@ -731,6 +731,11 @@ class UnifiedTimetableTest extends TestCase
         $other = app(LessonManagementService::class)->save(array_replace($this->data($f, 1), ['session' => 'Afternoon', 'teacher_id' => $f['substitute']->id, 'classroom_id' => $f['rooms'][0]->id, 'starts_at' => '13:00', 'ends_at' => '15:00']));
         foreach ([$f['student'], $f['parent']] as $user) {
             $this->actingAs($user)->get(route('timetables.index', ['view' => 'classrooms', 'classroom' => $f['rooms'][0]->id]))->assertOk()->assertDontSee('data-lesson-id="'.$other->id.'"', false)->assertDontSee('Replacement Mathematics Teacher');
+            if ($user->role === 'student') {
+                $this->get(route('classrooms.show', $f['rooms'][0]))->assertForbidden();
+                $this->getJson(route('classrooms.lesson-status', $f['rooms'][0]))->assertForbidden();
+                continue;
+            }
             $this->get(route('classrooms.show', ['classroom' => $f['rooms'][0], 'date' => '2026-11-02', 'time' => '13:30']))->assertOk()->assertDontSee('Replacement Mathematics Teacher')->assertDontSee('Grade 8B');
             $status = $this->getJson(route('classrooms.lesson-status', ['classroom' => $f['rooms'][0], 'date' => '2026-11-02', 'time' => '13:30']))->assertOk();
             $this->assertStringNotContainsString('Replacement Mathematics Teacher', $status->json('html'));

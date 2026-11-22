@@ -10,6 +10,10 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
+    public const STAFF_ROLES = ['administrator', 'teacher'];
+
+    public const GUARDIAN_ROLES = ['parent', ...self::STAFF_ROLES];
+
     protected static function booted(): void
     {
         static::addGlobalScope('archived',fn($query)=>$query->whereNull('users.archived_at'));
@@ -56,6 +60,21 @@ class User extends Authenticatable
     public function getProfilePhotoUrlAttribute(): ?string
     {
         return $this->profile_photo_path ? route('users.photo', $this) : null;
+    }
+
+    public function getAccountPhotoUrlAttribute(): ?string
+    {
+        if ($this->profile_photo_path) {
+            return route('profile.photo');
+        }
+
+        if ($this->role !== 'student') {
+            return null;
+        }
+
+        $student = Student::where('user_id', $this->id)->whereNotNull('photo')->first();
+
+        return $student?->photo ? route('students.photo', $student) : null;
     }
 
     public function ensureParentProfileNumber(): void

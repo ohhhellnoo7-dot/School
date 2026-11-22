@@ -1,4 +1,7 @@
 (() => {
+    const form = document.getElementById('parent-filters');
+    if (!form) return;
+
     const program = document.getElementById('parent-program');
     const session = document.getElementById('parent-session');
     if (!program || !session) return;
@@ -31,5 +34,10 @@
     }
     program.addEventListener('change', updateSessions);
     session.addEventListener('change', updateGrades);
+    form.addEventListener('change', event => {
+        if (event.target.matches('select, input[type="date"]')) {
+            form.requestSubmit();
+        }
+    });
     updateSessions();
 })();

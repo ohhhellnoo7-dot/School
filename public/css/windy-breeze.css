@@ -5,6 +5,7 @@
     --theme-nav-muted: #e0f5fa;
     --windy-sky: #cdeffc;
     --windy-sage: #a5c6ae;
+    --windy-sidebar-sun-top: 38%;
     --windy-campus: url('../images/windy-breeze-campus.jpg');
     --chart-female: #367c88;
     --chart-male: #527957;
@@ -21,7 +22,11 @@
     }
 
     & .scholar-workspace .sidebar {
-        background: linear-gradient(156deg, var(--theme-nav-start), #00566b 58%, var(--theme-nav-end)) !important;
+        height: 100dvh;
+        background:
+            linear-gradient(180deg, #003e50 0%, #00485cee 28%, #005369d9 48%, #0065828a 69%, #0065821f 87%, transparent 100%),
+            url('../images/teacher-dashboard-wind-hills.png') 67% bottom / auto clamp(28rem, 78dvh, 54rem) no-repeat,
+            #003e50 !important;
     }
     & .scholar-workspace .school-nav a {
         color: #fff;
@@ -209,11 +214,8 @@
 }
 :root[data-theme="windy-breeze"] .windy-landscape--sidebar {
     position: relative;
-    flex: 0 0 8rem;
-    min-height: 8rem;
-    margin: .6rem 0 0;
-    background: linear-gradient(180deg, #00566b 0%, transparent 29%, transparent 77%, #00596a 100%),
-        url('../images/teacher-dashboard-wind-hills.png') center 64% / cover no-repeat;
+    flex: 0 0 clamp(9rem, 29dvh, 19rem);
+    margin: 0;
 }
 :root[data-theme="windy-breeze"] .windy-landscape--hero {
     position: absolute;
@@ -222,9 +224,70 @@
     z-index: -1;
 }
 :root[data-theme="windy-breeze"][data-sidebar="collapsed"] .windy-landscape--sidebar { display: none; }
-.windy-landscape--sidebar .windy-turbine--distant { --position: 22%; --hill: 22%; --tower: 1.65rem; --blade: .85rem; }
-.windy-landscape--sidebar .windy-turbine--middle { --position: 49%; --hill: 15%; --tower: 2.2rem; --blade: 1.15rem; }
-.windy-landscape--sidebar .windy-turbine--near { --position: 75%; --hill: 18%; --tower: 3.05rem; --blade: 1.5rem; }
+.windy-landscape--sidebar .windy-turbine--distant { --position: 22%; --hill: 17%; --tower: 2.75rem; --blade: 1.25rem; }
+.windy-landscape--sidebar .windy-turbine--middle { --position: 49%; --hill: 13%; --tower: 3.55rem; --blade: 1.55rem; }
+.windy-landscape--sidebar .windy-turbine--near { --position: 76%; --hill: 17%; --tower: 4.9rem; --blade: 2.15rem; }
+.sidebar > .windy-sidebar-sun {
+    position: absolute;
+    inset: var(--windy-sidebar-sun-top) 12% auto auto;
+    pointer-events: none;
+    width: 2rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fff6bd, #ffce63);
+    box-shadow: 0 0 1.45rem #ffde7290;
+}
+:root[data-sidebar="collapsed"] .sidebar > :is(.windy-sidebar-sun, .windy-sidebar-cloud) { display: none; }
+.windy-sidebar-cloud {
+    position: absolute;
+    top: calc(var(--windy-sidebar-sun-top) + 3.6rem);
+    left: 46%;
+    pointer-events: none;
+    width: 3.4rem;
+    height: .75rem;
+    border-radius: 1rem;
+    background: #eefcffb0;
+}
+.windy-sidebar-cloud::before,
+.windy-sidebar-cloud::after {
+    content: '';
+    position: absolute;
+    bottom: .24rem;
+    left: .55rem;
+    width: 1.2rem;
+    height: .9rem;
+    border-radius: 50%;
+    background: inherit;
+}
+.windy-sidebar-cloud::after { left: 1.42rem; width: 1.45rem; height: 1.15rem; }
+.windy-sidebar-cloud--far { left: 61%; top: calc(var(--windy-sidebar-sun-top) + 2.7rem); opacity: .62; }
+.windy-bird-flock { position: absolute; bottom: 9%; left: 25%; width: 2.8rem; height: .65rem; }
+.windy-bird-flock i { position: absolute; width: .65rem; height: .38rem; color: #143f4c; }
+.windy-bird-flock i:nth-child(2) { left: 1rem; top: .22rem; }
+.windy-bird-flock i:nth-child(3) { left: 2rem; top: -.28rem; }
+.windy-bird-flock i::before,
+.windy-bird-flock i::after {
+    content: '';
+    position: absolute;
+    width: 56%;
+    height: .3rem;
+    border-top: 1.5px solid currentColor;
+    border-radius: 70% 70% 0 0;
+    transform: rotate(24deg);
+}
+.windy-bird-flock i::after { right: 0; transform: rotate(-24deg); }
+@keyframes windySidebarCloud {
+    from { transform: translateX(-1rem); }
+    to { transform: translateX(2rem); }
+}
+/* The flock holds the same position for 3 seconds of the 18-second loop. */
+@keyframes windyFlockFlight {
+    0% { transform: translate(-9rem, -8rem); opacity: 0; }
+    10% { opacity: 1; }
+    33% { transform: translate(3rem, -4rem); }
+    50%, 66.6667% { transform: translate(0, 0); opacity: 1; }
+    92%, 100% { transform: translate(15rem, -9rem); opacity: 0; }
+}
 .windy-landscape--sidebar .windy-turbine::before { inset-inline: -.19rem; }
 .windy-landscape--sidebar .windy-turbine-rotor::after { width: .4rem; height: .4rem; }
 .windy-landscape--sidebar .windy-turbine-rotor i { left: -.2rem; width: .4rem; }
@@ -296,11 +359,14 @@
 @media (prefers-reduced-motion: no-preference) {
     :root[data-theme="windy-breeze"] .windy-turbine-rotor { animation: windyTurbineSpin var(--spin) linear infinite; animation-delay: -2s; }
     :root[data-theme="windy-breeze"] .windy-hero-wind-streak { animation: windy-hero-wind-drift 7s ease-in-out infinite; }
+    :root[data-theme="windy-breeze"] .windy-sidebar-cloud { animation: windySidebarCloud 16s ease-in-out infinite alternate; }
+    :root[data-theme="windy-breeze"] .windy-sidebar-cloud--far { animation-delay: -8s; }
+    :root[data-theme="windy-breeze"] .windy-bird-flock { animation: windyFlockFlight 18s ease-in-out infinite; }
 }
 @media (max-width: 575px) {
     .windy-turbine--near { --position: 83%; --tower: 5.3rem; --blade: 2.4rem; }
     .windy-turbine--middle { --position: 63%; --tower: 3.65rem; --blade: 1.6rem; }
-    .windy-turbine--distant { display: none; }
+    .windy-landscape--hero .windy-turbine--distant { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
     .windy-turbine-rotor, .windy-hero-wind-streak { animation: none; }

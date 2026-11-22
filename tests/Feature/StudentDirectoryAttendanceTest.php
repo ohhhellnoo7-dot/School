@@ -106,6 +106,7 @@ class StudentDirectoryAttendanceTest extends TestCase
         $other = Student::factory()->create();
         foreach ([$child, $other] as $student) Attendance::create(['student_id' => $student->id, 'date' => today(), 'status' => 'present']);
         $this->actingAs($parent)->get(route('students.index'))->assertOk()
-            ->assertViewHas('attendanceCounts', ['total' => 1, 'present' => 1, 'absent' => 0, 'late' => 0, 'excused' => 0, 'unrecorded' => 0]);
+            ->assertViewHas('children', fn ($children) => $children->count() === 1 && $children->first()->is($child))
+            ->assertSee('Present');
     }
 }

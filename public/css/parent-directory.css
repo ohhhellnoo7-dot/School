@@ -16,15 +16,51 @@
 :root:root:root .parents-page .directory-panel{border:1px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:0 8px 28px var(--shadow-color)}
 :root:root:root .parents-page .panel-header{padding:20px 24px 16px}
 :root:root:root .parents-page .panel-header h2{font-size:16px}
-:root:root:root .parents-page .filter-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px!important;align-items:end;padding:0 24px 22px!important}
-.parents-page .filter-grid>div{min-width:0;width:auto!important}
-.parents-page .directory-search-field{order:-1;grid-column:span 2}
-.parents-page .filter-grid .form-label{font-size:11px;font-weight:600;margin-bottom:5px}
-:root:root:root .parents-page .filter-grid :is(.form-control,.form-select){font-size:12px;min-height:44px;border-radius:13px;background-color:var(--surface);border-color:var(--border);width:100%}
-.parents-page .filter-grid>div:last-child{grid-column:span 2;justify-content:flex-end}
-:root:root:root .parents-page .filter-grid .btn{min-height:44px;border-radius:13px;padding:10px 24px;font-size:12px}
+.parent-filter-toolbar {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    align-items: end;
+    gap: .75rem;
+    margin: 0 clamp(.75rem, 2vw, 1.5rem) 1rem;
+    padding: .875rem;
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--soft);
+}
+.parent-filter-toolbar > div { min-width: 0; }
+.parent-filter-search { grid-column: span 3; }
+.parent-filter-date { grid-column: span 2; }
+.parent-filter-toolbar .form-label {
+    display: block;
+    margin-bottom: .25rem;
+    color: var(--text-secondary);
+    font-size: .75rem;
+    font-weight: 650;
+}
+.parents-page .parent-filter-toolbar :is(.form-control, .form-select, .input-group .btn) {
+    min-height: 2.5rem;
+    border-color: var(--border);
+    font-size: .875rem;
+}
+.parent-filter-reset {
+    grid-column: span 2;
+    justify-self: end;
+    align-self: end;
+    padding: .625rem .5rem;
+    color: var(--text-primary);
+    font-size: .875rem;
+    white-space: nowrap;
+}
+@media (max-width: 1399px) {
+    .parent-filter-toolbar { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .parent-filter-search { grid-column: span 2; }
+    .parent-filter-date, .parent-filter-reset { grid-column: span 1; }
+}
+@media (max-width: 767px) {
+    .parent-filter-toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 :root:root:root .parents-page .table th{background:var(--soft);padding:14px 16px;border:0;font-size:10px;text-transform:uppercase;letter-spacing:.35px}
 :root:root:root .parents-page .table td{padding:12px 16px;vertical-align:middle;font-size:12px;border-color:var(--border)}
 .parents-page .field-name{font-weight:650;color:var(--ink)}
 @media(max-width:1199px){.parents-page .parent-summary{gap:10px}.parents-page .parent-stat{padding:15px;gap:10px}.parents-page .parent-stat-icon{width:38px;height:38px;font-size:22px}}
-@media(max-width:767px){.parents-page .parent-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.parents-page .parent-stat h2{font-size:10px}.parents-page .parent-stat strong{font-size:26px}.parents-page .parent-hero>div{max-width:100%}:root:root:root .parents-page .parent-hero{min-height:220px;flex-direction:column;align-items:flex-start;padding:20px;gap:18px}.parents-page .parent-hero .btn{align-self:flex-start}:root:root:root .parents-page .filter-grid{grid-template-columns:repeat(2,minmax(0,1fr));padding:0 18px 18px!important}.parents-page .directory-search-field{grid-column:1/-1}.parents-page .filter-grid>div:last-child{grid-column:1/-1}.parents-page .filter-grid>div:last-child .btn{flex:1}}
+@media(max-width:767px){.parents-page .parent-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.parents-page .parent-stat h2{font-size:10px}.parents-page .parent-stat strong{font-size:26px}.parents-page .parent-hero>div{max-width:100%}:root:root:root .parents-page .parent-hero{min-height:220px;flex-direction:column;align-items:flex-start;padding:20px;gap:18px}.parents-page .parent-hero .btn{align-self:flex-start}}

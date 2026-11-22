@@ -1,0 +1,631 @@
+.enrollment-payment {
+    container-type: inline-size;
+    color: var(--text-primary);
+}
+
+.enrollment-hero {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    align-content: space-between;
+    gap: 1.1rem;
+    min-height: 240px;
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 1rem;
+    border-radius: var(--card-radius);
+    background:
+        radial-gradient(ellipse at 85% 5%, color-mix(in srgb, var(--accent) 32%, transparent), transparent 67%),
+        linear-gradient(130deg, var(--hero-veil), color-mix(in srgb, var(--primary) 10%, var(--app-bg)));
+    overflow: hidden;
+}
+
+.enrollment-hero-art {
+    position: absolute;
+    z-index: -1;
+    inset: 0 9% 1.1rem auto;
+    width: 42%;
+    height: calc(100% - 1.1rem);
+    object-fit: contain;
+    pointer-events: none;
+}
+
+.enrollment-heading {
+    max-width: 52%;
+}
+
+.enrollment-status, .enrollment-student, .enrollment-programs,
+.enrollment-programs li, .enrollment-profile, .enrollment-card-heading,
+.enrollment-row-label, .enrollment-payment-notes li {
+    display: flex;
+    align-items: center;
+}
+
+.enrollment-status {
+    gap: .55rem;
+    margin-bottom: .4rem;
+    color: var(--action);
+    font-size: .79rem;
+    font-weight: 800;
+    letter-spacing: .075em;
+    text-transform: uppercase;
+}
+
+.enrollment-status i {
+    display: grid;
+    place-items: center;
+    width: 1.65rem;
+    aspect-ratio: 1;
+    color: var(--surface);
+    background: var(--success);
+    border-radius: 50%;
+    font-size: 1rem;
+}
+
+.enrollment-heading h1 {
+    margin: 0 0 .5rem;
+    color: var(--text-primary);
+    font-size: clamp(2rem, 4.25cqw, 3.35rem);
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -.04em;
+}
+
+.enrollment-heading p, .enrollment-card-heading p,
+.enrollment-student small, .enrollment-payment-notes small, .enrollment-help {
+    color: var(--text-secondary);
+}
+
+.enrollment-heading p, .enrollment-card-heading p {
+    margin: 0;
+}
+
+.enrollment-heading p {
+    font-size: 1.02rem;
+}
+
+.enrollment-student-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .85rem 1.3rem;
+}
+
+.enrollment-student {
+    gap: .7rem;
+}
+
+.enrollment-student strong, .enrollment-student small,
+.enrollment-payment-notes strong, .enrollment-payment-notes small {
+    display: block;
+}
+
+.enrollment-student strong {
+    font-size: 1.15rem;
+    line-height: 1.25;
+}
+
+.enrollment-programs {
+    flex-wrap: wrap;
+    list-style: none;
+    gap: .5rem;
+    padding: 0;
+    margin: 0;
+}
+
+.enrollment-programs li, .enrollment-profile {
+    gap: .45rem;
+    padding: .6rem .86rem;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: var(--surface);
+    font-size: .82rem;
+    font-weight: 700;
+}
+
+.enrollment-programs i, .enrollment-profile {
+    color: var(--action);
+}
+
+.enrollment-programs i, .enrollment-profile i {
+    font-size: 1.05rem;
+}
+
+.enrollment-profile {
+    margin-inline-start: auto;
+    text-decoration: none;
+}
+
+.enrollment-profile:hover {
+    color: var(--action);
+    background: var(--surface-tint);
+    border-color: var(--action);
+}
+
+.enrollment-payment-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
+    gap: clamp(1rem, 2cqw, 1.8rem);
+}
+
+.enrollment-card {
+    min-width: 0;
+    padding: clamp(1rem, 2cqw, 1.8rem);
+    border: 1px solid var(--border-color);
+    border-radius: var(--card-radius);
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+}
+
+.enrollment-card:only-child {
+    grid-column: 1 / -1;
+}
+
+.enrollment-card-heading {
+    gap: clamp(.7rem, 1.5cqw, 1.25rem);
+    margin-bottom: .9rem;
+}
+
+.enrollment-tuition-heading {
+    padding: .6rem;
+    margin: -.6rem -.6rem .2rem;
+    border-radius: 17px;
+    background: radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 65%);
+}
+
+.enrollment-card-heading h2 {
+    margin: 0 0 .2rem;
+    color: var(--text-primary);
+    font-size: clamp(1.2rem, 2cqw, 1.65rem);
+    font-weight: 800;
+    letter-spacing: -.025em;
+}
+
+.enrollment-icon {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: clamp(2.65rem, 4.9cqw, 4.1rem);
+    aspect-ratio: 1;
+    border-radius: 26%;
+    background: color-mix(in srgb, var(--primary) 12%, var(--surface));
+    color: var(--action);
+    font-size: clamp(1.3rem, 2.5cqw, 2rem);
+}
+
+.enrollment-icon-fee {
+    background: var(--warning-soft);
+    color: var(--warning);
+}
+
+.enrollment-tuition {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 .65rem;
+    margin-bottom: -.65rem;
+}
+
+.enrollment-tuition th, .enrollment-tuition td {
+    padding: .65rem .85rem;
+    background: var(--info-soft);
+    color: var(--text-primary);
+    vertical-align: middle;
+}
+
+.enrollment-tuition th {
+    border-radius: 14px 0 0 14px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.enrollment-tuition td {
+    border-radius: 0 14px 14px 0;
+    font-weight: 800;
+    text-align: end;
+    white-space: nowrap;
+}
+
+.enrollment-row-label {
+    gap: .65rem;
+}
+
+.enrollment-row-label i {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 2.3rem;
+    aspect-ratio: 1;
+    border-radius: .75rem;
+    background: color-mix(in srgb, var(--primary) 17%, var(--surface));
+    color: var(--action);
+    font-size: 1.25rem;
+}
+
+.enrollment-tuition-alternate th, .enrollment-tuition-alternate td {
+    background: var(--violet-soft);
+}
+
+.enrollment-tuition-alternate i {
+    background: color-mix(in srgb, var(--violet) 17%, var(--surface));
+    color: var(--violet);
+}
+
+.enrollment-tuition-extra th, .enrollment-tuition-extra td {
+    font-size: .88rem;
+}
+
+.enrollment-tuition tfoot th, .enrollment-tuition tfoot td, .enrollment-total {
+    padding: .8rem .85rem;
+    background: var(--success-soft);
+    color: var(--success);
+    font-weight: 800;
+}
+
+.enrollment-tuition tfoot td {
+    font-size: clamp(1.05rem, 2cqw, 1.6rem);
+}
+
+.enrollment-total {
+    margin: .85rem 0 0;
+    border-radius: 14px;
+}
+
+.enrollment-method-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.enrollment-methods {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .7rem;
+    min-width: 0;
+    margin: .25rem 0 1.2rem;
+}
+
+.enrollment-method {
+    position: relative;
+    display: flex;
+    cursor: pointer;
+}
+
+.enrollment-method-option {
+    position: relative;
+    display: grid;
+    flex: 1;
+    place-content: center;
+    justify-items: center;
+    gap: .4rem;
+    min-height: 108px;
+    padding: .8rem .4rem;
+    border: 2px solid var(--border-color);
+    border-radius: 17px;
+    background: var(--surface-tint);
+    color: var(--text-primary);
+    font-weight: 800;
+}
+
+.enrollment-method-icon {
+    color: var(--action);
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.enrollment-method .bi-cash-stack {
+    color: var(--success);
+}
+
+.enrollment-method-indicator {
+    position: absolute;
+    inset: .55rem .55rem auto auto;
+    display: grid;
+    place-items: center;
+    width: 1.3rem;
+    aspect-ratio: 1;
+    border: 2px solid var(--text-secondary);
+    border-radius: 50%;
+}
+
+.enrollment-method-indicator i {
+    visibility: hidden;
+    font-size: .8rem;
+    line-height: 1;
+}
+
+.enrollment-method input:checked + .enrollment-method-option {
+    border-color: var(--action);
+    background: var(--success-soft);
+}
+
+.enrollment-method input:checked + .enrollment-method-option .enrollment-method-indicator {
+    border-color: var(--action);
+    background: var(--action);
+    color: var(--on-action);
+}
+
+.enrollment-method input:checked + .enrollment-method-option .enrollment-method-indicator i {
+    visibility: visible;
+}
+
+.enrollment-method:hover .enrollment-method-option {
+    border-color: var(--action);
+}
+
+.enrollment-method input:focus-visible + .enrollment-method-option {
+    outline: 3px solid var(--primary);
+    outline-offset: 3px;
+}
+
+.enrollment-continue {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .65rem;
+    width: 100%;
+    min-height: 52px;
+    padding: .65rem .8rem;
+    margin-top: auto;
+    border: 1px solid var(--action);
+    border-radius: 17px;
+    background: var(--action);
+    background-image: linear-gradient(to bottom, color-mix(in srgb, var(--action) 90%, var(--accent)), var(--action));
+    color: var(--on-action);
+    font-weight: 800;
+}
+
+.enrollment-continue:hover:not(:disabled) {
+    filter: brightness(.93);
+}
+
+/* Keep the action text color when the payment button is a link. */
+:root:root:root:root a.enrollment-continue {
+    color: var(--on-action);
+}
+
+.enrollment-continue:disabled {
+    cursor: wait;
+    opacity: .75;
+}
+
+.enrollment-payment-notes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: .85rem 1.15rem;
+    margin: 1.2rem 0 0;
+    border: 1px solid var(--border-color);
+    border-radius: var(--card-radius);
+    background: color-mix(in srgb, var(--surface) 77%, var(--hero-veil));
+    list-style: none;
+}
+
+.enrollment-payment-notes li {
+    gap: .65rem;
+    padding: .35rem .75rem;
+}
+
+.enrollment-payment-notes li + li {
+    border-inline-start: 1px solid var(--border-color);
+}
+
+.enrollment-payment-notes .enrollment-icon {
+    width: 2.75rem;
+    font-size: 1.35rem;
+}
+
+.enrollment-icon-confirmation {
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+@container (max-width: 780px) {
+    .enrollment-payment-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .enrollment-hero-art {
+        inset-inline-end: 0;
+        width: 39%;
+    }
+
+    .enrollment-profile {
+        margin-inline-start: 0;
+    }
+}
+
+@container (max-width: 525px) {
+    .enrollment-hero {
+        min-height: auto;
+        padding: 1rem;
+    }
+
+    .enrollment-heading {
+        max-width: none;
+    }
+
+    .enrollment-hero-art {
+        display: none;
+    }
+
+    .enrollment-student-row {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .enrollment-row-label i {
+        display: none;
+    }
+
+    .enrollment-tuition th, .enrollment-tuition td {
+        padding-inline: .55rem;
+    }
+
+    .enrollment-payment-notes {
+        grid-template-columns: 1fr;
+    }
+
+    .enrollment-payment-notes li + li {
+        border-inline-start: 0;
+        border-block-start: 1px solid var(--border-color);
+        margin-top: .4rem;
+        padding-top: .7rem;
+    }
+}
+
+.fee-payment-hero .enrollment-status i {
+    color: var(--on-action);
+    background: var(--action);
+}
+
+.fee-payment-progress {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .45rem;
+    padding: .5rem;
+    margin: 0 0 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--card-radius);
+    background: var(--surface);
+    list-style: none;
+}
+
+.fee-payment-progress li {
+    display: flex;
+    gap: .6rem;
+    align-items: center;
+    padding: .55rem .7rem;
+    border: 1px solid transparent;
+    border-radius: calc(var(--card-radius) * .65);
+    color: var(--text-secondary);
+    font-size: .88rem;
+    font-weight: 700;
+}
+
+.fee-payment-progress li[aria-current="step"] {
+    border-color: var(--action);
+    color: var(--action);
+    background: var(--info-soft);
+}
+
+.fee-payment-step {
+    display: grid;
+    flex: 0 0 auto;
+    width: 1.65rem;
+    aspect-ratio: 1;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--surface-tint);
+}
+
+.fee-payment-progress .is-complete .fee-payment-step {
+    color: var(--success);
+    background: var(--success-soft);
+}
+
+.fee-payment-progress li[aria-current="step"] .fee-payment-step {
+    color: var(--on-action);
+    background: var(--action);
+}
+
+.fee-payment-grid {
+    align-items: start;
+}
+
+.fee-invoice-number {
+    overflow-wrap: anywhere;
+    font-size: .88rem;
+}
+
+.fee-payment-total {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: .3rem .8rem;
+}
+
+.fee-payment-total strong {
+    font-size: clamp(1.3rem, 2.4cqw, 2rem);
+}
+
+.fee-payment-total-due {
+    color: var(--action);
+    background: var(--info-soft);
+}
+
+.fee-payment-instructions, .fee-payment-message {
+    padding: .85rem 1rem;
+    margin-bottom: 1rem;
+    border-radius: 14px;
+    background: var(--surface-tint);
+    overflow-wrap: anywhere;
+}
+
+.fee-payment-instructions h3, .fee-payment-admin h3 {
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.fee-payment-instructions p:last-child, .fee-payment-details form {
+    margin-bottom: 0;
+}
+
+.fee-payment-instructions ol {
+    padding-inline-start: 1.25rem;
+}
+
+.fee-payment-instructions li + li {
+    margin-top: .35rem;
+}
+
+.fee-payment-qr {
+    display: block;
+    width: min(100%, 310px);
+    max-height: 480px;
+    object-fit: contain;
+    margin: 0 auto 1rem;
+    border-radius: 14px;
+}
+
+.fee-payment-success {
+    color: var(--success);
+    background: var(--success-soft);
+}
+
+.fee-payment-admin, .fee-payment-details {
+    padding-top: 1rem;
+    margin-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.fee-payment-details summary {
+    width: fit-content;
+    color: var(--action);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.fee-payment-details[open] summary {
+    margin-bottom: .85rem;
+}
+
+.fee-payment-receipts {
+    padding: 0;
+    list-style: none;
+}
+
+.fee-payment-receipts li {
+    display: grid;
+    gap: .3rem;
+    padding: .7rem 0;
+    border-bottom: 1px solid var(--border-color);
+    overflow-wrap: anywhere;
+}
+
+@container (max-width: 560px) {
+    .fee-payment-progress {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .fee-payment-progress li {
+        padding-block: .35rem;
+    }
+}

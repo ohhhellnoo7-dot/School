@@ -54,6 +54,7 @@ class ProfileController extends Controller
         $viewer = $request->user();
         $students = \App\Models\Student::visibleTo($viewer);
         $visible = $viewer->id === $user->id || $viewer->role === 'administrator'
+            || (in_array($viewer->role, \App\Models\User::STAFF_ROLES, true) && $viewer->children()->where('user_id', $user->id)->exists())
             || (clone $students)->where(fn ($q) => $q->where('user_id', $user->id)->orWhere('parent_id', $user->id))->exists()
             || ($user->role === 'teacher' && (
                 \App\Support\SchoolModules::subjects($viewer)->where('teacher_id', $user->id)->exists()

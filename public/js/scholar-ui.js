@@ -126,7 +126,7 @@
         link.title = label;
     });
     // Keep navigation context while the document itself scrolls independently.
-    const navigation = document.querySelector('.school-nav');
+    const navigation = document.querySelector('[data-school-nav-scroll]');
     if (navigation) {
         const key = 'scholar-navigation-scroll';
         try { navigation.scrollTop = Number(sessionStorage.getItem(key)) || 0; } catch (_) {}

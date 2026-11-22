@@ -15,17 +15,63 @@
 @endif
 @endunless
 </div>@endforeach
-<div class="col-md-6"><label class="form-label" for="gender">Gender *</label><select class="form-select" id="gender" name="gender" required><option value="">Select gender</option>@foreach(['female', 'male', 'other'] as $gender)<option value="{{ $gender }}" @selected(old('gender', $student->gender) === $gender)>{{ ucfirst($gender) }}</option>@endforeach</select></div><div class="col-12"><label class="form-label" for="address">Address</label>@include('school.partials.address-options', ['addressId' => 'address'])<textarea class="form-control" rows="3" name="address" id="address">{{ old('address', $student->address) }}</textarea></div><div class="col-12"><label class="form-label" for="photo">Profile photo</label><input class="form-control" type="file" name="photo" id="photo" accept="image/png,image/jpeg,image/webp"><small class="text-secondary">JPG, PNG, or WebP. Maximum 2 MB.</small></div></div></section>
-<section class="panel p-4"><h2 class="section-title"><i class="bi bi-people me-2 text-success"></i>Parent & guardian</h2><div class="row g-3">@foreach(['guardian_name' => 'Guardian name', 'guardian_phone' => 'Guardian phone'] as $field => $label)<div class="col-md-6"><label class="form-label" for="{{ $field }}">{{ __($label) }} *</label><input class="form-control" id="{{ $field }}" name="{{ $field }}" value="{{ old($field, $student->$field) }}" required></div>@endforeach<div class="col-md-6"><label class="form-label" for="guardian_gender">Parent gender</label><select class="form-select @error('guardian_gender') is-invalid @enderror" id="guardian_gender" name="guardian_gender"><option value="">Select parent gender</option>@foreach(['female', 'male', 'other'] as $parentGender)<option value="{{ $parentGender }}" @selected(old('guardian_gender', $student->parent?->gender) === $parentGender)>{{ ucfirst($parentGender) }}</option>@endforeach</select>@error('guardian_gender')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+<div class="col-md-6"><label class="form-label" for="gender">Gender *</label><select class="form-select" id="gender" name="gender" required><option value="">Select gender</option>@foreach(['female', 'male', 'other'] as $gender)<option value="{{ $gender }}" @selected(old('gender', $student->gender) === $gender)>{{ ucfirst($gender) }}</option>@endforeach</select></div><div class="col-12"><label class="form-label" for="address">Address</label>@include('school.partials.address-options', ['addressId' => 'address', 'sameAsAddressId' => 'guardian_address', 'sameAsAddressLabel' => 'Same as parent address'])<textarea class="form-control" rows="3" name="address" id="address">{{ old('address', $student->address) }}</textarea></div><div class="col-12"><label class="form-label" for="photo">Profile photo</label><input class="form-control" type="file" name="photo" id="photo" accept="image/png,image/jpeg,image/webp"><small class="text-secondary">JPG, PNG, or WebP. Maximum 2 MB.</small></div></div></section>
+<section class="panel p-4">
+    <div class="section-title d-flex flex-wrap align-items-center gap-3">
+        <h2 class="fs-6 fw-semibold mb-0"><i class="bi bi-people me-2 text-success" aria-hidden="true"></i>{{ __('Parent & guardian') }}</h2>
+        <button type="button" id="guardian-employee-toggle" class="btn btn-sm btn-outline-secondary" aria-expanded="false" aria-controls="guardian-employee-picker">
+            <i class="bi bi-person-badge me-1" aria-hidden="true"></i>{{ __('Employee') }}
+        </button>
+    </div>
+    <div id="guardian-employee-picker" class="border rounded-3 p-3 mb-3" hidden>
+        <label for="guardian-employee-search" class="form-label">{{ __('Search employees by name') }}</label>
+        <input type="search" id="guardian-employee-search" class="form-control" autocomplete="off" aria-controls="guardian-employee-results">
+        <div id="guardian-employee-count" class="small text-secondary my-2" role="status"></div>
+        <div id="guardian-employee-results" class="list-group overflow-auto" style="max-height: 15rem"></div>
+    </div>
+    <div class="row g-3">@foreach(['guardian_name' => 'Guardian name', 'guardian_phone' => 'Guardian phone'] as $field => $label)<div class="col-md-6"><label class="form-label" for="{{ $field }}">{{ __($label) }} *</label><input class="form-control" id="{{ $field }}" name="{{ $field }}" value="{{ old($field, $student->$field) }}" required></div>@endforeach<div class="col-md-6"><label class="form-label" for="guardian_gender">Parent gender</label><select class="form-select @error('guardian_gender') is-invalid @enderror" id="guardian_gender" name="guardian_gender"><option value="">Select parent gender</option>@foreach(['female', 'male', 'other'] as $parentGender)<option value="{{ $parentGender }}" @selected(old('guardian_gender', $student->parent?->gender) === $parentGender)>{{ ucfirst($parentGender) }}</option>@endforeach</select>@error('guardian_gender')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
 <div class="col-md-6"><label class="form-label">Parent profile number</label><input class="form-control" readonly aria-label="Parent profile number" value="{{ $student->parent?->profile_number }}" placeholder="Assigned automatically when registered"></div>
-<div class="col-12"><label class="form-label" for="guardian_address">Parent address</label>@include('school.partials.address-options', ['addressId' => 'guardian_address', 'sameAsAddressId' => 'address'])<textarea class="form-control @error('guardian_address') is-invalid @enderror" id="guardian_address" name="guardian_address" rows="3">{{ old('guardian_address', $student->parent?->address) }}</textarea>@error('guardian_address')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
-<div class="col-md-6"><label class="form-label" for="guardian_relationship">Relationship</label><select class="form-select" id="guardian_relationship" name="guardian_relationship"><option value="">{{ __('Not recorded') }}</option>@foreach(['father', 'mother', 'guardian'] as $relationship)<option value="{{ $relationship }}" @selected(old('guardian_relationship', $student->guardian_relationship) === $relationship)>{{ ucfirst($relationship) }}</option>@endforeach</select></div>
+<div class="col-12"><label class="form-label" for="guardian_address">Parent address</label>@include('school.partials.address-options', ['addressId' => 'guardian_address', 'sameAsAddressId' => 'address', 'sameAsAddressLabel' => 'Same as student address'])<textarea class="form-control @error('guardian_address') is-invalid @enderror" id="guardian_address" name="guardian_address" rows="3">{{ old('guardian_address', $student->parent?->address) }}</textarea>@error('guardian_address')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+<div class="col-md-6">
+    @php
+        $relationshipOptions = ['father', 'mother', 'guardian', 'brother', 'sister'];
+        $savedRelationship = old('guardian_relationship', $student->guardian_relationship);
+        $selectedRelationship = strtolower($savedRelationship ?? '');
+        $customRelationship = $selectedRelationship !== '' && !in_array($selectedRelationship, $relationshipOptions, true);
+    @endphp
+    <label class="form-label" for="guardian_relationship">{{ __('Relationship') }}</label>
+    <select class="form-select @error('guardian_relationship') is-invalid @enderror" id="guardian_relationship" name="guardian_relationship">
+        <option value="">{{ __('Not recorded') }}</option>
+        @foreach($relationshipOptions as $relationship)
+            <option value="{{ $relationship }}" @selected($selectedRelationship === $relationship)>{{ __(ucfirst($relationship)) }}</option>
+        @endforeach
+        <option value="__custom" @selected($customRelationship)>{{ __('Enter my own') }}</option>
+    </select>
+    @error('guardian_relationship')<div class="invalid-feedback">{{ $message }}</div>@enderror
+    <div id="guardian-custom-relationship-field" class="mt-2" @if(!$customRelationship) hidden @endif>
+        <label class="form-label" for="guardian_custom_relationship">{{ __('Custom relationship') }}</label>
+        <input class="form-control @error('guardian_custom_relationship') is-invalid @enderror" id="guardian_custom_relationship" name="guardian_custom_relationship" maxlength="100" value="{{ old('guardian_custom_relationship', $customRelationship && $selectedRelationship !== '__custom' ? $savedRelationship : '') }}">
+        @error('guardian_custom_relationship')<div class="invalid-feedback">{{ $message }}</div>@enderror
+    </div>
+</div>
 @unless($student->exists)
-<div class="col-md-6"><label class="form-label" for="guardian_email">Parent email *</label><input class="form-control @error('guardian_email') is-invalid @enderror" type="email" name="guardian_email" id="guardian_email" value="{{ old('guardian_email') }}" required>@error('guardian_email')<div class="invalid-feedback">{{ $message }}</div>@enderror<small class="text-secondary">Creates or links the parent account automatically by email.</small></div>
-<div class="col-md-6"><label class="form-label" for="parent_password">Parent password</label><input class="form-control @error('parent_password') is-invalid @enderror" type="text" name="parent_password" id="parent_password" minlength="3" maxlength="255" autocomplete="off">@error('parent_password')<div class="invalid-feedback">{{ $message }}</div>@enderror<small class="text-secondary">Leave blank to generate a 6-digit password. Existing accounts keep their password.</small></div>
+<div class="col-md-6"><label class="form-label" for="guardian_email">Parent email *</label><input class="form-control @error('guardian_email') is-invalid @enderror" type="email" name="guardian_email" id="guardian_email" value="{{ old('guardian_email') }}" required>@error('guardian_email')<div class="invalid-feedback">{{ $message }}</div>@enderror<small class="text-secondary">Enter a school email to link an existing staff account, or enter a parent email to create or link a parent account.</small></div>
+<div class="col-md-6">
+    <div id="guardian-new-password">
+        <label class="form-label" for="parent_password">{{ __('Parent password') }}</label>
+        <input class="form-control @error('parent_password') is-invalid @enderror" type="text" name="parent_password" id="parent_password" minlength="3" maxlength="255" autocomplete="off">
+        @error('parent_password')<div class="invalid-feedback">{{ $message }}</div>@enderror
+        <small class="text-secondary">{{ __('Leave blank to generate a 6-digit password.') }}</small>
+    </div>
+    <div id="guardian-existing-password" role="status" hidden>
+        <div class="form-label">{{ __('Parent password') }}</div>
+        <div class="form-control"><i class="bi bi-lock me-2" aria-hidden="true"></i>{{ __('Uses existing password') }}</div>
+        <small class="text-secondary">{{ __('The guardian signs in with their current account.') }}</small>
+    </div>
+</div>
 @endunless
 <div class="col-12"><label class="form-label" for="parent_photo">Parent profile photo</label><input class="form-control @error('parent_photo') is-invalid @enderror" type="file" name="parent_photo" id="parent_photo" accept="image/png,image/jpeg,image/webp">@error('parent_photo')<div class="invalid-feedback">{{ $message }}</div>@enderror<small class="text-secondary">JPG, PNG, or WebP. Maximum 2 MB.</small>@if($student->exists && $student->parent?->profile_photo_url)<div class="mt-2"><img src="{{ $student->parent->profile_photo_url }}" alt="Parent profile photo" class="rounded" width="64" height="64" style="object-fit:cover"></div>@endif</div>
-<div class="col-12"><label class="form-label" for="parent_id">Linked parent account</label><label class="visually-hidden" for="parent_id-search">Search parent accounts by email</label><input class="form-control mb-2" type="search" id="parent_id-search" data-account-search="parent_id" data-email-field="guardian_email" placeholder="Search parent email?" autocomplete="off" aria-controls="parent_id-results"><div id="parent_id-results" class="list-group mb-2" style="max-height:240px;overflow-y:auto" hidden></div><div id="parent_id-status" class="small text-secondary" role="status"></div><select class="form-select" name="parent_id" id="parent_id"><option value="">{{ $student->exists ? 'No parent account linked' : 'Automatically link by parent email' }}</option>@foreach($parents as $parent)<option value="{{ $parent->id }}" data-email="{{ $parent->email }}" data-gender="{{ $parent->gender }}" data-phone="{{ $parent->phone }}" data-address="{{ $parent->address }}" data-profile-number="{{ $parent->profile_number }}" @selected(old('parent_id', $student->parent_id) == $parent->id)>{{ $parent->name }} · {{ $parent->email }}</option>@endforeach</select><small class="text-secondary">Linked parents can view this child's records in their portal.</small></div></div></section></div>
+<div class="col-12"><label class="form-label" for="parent_id">Linked guardian account</label>@error('parent_id')<div class="text-danger small mb-2">{{ $message }}</div>@enderror<label class="visually-hidden" for="parent_id-search">Search parent and staff accounts by email</label><input class="form-control mb-2" type="search" id="parent_id-search" data-account-search="parent_id" data-email-field="guardian_email" placeholder="Search parent or staff email" autocomplete="off" aria-controls="parent_id-results"><div id="parent_id-results" class="list-group mb-2" style="max-height:240px;overflow-y:auto" hidden></div><div id="parent_id-status" class="small text-secondary" role="status"></div><select class="form-select" name="parent_id" id="parent_id"><option value="">{{ $student->exists ? 'No parent account linked' : 'Automatically link by parent email' }}</option>@foreach($parents as $parent)<option value="{{ $parent->id }}" data-email="{{ $parent->email }}" data-gender="{{ $parent->gender }}" data-phone="{{ $parent->phone }}" data-address="{{ $parent->address }}" data-profile-number="{{ $parent->profile_number }}" data-name="{{ $parent->name }}" @if(in_array($parent->role, \App\Models\User::STAFF_ROLES, true)) data-employee @endif @selected(old('parent_id', $student->parent_id) == $parent->id)>{{ $parent->name }} · {{ $parent->email }} ({{ __(ucfirst($parent->role)) }})</option>@endforeach</select><small class="text-secondary">Staff can view linked students under My children using their school login.</small></div></div></section></div>
 <div class="col-lg-4"><section class="panel p-4"><h2 class="section-title"><i class="bi bi-building me-2 text-success"></i>School information</h2><div class="mb-3">@include('school.students.class-picker')@include('school.students._study-sessions')</div><div class="mb-3"><label class="form-label" for="enrollment_date">Enrollment date *</label><input type="date" id="enrollment_date" name="enrollment_date" class="form-control" value="{{ old('enrollment_date', $student->enrollment_date?->format('Y-m-d') ?? now()->format('Y-m-d')) }}" required></div><div class="mb-3"><label class="form-label" for="status">Status *</label><select class="form-select" name="status" id="status">@foreach(['active', 'inactive', 'graduated'] as $status)<option value="{{ $status }}" @selected(old('status', $student->status ?? 'active') === $status)>{{ __(ucfirst($status)) }}</option>@endforeach</select></div><div class="mb-4"><label class="form-label" for="user_id">Linked student account</label><label class="visually-hidden" for="user_id-search">Search student accounts by email</label><input class="form-control mb-2" type="search" id="user_id-search" data-account-search="user_id" data-email-field="email" placeholder="Search student email?" autocomplete="off" aria-controls="user_id-results"><div id="user_id-results" class="list-group mb-2" style="max-height:240px;overflow-y:auto" hidden></div><div id="user_id-status" class="small text-secondary" role="status"></div><select class="form-select" name="user_id" id="user_id"><option value="">{{ $student->exists ? 'No account linked' : 'Automatically link by student email' }}</option>@foreach($accounts as $account)<option value="{{ $account->id }}" data-email="{{ $account->email }}" @selected(old('user_id', $student->user_id) == $account->id)>{{ $account->name }} · {{ $account->email }}</option>@endforeach</select></div><button class="btn btn-primary w-100"><i class="bi bi-check2 me-2"></i>{{ $student->exists ? 'Save changes' : 'Enroll student' }}</button><a href="{{ route('students.index') }}" class="btn btn-light w-100 mt-2">Cancel</a></section><div class="mt-3 px-2 text-secondary small"><i class="bi bi-shield-check me-1"></i>Student information is visible only to authorized school members and linked accounts.</div></div></div></form>
 @endsection
 
@@ -37,6 +83,23 @@
 
 @push('scripts')
 <script src="{{ asset('js/account-search.js') }}?v={{ filemtime(public_path('js/account-search.js')) }}"></script>
+<script>
+    (() => {
+        const relationship = document.getElementById('guardian_relationship');
+        const field = document.getElementById('guardian-custom-relationship-field');
+        const input = document.getElementById('guardian_custom_relationship');
+        const sync = () => {
+            const custom = relationship.value === '__custom';
+            field.hidden = !custom;
+            input.required = custom;
+        };
+        relationship.addEventListener('change', () => {
+            sync();
+            if (!field.hidden) input.focus();
+        });
+        sync();
+    })();
+</script>
 @endpush
 
 @push('scripts')

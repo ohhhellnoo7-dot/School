@@ -50,12 +50,12 @@
         box-shadow: 0 5px 14px #153d541c;
     }
     .attendance-summary-icon {
+        --medallion-color: var(--attendance-accent);
         display: grid;
         place-items: center;
         flex: 0 0 2.45rem;
         height: 2.45rem;
         border-radius: 50%;
-        background: var(--attendance-accent);
         color: white;
         font-size: 1.2rem;
     }
@@ -135,7 +135,8 @@
     .student-attendance-panel .pagination { gap: .25rem; }
     .student-attendance-panel .pagination .page-link { border-radius: .6rem; }
 
-    .teacher-dashboard-hero .btn { margin-top: .75rem; border-radius: .75rem; }
+    .teacher-dashboard-actions { margin-top: .75rem; }
+    .teacher-dashboard-actions .btn { border-radius: .75rem; }
     #teacher-dashboard-heading {
         font-family: Manrope, 'DM Sans', sans-serif;
         font-size: clamp(1.45rem, 2.5vw, 2.25rem);
@@ -144,24 +145,44 @@
         letter-spacing: -.035em;
     }
     .teacher-greeting-emoji { font-size: .8em; margin-inline-start: .15em; white-space: nowrap; }
-    .teacher-workspace-design .teacher-dashboard-metric {
-        --metric-ink: #134b89;
-        --metric-tint: #daefff;
-        --metric-accent: #1487dc;
-        border: 1px solid var(--metric-tint);
-        border-radius: 1.15rem;
-        background: linear-gradient(155deg, #fff, var(--metric-tint));
-        box-shadow: 0 6px 16px #153d5421;
+    .scholar-workspace.teacher-workspace-design .dashboard-metrics .teacher-dashboard-metric {
+        --metric-tint: #52ada7;
+        min-height: 8rem;
+        gap: clamp(.75rem, 1.55vw, 1.55rem);
+        padding: 1rem clamp(.875rem, 1.3vw, 1.35rem);
+        border: 1px solid #bce5e0;
+        border-radius: 2rem;
+        background: linear-gradient(115deg, #fcfefe, #e2f2f0);
+        box-shadow: 0 7px 18px #217e7426;
     }
-    .teacher-workspace-design .teacher-dashboard-metric--building { --metric-ink: #086238; --metric-tint: #d8f9e6; --metric-accent: #098647; }
-    .teacher-workspace-design .teacher-dashboard-metric--book { --metric-ink: #6324a2; --metric-tint: #eee2fc; --metric-accent: #8339d1; }
-    .teacher-workspace-design .teacher-dashboard-metric .dashboard-metric-icon {
-        color: #fff;
-        background: var(--metric-accent);
-        border-radius: 50%;
-        box-shadow: 0 4px 9px #153d5425;
+    .teacher-dashboard-metric .dashboard-metric-icon {
+        width: clamp(3rem, 4.8vw, 4.8rem);
+        border-radius: 28%;
+        background: #d3ece8;
+        font-size: clamp(2rem, 3.3vw, 3.3rem);
     }
-    .teacher-workspace-design .teacher-dashboard-metric .dashboard-metric-copy :is(span, strong) { color: var(--metric-ink); }
+    .teacher-dashboard-metric .dashboard-metric-copy span {
+        color: #3e6c68;
+        font-size: 1.0625rem;
+    }
+    .teacher-dashboard-metric .dashboard-metric-copy strong {
+        color: #164f49;
+        font-size: clamp(2rem, 3.2vw, 3.25rem);
+    }
+    .attendance-summary-icon {
+        background:
+            radial-gradient(ellipse at 32% 15%, #ffffff80, transparent 46%),
+            linear-gradient(152deg, color-mix(in srgb, var(--medallion-color), white 23%), var(--medallion-color) 54%, color-mix(in srgb, var(--medallion-color), #142441 32%));
+        border: 1px solid color-mix(in srgb, var(--medallion-color), white 28%);
+        box-shadow:
+            inset 0 1px 2px #ffffffa0,
+            inset 0 -4px 6px #10243e35,
+            0 3px 0 color-mix(in srgb, var(--medallion-color), #142441 30%),
+            0 7px 12px color-mix(in srgb, var(--medallion-color) 30%, transparent);
+    }
+    .attendance-summary-icon > i {
+        text-shadow: 0 2px 0 #17234445, 0 3px 4px #13243e4d;
+    }
     .teacher-workspace-design .dashboard-feature-row .panel {
         border-radius: 1.15rem;
         box-shadow: 0 6px 16px #153d5421;

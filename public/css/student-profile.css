@@ -1,0 +1,385 @@
+.student-profile-page {
+    container-type: inline-size;
+    color: var(--text-primary);
+}
+
+.student-profile-banner {
+    position: relative;
+    isolation: isolate;
+    min-height: 150px;
+    display: grid;
+    align-items: center;
+    padding: clamp(1rem, 2cqw, 1.7rem);
+    margin-bottom: 1rem;
+    border-radius: var(--card-radius);
+    overflow: hidden;
+    background:
+        radial-gradient(ellipse at 79% 12%, color-mix(in srgb, var(--accent) 48%, transparent), transparent 65%),
+        linear-gradient(110deg, var(--hero-veil), color-mix(in srgb, var(--primary) 22%, var(--app-bg)));
+}
+
+.student-profile-banner img {
+    position: absolute;
+    z-index: -1;
+    inset: 0 2% 0 auto;
+    width: 42%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center bottom;
+}
+
+.student-profile-banner-content {
+    max-width: 57%;
+}
+
+.student-profile-banner h1 {
+    margin: .45rem 0 .3rem;
+    font-size: clamp(1.8rem, 3.25cqw, 2.8rem);
+    font-weight: 800;
+    letter-spacing: -.045em;
+}
+
+.student-profile-banner p {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+.student-profile-links,
+.student-attendance-month {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .45rem;
+}
+
+.student-profile-links a,
+.student-profile-chip,
+.student-profile-control {
+    display: inline-flex;
+    gap: .45rem;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: .35rem .7rem;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: var(--info-soft);
+    font-size: .82rem;
+    font-weight: 700;
+}
+
+.student-profile-links a:hover,
+.student-profile-control:hover:not(:disabled) {
+    border-color: var(--action);
+}
+
+.student-profile-control {
+    min-width: 40px;
+    color: var(--action);
+}
+
+.student-profile-control:disabled {
+    opacity: .55;
+}
+
+.student-profile-grid {
+    display: grid;
+    grid-template-columns: minmax(225px, .95fr) minmax(0, 2.65fr);
+    gap: 1rem;
+    align-items: start;
+}
+
+.student-profile-records {
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+}
+
+#monthly-attendance-status {
+    margin: 0;
+}
+
+#monthly-attendance-status:empty {
+    display: none;
+}
+
+.student-profile-card {
+    min-width: 0;
+    padding: clamp(.85rem, 1.45cqw, 1.35rem);
+    border: 1px solid var(--border-color);
+    border-radius: var(--card-radius);
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+}
+
+.student-identity-header {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: .25rem;
+    padding: .7rem .35rem .85rem;
+    text-align: center;
+    border-radius: calc(var(--card-radius) * .75);
+    background:
+        radial-gradient(ellipse at 5% 38%, color-mix(in srgb, var(--accent) 28%, transparent), transparent 57%),
+        radial-gradient(ellipse at 96% 31%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 56%);
+}
+
+.student-profile-edit {
+    position: absolute;
+    inset: 0 0 auto auto;
+}
+
+.student-profile-avatar {
+    padding: 4px;
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+}
+
+.student-profile-avatar .student-avatar {
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    font-size: 2.7rem;
+}
+
+.student-identity-header h2 {
+    margin: .35rem 0 0;
+    font-size: clamp(1.3rem, 2.35cqw, 2rem);
+    font-weight: 800;
+    letter-spacing: -.035em;
+    overflow-wrap: anywhere;
+}
+
+.student-identity-header p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: .83rem;
+}
+
+.student-profile-details {
+    display: grid;
+    gap: .23rem;
+    margin: .4rem 0 0;
+}
+
+.student-profile-details > div {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: .65rem;
+    padding: .4rem;
+    border-radius: 14px;
+}
+
+.student-profile-details > div:nth-child(odd),
+.student-guardian-name {
+    background: var(--info-soft);
+}
+
+.student-profile-glyph {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 2.25rem;
+    aspect-ratio: 1;
+    border-radius: .8rem;
+    background: color-mix(in srgb, var(--primary) 13%, var(--surface));
+    color: var(--action);
+    font-size: 1.1rem;
+}
+
+.student-profile-details .student-profile-glyph {
+    grid-row: span 2;
+}
+
+.student-profile-details dt {
+    align-self: end;
+    color: var(--text-secondary);
+    font-size: .78rem;
+}
+
+.student-profile-details dd {
+    align-self: start;
+    margin: 0;
+    font-size: .88rem;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.student-guardian,
+.student-profile-schedule {
+    margin-top: .75rem;
+    padding-top: .75rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.student-guardian h3 {
+    font-size: .97rem;
+    font-weight: 800;
+}
+
+.student-guardian h3 i {
+    color: var(--action);
+    margin-inline-end: .25rem;
+}
+
+.student-guardian-name {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .45rem;
+    padding: .4rem .55rem;
+    border-radius: 14px;
+    overflow-wrap: anywhere;
+}
+
+.student-guardian-name span:not(.student-avatar) {
+    border-radius: 999px;
+    padding: .18rem .55rem;
+    background: var(--surface);
+    color: var(--action);
+    font-size: .75rem;
+    font-weight: 700;
+}
+
+.student-profile-schedule {
+    display: block;
+    font-size: .84rem;
+    font-weight: 700;
+}
+
+.student-profile-card-title {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: .55rem;
+    margin-bottom: .7rem;
+}
+
+.student-profile-card-title h2 {
+    margin: 0;
+    font-size: clamp(1.2rem, 2.1cqw, 1.7rem);
+    font-weight: 800;
+    letter-spacing: -.025em;
+}
+
+.student-profile-card-title h2 i {
+    margin-inline-end: .3rem;
+    color: var(--action);
+}
+
+.student-profile-exams h2 i {
+    color: var(--violet);
+}
+
+.student-profile-card-title h2 .student-fee-icon {
+    color: var(--warning);
+}
+
+.student-attendance-month {
+    margin-bottom: .65rem;
+}
+
+.student-profile-table-wrap {
+    overflow-x: auto;
+    border-radius: 14px;
+}
+
+.student-profile-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .88rem;
+}
+
+.student-profile-table th,
+.student-profile-table td {
+    padding: .65rem .75rem;
+    text-align: start;
+    vertical-align: middle;
+}
+
+.student-profile-table th {
+    background: color-mix(in srgb, var(--primary) 13%, var(--surface));
+    font-size: .75rem;
+    text-transform: uppercase;
+}
+
+.student-profile-exams .student-profile-table th {
+    background: color-mix(in srgb, var(--violet) 16%, var(--surface));
+}
+
+.student-profile-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.student-profile-empty {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: .7rem;
+    min-height: 80px;
+    padding: .7rem;
+    border-radius: 14px;
+    background: var(--info-soft);
+    text-align: center;
+    font-weight: 700;
+}
+
+.student-profile-exams .student-profile-empty {
+    background: var(--violet-soft);
+}
+
+.student-profile-empty i {
+    color: var(--action);
+    font-size: 2rem;
+}
+
+.student-profile-exams .student-profile-empty i {
+    color: var(--violet);
+}
+
+.student-fee-description {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+}
+
+.student-fee-description a {
+    display: block;
+    font-size: .82rem;
+}
+
+.student-fee-table :is(th, td):not(:first-child) {
+    text-align: center;
+    white-space: nowrap;
+}
+
+.student-fee-cleared {
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+.student-profile-sessions {
+    margin-top: 1rem;
+}
+
+@container (max-width: 760px) {
+    .student-profile-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@container (max-width: 480px) {
+    .student-profile-banner img {
+        display: none;
+    }
+
+    .student-profile-banner-content {
+        max-width: none;
+    }
+}

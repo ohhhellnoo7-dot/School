@@ -2,7 +2,7 @@
     <label class="visually-hidden" for="{{ $addressId }}-mode">Address entry option</label>
     <select id="{{ $addressId }}-mode" class="form-select w-auto" data-address-mode aria-label="Address entry option">
         <option value="manual">Enter my own address</option>
-        @isset($sameAsAddressId)<option value="same">Same as student address</option>@endisset
+        @isset($sameAsAddressId)<option value="same">{{ $sameAsAddressLabel }}</option>@endisset
         <option value="random">Random sample in Phnom Penh</option>
     </select>
     <button type="button" class="btn btn-outline-secondary" data-address-random hidden>Generate another</button>

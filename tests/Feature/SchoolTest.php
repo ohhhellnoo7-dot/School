@@ -94,10 +94,10 @@ class SchoolTest extends TestCase
         foreach (['admin', 'teacher', 'student', 'parent'] as $name) {
             $user = User::where('email', $name.'@school.test')->firstOrFail();
             $this->actingAs($user);
-            $this->get('/dashboard')->assertOk()->assertSee($name === 'student' ? 'MY SCHOOL DAY' : 'Welcome back');
-            $this->get('/students')->assertOk();
+            $this->get('/dashboard')->assertOk()->assertSee($name === 'student' ? 'Today’s lessons' : 'Welcome back');
+            $this->get('/students')->assertStatus($name === 'student' ? 302 : 200);
             foreach (SchoolModules::all() as $module => $meta) {
-                $this->get('/school/'.$module)->assertStatus(SchoolModules::canView($user, $module) ? 200 : 403);
+                $this->get('/school/'.$module)->assertStatus(SchoolModules::canView($user, $module) ? ($name === 'student' ? 302 : 200) : 403);
                 $this->get('/school/'.$module.'/create')->assertStatus(SchoolModules::canWrite($user, $module) ? 200 : 403);
                 if (SchoolModules::canWrite($user, $module)) {
                     $record = SchoolModules::query($module, $user)->first();
@@ -162,8 +162,8 @@ class SchoolTest extends TestCase
         $own = $this->student(['parent_id' => $parent->id, 'user_id' => $studentUser->id, 'name' => 'Linked Child']);
         $other = $this->student(['name' => 'Private Child']);
         foreach ([$parent, $studentUser] as $user) {
-            $this->actingAs($user)->get('/students')->assertSee('Linked Child')->assertDontSee('Private Child');
-            $this->get('/students/'.$own->id)->assertOk();
+            $this->actingAs($user)->followingRedirects()->get('/students')->assertOk()->assertSee('Linked Child')->assertDontSee('Private Child');
+            $this->followingRedirects()->get('/students/'.$own->id)->assertOk();
             $this->get('/students/'.$other->id)->assertForbidden();
             $this->get('/students/create')->assertForbidden();
             $this->post('/students', [])->assertForbidden();

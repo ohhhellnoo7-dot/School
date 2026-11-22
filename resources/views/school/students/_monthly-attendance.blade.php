@@ -1,7 +1,7 @@
-<section class="panel mb-4" aria-labelledby="attendance-heading">
-    <div class="panel-header d-flex flex-wrap gap-2">
-        <h2 id="attendance-heading" tabindex="-1">{{ __('Attendance history') }}</h2>
-        <span class="small text-secondary">
+<section class="student-profile-card" aria-labelledby="attendance-heading">
+    <div class="student-profile-card-title">
+        <h2 id="attendance-heading" tabindex="-1"><i class="bi bi-calendar2-check" aria-hidden="true"></i> {{ __('Attendance history') }}</h2>
+        <span class="student-profile-chip">
             @if($attendanceRate !== null)
                 {{ __('Attendance') }} {{ $attendanceRate }}% <span>({{ __('present + late / all records') }})</span>
             @else
@@ -9,21 +9,25 @@
             @endif
         </span>
     </div>
-    <nav class="px-3 py-2 d-flex align-items-center gap-2" aria-label="{{ __('Attendance month') }}">
+    <nav class="student-attendance-month" aria-label="{{ __('Attendance month') }}">
         @if($month->year > 0 || $month->month > 1)
-            <a class="btn btn-sm btn-outline-secondary" href="{{ route('students.show', ['student' => $student, 'month' => $month->subMonth()->format('Y-m')]) }}" data-attendance-month="previous" aria-label="{{ __('Previous month') }}"><i class="bi bi-chevron-left" aria-hidden="true"></i></a>
+            <a class="student-profile-control" href="{{ route('students.show', ['student' => $student, 'month' => $month->subMonth()->format('Y-m')]) }}" data-attendance-month="previous" aria-label="{{ __('Previous month') }}"><i class="bi bi-chevron-left" aria-hidden="true"></i></a>
         @endif
-        <strong>{{ $month->translatedFormat('F Y') }}</strong>
+        <strong class="student-profile-chip"><i class="bi bi-calendar3" aria-hidden="true"></i> {{ $month->translatedFormat('F Y') }}</strong>
         @if($month->lessThan($currentMonth))
-            <a class="btn btn-sm btn-outline-secondary" href="{{ route('students.show', ['student' => $student, 'month' => $month->addMonth()->format('Y-m')]) }}" data-attendance-month="next" aria-label="{{ __('Next month') }}"><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+            <a class="student-profile-control" href="{{ route('students.show', ['student' => $student, 'month' => $month->addMonth()->format('Y-m')]) }}" data-attendance-month="next" aria-label="{{ __('Next month') }}"><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
         @else
-            <button type="button" class="btn btn-sm btn-outline-secondary" disabled aria-label="{{ __('Next month') }}"><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+            <button type="button" class="student-profile-control" disabled aria-label="{{ __('Next month') }}"><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
         @endif
     </nav>
-    <div class="table-responsive">
-        <table class="table">
-            <thead><tr><th>{{ __('Date') }}</th><th>{{ __('Status') }}</th><th>{{ __('Notes') }}</th></tr></thead>
-            <tbody>@include('school.students._attendance-history-rows')</tbody>
-        </table>
-    </div>
+    @if($student->attendances->isEmpty())
+        <div class="student-profile-empty"><i class="bi bi-calendar-x" aria-hidden="true"></i> {{ __('No attendance recorded yet.') }}</div>
+    @else
+        <div class="student-profile-table-wrap">
+            <table class="student-profile-table" aria-labelledby="attendance-heading">
+                <thead><tr><th scope="col">{{ __('Date') }}</th><th scope="col">{{ __('Status') }}</th><th scope="col">{{ __('Notes') }}</th></tr></thead>
+                <tbody>@include('school.students._attendance-history-rows')</tbody>
+            </table>
+        </div>
+    @endif
 </section>
