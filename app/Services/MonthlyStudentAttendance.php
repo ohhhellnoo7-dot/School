@@ -8,16 +8,16 @@ use App\Models\Student;
 use App\Models\User;
 use App\Support\AttendanceSession;
 use Carbon\CarbonImmutable;
-use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
-class WeeklyStudentAttendance
+class MonthlyStudentAttendance
 {
+    public const STATUSES = ['present', 'late', 'absent', 'excused'];
+
     public function dashboard(Request $request): array
     {
         $filters = $request->validate([
-            'attendance_week' => ['nullable', 'date_format:Y-m-d'],
             'weekly_program' => ['nullable', 'string', 'max:80'],
             'weekly_grade' => ['nullable', 'integer', 'min:1', 'max:99'],
             'weekly_class' => ['nullable', 'integer', 'min:1'],
@@ -25,11 +25,8 @@ class WeeklyStudentAttendance
         ]);
         /** @var User $user */
         $user = $request->user();
-        $thisWeek = CarbonImmutable::today()->startOfWeek(CarbonInterface::MONDAY);
-        $monday = isset($filters['attendance_week'])
-            ? CarbonImmutable::parse($filters['attendance_week'])->startOfWeek(CarbonInterface::MONDAY)
-            : $thisWeek;
-        $friday = $monday->addDays(4);
+        $today = CarbonImmutable::today();
+        $monthStart = $today->startOfMonth();
 
         $students = Student::visibleForAttendance($user);
         $classes = SchoolClass::with('classGroup')
@@ -41,7 +38,7 @@ class WeeklyStudentAttendance
         $programs = $classes->pluck('program')->filter()->unique()->values();
         $grades = $classGrades->filter()->unique()->sort()->values();
 
-        if (array_filter(array_diff_key($filters, ['attendance_week' => true]))) {
+        if (array_filter($filters)) {
             $matched = $classes->filter(fn (SchoolClass $class) =>
                 (! isset($filters['weekly_program']) || $class->program === $filters['weekly_program'])
                 && (! isset($filters['weekly_grade']) || $classGrades[$class->id] === (int) $filters['weekly_grade'])
@@ -52,29 +49,33 @@ class WeeklyStudentAttendance
 
         $counts = Attendance::query()
             ->whereIn('student_id', $students->select('students.id'))
-            ->whereDate('date', '>=', $monday->toDateString())
-            ->whereDate('date', '<=', $friday->toDateString())
-            ->whereIn('status', ['present', 'late', 'absent', 'excused'])
-            ->selectRaw("DATE(date) AS day, COUNT(*) AS recorded, SUM(CASE WHEN status IN ('present', 'late') THEN 1 ELSE 0 END) AS attended")
-            ->groupByRaw('DATE(date)')->toBase()->get()->keyBy('day');
+            ->whereDate('date', '>=', $monthStart->toDateString())
+            ->whereDate('date', '<=', $today->toDateString())
+            ->whereIn('status', self::STATUSES)
+            ->selectRaw('DATE(date) AS day, status, COUNT(*) AS total')
+            ->groupByRaw('DATE(date), status')->toBase()->get()->groupBy('day');
 
-        $days = collect(range(0, 4))->map(function (int $offset) use ($monday, $counts) {
-            $day = $monday->addDays($offset);
-            $totals = $counts->get($day->toDateString());
-            $recorded = (int) ($totals->recorded ?? 0);
-            $attended = (int) ($totals->attended ?? 0);
+        $emptyCounts = array_fill_keys(self::STATUSES, 0);
+        $days = collect(range(0, $monthStart->daysInMonth - 1))->map(function (int $offset) use ($monthStart, $counts, $emptyCounts) {
+            $day = $monthStart->addDays($offset);
+            $statusCounts = $emptyCounts;
+            foreach ($counts->get($day->toDateString(), []) as $row) {
+                $statusCounts[$row->status] = (int) $row->total;
+            }
+            $recorded = array_sum($statusCounts);
+            $attended = $statusCounts['present'] + $statusCounts['late'];
 
             return [
-                'label' => $day->translatedFormat('l'),
-                'shortLabel' => $day->translatedFormat('D'),
+                'label' => $day->format('j'),
                 'date' => $day->toDateString(),
+                'counts' => $statusCounts,
                 'recorded' => $recorded,
                 'attended' => $attended,
                 'rate' => $recorded ? round(100 * $attended / $recorded, 2) : null,
             ];
         });
 
-        return compact('filters', 'classes', 'programs', 'grades', 'monday', 'friday', 'thisWeek', 'days');
+        return compact('filters', 'classes', 'programs', 'grades', 'monthStart', 'days');
     }
 
     private function grade(SchoolClass $class): ?int

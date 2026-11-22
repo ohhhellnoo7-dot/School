@@ -10,7 +10,7 @@
     $subjectLabel = match ($role) { 'administrator' => 'Total subjects', 'parent' => $childrenLabel.' subjects', default => 'My subjects' };
     $studentLabel = match ($role) { 'administrator' => 'Total students', 'teacher' => 'Students in my classes', 'parent' => 'My children', default => 'My student profile' };
     $scope = match ($role) { 'administrator', 'teacher' => null, 'parent' => 'These figures cover your linked children and their classes.', default => 'These figures cover your linked student profile and class.' };
-    $weeklyQuery = array_filter($weeklyAttendance['filters']);
+    $weeklyQuery = array_filter($monthlyAttendance['filters']);
 @endphp
 
 @if($role !== 'administrator' && $studentCount === 0)
@@ -228,7 +228,7 @@
 @endif
 @unless($isTeacher)
 <div class="row g-3 dashboard-feature-row">
-    <div class="col-lg-8">@include('school.partials.weekly-attendance-trend')</div>
+    <div class="col-lg-8">@include('school.partials.monthly-attendance-trend')</div>
     <div class="col-lg-4"><section class="panel h-100"><div class="panel-header"><div class="dashboard-panel-title"><span aria-hidden="true">&#128101;</span><div><h2>Students by gender</h2><p>Different perspectives. Shared possibilities.</p></div></div></div>@php($genderTotal = collect($charts['gender'])->sum())
         <div class="dashboard-gender">
             <div class="chart-wrap small">
@@ -263,7 +263,7 @@
 </div>
 
 @if($isTeacher)
-    <div class="mt-3">@include('school.partials.weekly-attendance-trend')</div>
+    <div class="mt-3">@include('school.partials.monthly-attendance-trend')</div>
 @endif
 
 @endif

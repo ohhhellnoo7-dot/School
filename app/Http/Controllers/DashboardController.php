@@ -10,7 +10,7 @@ use App\Models\Schedule;
 use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\User;
-use App\Services\WeeklyStudentAttendance;
+use App\Services\MonthlyStudentAttendance;
 use App\Support\SchoolModules;
 use App\Support\AttendanceSession;
 use Illuminate\Http\Request;
@@ -103,7 +103,7 @@ class DashboardController extends Controller
         $reportDate = Carbon::parse($validated['date'] ?? today()->toDateString())->startOfDay();
         $students = Student::visibleTo($user);
         $attendanceSession = AttendanceSession::selected($request);
-        $weeklyAttendance = app(WeeklyStudentAttendance::class)->dashboard($request);
+        $monthlyAttendance = app(MonthlyStudentAttendance::class)->dashboard($request);
         $attendanceStudents = AttendanceSession::students(Student::visibleForAttendance($user), $attendanceSession);
         $ids = (clone $attendanceStudents)->select('id');
         $attendance = Attendance::whereIn('student_id', $ids)->whereDate('date', $reportDate);
@@ -124,7 +124,7 @@ class DashboardController extends Controller
             'gender' => collect(['female', 'male', 'other'])->map(fn ($gender) => (clone $students)->where('gender', $gender)->count()),
             'teacherAttendance' => collect(['present', 'absent', 'late', 'excused'])->map(fn ($status) => (int) ($teacherAttendanceCounts[$status] ?? 0))->values(),
             'attendance' => collect(['present', 'absent', 'late', 'excused'])->map(fn ($status) => (clone $attendance)->where('status', $status)->count()),
-            'weeklyAttendance' => $weeklyAttendance['days'],
+            'monthlyAttendance' => $monthlyAttendance['days'],
         ];
 
         $programBreakdowns = [];
@@ -155,7 +155,7 @@ class DashboardController extends Controller
 
         return [
             'attendanceSession' => $attendanceSession,
-            'weeklyAttendance' => $weeklyAttendance,
+            'monthlyAttendance' => $monthlyAttendance,
             'attendanceStudentCount' => (clone $attendanceStudents)->count(),
             'activeTeacherCount' => $activeTeacherIds->count(),
             'teacherRecordedCount' => $activeTeacherIds->isEmpty() ? 0 : \App\Models\TeacherAttendance::whereDate('date', $reportDate)->whereIn('teacher_id', $activeTeacherIds)->count(),

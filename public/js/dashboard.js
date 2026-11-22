@@ -1,10 +1,12 @@
-﻿(() => {
+(() => {
     const content = document.getElementById('dashboard-content');
     const button = document.getElementById('dashboard-refresh');
     const status = document.getElementById('dashboard-sync-status');
     if (!content || !button || !status) return;
 
     let charts = [];
+    let monthlyChart;
+    let attendanceMode = 'combined';
     let latestPayload;
     let pending = false;
     let sessionExpired = false;
@@ -23,54 +25,93 @@
         const axes = () => ({x: {grid: {display: false}, border: {display: false}}, y: {beginAtZero: true, grid: {color: color('grid', night ? '#a7b7d225' : '#83909825')}, border: {display: false}, ticks: {maxTicksLimit: 5, precision: 0}}});
         const create = (id, config) => {
             const canvas = document.getElementById(id);
-            if (canvas) charts.push(new Chart(canvas, config));
+            if (!canvas) return;
+            const chart = new Chart(canvas, config);
+            charts.push(chart);
+            return chart;
         };
         const options = {maintainAspectRatio: false, animation: false, plugins: {legend: {display: false}}};
-        const weeklyCanvas = content.querySelector('#weeklyAttendanceChart');
-        if (weeklyCanvas && data.weeklyAttendance) {
-            const days = data.weeklyAttendance;
-            const line = palette.getPropertyValue('--action').trim() || color('line', '#007c89');
-            const surface = palette.getPropertyValue('--surface').trim() || '#fff';
-            const percent = new Intl.NumberFormat(document.documentElement.lang || undefined, {maximumFractionDigits: 2});
-            const weeklyAxes = axes();
-            create('weeklyAttendanceChart', {
+        const monthlyCanvas = content.querySelector('#monthlyAttendanceChart');
+        if (monthlyCanvas && data.monthlyAttendance) {
+            const days = data.monthlyAttendance;
+            const monthlyAxes = axes();
+            const action = palette.getPropertyValue('--action').trim() || '#007c89';
+            const rates = days.map(day => day.rate);
+            const dateFormat = new Intl.DateTimeFormat(document.documentElement.lang || undefined, {dateStyle: 'medium', timeZone: 'UTC'});
+            const shading = ({chart}) => {
+                if (!chart.chartArea) return 'rgba(21, 190, 179, .35)';
+                const fill = chart.ctx.createLinearGradient(0, chart.chartArea.top, 0, chart.chartArea.bottom);
+                fill.addColorStop(0, 'rgba(21, 190, 179, .56)');
+                fill.addColorStop(1, 'rgba(21, 190, 179, .1)');
+                return fill;
+            };
+            monthlyChart = create('monthlyAttendanceChart', {
                 type: 'line',
-                data: {labels: days.map(day => day.label), datasets: [{
-                    label: weeklyCanvas.dataset.chartLabel,
-                    data: days.map(day => day.rate),
-                    borderColor: line,
-                    fill: false,
-                    spanGaps: false,
-                    cubicInterpolationMode: 'monotone',
-                    borderWidth: 3,
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
-                    pointHitRadius: 12,
-                    pointBackgroundColor: line,
-                    pointBorderColor: surface,
-                    pointBorderWidth: 2,
-                }]},
+                data: {
+                    labels: days.map(day => day.label),
+                    datasets: [
+                        {
+                            label: monthlyCanvas.dataset.rateLabel,
+                            data: rates,
+                            hidden: attendanceMode === 'column',
+                            borderColor: action,
+                            borderWidth: 2,
+                            backgroundColor: shading,
+                            fill: attendanceMode === 'area' ? 'origin' : false,
+                            cubicInterpolationMode: 'monotone',
+                            pointBackgroundColor: palette.getPropertyValue('--surface').trim() || '#fff',
+                            pointRadius: 3.5,
+                            pointHoverRadius: 6,
+                            pointHitRadius: 8,
+                        },
+                        {
+                            data: days.map(() => 90),
+                            borderColor: '#ee981d',
+                            borderDash: [5, 4],
+                            borderWidth: 1,
+                            pointRadius: 0,
+                            pointHitRadius: 0,
+                            order: 1,
+                        },
+                        {
+                            type: 'bar',
+                            label: monthlyCanvas.dataset.rateLabel,
+                            data: rates,
+                            hidden: attendanceMode === 'area',
+                            backgroundColor: shading,
+                            hoverBackgroundColor: 'rgba(21, 190, 179, .8)',
+                            maxBarThickness: 28,
+                            order: 2,
+                        },
+                    ],
+                },
                 options: {
                     ...options,
-                    layout: {padding: {top: 10, right: 10}},
-                    interaction: {mode: 'nearest', intersect: true},
+                    layout: {padding: {top: 8, right: 8}},
                     scales: {
-                        x: {...weeklyAxes.x, offset: true, ticks: {
-                            autoSkip: false,
-                            maxRotation: 0,
-                            callback(value) {
-                                return this.chart.width < 440 ? days[value].shortLabel : days[value].label;
-                            },
-                        }},
-                        y: {...weeklyAxes.y, min: 0, max: 100, ticks: {stepSize: 25, callback: value => `${value}%`}},
-                    },
-                    plugins: {...options.plugins, tooltip: {
-                        callbacks: {
-                            label: ({parsed}) => `${weeklyCanvas.dataset.chartLabel}: ${percent.format(parsed.y)}%`,
-                            afterLabel: ({dataIndex}) => `${days[dataIndex].attended} / ${days[dataIndex].recorded} ${weeklyCanvas.dataset.attendedLabel}`,
+                        x: {...monthlyAxes.x, offset: true, ticks: {maxRotation: 0}},
+                        y: {...monthlyAxes.y, min: 0, max: 100,
+                            title: {display: true, text: monthlyCanvas.dataset.rateLabel},
+                            ticks: {stepSize: 25, callback: value => value + '%'},
                         },
-                    }},
+                    },
+                    interaction: {mode: 'index', intersect: false},
+                    plugins: {
+                        ...options.plugins,
+                        tooltip: {
+                            filter: item => item.datasetIndex === (attendanceMode === 'column' ? 2 : 0),
+                            callbacks: {
+                                title: ([item]) => item ? dateFormat.format(new Date(days[item.dataIndex].date)) : '',
+                                label: ({parsed}) => monthlyCanvas.dataset.rateLabel + ': ' + parsed.y + '%',
+                                afterLabel: ({dataIndex}) => Object.entries(days[dataIndex].counts)
+                                    .map(([status, count]) => monthlyCanvas.dataset[status] + ': ' + count),
+                            },
+                        },
+                    },
                 },
+            });
+            content.querySelectorAll('[data-attendance-mode]').forEach(control => {
+                control.setAttribute('aria-pressed', String(control.dataset.attendanceMode === attendanceMode));
             });
         }
         const doughnut = (id, labels, values, colors) => create(id, {type: 'doughnut', data: {labels, datasets: [{data: values, backgroundColor: colors, borderWidth: 0, borderRadius: 5}]}, options: {...options, cutout: '77%'}});
@@ -127,7 +168,7 @@
         try {
             const url = new URL(content.dataset.url, window.location.origin);
             const selected = new URLSearchParams(window.location.search);
-            for (const key of ['date', 'session', 'attendance_week', 'weekly_program', 'weekly_grade', 'weekly_class', 'weekly_session']) {
+            for (const key of ['date', 'session', 'weekly_program', 'weekly_grade', 'weekly_class', 'weekly_session']) {
                 if (selected.get(key)) url.searchParams.set(key, selected.get(key));
             }
             const response = await fetch(url, {
@@ -150,12 +191,17 @@
             charts = [];
             const calendar = content.querySelector('#dashboard-khmer-calendar');
             const calendarFocus = calendar?.contains(document.activeElement) ? document.activeElement : null;
+            const modeFocus = content.contains(document.activeElement) ? document.activeElement.dataset.attendanceMode : null;
+            const ratesWereOpen = content.querySelector('[data-monthly-rates]')?.open;
             content.innerHTML = payload.html;
+            const rates = content.querySelector('[data-monthly-rates]');
+            if (rates && ratesWereOpen) rates.open = true;
             if (calendar) {
                 content.querySelector('#dashboard-khmer-calendar')?.replaceWith(calendar);
                 calendarFocus?.focus({preventScroll: true});
             }
             renderCharts(payload);
+            if (modeFocus) content.querySelector(`[data-attendance-mode="${modeFocus}"]`)?.focus({preventScroll: true});
             status.textContent = `Updated ${new Date().toLocaleTimeString()} · refreshes every 30 seconds`;
         } catch (_) {
             status.textContent = 'Could not refresh. Showing the last loaded data. Try Refresh again.';
@@ -175,6 +221,17 @@
         renderCharts(latestPayload);
     }).observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
     button.addEventListener('click', refresh);
+    content.addEventListener('click', event => {
+        const control = event.target.closest('[data-attendance-mode]');
+        if (!control || !monthlyChart) return;
+        attendanceMode = control.dataset.attendanceMode;
+        content.querySelector('[data-attendance-mode][aria-pressed="true"]')?.setAttribute('aria-pressed', 'false');
+        control.setAttribute('aria-pressed', 'true');
+        monthlyChart.setDatasetVisibility(0, attendanceMode !== 'column');
+        monthlyChart.setDatasetVisibility(2, attendanceMode !== 'area');
+        monthlyChart.data.datasets[0].fill = attendanceMode === 'area' ? 'origin' : false;
+        monthlyChart.update();
+    });
     content.addEventListener('pointerover', event => {
         const dropdown = event.target.closest('.attendance-actions');
         if (dropdown && event.pointerType === 'mouse') dropdown.open = true;

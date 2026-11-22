@@ -20,7 +20,7 @@ class DashboardAjaxTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_weekly_attendance_reports_real_totals_gaps_and_matching_enrollments(): void
+    public function test_monthly_attendance_reports_real_totals_gaps_and_matching_enrollments(): void
     {
         $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-18 09:00'));
         $admin = User::factory()->create(['role' => 'administrator']);
@@ -41,24 +41,38 @@ class DashboardAjaxTest extends TestCase
         $different = Student::factory()->create(['school_class_id' => $afternoon->id]);
         Attendance::create(['student_id' => $different->id, 'date' => '2026-11-16', 'status' => 'present']);
         $this->actingAs($admin)->get('/dashboard')->assertOk()
-            ->assertSee(['Weekly Attendance Trend', 'Previous Week', 'This Week', 'Next Week', 'No attendance recorded', '60%'])
-            ->assertSeeInOrder(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']);
+            ->assertSee(['Monthly Attendance Trend', 'November 2026', 'No attendance recorded', '60%'])
+            ->assertSee(['Average Attendance', 'Highest Day', 'Lowest Day', 'Days in Month', '53.3%', '30 days'])
+            ->assertSee(['data-attendance-mode="combined"', 'data-attendance-mode="area"', 'data-attendance-mode="column"'], false)
+            ->assertSeeInOrder(['2026-11-01', '2026-11-16', '2026-11-30']);
         $this->getJson('/dashboard/data')->assertOk()
-            ->assertJsonPath('charts.weeklyAttendance.0.rate', 60)
-            ->assertJsonPath('charts.weeklyAttendance.1.rate', null)
-            ->assertJsonPath('charts.weeklyAttendance.2.rate', 0)
-            ->assertJsonPath('charts.weeklyAttendance.2.recorded', 1)
-            ->assertJsonPath('charts.weeklyAttendance.4.rate', 66.67);
+            ->assertJsonCount(30, 'charts.monthlyAttendance')
+            ->assertJsonPath('charts.monthlyAttendance.0.date', '2026-11-01')
+            ->assertJsonPath('charts.monthlyAttendance.8.rate', 100)
+            ->assertJsonPath('charts.monthlyAttendance.15.rate', 60)
+            ->assertJsonPath('charts.monthlyAttendance.15.counts', ['present' => 2, 'late' => 1, 'absent' => 1, 'excused' => 1])
+            ->assertJsonPath('charts.monthlyAttendance.16.rate', null)
+            ->assertJsonPath('charts.monthlyAttendance.17.rate', 0)
+            ->assertJsonPath('charts.monthlyAttendance.17.recorded', 1)
+            ->assertJsonPath('charts.monthlyAttendance.19.rate', null)
+            ->assertJsonPath('charts.monthlyAttendance.29.date', '2026-11-30');
         $this->getJson('/dashboard/data?date=2026-11-18&weekly_program=Khmer&weekly_grade=7&weekly_class='.$morning->id.'&weekly_session=Morning')
-            ->assertOk()->assertJsonPath('charts.weeklyAttendance.0.rate', 50)
-            ->assertJsonPath('charts.weeklyAttendance.0.attended', 2)->assertJsonPath('summary.attendanceCount', 1);
+            ->assertOk()->assertJsonPath('charts.monthlyAttendance.15.rate', 50)
+            ->assertJsonPath('charts.monthlyAttendance.15.attended', 2)->assertJsonPath('summary.attendanceCount', 1);
         $this->getJson('/dashboard/data?weekly_program=Khmer&weekly_session=Afternoon')
-            ->assertOk()->assertJsonPath('charts.weeklyAttendance.0.rate', null);
-        $this->getJson('/dashboard/data?attendance_week=2026-11-11')->assertOk()
-            ->assertJsonPath('charts.weeklyAttendance.0.date', '2026-11-09')
-            ->assertJsonPath('charts.weeklyAttendance.0.rate', 100);
+            ->assertOk()->assertJsonPath('charts.monthlyAttendance.15.rate', null);
+        Attendance::create(['student_id' => $different->id, 'date' => '2026-11-18', 'status' => 'present']);
+        $this->getJson('/dashboard/data')->assertOk()
+            ->assertJsonPath('charts.monthlyAttendance.17.rate', 50)
+            ->assertJsonPath('charts.monthlyAttendance.17.counts', ['present' => 1, 'late' => 0, 'absent' => 1, 'excused' => 0]);
         $this->actingAs($parent)->getJson('/dashboard/data')->assertOk()
-            ->assertJsonPath('charts.weeklyAttendance.0.rate', 100)->assertJsonPath('charts.weeklyAttendance.0.recorded', 1);
+            ->assertJsonPath('charts.monthlyAttendance.15.rate', 100)->assertJsonPath('charts.monthlyAttendance.15.recorded', 1);
+
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-12-01 09:00'));
+        $this->getJson('/dashboard/data')->assertOk()
+            ->assertJsonCount(31, 'charts.monthlyAttendance')
+            ->assertJsonPath('charts.monthlyAttendance.0.date', '2026-12-01')
+            ->assertJsonPath('charts.monthlyAttendance.30.date', '2026-12-31');
     }
 
     public function test_teacher_dashboard_focuses_on_teaching_and_attendance_on_initial_load_and_refresh(): void
