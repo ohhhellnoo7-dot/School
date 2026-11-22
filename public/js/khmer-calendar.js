@@ -20,36 +20,7 @@
     const holidays = calendar.querySelector('[data-calendar-holidays]');
     const holidayList = holidays.querySelector('ul');
 
-    // Cambodia's 2026 Legal Reform Committee calendar and 2027 Sub-Decree No. 198.
-    const commonHolidays = {
-        '1-1': 'new_year',
-        '1-7': 'victory',
-        '3-8': 'women',
-        '4-14': 'khmer_new_year', '4-15': 'khmer_new_year', '4-16': 'khmer_new_year',
-        '5-1': 'labour',
-        '5-14': 'king_birthday',
-        '6-18': 'queen_mother',
-        '9-24': 'constitution',
-        '10-15': 'king_father',
-        '10-29': 'coronation',
-        '11-9': 'independence',
-        '12-29': 'peace',
-    };
-    const holidaySchedules = {
-        2026: {
-            ...commonHolidays,
-            '5-1': 'labour_and_visak',
-            '5-5': 'ploughing',
-            '10-10': 'pchum_ben', '10-11': 'pchum_ben', '10-12': 'pchum_ben',
-            '11-23': 'water_festival', '11-24': 'water_festival', '11-25': 'water_festival',
-        },
-        2027: {
-            ...commonHolidays,
-            '5-20': 'visak', '5-24': 'ploughing',
-            '9-29': 'pchum_ben', '9-30': 'pchum_ben', '10-1': 'pchum_ben',
-            '11-12': 'water_festival', '11-13': 'water_festival', '11-14': 'water_festival',
-        },
-    };
+    const holidaySchedules = JSON.parse(calendar.dataset.holidaySchedules);
 
     function today() {
         const parts = Object.fromEntries(cambodiaDate.formatToParts().map(({type, value}) => [type, value]));

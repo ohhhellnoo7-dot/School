@@ -4,6 +4,7 @@
 @php
     $role = auth()->user()->role;
     $isTeacher = $role === 'teacher';
+    $isParent = $role === 'parent';
     $childrenLabel = $role === 'parent' && $parentChildNames->count() === 1 ? $parentChildNames->first()."'s" : "My children's";
     $teacherLabel = match ($role) { 'administrator' => 'Total teachers', 'parent' => $childrenLabel.' teachers', default => 'My teachers' };
     $classLabel = match ($role) { 'administrator' => 'Total classes', 'parent' => $childrenLabel.' classes', default => 'My classes' };
@@ -11,6 +12,9 @@
     $studentLabel = match ($role) { 'administrator' => 'Total students', 'teacher' => 'Students in my classes', 'parent' => 'My children', default => 'My student profile' };
     $scope = match ($role) { 'administrator', 'teacher' => null, 'parent' => 'These figures cover your linked children and their classes.', default => 'These figures cover your linked student profile and class.' };
     $weeklyQuery = array_filter($monthlyAttendance['filters']);
+    if ($isTeacher && $attendanceScope === 'children') {
+        $weeklyQuery['attendance_scope'] = 'children';
+    }
     $monthlyStatusCounts = collect(\App\Services\MonthlyStudentAttendance::STATUSES)
         ->mapWithKeys(fn ($status) => [$status => $monthlyAttendance['days']->sum("counts.$status")]);
     $monthlyRecordCount = $monthlyStatusCounts->sum();
@@ -48,7 +52,11 @@
 @else
 <x-scholar-hero tag="div" class="page-heading dashboard-heading school-hero">
     <div class="dashboard-welcome"><h1><span class="windy-original">Good {{ now('Asia/Phnom_Penh')->hour < 12 ? 'morning' : (now('Asia/Phnom_Penh')->hour < 18 ? 'afternoon' : 'evening') }}, {{ auth()->user()->name }} <span aria-hidden="true">&#128075;</span></span><span class="windy-only">Welcome back, {{ auth()->user()->name }}</span></h1>
-            <p><span class="windy-original">Here's what's happening at Greenfield Academy today.</span><span class="windy-only">Here's what's happening at your school today.</span></p>
+            @if($isParent)
+                <p>{{ __('See attendance, classes, results, and fees for your linked children.') }}</p>
+            @else
+                <p><span class="windy-original">Here's what's happening at Greenfield Academy today.</span><span class="windy-only">Here's what's happening at your school today.</span></p>
+            @endif
     </div>
     @if($role === 'administrator' && $reportDate->isToday())
         <div class="dashboard-attendance-actions d-flex flex-wrap gap-2">
@@ -124,6 +132,7 @@
 </x-scholar-hero>
 @endif
 
+@if(!$isParent || $studentCount > 0)
 <div class="row g-3 dashboard-metrics">
     @foreach([[$studentLabel, $studentCount, 'people', '🎓'], [$teacherLabel, $teacherCount, 'person-workspace', '👨‍🏫'], [$classLabel, $classCount, 'building', '🏫'], ['My children', $staffChildCount, 'family', "\u{1F46A}"], [$subjectLabel, $subjectCount, 'book', '📚']] as [$label, $value, $icon, $illustration])
     @continue(($isTeacher && $icon === 'person-workspace') || ($icon === 'family' && !$staffChildCount))
@@ -159,6 +168,7 @@
 @if($scope)
 <p class="dashboard-scope">{{ $scope }}</p>
 @endif
+@endif
 @if($isTeacher)
     <div class="row g-3 dashboard-feature-row">
         <div class="col-xl-6">
@@ -171,14 +181,19 @@
         </div>
     </div>
 @endif
-@unless($isTeacher)
+@if($isParent && $dashboardChildren->isNotEmpty())
+    @include('school.partials.dashboard-children')
+@endif
+@if($role === 'administrator')
 <div class="mini-stats">
     <div class="mini-stat"><i class="bi bi-calendar2-check"></i><div><small>Present students</small><strong>{{ $presentCount }} <span class="fw-normal text-secondary" style="font-size:10px">/ {{ $attendanceCount }} recorded</span></strong></div></div>
     <div class="mini-stat"><i class="bi bi-cash-stack"></i><div><small>Fees collected · USD</small><strong>${{ number_format($collected, 2) }}</strong></div></div>
     <div class="mini-stat"><i class="bi bi-hourglass-split"></i><div><small>Pending payments · USD</small><strong>${{ number_format($pending, 2) }}</strong></div></div>
     <div class="mini-stat"><i class="bi bi-person-dash"></i><div><small>Absent students</small><strong>{{ $absentCount }}</strong></div></div>
 </div>
-@endunless
+@endif
+@if(!$isParent || $studentCount > 0)
+@unless($isParent)
 <section class="attendance-toolbar" aria-label="Daily attendance report filters">
     <div class="attendance-toolbar-title">
         <span class="attendance-toolbar-icon"><i class="bi bi-calendar2-week" aria-hidden="true"></i></span>
@@ -206,14 +221,21 @@
         <button type="submit" class="btn btn-primary attendance-view-button">View report <i class="bi bi-arrow-right ms-2" aria-hidden="true"></i></button>
     </form>
 </section>
+@endunless
 <div class="row g-3 dashboard-feature-row">
-    @unless($isTeacher)
-    <div class="col-lg-8"><section class="panel h-100"><div class="panel-header"><div class="dashboard-panel-title"><span aria-hidden="true">&#129689;</span><div><h2>{{ in_array(auth()->user()->role, ['administrator', 'parent']) ? 'Monthly revenue' : 'Enrollment trend' }}</h2><p>{{ in_array(auth()->user()->role, ['administrator', 'parent']) ? 'Recorded fee payments · USD' : 'New students joining your classes' }}</p></div></div><div class="chart-key"><span>{{ in_array(auth()->user()->role, ['administrator', 'parent']) ? 'Collected fees' : 'New students' }}</span></div></div><div class="chart-wrap"><canvas id="revenueChart" role="img" aria-label="Monthly trend chart"></canvas></div></section></div>
-    @endunless
+    @if($role === 'administrator')
+    <div class="col-lg-8"><section class="panel h-100"><div class="panel-header"><div class="dashboard-panel-title"><span aria-hidden="true">&#129689;</span><div><h2>Monthly revenue</h2><p>{{ in_array(auth()->user()->role, ['administrator', 'parent']) ? 'Recorded fee payments · USD' : 'New students joining your classes' }}</p></div></div><div class="chart-key"><span>{{ in_array(auth()->user()->role, ['administrator', 'parent']) ? 'Collected fees' : 'New students' }}</span></div></div><div class="chart-wrap"><canvas id="revenueChart" role="img" aria-label="Monthly trend chart"></canvas></div></section></div>
+    @endif
+    @if($isParent)
+        <div class="col-12 col-lg-6">@include('school.partials.dashboard-payment-coverage')</div>
+        <div class="col-12 col-lg-6">@include('school.partials.family-announcements')</div>
+    @else
     <div class="{{ $isTeacher ? 'col-12 col-lg-6' : 'col-lg-4' }}"><section class="panel h-100"><div class="panel-header"><div><h2>Student attendance report</h2><p>{{ $reportDate->format('l, M d, Y') }} &middot; {{ $attendanceSession ?: 'All sessions' }}</p></div><span class="stat-icon tint-green"><i class="bi bi-check2-circle"></i></span></div><div class="chart-wrap small attendance-donut"><div class="donut-label"><strong>{{ $attendanceCount ? round($presentCount / $attendanceCount * 100) : 0 }}%</strong><span>Present</span></div><canvas id="attendanceChart" role="img" aria-label="Attendance by status for {{ $reportDate->format('M d, Y') }}"></canvas></div><div class="chart-legend">@foreach(['present' => 'Present', 'absent' => 'Absent', 'late' => 'Late', 'excused' => 'Excused'] as $status => $label)<a class="text-reset" href="{{ route('attendance.people', array_filter(['kind' => 'students', 'status' => $status, 'date' => $reportDate->toDateString(), 'session' => $attendanceSession])) }}"><span><b>{{ $charts['attendance'][array_search($status, ['present', 'absent', 'late', 'excused'])] }}</b> {{ $label }}</span></a>@endforeach</div>@if($attendanceCount === 0)<p class="text-secondary text-center small mt-2">No attendance recorded for this date.</p>@endif</section></div>
+    @endif
 @unless($isTeacher)
 </div>
 @endunless
+@endif
 @if(auth()->user()->role === 'administrator')
 <div class="mb-4">
 @include('school.attendance._workspace', [
@@ -229,7 +251,7 @@
 ])
 </div>
 @endif
-@unless($isTeacher)
+@if($role === 'administrator')
 <div class="row g-3 dashboard-feature-row">
     <div class="col-lg-8">@include('school.partials.monthly-attendance-trend')</div>
     <div class="col-lg-4"><section class="panel h-100"><div class="panel-header"><div class="dashboard-panel-title"><span aria-hidden="true">&#128101;</span><div><h2>Students by gender</h2><p>Different perspectives. Shared possibilities.</p></div></div></div>@php($genderTotal = collect($charts['gender'])->sum())
@@ -280,7 +302,8 @@
         </section>
     </section></div>
 </div>
-@endunless
+@endif
+@unless($isParent)
 @unless($isTeacher)
 <div class="row g-3 dashboard-feature-row">
     <div class="col-lg-8"><section class="panel h-100"><div class="panel-header"><div class="dashboard-panel-title"><span aria-hidden="true">&#128203;</span><div><h2>Recent registrations</h2><p>The newest faces in our community</p></div></div><a class="text-link" href="{{ route('students.index') }}">View all students <i class="bi bi-arrow-right ms-1"></i></a></div><div class="table-responsive"><table class="table"><thead><tr><th>Student name</th><th>{{ __('Student ID') }}</th><th>{{ __('Class') }}</th><th>Enrolled</th><th>{{ __('Status') }}</th></tr></thead><tbody>@forelse($recent as $student)<tr><td><a href="{{ route('students.show', $student) }}">@include('school.partials.avatar', ['person' => $student])<strong>{{ $student->name }}</strong></a></td><td>{{ $student->student_number }}</td><td>{{ $student->schoolClass->name }} · {{ $student->schoolClass->section }}</td><td>{{ $student->enrollment_date->format('M d, Y') }}</td><td><span class="status-badge {{ $student->status }}">{{ __(ucfirst($student->status)) }}</span></td></tr>@empty<tr><td colspan="5" class="empty-state">No student records yet. {{ auth()->user()->role === 'administrator' ? 'Enroll your first student to get started.' : 'Ask the school office to link your account.' }}</td></tr>@endforelse</tbody></table></div>
@@ -288,9 +311,31 @@
     @include('school.partials.khmer-calendar')
     </section></div>
     @endunless
-    <div class="{{ $isTeacher ? 'col-12 col-lg-6' : 'col-lg-4' }}"><section class="panel h-100"><div class="panel-header"><div class="dashboard-panel-title"><span aria-hidden="true">&#128227;</span><div><h2>School announcements</h2><p>Stay in the loop</p></div></div><a href="{{ route('modules.index', 'announcements') }}" aria-label="View announcements"><i class="bi bi-arrow-up-right"></i></a></div><div class="panel-body pt-0">@forelse($announcements as $announcement)<article class="announcement"><span class="announcement-icon"><i class="bi bi-megaphone"></i></span><div><h3>{{ $announcement->title }}</h3><p>{{ \Illuminate\Support\Str::limit($announcement->body, 110) }}</p><small><i class="bi bi-clock me-1"></i>{{ $announcement->published_at->format('M d, Y') }}</small></div></article>@empty<div class="empty-state py-4">You're all caught up. No announcements yet.</div>@endforelse</div></section></div>
+    @if($isTeacher)
+        <div class="col-12 col-lg-6">
+            <section class="panel h-100" id="student-attendance-updates" aria-labelledby="student-attendance-updates-title">
+                <div class="panel-header">
+                    <div class="dashboard-panel-title">
+                        <span aria-hidden="true"><i class="bi bi-calendar2-check"></i></span>
+                        <div>
+                            <h2 id="student-attendance-updates-title">{{ __('Student attendance updates') }}</h2>
+                            <p>{{ $attendanceWeekStart->translatedFormat('M j') }} &ndash; {{ $attendanceWeekStart->copy()->addDays(4)->translatedFormat('M j, Y') }}</p>
+                        </div>
+                    </div>
+                    <a class="btn btn-sm btn-outline-primary" href="{{ route('attendance.student-history', ['attendance_scope' => $attendanceScope]) }}">{{ __('Attendance history') }}</a>
+                </div>
+                <div class="panel-body pt-0">
+                    @include('school.attendance._message-scope', ['scopeRoute' => 'dashboard'])
+                    @include('school.attendance._student-messages', ['records' => $attendanceMessages, 'live' => true])
+                </div>
+            </section>
+        </div>
+    @else
+    <div class="col-lg-4">@include('school.partials.dashboard-announcements')</div>
+    @endif
 </div>
 
+@endunless
 @if($isTeacher)
     <div class="mt-3">@include('school.partials.monthly-attendance-trend')</div>
 @endif

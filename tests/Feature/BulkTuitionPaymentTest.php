@@ -58,6 +58,11 @@ class BulkTuitionPaymentTest extends TestCase
             ->assertViewHas('durationCounts', fn ($counts) => $counts[6] === 1 && $counts[1] === 0 && $counts[12] === 0 && $counts['not_paid'] === 1);
         $this->get(route('finance.parents', ['year' => 2026, 'duration' => 6]))->assertOk()
             ->assertViewHas('families', fn ($rows) => $rows->total() === 1 && $rows->first()['parent']->id === $f['parent']->id);
+        $this->get(route('finance.index', ['duration' => 6, 'search' => $f['parent']->name]))->assertOk()
+            ->assertViewHas('fees', fn ($rows) => $rows->total() === 2)
+            ->assertSee('Parent: '.$f['parent']->name);
+        $this->get(route('finance.index', ['duration' => 1]))->assertOk()
+            ->assertViewHas('fees', fn ($rows) => $rows->total() === 0);
         $this->get(route('finance.parents', ['year' => 2026, 'duration' => 'not_paid']))->assertOk()
             ->assertViewHas('families', fn ($rows) => $rows->total() === 1 && $rows->first()['parent']->id === $unpaid->id);
         $this->get(route('finance.parents', ['year' => 2027]))->assertOk()
@@ -84,7 +89,8 @@ class BulkTuitionPaymentTest extends TestCase
             ->assertSee('Bulk payments reopen on 07 Dec 2026.')
             ->assertSee('data-bulk-option  hidden', false)
             ->assertSee('aria-current="page"', false);
-        $this->get(route('finance.index'))->assertOk()->assertSee(Fee::first()->invoice_number);
+        $this->get(route('finance.index', ['duration' => 1]))->assertOk()->assertSee(Fee::first()->invoice_number)
+            ->assertViewHas('fees', fn ($rows) => $rows->total() === 2);
         $this->assertTrue(Fee::get()->every(fn ($fee) => $fee->balanceCents() === 0));
         $this->post(route('finance.bulk.pay'), $data)->assertSessionHasNoErrors();
         $this->assertSame(1, BulkPaymentRun::count());
@@ -111,7 +117,11 @@ class BulkTuitionPaymentTest extends TestCase
         $this->assertSame('2027-11-07', $year['cycle']['next_date']->format('Y-m-d'));
         $this->post(route('finance.bulk.pay'), $this->data($year))->assertSessionHasNoErrors();
         $this->assertSame(38400, Money::cents((string) FeePayment::sum('amount')));
+        $this->get(route('finance.index', ['duration' => 12]))->assertOk()
+            ->assertViewHas('fees', fn ($rows) => $rows->total() === 2);
         $this->assertTrue($f['bulk']->availability()['locked']);
+        $this->actingAs($f['parent'])->get('/dashboard')->assertOk()
+            ->assertSee('12 months')->assertSee('Nov 7, 2027')->assertSee('--coverage: 100%', false);
     }
 
     public function test_month_end_clamps_february_without_drifting_the_march_payment_date(): void
@@ -123,6 +133,28 @@ class BulkTuitionPaymentTest extends TestCase
         $this->travelTo(now()->setDate(2026, 2, 28));
         $this->post(route('finance.bulk.pay'), $this->data($f['bulk']->preview(1)))->assertSessionHasNoErrors();
         $this->assertSame('2026-03-31', BulkPaymentRun::latest('id')->first()->next_on->format('Y-m-d'));
+    }
+
+    public function test_parent_payment_ring_counts_down_and_renews_from_recorded_tuition(): void
+    {
+        $f = $this->family();
+        $this->actingAs($f['parent'])->get('/dashboard')->assertOk()->assertSee('No paid period')
+            ->assertDontSee('Student attendance report')->assertDontSee('Daily attendance');
+        $this->actingAs($f['admin'])->post(route('finance.bulk.pay'), $this->data($f['bulk']->preview(6)))->assertSessionHasNoErrors();
+        $this->actingAs($f['parent'])->get('/dashboard')->assertOk()->assertSee('Paid period active')
+            ->assertSee(['6 months', 'May 7, 2027', 'Total Fee', 'Remaining', 'Coverage', 'Payment Timeline', 'Billing cycle: 6 months', '120.00', '72.00'])
+            ->assertSee('--coverage: 100%', false);
+        $this->travelTo(now()->addDay());
+        $this->getJson('/dashboard/data')->assertOk()->assertSee('--coverage: 99.45%', false);
+        $this->travelTo(now()->setDate(2027, 5, 7));
+        $html = $this->getJson('/dashboard/data')->assertOk()->json('html');
+        $this->assertStringContainsString('Paid period ended', $html);
+        $this->assertStringContainsString('--coverage: 0%', $html);
+
+        $this->actingAs($f['admin'])->post(route('finance.bulk.pay'), $this->data($f['bulk']->preview(1)))->assertSessionHasNoErrors();
+        $html = $this->actingAs($f['parent'])->getJson('/dashboard/data')->assertOk()->json('html');
+        $this->assertStringContainsString('Jun 7, 2027', $html);
+        $this->assertStringContainsString('--coverage: 100%', $html);
     }
 
     public function test_stale_preview_missing_prices_and_unauthorized_access_do_not_record_payments(): void

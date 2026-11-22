@@ -4,13 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Announcement;
 use App\Models\Attendance;
+use App\Models\ClassAttendance;
 use App\Models\ClassGroup;
 use App\Models\Fee;
 use App\Models\Schedule;
 use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\User;
+use App\Services\FamilyAnnouncementNotices;
 use App\Services\MonthlyStudentAttendance;
+use App\Services\TuitionPaymentCoverage;
 use App\Support\SchoolModules;
 use App\Support\AttendanceSession;
 use Illuminate\Http\Request;
@@ -89,19 +92,65 @@ class DashboardController extends Controller
         return response()->json([
             'html' => view('school.partials.dashboard-content', $data)->render(),
             'charts' => $data['charts'],
-            'showRevenue' => in_array($request->user()->role, ['administrator', 'parent'], true),
+            'showRevenue' => $request->user()->role === 'administrator',
             'summary' => collect($data)->only(['studentCount', 'teacherCount', 'classCount', 'subjectCount', 'presentCount', 'absentCount', 'lateCount', 'attendanceCount', 'collected', 'pending']),
         ])->header('Cache-Control', 'no-store, private');
+    }
+
+    public function attendanceHistory(Request $request)
+    {
+        $validated = $request->validate([
+            'week' => 'nullable|date_format:Y-m-d|before_or_equal:today',
+            'attendance_scope' => 'nullable|in:students,children',
+        ]);
+        $weekStart = Carbon::parse($validated['week'] ?? today()->toDateString())->startOfWeek(Carbon::MONDAY);
+        $attendanceScope = $validated['attendance_scope'] ?? 'students';
+        $records = $this->attendanceMessages($request->user(), $weekStart, $attendanceScope);
+
+        return response()->view('school.attendance.weekly-history', compact('weekStart', 'records', 'attendanceScope'))
+            ->header('Cache-Control', 'no-store, private');
+    }
+
+    private function attendanceMessages(User $teacher, Carbon $weekStart, string $scope): \Illuminate\Support\Collection
+    {
+        $weekEnd = $weekStart->copy()->addDays(4)->min(today());
+        $from = $weekStart->toDateString();
+        $until = $weekEnd->copy()->addDay()->toDateString();
+        $students = $scope === 'children'
+            ? $teacher->children()->select('students.id')
+            : Student::visibleForAttendance($teacher)->select('students.id');
+        $daily = Attendance::with('student:id,name')->whereIn('student_id', clone $students)
+            ->where('date', '>=', $from)->where('date', '<', $until)->whereIn('status', MonthlyStudentAttendance::STATUSES)->get();
+        $classRecords = ClassAttendance::with(['student:id,name', 'schoolClass.classGroup'])
+            ->whereIn('student_id', $students)
+            ->when($scope === 'students', fn ($records) => $records->whereIn('school_class_id', SchoolClass::scheduledForTeacher($teacher)->select('school_classes.id')))
+            ->where('date', '>=', $from)->where('date', '<', $until)->whereIn('status', MonthlyStudentAttendance::STATUSES)->get();
+
+        return $daily->toBase()->concat($classRecords)
+            ->sortBy([['date', 'desc'], ['updated_at', 'desc'], ['id', 'desc']])->values();
     }
 
     private function dashboardData(Request $request): array
     {
         $user = $request->user();
-        $validated = $request->validate(['date' => 'nullable|date_format:Y-m-d']);
+        $isParent = $user->role === 'parent';
+        $validated = $request->validate(['date' => 'nullable|date_format:Y-m-d', 'attendance_scope' => 'nullable|in:students,children']);
+        $attendanceScope = $validated['attendance_scope'] ?? 'students';
         $today = today();
+        $attendanceWeekStart = $today->copy()->startOfWeek(Carbon::MONDAY);
         $academicYear = $today->year.'-'.($today->year + 1);
         $reportDate = Carbon::parse($validated['date'] ?? today()->toDateString())->startOfDay();
         $students = Student::visibleTo($user);
+        $dashboardChildren = $isParent ? (clone $students)->with(['schoolClass.classGroup', 'user', 'fees.adjustments'])->orderBy('name')->orderBy('id')->get() : collect();
+        $familyFeeTotals = $dashboardChildren->mapWithKeys(fn (Student $child) => [
+            $child->id => $child->fees->groupBy('currency')->map(fn ($invoices) => [
+                'billed' => $invoices->sum(fn (Fee $invoice) => $invoice->netCents()),
+                'paid' => $invoices->sum(fn (Fee $invoice) => \App\Support\Money::cents($invoice->paid)),
+                'remaining' => $invoices->sum(fn (Fee $invoice) => max(0, $invoice->balanceCents())),
+            ]),
+        ]);
+        $familyNotices = $isParent ? app(FamilyAnnouncementNotices::class) : null;
+        $noticeDate = \Carbon\CarbonImmutable::today('Asia/Phnom_Penh');
         $attendanceSession = AttendanceSession::selected($request);
         $monthlyAttendance = app(MonthlyStudentAttendance::class)->dashboard($request);
         $attendanceStudents = AttendanceSession::students(Student::visibleForAttendance($user), $attendanceSession);
@@ -118,10 +167,10 @@ class DashboardController extends Controller
         $teacherAttendanceTotal = $dashboardAttendance['total'] ?? 0;
         $charts = [
             'labels' => $months->map(fn ($date) => $date->format('M'))->values(),
-            'enrollment' => $months->map(fn ($date) => (clone $students)->whereBetween('enrollment_date', [$date->toDateString(), $date->copy()->endOfMonth()->toDateString()])->count())->values(),
+            'enrollment' => $isParent ? [] : $months->map(fn ($date) => (clone $students)->whereBetween('enrollment_date', [$date->toDateString(), $date->copy()->endOfMonth()->toDateString()])->count())->values(),
             // Chart conversion only; ledger arithmetic uses integer minor units.
-            'revenue' => $canViewFees ? $months->map(fn ($date) => ($finance['trend'][$date->format('Y-m')] ?? 0) / 100)->values() : [],
-            'gender' => collect(['female', 'male', 'other'])->map(fn ($gender) => (clone $students)->where('gender', $gender)->count()),
+            'revenue' => $user->role === 'administrator' ? $months->map(fn ($date) => ($finance['trend'][$date->format('Y-m')] ?? 0) / 100)->values() : [],
+            'gender' => $isParent ? [] : collect(['female', 'male', 'other'])->map(fn ($gender) => (clone $students)->where('gender', $gender)->count()),
             'teacherAttendance' => collect(['present', 'absent', 'late', 'excused'])->map(fn ($status) => (int) ($teacherAttendanceCounts[$status] ?? 0))->values(),
             'attendance' => collect(['present', 'absent', 'late', 'excused'])->map(fn ($status) => (clone $attendance)->where('status', $status)->count()),
             'monthlyAttendance' => $monthlyAttendance['days'],
@@ -155,6 +204,9 @@ class DashboardController extends Controller
 
         return [
             'attendanceSession' => $attendanceSession,
+            'attendanceWeekStart' => $attendanceWeekStart,
+            'attendanceScope' => $attendanceScope,
+            'attendanceMessages' => $user->role === 'teacher' ? $this->attendanceMessages($user, $attendanceWeekStart, $attendanceScope) : collect(),
             'monthlyAttendance' => $monthlyAttendance,
             'attendanceStudentCount' => (clone $attendanceStudents)->count(),
             'activeTeacherCount' => $activeTeacherIds->count(),
@@ -192,7 +244,15 @@ class DashboardController extends Controller
             'lateCount' => (clone $attendance)->where('status', 'late')->count(),
             'attendanceCount' => (clone $attendance)->count(), 'collected' => $canViewFees ? \App\Support\Money::decimal($finance['paid'] ?? 0) : null,
             'pending' => $canViewFees ? \App\Support\Money::decimal($finance['balance'] ?? 0) : null,
-            'recent' => (clone $students)->with(['schoolClass', 'user', 'parent'])->latest()->latest('id')->limit(5)->get(),
+            'recent' => $isParent ? collect() : (clone $students)->with(['schoolClass', 'user', 'parent'])->latest()->latest('id')->limit(5)->get(),
+            'dashboardChildren' => $dashboardChildren,
+            'familyFeeTotals' => $familyFeeTotals,
+            'paymentToday' => $today,
+            'familyHolidayNotices' => $familyNotices?->holidays($noticeDate) ?? [],
+            'familyAttendanceNotices' => $familyNotices?->attendance($dashboardChildren, $noticeDate) ?? collect(),
+            'paymentCoverage' => $dashboardChildren->isNotEmpty()
+                ? app(TuitionPaymentCoverage::class)->forChildren($dashboardChildren->pluck('id'), $today->toImmutable())
+                : collect(),
             'announcements' => Announcement::whereIn('audience', ['all', $user->role])->whereDate('published_at', '<=', today())->latest('published_at')->limit(4)->get(),
             'teacherAttendanceCounts' => $teacherAttendanceCounts,
             'teacherAttendanceTotal' => $teacherAttendanceTotal,

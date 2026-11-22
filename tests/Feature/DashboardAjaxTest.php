@@ -96,7 +96,7 @@ class DashboardAjaxTest extends TestCase
 
         foreach ($pages as $html) {
             $this->assertMatchesRegularExpression('~🌅</span>Morning.*08:00–08:50.*☀️</span>Afternoon.*13:00–14:00.*🌙</span>Evening.*17:00–18:00~s', $html);
-            foreach (['Students in my classes', 'My classes', 'My subjects', 'View assignments', 'Daily attendance', 'Student attendance report', 'School announcements', 'Today’s teaching schedule', 'Period 1', 'A-TEST', 'Building A', 'dashboard-khmer-calendar'] as $label) {
+            foreach (['Students in my classes', 'My classes', 'My subjects', 'View assignments', 'Daily attendance', 'Student attendance report', 'Student attendance updates', 'Attendance history', 'Today’s teaching schedule', 'Period 1', 'A-TEST', 'Building A', 'dashboard-khmer-calendar'] as $label) {
                 $this->assertStringContainsString($label, $html);
             }
 
@@ -112,18 +112,104 @@ class DashboardAjaxTest extends TestCase
         $parent->forceFill(['role' => 'parent'])->save();
         Student::factory()->create(['name' => 'Rika', 'parent_id' => $parent->id]);
         Student::factory()->create(['name' => 'Private Child']);
+        $teacher = User::factory()->create(['role' => 'teacher']);
+        \App\Models\Announcement::create(['title' => 'Family meeting', 'body' => 'Meeting for families.', 'audience' => 'parent', 'published_at' => today(), 'created_by' => $teacher->id]);
+        \App\Models\Announcement::create(['title' => 'Staff-only update', 'body' => 'Internal update.', 'audience' => 'teacher', 'published_at' => today(), 'created_by' => $teacher->id]);
         $this->actingAs($parent)->get('/dashboard')->assertOk()
             ->assertSee("Rika's teachers")->assertSee("Rika's classes")->assertSee("Rika's subjects")
+            ->assertSee(['Open family dashboard', 'Family meeting', 'Family Announcements'])
+            ->assertDontSee('Monthly Attendance Trend')
+            ->assertDontSee(['Private Child', 'Staff-only update', 'Monthly revenue', 'Recent registrations', 'Students by gender', 'Fees collected'])
             ->assertDontSee('My teachers')->assertDontSee("Private Child's teachers");
-        $html = $this->getJson('/dashboard/data')->assertOk()->json('html');
+        $html = $this->getJson('/dashboard/data')->assertOk()->assertJsonPath('showRevenue', false)
+            ->assertJsonPath('charts.revenue', [])->assertJsonPath('charts.gender', [])->assertJsonPath('charts.enrollment', [])->json('html');
         $this->assertStringContainsString(e("Rika's teachers"), $html);
+        $this->assertStringContainsString('Family meeting', $html);
+        $this->assertStringNotContainsString('Monthly Attendance Trend', $html);
+        $this->assertStringNotContainsString('Staff-only update', $html);
         Student::factory()->create(['name' => 'Soth Vichea', 'parent_id' => $parent->id]);
         $this->get('/dashboard')->assertOk()->assertSee("My children's teachers")
             ->assertSee("My children's classes")->assertSee("My children's subjects");
         $otherParent = User::factory()->create();
         $otherParent->forceFill(['role' => 'parent'])->save();
         $this->actingAs($otherParent)->get('/dashboard')->assertOk()
-            ->assertSee("My children's teachers")->assertDontSee("Rika's teachers");
+            ->assertSee('No student records are linked')->assertDontSee("Rika's teachers")->assertDontSee('Monthly Attendance Trend');
+    }
+
+    public function test_teacher_attendance_messages_refresh_and_roll_over_to_weekly_history(): void
+    {
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-22 09:00'));
+        $this->seed(SchoolSeeder::class);
+        $teacher = User::where('email', 'teacher@school.test')->firstOrFail();
+        $class = SchoolClass::scheduledForTeacher($teacher)->firstOrFail();
+        $student = Student::factory()->create(['name' => 'Attendance Feed Student', 'school_class_id' => $class->id]);
+        $student->studyClasses()->syncWithoutDetaching([$class->id]);
+        $otherClass = SchoolClass::create(['name' => 'Grade 12', 'section' => 'Feed scope', 'program' => 'English', 'session' => 'Morning']);
+        $other = Student::factory()->create(['name' => 'Outside Teacher Scope', 'school_class_id' => $otherClass->id]);
+        $child = Student::factory()->create(['name' => 'Linked Teacher Child', 'school_class_id' => $otherClass->id, 'parent_id' => $teacher->id]);
+        foreach (['2026-11-16' => 'present', '2026-11-17' => 'late', '2026-11-18' => 'absent', '2026-11-21' => 'late'] as $date => $status) {
+            Attendance::updateOrCreate(['student_id' => $student->id, 'date' => $date], ['status' => $status]);
+        }
+        Attendance::create(['student_id' => $other->id, 'date' => '2026-11-18', 'status' => 'absent']);
+        Attendance::create(['student_id' => $child->id, 'date' => '2026-11-18', 'status' => 'late']);
+        \App\Models\ClassAttendance::create(['student_id' => $child->id, 'school_class_id' => $otherClass->id, 'date' => '2026-11-19', 'status' => 'present', 'recorded_by' => $teacher->id]);
+        \App\Models\ClassAttendance::create(['student_id' => $student->id, 'school_class_id' => $class->id, 'date' => '2026-11-19', 'status' => 'excused', 'recorded_by' => $teacher->id]);
+        $html = $this->actingAs($teacher)->getJson('/dashboard/data')->assertOk()->json('html');
+        $this->assertStringContainsString(e($student->name.' arrived on time.'), $html);
+        $this->assertStringContainsString(e($student->name.' arrived late.'), $html);
+        $this->assertStringContainsString(e($student->name.' was marked absent.'), $html);
+        $this->assertStringContainsString(e($class->label), $html);
+        $this->assertStringContainsString(e($student->name.'’s absence was excused.'), $html);
+        $this->assertStringNotContainsString('Sat, Nov 21', $html);
+        $this->assertStringNotContainsString('Outside Teacher Scope was marked absent.', $html);
+        $this->assertStringNotContainsString('Linked Teacher Child arrived', $html);
+        $childHtml = $this->getJson('/dashboard/data?attendance_scope=children')->assertOk()->json('html');
+        $this->assertStringContainsString('Linked Teacher Child arrived late.', $childHtml);
+        $this->assertStringContainsString('Linked Teacher Child arrived on time.', $childHtml);
+        $this->assertStringNotContainsString('Attendance Feed Student arrived', $childHtml);
+        $this->assertStringNotContainsString('Outside Teacher Scope was marked absent.', $childHtml);
+
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-23 09:00'));
+        $html = $this->getJson('/dashboard/data')->assertOk()->json('html');
+        $this->assertStringNotContainsString(e($student->name.' arrived late.'), $html);
+        Attendance::updateOrCreate(['student_id' => $student->id, 'date' => '2026-11-23'], ['status' => 'present']);
+        $this->assertStringContainsString(e($student->name.' arrived on time.'), $this->getJson('/dashboard/data')->assertOk()->json('html'));
+        $this->get(route('attendance.student-history', ['week' => '2026-11-16']))->assertOk()
+            ->assertSee($student->name.' arrived late.')->assertDontSee('Sat, Nov 21')->assertDontSee('Outside Teacher Scope');
+        $this->get(route('attendance.student-history', ['week' => '2026-11-16', 'attendance_scope' => 'children']))->assertOk()
+            ->assertSee('Linked Teacher Child arrived late.')->assertDontSee('Attendance Feed Student arrived');
+    }
+
+    public function test_family_notices_start_three_days_ahead_and_show_one_current_weekday_status(): void
+    {
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-19 09:00', 'Asia/Phnom_Penh'));
+        $parent = User::factory()->create(['role' => 'parent']);
+        $child = Student::factory()->create(['name' => 'Family Notice Child', 'parent_id' => $parent->id]);
+        $other = Student::factory()->create(['name' => 'Unrelated Notice Child']);
+        $this->actingAs($parent)->get('/dashboard')->assertOk()->assertDontSee('Water Festival');
+
+        $this->travelTo(now()->addDay());
+        \App\Models\ClassAttendance::create(['student_id' => $child->id, 'school_class_id' => $child->school_class_id, 'date' => '2026-11-20', 'status' => 'late', 'recorded_by' => User::factory()->create(['role' => 'teacher'])->id]);
+        $this->get('/dashboard')->assertOk()->assertSee('Family Notice Child arrived late.');
+        $daily = Attendance::create(['student_id' => $child->id, 'date' => '2026-11-20', 'status' => 'present']);
+        Attendance::create(['student_id' => $other->id, 'date' => '2026-11-20', 'status' => 'absent']);
+        $html = $this->getJson('/dashboard/data')->assertOk()->json('html');
+        $this->assertSame(1, substr_count($html, 'Water Festival'));
+        $this->assertStringContainsString('Mon, Nov 23', $html);
+        $this->assertStringContainsString('Wed, Nov 25, 2026', $html);
+        $this->assertSame(1, substr_count($html, 'data-family-attendance-notice'));
+        $this->assertStringContainsString('Family Notice Child arrived on time.', $html);
+        $this->assertStringNotContainsString('Unrelated Notice Child', $html);
+        $daily->update(['status' => 'excused']);
+        $html = $this->getJson('/dashboard/data')->assertOk()->json('html');
+        $this->assertStringContainsString('Family Notice Child’s absence was excused.', $html);
+        $this->assertStringNotContainsString('Family Notice Child arrived on time.', $html);
+
+        $this->travelTo(now()->addDay());
+        Attendance::create(['student_id' => $child->id, 'date' => '2026-11-21', 'status' => 'absent']);
+        $this->get('/dashboard')->assertOk()->assertSee('Water Festival')->assertDontSee('data-family-attendance-notice', false);
+        $this->travelTo(now()->addDays(5));
+        $this->get('/dashboard')->assertOk()->assertDontSee('Water Festival')->assertDontSee('data-family-attendance-notice', false);
     }
 
     public function test_daily_report_uses_selected_date_for_totals_and_chart(): void

@@ -8,7 +8,7 @@
     <span id="dashboard-sync-status" class="small text-secondary" role="status" aria-live="polite">Live data &middot; refreshes every 30 seconds</span>
     <button type="button" id="dashboard-refresh" class="btn btn-outline-secondary"><i class="bi bi-arrow-clockwise me-1"></i>Refresh</button>
 </div>
-@php($dashboardInitial = ['charts' => $charts, 'showRevenue' => in_array(auth()->user()->role, ['administrator', 'parent'])])
+@php($dashboardInitial = ['charts' => $charts, 'showRevenue' => auth()->user()->role === 'administrator'])
 <script type="application/json" id="dashboard-initial-data">@json($dashboardInitial)</script>
 @endsection
 @push('scripts')

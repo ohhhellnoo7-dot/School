@@ -1,7 +1,7 @@
 @php
     ['filters' => $weeklyFilters, 'classes' => $weeklyClasses, 'programs' => $weeklyPrograms, 'grades' => $weeklyGrades,
         'monthStart' => $monthStart, 'days' => $monthDays] = $monthlyAttendance;
-    $dailyQuery = array_filter(['date' => request('date'), 'session' => $attendanceSession]);
+    $dailyQuery = array_filter(['date' => request('date'), 'session' => $attendanceSession, 'attendance_scope' => $weeklyQuery['attendance_scope'] ?? null]);
     $recordedDays = $monthDays->whereNotNull('rate');
     $hasRecords = $recordedDays->isNotEmpty();
     $formatRate = fn ($rate) => $rate === null ? '—' : (round($rate, 1).'%');

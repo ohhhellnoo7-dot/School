@@ -21,7 +21,7 @@
     $bulkState = $isFinanceAdmin ? app(\App\Services\BulkTuitionPaymentService::class)->availability() : null;
 @endphp
 
-<div class="page-heading finance-hero">
+<div class="finance-hero">
     <div class="finance-hero-copy">
         @if($currentTab === 'finance.parents')
             <span class="finance-hero-wallet"><i class="bi bi-wallet2" aria-hidden="true"></i></span>

@@ -1,4 +1,4 @@
-<section id="dashboard-khmer-calendar" class="khmer-calendar {{ $calendarClass ?? 'border-top p-3' }}" aria-labelledby="khmer-calendar-title" lang="{{ app()->getLocale() }}" data-holiday-labels="{{ json_encode(__('khmer-calendar.holidays')) }}">
+<section id="dashboard-khmer-calendar" class="khmer-calendar {{ $calendarClass ?? 'border-top p-3' }}" aria-labelledby="khmer-calendar-title" lang="{{ app()->getLocale() }}" data-holiday-labels="{{ json_encode(__('khmer-calendar.holidays')) }}" data-holiday-schedules="{{ json_encode(config('khmer-holidays')) }}">
     <div class="khmer-calendar-header">
         <div class="khmer-calendar-heading">
             <span class="khmer-calendar-icon"><i class="bi bi-calendar3" aria-hidden="true"></i></span>

@@ -1,4 +1,8 @@
 (() => {
+    document.querySelector('[data-invoice-filters]')?.addEventListener('change', event => {
+        if (event.target.matches('select')) event.currentTarget.requestSubmit();
+    });
+
     if (typeof Chart === 'undefined') return;
 
     const root = document.documentElement;

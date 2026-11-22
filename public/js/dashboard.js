@@ -168,7 +168,7 @@
         try {
             const url = new URL(content.dataset.url, window.location.origin);
             const selected = new URLSearchParams(window.location.search);
-            for (const key of ['date', 'session', 'weekly_program', 'weekly_grade', 'weekly_class', 'weekly_session']) {
+            for (const key of ['date', 'session', 'weekly_program', 'weekly_grade', 'weekly_class', 'weekly_session', 'attendance_scope']) {
                 if (selected.get(key)) url.searchParams.set(key, selected.get(key));
             }
             const response = await fetch(url, {
@@ -193,7 +193,15 @@
             const calendarFocus = calendar?.contains(document.activeElement) ? document.activeElement : null;
             const modeFocus = content.contains(document.activeElement) ? document.activeElement.dataset.attendanceMode : null;
             const ratesWereOpen = content.querySelector('[data-monthly-rates]')?.open;
+            const previousFeed = content.querySelector('[data-attendance-message-feed]');
+            const feedScroll = previousFeed?.scrollTop;
+            const feedWasFocused = previousFeed && previousFeed === document.activeElement;
             content.innerHTML = payload.html;
+            const feed = content.querySelector('[data-attendance-message-feed]');
+            if (feed && previousFeed?.dataset.attendanceMessageFeed === feed.dataset.attendanceMessageFeed) {
+                feed.scrollTop = feedScroll;
+            }
+            if (feedWasFocused) feed?.focus({preventScroll: true});
             const rates = content.querySelector('[data-monthly-rates]');
             if (rates && ratesWereOpen) rates.open = true;
             if (calendar) {

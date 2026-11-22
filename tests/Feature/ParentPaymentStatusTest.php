@@ -52,6 +52,9 @@ class ParentPaymentStatusTest extends TestCase
         $this->assertSame(5000, $families[$partial->id]['currencies']['USD']['overdue']);
         $this->assertSame($debt->due_date->format('Y-m-d'), $families[$partial->id]['currencies']['USD']['next_due']);
         $this->get(route('finance.parents', ['status' => 'unpaid']))->assertOk()->assertSee('Unpaid Family')->assertDontSee('Partial Family')->assertDontSee('Paid Family');
+        $this->get(route('finance.index', ['duration' => 'not_paid']))->assertOk()
+            ->assertViewHas('fees', fn ($fees) => $fees->total() === 1)
+            ->assertSee('Parent: Unpaid Family')->assertDontSee('Parent: Partial Family');
         $this->get(route('finance.parents', ['search' => $debt->student->student_number]))->assertOk()->assertSee('Partial Family')->assertDontSee('Unpaid Family');
         $this->get(route('finance.index'))->assertOk()->assertSee('Parent payment status');
     }

@@ -42,9 +42,7 @@
                         </div>
                         @if($canEditTuition && $programRecord)
                             <button type="button" class="finance-tuition-customize" data-tuition-customize-button
-                                aria-label="{{ __('Customize :program picture', ['program' => $programLabel]) }}">
-                                <i class="bi bi-image" aria-hidden="true"></i> {{ __('Customize') }}
-                            </button>
+                                aria-label="{{ __('Customize :program picture', ['program' => $programLabel]) }}"></button>
                         @endif
                     </header>
                     @foreach($tiers as $rates)

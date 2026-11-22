@@ -85,6 +85,7 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent', \App\Htt
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::get('/profile/photo', [ProfileController::class, 'photo'])->name('profile.photo');
     Route::get('/attendance/people/{kind}/{status}', [DashboardController::class, 'attendancePeople'])->where('kind', 'students|teachers')->where('status', 'present|absent|late|excused')->name('attendance.people');
+    Route::get('/attendance/student-history', [DashboardController::class, 'attendanceHistory'])->middleware('role:teacher')->name('attendance.student-history');
     Route::post('/classrooms/{classroom}/study-with', [ClassroomController::class, 'studyWith'])->middleware('role:administrator,teacher')->name('classrooms.study-with');
     Route::get('/classrooms/{classroom}/matching-class', [ClassroomController::class, 'matchingClass'])->middleware('role:administrator,teacher')->name('classrooms.matching-class');
     Route::get('/dashboard/data', [DashboardController::class, 'data'])->name('dashboard.data');

@@ -8,6 +8,11 @@ class ClassAttendance extends Model
 {
     protected $guarded = [];
 
+    public function student()
+    {
+        return $this->belongsTo(Student::class);
+    }
+
     public function schoolClass()
     {
         return $this->belongsTo(SchoolClass::class)->withoutGlobalScope('unmerged');

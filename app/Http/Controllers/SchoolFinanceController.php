@@ -21,6 +21,26 @@ use Illuminate\Validation\Rule;
 
 class SchoolFinanceController extends Controller
 {
+    private function invoicePeriods(): \Illuminate\Support\Collection
+    {
+        $coverage = DB::table('invoice_periods')->selectRaw('fee_id, count(*) as months')
+            ->groupBy('fee_id')->pluck('months', 'fee_id');
+        $bulk = DB::table('bulk_payment_allocations')
+            ->join('bulk_payment_runs', 'bulk_payment_runs.id', '=', 'bulk_payment_allocations.bulk_payment_run_id')
+            ->pluck('bulk_payment_runs.months', 'bulk_payment_allocations.fee_id');
+
+        return $bulk->union($coverage);
+    }
+
+    private function invoicePeriod(Fee $fee, \Illuminate\Support\Collection $periods): int
+    {
+        return (int) ($periods[$fee->id] ?? match ($fee->payment_plan) {
+            'monthly' => 1,
+            'package' => 6,
+            default => 0,
+        });
+    }
+
     private function familyStatus($fees): string
     {
         $hasDebt = $fees->contains(fn ($fee) => $fee->balanceCents() > 0);
@@ -138,17 +158,16 @@ class SchoolFinanceController extends Controller
             'duration' => 'nullable|in:1,6,12,not_paid',
         ]);
         $paymentYear = (int) ($filters['year'] ?? today()->year);
-        $coverageMonths = DB::table('invoice_periods')->selectRaw('fee_id, count(*) as months')->groupBy('fee_id')->pluck('months', 'fee_id');
-        $bulkMonths = DB::table('bulk_payment_allocations')->join('bulk_payment_runs', 'bulk_payment_runs.id', '=', 'bulk_payment_allocations.bulk_payment_run_id')->pluck('bulk_payment_runs.months', 'bulk_payment_allocations.fee_id');
+        $periods = $this->invoicePeriods();
         $families = User::where('role', 'parent')->with(['children.fees.adjustments', 'children.fees.items', 'children.fees.payments'])
-            ->orderBy('name')->get()->map(function ($parent) use ($service, $paymentYear, $coverageMonths, $bulkMonths) {
+            ->orderBy('name')->get()->map(function ($parent) use ($service, $paymentYear, $periods) {
                 $fees = $parent->children->flatMap->fees;
                 $currencies = $service->summary($fees);
                 $status = $this->familyStatus($fees);
 
                 $yearPayments = $fees->flatMap->payments->filter(fn ($payment) => $payment->paid_on && $payment->paid_on->year === $paymentYear && \App\Support\Money::cents($payment->amount) > 0);
                 $paidDurations = $fees->filter(fn ($fee) => $fee->netCents() > 0 && $fee->balanceCents() <= 0 && $fee->payments->contains(fn ($payment) => $yearPayments->contains('id', $payment->id)))
-                    ->map(fn ($fee) => (int) ($bulkMonths[$fee->id] ?? $coverageMonths[$fee->id] ?? match ($fee->payment_plan) { 'monthly' => 1, 'package' => 6, default => 0 }))->filter(fn ($months) => in_array($months, [1, 6, 12], true))->unique()->values();
+                    ->map(fn ($fee) => $this->invoicePeriod($fee, $periods))->filter(fn ($months) => in_array($months, [1, 6, 12], true))->unique()->values();
 
                 return compact('parent', 'currencies', 'status', 'paidDurations') + ['invoice_count' => $fees->count(), 'noYearPayments' => $yearPayments->isEmpty()];
             });
@@ -220,12 +239,21 @@ class SchoolFinanceController extends Controller
         if (! $request->filled('status') && $request->filled('filter')) {
             $request->merge(['status' => $request->filter === 'pending' ? 'unpaid' : $request->filter]);
         }
+        $showParent = $request->user()->role === 'administrator';
         $filters = $request->validate([
             'search' => 'nullable|string|max:100', 'program' => 'nullable|string|max:30', 'grade' => 'nullable|integer|between:1,12',
             'academic_year' => ['nullable', 'regex:/^\d{4}-\d{4}$/'], 'status' => 'nullable|in:unpaid,partially_paid,paid,overdue,waived,refunded',
+            'duration' => ['nullable', Rule::in($showParent ? ['1', '6', '12', 'not_paid'] : ['1', '6', '12'])],
         ]);
         $query = $this->visible($request)
-            ->when($filters['search'] ?? null, fn ($q, $value) => $q->whereHas('student', fn ($s) => $s->search($value)))
+            ->when($filters['search'] ?? null, function ($query, $value) use ($showParent) {
+                $parentPattern = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower(trim($value))).'%';
+
+                $query->whereHas('student', fn ($students) => $students->where(fn ($match) => $match
+                    ->search($value)
+                    ->when($showParent, fn ($student) => $student->orWhereHas('parent', fn ($parent) => $parent
+                        ->where('role', 'parent')->whereRaw("LOWER(users.name) LIKE ? ESCAPE '!'", [$parentPattern])))));
+            })
             ->when($filters['program'] ?? null, fn ($q, $v) => $q->where('program', $v))
             ->when($filters['grade'] ?? null, fn ($q, $v) => $q->where('grade', $v))
             ->when($filters['academic_year'] ?? null, fn ($q, $v) => $q->where('academic_year', $v));
@@ -241,12 +269,29 @@ class SchoolFinanceController extends Controller
         if ($request->filled('status')) {
             $all = $all->filter(fn ($fee) => $fee->payment_status === $request->status);
         }
+        if (($filters['duration'] ?? null) === 'not_paid') {
+            $parentIds = $all->pluck('student.parent_id')->filter()->unique()->values()->all();
+            $unpaidParents = User::whereKey($parentIds)->where('role', 'parent')
+                ->whereDoesntHave('children.fees', fn ($fees) => $fees->where(fn ($paid) => $paid
+                    ->where('paid', '>', 0)
+                    ->orWhereHas('payments', fn ($payments) => $payments->where('amount', '>', 0))))
+                ->pluck('id')->flip();
+            $all = $all->filter(fn (Fee $fee) => $fee->balanceCents() > 0 && $unpaidParents->has($fee->student->parent_id));
+        } elseif (isset($filters['duration'])) {
+            $periods = $this->invoicePeriods();
+            $all = $all->filter(fn (Fee $fee) => $this->invoicePeriod($fee, $periods) === (int) $filters['duration']
+                && $fee->netCents() > 0 && $fee->balanceCents() <= 0
+                && $fee->payments->contains(fn (FeePayment $payment) => $payment->paid_on && Money::cents($payment->amount) > 0));
+        }
         $page = max(1, $request->integer('page', 1));
         $size = $request->attributes->get('finance_export') ? max(1, $all->count()) : 25;
         if ($request->attributes->get('finance_export')) {
             $page = 1;
         }
         $fees = new LengthAwarePaginator($all->forPage($page, $size)->values(), $all->count(), $size, $page, ['path' => $request->url(), 'query' => $request->query()]);
+        if ($showParent && ! $request->attributes->get('finance_export')) {
+            $fees->getCollection()->loadMissing('student.parent:id,name,role');
+        }
 
         $programRates = FeeStructure::where('status', 'active')->whereNotNull('approved_at')
             ->whereDate('effective_from', '<=', today())->where(fn ($q) => $q->whereNull('effective_until')->orWhereDate('effective_until', '>=', today()))
