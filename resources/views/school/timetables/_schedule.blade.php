@@ -47,6 +47,14 @@
 @endunless
 @if(auth()->user()->role === 'parent')
     @include('school.timetables._parent-metrics')
+    <nav class="parent-timetable-actions" aria-label="{{ __('Schedule actions') }}">
+        <a class="btn btn-primary" href="#parent-timetable-today"><i class="bi bi-calendar2-check" aria-hidden="true"></i> {{ __('Today’s Schedule') }}</a>
+        <button class="btn" type="button" data-copy-parent-schedule><i class="bi bi-copy" aria-hidden="true"></i> {{ __('Copy Schedule') }}</button>
+        <button class="btn" type="button" data-download-parent-schedule><i class="bi bi-download" aria-hidden="true"></i> {{ __('Export CSV') }}</button>
+        <button class="btn" type="button" onclick="window.print()"><i class="bi bi-printer" aria-hidden="true"></i> {{ __('Print Schedule') }}</button>
+        <a class="btn" href="{{ route('students.index') }}"><i class="bi bi-people" aria-hidden="true"></i> {{ __('My Children') }}</a>
+        <a class="btn" href="#parent-timetable-summary"><i class="bi bi-bar-chart" aria-hidden="true"></i> {{ __('Quick Summary') }}</a>
+    </nav>
 @endif
 @if($view === 'teachers' && ($selectedTeacher = $teachers->firstWhere('id', $selected))?->program === 'English')
 @php($workingMinutes = app(\App\Services\TeacherManagementService::class)->periods($selectedTeacher)->where('unavailable', false)->sum(fn ($p) => \App\Services\TeacherManagementService::duration($p->start_time, $p->end_time)))
@@ -57,8 +65,15 @@
     @if(auth()->user()->role === 'administrator')<a href="{{ route('teacher-management.edit', $selectedTeacher) }}">Edit working hours</a>@endif
 </div>
 @endif
+@if($parentSchedule)
+    <div class="parent-timetable-board">
+@endif
 <section class="timetable-calendar" aria-label="{{ __('Weekly timetable') }}">
-    <header class="timetable-calendar-toolbar"><div><span class="timetable-calendar-icon"><i class="bi bi-calendar3" aria-hidden="true"></i></span><div><h2>{{ __('Weekly schedule') }}</h2><p>{{ __('Monday–Friday') }} <span>·</span> {{ $academicYear }}</p></div></div>@include('school.timetables._schedule-details')<div class="timetable-calendar-tools"><span class="timetable-refresh-note"><span></span>{{ __('Updates every 30 seconds') }}</span><button class="btn btn-outline-secondary" type="button" onclick="window.print()"><i class="bi bi-printer" aria-hidden="true"></i> {{ __('Print Schedule') }}</button></div>
+    <header class="timetable-calendar-toolbar"><div><span class="timetable-calendar-icon"><i class="bi bi-calendar3" aria-hidden="true"></i></span><div><h2>{{ __('Weekly schedule') }}</h2><p>{{ __('Monday–Friday') }} <span>·</span> {{ $academicYear }}</p></div></div>@include('school.timetables._schedule-details')<div class="timetable-calendar-tools">@if($parentSchedule)
+            <span class="timetable-refresh-note" data-parent-timetable-updated><span aria-hidden="true"></span>{{ __('Updated') }} <time datetime="{{ now()->toIso8601String() }}">{{ now('Asia/Phnom_Penh')->format('H:i') }}</time></span>
+        @else
+            <span class="timetable-refresh-note"><span></span>{{ __('Updates every 30 seconds') }}</span>
+        @endif @unless($parentSchedule)<button class="btn btn-outline-secondary" type="button" onclick="window.print()"><i class="bi bi-printer" aria-hidden="true"></i> {{ __('Print Schedule') }}</button>@endunless</div>
         @if(auth()->user()->role === 'administrator')
             <div class="timetable-reset-row w-100 d-print-none">
                 @include('school.timetables._reset-controls')
@@ -66,9 +81,18 @@
         @endif
     </header>
     @if(auth()->user()->role === 'parent')
-        <div class="parent-timetable-display" role="group" aria-label="{{ __('Timetable display') }}">
-            <button type="button" class="btn" data-schedule-display-option="weekly" aria-pressed="true"><i class="bi bi-calendar-week" aria-hidden="true"></i> {{ __('Weekly View') }}</button>
-            <button type="button" class="btn" data-schedule-display-option="list" aria-pressed="false"><i class="bi bi-list-ul" aria-hidden="true"></i> {{ __('List View') }}</button>
+        <div class="parent-timetable-controls">
+            <div class="parent-timetable-display" role="group" aria-label="{{ __('Timetable display') }}">
+                <button type="button" class="btn" data-schedule-display-option="weekly" aria-pressed="true"><i class="bi bi-calendar-week" aria-hidden="true"></i> {{ __('Weekly View') }}</button>
+                <button type="button" class="btn" data-schedule-display-option="list" aria-pressed="false"><i class="bi bi-list-ul" aria-hidden="true"></i> {{ __('List View') }}</button>
+            </div>
+            <ul class="parent-timetable-legend" data-parent-timetable-legend aria-label="{{ __('Subjects with the most scheduled time') }}">
+                @foreach($parentSchedule['legend'] as $subject => $minutes)
+                    <li data-tone="{{ \App\Support\TimetableGrid::subjectStyle($subject)[0] }}" title="{{ $subject }}">
+                        <span>{{ $subject }}</span><small>{{ __(':count min', ['count' => $minutes]) }}</small>
+                    </li>
+                @endforeach
+            </ul>
         </div>
     @endif
     <div id="shared-timetable">
@@ -80,3 +104,7 @@
         @endif
     </div>
 </section>
+@if($parentSchedule)
+        @include('school.timetables._parent-side')
+    </div>
+@endif

@@ -15,7 +15,16 @@
     }, true);
     $sessionIcons = ['Morning'=>'sunrise', 'Afternoon'=>'sun', 'Evening'=>'moon-stars'];
 @endphp
-<div class="panel timetable-scroll"><table class="shared-timetable"><caption>{{ __('Weekly schedule — Monday–Friday') }}</caption><thead><tr><th scope="col"><i class="bi bi-clock" aria-hidden="true"></i> {{ __('Time') }}</th>@foreach(\App\Services\TeacherManagementService::DAYS as $day)<th scope="col"><i class="bi bi-calendar2" aria-hidden="true"></i> {{ __($day) }}</th>@endforeach</tr></thead>
+<div class="panel timetable-scroll"><table class="shared-timetable"><caption>{{ __('Weekly schedule — Monday–Friday') }}</caption><thead><tr><th scope="col"><i class="bi bi-clock" aria-hidden="true"></i> {{ __('Time') }}</th>@foreach(\App\Services\TeacherManagementService::DAYS as $day)<th scope="col"><i class="bi bi-calendar2" aria-hidden="true"></i>
+    @if($parentSchedule ?? null)
+        <span class="parent-timetable-day">
+            <strong>{{ __($day) }}</strong>
+            <time datetime="{{ $parentSchedule['weekStart']->addDays($loop->index)->toDateString() }}">{{ $parentSchedule['weekStart']->addDays($loop->index)->translatedFormat('M j') }}</time>
+        </span>
+    @else
+        {{ __($day) }}
+    @endif
+</th>@endforeach</tr></thead>
 @foreach($sessionGroups as $sessionName => $sessionPeriods)
 <tbody class="timetable-session-group" aria-label="{{ $sessionName }} schedule">
 <tr class="timetable-session-heading session-{{ strtolower($sessionName) }}"><th colspan="6" scope="rowgroup"><span class="timetable-session-title"><i class="bi bi-{{ $sessionIcons[$sessionName] }}" aria-hidden="true"></i> {{ $sessionName }} schedule</span><span class="timetable-session-hours">{{ $sessionPeriods->first()[0] }}–{{ $sessionPeriods->last()[1] }}</span></th></tr>

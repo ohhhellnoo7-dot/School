@@ -7,7 +7,16 @@
 <div class="timetable-workspace {{ auth()->user()->role === 'parent' ? 'parent-timetable' : '' }}">
 <x-scholar-hero tag="section" class="unified-timetable-hero">
     <div class="timetable-hero-copy">
-        <div class="timetable-hero-heading"><span class="timetable-hero-icon"><i class="bi bi-calendar-week" aria-hidden="true"></i></span><div><span class="timetable-eyebrow">{{ __('Plan the school week') }}</span><h1>{{ __('School') }} <span>{{ __('Timetables') }}</span></h1></div></div>
+        <div class="timetable-hero-heading">
+            <span class="timetable-hero-icon">
+                @if(auth()->user()->role === 'parent')
+                    <img src="{{ asset('images/student-timetable-calendar.png') }}" alt="">
+                @else
+                    <i class="bi bi-calendar-week" aria-hidden="true"></i>
+                @endif
+            </span>
+            <div><span class="timetable-eyebrow">{{ __('Plan the school week') }}</span><h1>{{ __('School') }} <span>{{ __('Timetables') }}</span></h1></div>
+        </div>
         <p>{{ __(auth()->user()->role === 'parent' ? 'View the weekly class schedules for your linked children.' : 'One lesson, three connected schedules.') }} <span class="timetable-timezone"><i class="bi bi-geo-alt" aria-hidden="true"></i> Asia/Phnom_Penh</span></p>
         @if(auth()->user()->role === 'administrator')<div class="timetable-hero-actions d-flex gap-2 flex-wrap"><a class="btn btn-primary" href="{{ route('timetables.lessons.create') }}"><i class="bi bi-plus-lg" aria-hidden="true"></i> {{ __('Add lesson') }}</a><a class="btn btn-outline-secondary" href="{{ route('timetables.diagnostics') }}"><i class="bi bi-tools" aria-hidden="true"></i> {{ __('Diagnostics & Khmer replacement') }}</a><a class="btn btn-outline-secondary" href="{{ route('timetables.rooms.review') }}"><i class="bi bi-layers" aria-hidden="true"></i> {{ __('Review physical room assignments') }}</a></div>@endif
     </div>
@@ -16,6 +25,7 @@
     @include('school.timetables._schedule')
 </div>
 <p id="timetable-filter-status" class="text-danger" role="status"></p>
+@if($parentSchedule)<p id="parent-timetable-action-status" class="small mb-0" role="status"></p>@endif
 @if(auth()->user()->role === 'administrator')
     @include('school.timetables._reset-dialogs')
 @endif
@@ -104,7 +114,44 @@
         });
     }
 
+    async function exportParentSchedule(download) {
+        const actionStatus = document.getElementById('parent-timetable-action-status');
+        const rows = [...schedule.querySelectorAll('[data-parent-export]')].map(lesson => JSON.parse(lesson.dataset.parentExport));
+        if (!rows.length) {
+            actionStatus.textContent = @json(__('There are no lessons to export.'));
+            return;
+        }
+        rows.unshift({{ \Illuminate\Support\Js::from([__('Day'), __('Start'), __('End'), __('Subject'), __('Teacher'), __('Classroom')]) }});
+        if (!download) {
+            try {
+                await navigator.clipboard.writeText(rows.map(row => row.join('\t')).join('\n'));
+                actionStatus.textContent = @json(__('Schedule copied.'));
+            } catch {
+                actionStatus.textContent = @json(__('Could not copy the schedule. You can export it as CSV.'));
+            }
+            return;
+        }
+        const csvCell = value => {
+            const cell = String(value ?? '');
+            const safe = /^\s*[=+@-]|^[\t\r\n]/.test(cell) ? "'" + cell : cell;
+            return '"' + safe.replaceAll('"', '""') + '"';
+        };
+        const csv = rows.map(row => row.map(csvCell).join(',')).join('\r\n');
+        const url = URL.createObjectURL(new Blob(['\uFEFF', csv], {type: 'text/csv;charset=utf-8'}));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'school-timetable.csv';
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        actionStatus.textContent = @json(__('Schedule exported.'));
+    }
+
     schedule.addEventListener('click', event => {
+        const exportButton = event.target.closest('[data-copy-parent-schedule], [data-download-parent-schedule]');
+        if (exportButton) {
+            exportParentSchedule(exportButton.hasAttribute('data-download-parent-schedule'));
+            return;
+        }
         const display = event.target.closest('[data-schedule-display-option]');
         if (display) {
             schedule.dataset.scheduleDisplay = display.dataset.scheduleDisplayOption;
@@ -140,7 +187,7 @@
             const fragment = document.createElement('template');
             fragment.innerHTML = html;
             const scrollLeft = shared.querySelector('.timetable-scroll')?.scrollLeft ?? 0;
-            for (const selector of ['[data-parent-timetable-metrics]', '#shared-timetable']) {
+            for (const selector of ['[data-parent-timetable-metrics]', '#shared-timetable', '[data-parent-timetable-side]', '[data-parent-timetable-updated]', '[data-parent-timetable-legend]']) {
                 const next = fragment.content.querySelector(selector);
                 if (next) schedule.querySelector(selector)?.replaceWith(next);
             }

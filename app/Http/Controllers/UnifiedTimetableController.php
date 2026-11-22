@@ -168,7 +168,39 @@ class UnifiedTimetableController extends Controller
             $excess = $subjects->filter(fn ($s)=>$s->required_weekly_minutes !== null && $lessons->where('subject_id',$s->id)->sum(fn ($entry)=>TeacherManagementService::duration($entry->starts_at,$entry->ends_at)) > $s->required_weekly_minutes)->pluck('name')->all();
             $curriculum = ['unknown'=>$unknown,'missing'=>array_values(array_unique($missing)), 'excess'=>array_values(array_unique($excess))];
         }
-        return compact('subjectSearch', 'subjectChoices', 'programs', 'timetableProgram', 'view', 'classes', 'teachers', 'rooms', 'selected', 'lessons', 'periods', 'breaks','roomIssues','curriculum','academicYear','studentClasses','teacherProgram','teacherSession','availableTeacherSessions','teacherId') + TimetableGrid::build($lessons, $periods);
+        $grid = TimetableGrid::build($lessons, $periods);
+        $parentSchedule = null;
+        if ($user->role === 'parent') {
+            $today = \Carbon\CarbonImmutable::today('Asia/Phnom_Penh');
+            $occupied = collect($grid['cells'])->sum(fn ($day) => count($day));
+            $slots = count($periods) * count(TeacherManagementService::DAYS);
+            $teaching = $lessons->reject(fn ($lesson) => $lesson->isRelaxation());
+            $subjectMinutes = $teaching->filter(fn ($lesson) => $lesson->subject)
+                ->groupBy(fn ($lesson) => $lesson->subject->name)
+                ->map(fn ($entries) => $entries->sum(fn ($entry) => TeacherManagementService::duration($entry->starts_at, $entry->ends_at)));
+            $weekdays = $lessons->whereIn('day', TeacherManagementService::DAYS)->groupBy('day');
+            $todayLessons = $weekdays->get($today->format('l'), collect());
+            $nextDay = $todayLessons->isEmpty()
+                ? collect(range(1, 7))->map(fn ($offset) => $today->addDays($offset))->first(fn ($date) => $weekdays->has($date->format('l')))
+                : null;
+            $parentSchedule = [
+                'today' => $today,
+                'weekStart' => $today->startOfWeek(\Carbon\CarbonInterface::MONDAY),
+                'todayLessons' => $todayLessons,
+                'nextDay' => $nextDay,
+                'nextLessons' => $nextDay ? $weekdays->get($nextDay->format('l')) : collect(),
+                'utilization' => $slots ? (int) round(100 * $occupied / $slots) : 0,
+                'occupied' => $occupied,
+                'slots' => $slots,
+                'teaching' => $teaching,
+                'legend' => $subjectMinutes->sortDesc()->take(3),
+                'subjects' => $teaching->pluck('subject_id')->filter()->unique()->count(),
+                'days' => $teaching->whereIn('day', TeacherManagementService::DAYS)->pluck('day')->unique()->count(),
+                'conflicts' => collect($grid['cells'])->sum(fn ($day) => collect($day)->filter(fn ($cell) => $cell && $cell['lessons']->count() > 1)->count()),
+            ];
+        }
+
+        return compact('subjectSearch', 'subjectChoices', 'programs', 'timetableProgram', 'view', 'classes', 'teachers', 'rooms', 'selected', 'lessons', 'periods', 'breaks','roomIssues','curriculum','academicYear','studentClasses','teacherProgram','teacherSession','availableTeacherSessions','teacherId', 'parentSchedule') + $grid;
     }
 
     public function index(Request $request)

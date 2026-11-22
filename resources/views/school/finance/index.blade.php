@@ -12,7 +12,7 @@
 @if(!request()->attributes->get('finance_archive') || $fees->isNotEmpty())
 @include('school.finance._summary')
 @endif
-@if(!request()->attributes->get('finance_archive'))
+@if(auth()->user()->role !== 'parent' && !request()->attributes->get('finance_archive'))
     @include('school.finance._program-tuition')
 @endif
 <section class="panel mb-4" id="invoice-list"><div class="panel-header"><h2>{{ request()->attributes->get('finance_archive') ? 'Archived invoices' : 'Invoices & balances' }} <small>({{ $fees->total() }})</small></h2><a class="btn btn-outline-primary" href="{{ route('finance.export', request()->query() + ['archived' => request()->attributes->get('finance_archive') ? 1 : null]) }}">Export filtered invoices (CSV)</a></div><div class="panel-body"><form method="get" action="{{ url()->current() }}#invoice-list" class="finance-filters invoice-filters" data-invoice-filters>

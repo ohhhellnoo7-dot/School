@@ -584,6 +584,7 @@ class UnifiedTimetableTest extends TestCase
 
     public function test_students_and_parents_only_see_their_enrolled_cohort_in_all_views(): void
     {
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-23 08:00', 'Asia/Phnom_Penh'));
         $f = $this->fixture();
         $manager = app(LessonManagementService::class);
         $own = $manager->save($this->data($f));
@@ -599,7 +600,11 @@ class UnifiedTimetableTest extends TestCase
         }
         $this->actingAs($f['parent'])->get(route('timetables.index'))->assertOk()
             ->assertDontSee(['timetable-view-tabs', 'class="panel timetable-filters'], false)
-            ->assertSee(['Weekly schedule', 'Total Lessons', 'Total Hours', 'Weekly View', 'List View', '2 hrs']);
+            ->assertSee(['Weekly schedule', 'Total Lessons', 'Total Hours', 'Weekly View', 'List View', '2 hrs', 'Schedule Utilization', 'Quick Summary', 'Today’s Schedule', 'Mon, Nov 23, 2026']);
+        $side = $this->getJson(route('timetables.data', ['fragment' => 1]))->assertOk()->json('html');
+        $side = strstr($side, 'data-parent-timetable-side');
+        $this->assertStringContainsString('data-lesson-id="'.$own->id.'"', $side);
+        $this->assertStringNotContainsString('data-lesson-id="'.$other->id.'"', $side);
         $fragment = $this->getJson(route('timetables.data', ['fragment' => 1]))->assertOk()->json('html');
         $this->assertStringNotContainsString('timetable-view-tabs', $fragment);
         $this->assertStringNotContainsString('timetable-filters', $fragment);

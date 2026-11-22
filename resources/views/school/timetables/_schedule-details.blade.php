@@ -32,4 +32,10 @@
     @endif
     <div><dt>{{ __('Classroom') }}</dt><dd>{{ $detailRooms->pluck('room_number')->join(', ') ?: __('Not assigned') }}</dd></div>
     <div><dt>{{ __('Building') }}</dt><dd>{{ $detailBuildings->join(', ') ?: __('Not assigned') }}</dd></div>
+    @if($parentSchedule ?? null)
+        <div>
+            <dt>{{ __('This week') }}</dt>
+            <dd>{{ $parentSchedule['weekStart']->translatedFormat('M j') }} &ndash; {{ $parentSchedule['weekStart']->addDays(4)->translatedFormat('M j, Y') }}</dd>
+        </div>
+    @endif
 </dl>

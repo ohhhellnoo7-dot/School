@@ -196,7 +196,8 @@ class SchoolFinanceTest extends TestCase
         $fb = $b['service']->issue($b['student'], $b['class'], $b['structure'], 'monthly', 1, 1, $b['actor'])[0];
         $payment = $b['service']->payment($fb, ['amount' => '5.00', 'request_key' => (string) Str::uuid(), 'paid_on' => today()->toDateString(), 'method' => 'cash'], $b['actor']);
         $this->actingAs($a['parent']);
-        $this->get(route('finance.index'))->assertOk()->assertSee($fa->display_number)->assertDontSee($fb->display_number);
+        $this->get(route('finance.index'))->assertOk()->assertSee($fa->display_number)->assertDontSee($fb->display_number)
+            ->assertDontSee('Current program tuition');
         $this->get(route('finance.invoice', $fb))->assertNotFound();
         $this->get(route('finance.receipt', $payment))->assertNotFound();
         $this->post(route('finance.pay', $fa), [])->assertForbidden();

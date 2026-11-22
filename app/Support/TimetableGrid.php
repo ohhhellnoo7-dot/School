@@ -7,6 +7,24 @@ use Illuminate\Support\Collection;
 
 class TimetableGrid
 {
+    public static function subjectStyle(string $subject, bool $relaxation = false): array
+    {
+        $name = mb_strtolower($subject);
+
+        return match (true) {
+            $relaxation => ['gold', 'cup-hot'],
+            str_contains($name, 'physics'), str_contains($name, 'រូបវិទ្យា') => ['teal', 'flask'],
+            str_contains($name, 'chemistry'), str_contains($name, 'គីមី') => ['pink', 'flask'],
+            str_contains($name, 'math'), str_contains($name, 'គណិត') => ['blue', 'calculator'],
+            str_contains($name, 'english'), str_contains($name, 'អង់គ្លេស') => ['purple', 'book'],
+            str_contains($name, 'biolog'), str_contains($name, 'ជីវវិទ្យា') => ['green', 'leaf'],
+            str_contains($name, 'geography'), str_contains($name, 'ភូមិវិទ្យា') => ['gold', 'globe2'],
+            str_contains($name, 'ict'), str_contains($name, 'computer') => ['sky', 'display'],
+            str_contains($name, 'khmer'), str_contains($name, 'ភាសាខ្មែរ') => ['green', 'book'],
+            default => [['teal', 'blue', 'purple', 'green', 'sky'][crc32($name) % 5], 'book'],
+        };
+    }
+
     public static function build(Collection $lessons, array $periods): array
     {
         $cells = []; $outside = $lessons->reject(fn ($lesson) => in_array($lesson->day, Time::DAYS, true))->values();
