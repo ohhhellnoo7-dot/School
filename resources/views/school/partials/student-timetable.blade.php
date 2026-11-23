@@ -77,7 +77,7 @@
                             </div>
                         </li>
                     @empty
-                        <li class="st-empty">{{ __('No lessons scheduled for this day.') }}</li>
+                        <li class="st-empty">{{ $holidays->has($weekday) ? __('School holiday. No class.') : __('No lessons scheduled for this day.') }}</li>
                     @endforelse
                 </ul>
             </div>

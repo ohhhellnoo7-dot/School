@@ -18,7 +18,7 @@ class SchoolDependencies
     public static function hasDependents(Model $record): bool
     {
         return match (true) {
-            $record instanceof Student => $record->attendances()->exists() || $record->grades()->exists() || $record->fees()->exists(),
+            $record instanceof Student => $record->attendances()->withoutGlobalScope('school-holiday')->exists() || $record->grades()->exists() || $record->fees()->exists(),
             $record instanceof User => $record->children()->exists() || $record->subjects()->exists() || $record->classes()->exists()
                 || Student::where('user_id', $record->id)->exists() || Announcement::where('created_by', $record->id)->exists()
                 || Schedule::withoutGlobalScope('active')->where('teacher_id', $record->id)->exists(),

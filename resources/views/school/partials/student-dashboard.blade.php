@@ -60,7 +60,7 @@
                                 </span>
                             </li>
                         @empty
-                            <li class="sd-empty">{{ __('No lessons scheduled for this day.') }}</li>
+                            <li class="sd-empty">{{ $holiday ? __('School holiday. No class.') : __('No lessons scheduled for this day.') }}</li>
                         @endforelse
                     </ul>
                 </section>

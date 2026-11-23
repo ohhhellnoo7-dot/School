@@ -1,6 +1,9 @@
 @if(!($overviewRendered ?? false))
 @include('school.attendance._teacher-overview')
 @endif
+@if($holiday ?? false)
+    <p class="alert alert-warning" role="status">{{ app(\App\Services\SchoolHolidayClosure::class)->message($holiday) }}</p>
+@else
 <form method="post" action="{{ route('teacher-attendance.store') }}">
 @csrf
 @if($embedded)<input type="hidden" name="return_to" value="teachers"><input type="hidden" name="attendance_page" value="{{ $teachers->currentPage() }}">@endif
@@ -37,6 +40,7 @@
 <p class="form-text">One record per teacher per day. Save applies to this page only; existing records are updated. Blank statuses remain unmarked.</p><button class="btn btn-primary" type="submit">Save teacher attendance</button>
 @endif
 </div></section></form><div class="mt-3">{{ $teachers->links() }}</div>
+@endif
 @push('scripts')
 <script src="{{ asset('vendor/chart/chart.umd.min.js') }}"></script>
 <script src="{{ asset('js/teacher-attendance-chart.js') }}?v={{ filemtime(public_path('js/teacher-attendance-chart.js')) }}" defer></script>

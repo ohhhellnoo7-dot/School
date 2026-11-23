@@ -199,6 +199,8 @@ class TeacherAttendanceController extends Controller
         ], ['date' => 'nullable|date_format:Y-m-d', 'program' => ['nullable', Rule::in(Program::names())], 'search' => 'nullable|string|max:100'])->validate();
         $filters['session'] = $session;
         $date = $filters['date'] ?? today()->toDateString();
+        $closure = app(SchoolHolidayClosure::class);
+        $holiday = $closure->holiday($date);
         app(\App\Services\TeacherScanAttendance::class)->refreshDate($date);
         $sessionTeacherIds = AttendanceSession::teachers(User::where('role', 'teacher'), $session)->select('users.id');
         $records = TeacherAttendance::whereDate('date', $date)
@@ -236,10 +238,10 @@ class TeacherAttendanceController extends Controller
                 ->when($filters['program'] ?? null, fn ($q, $program) => $q->where('program', $program))
                 ->when($filters['search'] ?? null, fn ($q, $search) => $q->whereHas('teacher', fn ($q) => $q->where(fn ($q) => $q->where('name', 'like', '%'.$search.'%')->orWhere('email', 'like', '%'.$search.'%'))))
                 ->get()->groupBy(fn ($record) => $record->date->toDateString());
-            $trend = collect(range(6, 0))->map(function ($offset) use ($end, $history) {
+            $trend = collect(range(6, 0))->map(function ($offset) use ($end, $history, $closure) {
                 $day = $end->copy()->subDays($offset);
                 $daily = $history->get($day->toDateString(), collect());
-                return ['date' => $day->toDateString(), 'label' => $day->format('D'), 'recorded' => $daily->count(),
+                return ['date' => $day->toDateString(), 'label' => $day->format('D'), 'recorded' => $daily->count(), 'holiday' => $closure->holiday($day),
                     'rate' => $daily->isEmpty() ? null : (int) round($daily->where('status', 'present')->count() / $daily->count() * 100)];
             });
             $programs = $teachers->groupBy(fn ($teacher) => $records->get($teacher->id)?->program ?? $teacher->program ?? 'Unassigned')
@@ -250,11 +252,11 @@ class TeacherAttendanceController extends Controller
                 })->values();
             $recent = $records->sortByDesc('updated_at')->take(3);
             $recent->each(fn ($record) => $record->loadMissing('teacher'));
-            $insights = compact('trend', 'programs', 'recent');
+            $insights = compact('trend', 'programs', 'recent', 'holiday');
         }
         $teachers = new \Illuminate\Pagination\LengthAwarePaginator($teachers->forPage(max(1, $request->integer($prefix.'page', 1)), 50)->values(), $total, 50, max(1, $request->integer($prefix.'page', 1)), ['path' => $request->url(), 'query' => $request->query(), 'pageName' => $prefix.'page', 'fragment' => 'teacher-attendance']);
         $workingHours = DB::table('teacher_working_periods')->whereIn('teacher_id', $teachers->pluck('id'))->where('unavailable', false)->orderBy('start_time')->get()->groupBy('teacher_id')->map(fn ($periods) => $periods->map(fn ($p) => substr($p->start_time, 0, 5).'–'.substr($p->end_time, 0, 5))->unique()->join(', '));
-        return compact('teachers', 'records', 'counts', 'total', 'date', 'workingHours', 'filters', 'embedded', 'prefix', 'insights');
+        return compact('teachers', 'records', 'counts', 'total', 'date', 'workingHours', 'filters', 'embedded', 'prefix', 'insights', 'holiday');
     }
     public function store(Request $request) {
         abort_unless($request->user()->role === 'administrator', 403);

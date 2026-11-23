@@ -1,15 +1,15 @@
 <div class="teacher-attendance-dashboard">
     <div class="teacher-attendance-main-grid">
         <div class="teacher-attendance-compact">
-            @include('school.attendance._teacher-chart')
+            @include('school.attendance._teacher-chart', ['holiday' => $insights['holiday']])
         </div>
         <section class="panel teacher-insight-card teacher-trend-card" aria-labelledby="teacher-trend-title">
             <header><h2 id="teacher-trend-title"><i class="bi bi-bar-chart" aria-hidden="true"></i>Attendance trend</h2><span class="teacher-period-pill">Last 7 days</span></header>
             <p class="teacher-card-caption">Present rate among recorded teachers</p>
             <div class="teacher-trend-plot" role="list" aria-label="Daily attendance rates for the last seven days">
                 @foreach($insights['trend'] as $day)
-                <div class="teacher-trend-day" role="listitem" aria-label="{{ $day['date'] }}: {{ $day['rate'] === null ? 'No records' : $day['rate'].'% present' }}">
-                    <span class="teacher-trend-value">{{ $day['rate'] === null ? 'N/A' : $day['rate'].'%' }}</span>
+                <div class="teacher-trend-day" role="listitem" aria-label="{{ $day['date'] }}: {{ $day['holiday'] ?? ($day['rate'] === null ? 'No records' : $day['rate'].'% present') }}">
+                    <span class="teacher-trend-value">{{ $day['holiday'] ? __('Holiday') : ($day['rate'] === null ? 'N/A' : $day['rate'].'%') }}</span>
                     <div class="teacher-trend-track"><span class="{{ $loop->last ? 'is-selected' : '' }}" style="height:{{ $day['rate'] ?? 0 }}%"></span></div>
                     <span class="teacher-trend-label">{{ $day['label'] }}</span>
                 </div>
@@ -18,6 +18,7 @@
             <footer><i class="bi bi-info-circle" aria-hidden="true"></i> Empty days have no recorded attendance.</footer>
         </section>
     </div>
+    @unless($insights['holiday'])
     <div class="teacher-attendance-detail-grid">
         <section class="panel teacher-insight-card" aria-labelledby="teacher-program-attendance-title">
             <header><h2 id="teacher-program-attendance-title"><i class="bi bi-layers" aria-hidden="true"></i>Attendance by program</h2></header>
@@ -50,4 +51,5 @@
             </div>
         </section>
     </div>
+    @endunless
 </div>

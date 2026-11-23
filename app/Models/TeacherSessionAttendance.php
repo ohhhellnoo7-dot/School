@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ExcludesSchoolHolidayAttendance;
 use Illuminate\Database\Eloquent\Model;
 
 class TeacherSessionAttendance extends Model
 {
+    use ExcludesSchoolHolidayAttendance;
+
     protected $guarded = [];
 
     public function setDateAttribute($value): void

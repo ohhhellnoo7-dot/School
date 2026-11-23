@@ -37,6 +37,7 @@ class ClassroomManagementTest extends TestCase
             'teacher_id' => $teacher->id, 'date' => '2026-11-23',
             'program' => 'Khmer', 'status' => 'absent', 'recorded_by' => $admin->id,
         ]);
+        $studentMark = \App\Models\Attendance::create(['student_id' => $student->id, 'date' => '2026-11-23', 'status' => 'absent']);
         $switch = route('classrooms.holiday-closure');
         $classrooms = route('classrooms.index', ['date' => '2026-11-23', 'time' => '09:00']);
         $status = fn (string $date) => app(ClassroomAvailabilityService::class)->forDateAndTime($date, '09:00')
@@ -52,18 +53,26 @@ class ClassroomManagementTest extends TestCase
         $this->assertSame('available', $status('2026-11-23'));
         $this->assertSame('busy', $status('2026-11-30'));
 
+        $dashboard = route('dashboard.data', ['date' => '2026-11-23']);
+        $this->getJson($dashboard)->assertOk()->assertJsonPath('summary.attendanceCount', 0)
+            ->assertJsonPath('charts.teacherAttendance.1', 0)
+            ->assertJsonPath('html', fn ($html) => str_contains($html, 'School holiday') && str_contains($html, 'id="teacherAttendanceChart"')
+                && str_contains($html, 'No attendance required') && ! str_contains($html, 'Recent attendance'));
+
         $studentAttendance = route('students.attendance.store', $student);
         $mark = ['date' => '2026-11-23', 'status' => 'present'];
         $this->postJson($studentAttendance, $mark)->assertUnprocessable()->assertJsonValidationErrors('date');
         $this->postJson(route('dashboard.teacher-attendance.bulk', 'all-present'))->assertUnprocessable();
         $this->actingAs($teacher)->postJson(route('school.map.scan'))->assertUnprocessable()->assertJsonPath('reason', 'school_holiday');
-        $this->assertDatabaseMissing('attendances', ['student_id' => $student->id, 'date' => '2026-11-23']);
+        $this->assertSame('absent', $studentMark->refresh()->status);
         $this->assertSame('absent', $existing->refresh()->status);
 
         $this->actingAs($admin)->put($switch, ['enabled' => 0])->assertRedirect();
         $this->assertSame('busy', $status('2026-11-23'));
         $this->getJson(route('classrooms.data', ['date' => '2026-11-23', 'time' => '09:00']))->assertOk()
             ->assertJsonPath('html', fn ($html) => str_contains($html, '>Absent</span>'));
+        $this->getJson($dashboard)->assertOk()->assertJsonPath('summary.absentCount', 1)
+            ->assertJsonPath('charts.teacherAttendance.1', 1);
         $this->postJson($studentAttendance, $mark)->assertOk();
     }
 

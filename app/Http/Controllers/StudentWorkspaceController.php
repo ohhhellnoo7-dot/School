@@ -60,11 +60,13 @@ class StudentWorkspaceController extends Controller
             $published = $query('announcements');
         }
 
+        $holiday = $section === 'overview' ? app(\App\Services\SchoolHolidayClosure::class)->holiday(today()) : null;
         $records = match ($section) {
             'overview' => [
                 'studentSessions' => $query('classes')->with('classGroup')->orderBy('name')->get(),
                 'attendanceRate' => $attendance->sum() ? round(100 * ($attendance->get('present', 0) + $attendance->get('late', 0)) / $attendance->sum()) : null,
-                'lessons' => $query('schedules')->with(['subject', 'teacher', 'classroom'])->forAcademicYear(AcademicYear::current())
+                'holiday' => $holiday,
+                'lessons' => $holiday ? collect() : $query('schedules')->with(['subject', 'teacher', 'classroom'])->forAcademicYear(AcademicYear::current())
                     ->where('day', today()->format('l'))->orderBy('starts_at')->get(),
                 'assignmentCount' => (clone $upcoming)->count(),
                 'assignments' => $upcoming->with('subject')->orderBy('due_date')->orderBy('id')->limit(3)->get(),
@@ -132,9 +134,15 @@ class StudentWorkspaceController extends Controller
             ->forAcademicYear(AcademicYear::current())
             ->whereIn('day', $days)
             ->orderBy('starts_at')->orderBy('id')
-            ->get()->groupBy('day');
+            ->get()->toBase()->groupBy('day');
 
-        return compact('date', 'weekStart', 'weekly', 'days', 'lessonsByDay') + ['weekdays' => self::WEEK_DAYS];
+        $closure = app(\App\Services\SchoolHolidayClosure::class);
+        $holidays = collect($days)->mapWithKeys(fn ($day) => [
+            $day => $closure->holiday($weekly ? $weekStart->addDays(array_search($day, self::WEEK_DAYS, true)) : $date),
+        ])->filter();
+        $lessonsByDay = $lessonsByDay->except($holidays->keys()->all());
+
+        return compact('date', 'weekStart', 'weekly', 'days', 'lessonsByDay', 'holidays') + ['weekdays' => self::WEEK_DAYS];
     }
 
     private function attendanceSummary(array $data, Builder $attendance): array

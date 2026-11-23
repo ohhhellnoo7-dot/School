@@ -19,6 +19,19 @@ class SchoolHolidayClosure
         DB::table('school_holiday_settings')->where('id', 1)->update(['enabled' => $enabled]);
     }
 
+    public function calendarDates(): array
+    {
+        $dates = [];
+        foreach (config('khmer-holidays', []) as $year => $schedule) {
+            foreach (array_keys($schedule) as $monthDay) {
+                [$month, $day] = explode('-', $monthDay);
+                $dates[] = sprintf('%04d-%02d-%02d', $year, $month, $day);
+            }
+        }
+
+        return $dates;
+    }
+
     public function holiday(CarbonInterface|string $date): ?string
     {
         $day = is_string($date) ? CarbonImmutable::parse($date, config('app.timezone')) : $date;
