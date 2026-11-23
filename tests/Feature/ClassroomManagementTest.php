@@ -57,7 +57,7 @@ class ClassroomManagementTest extends TestCase
         $this->getJson($dashboard)->assertOk()->assertJsonPath('summary.attendanceCount', 0)
             ->assertJsonPath('charts.teacherAttendance.1', 0)
             ->assertJsonPath('html', fn ($html) => str_contains($html, 'School holiday') && str_contains($html, 'id="teacherAttendanceChart"')
-                && str_contains($html, 'No attendance required') && ! str_contains($html, 'Recent attendance'));
+                && str_contains($html, 'View monthly teacher attendance') && str_contains($html, 'No attendance required') && ! str_contains($html, 'Recent attendance'));
 
         $studentAttendance = route('students.attendance.store', $student);
         $mark = ['date' => '2026-11-23', 'status' => 'present'];

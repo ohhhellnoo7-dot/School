@@ -42,7 +42,5 @@
         </aside>
         @endunless
     </div>
-    @unless($holiday)
-    <footer class="attendance-insight-footer d-flex align-items-center gap-2"><i class="bi bi-info-circle" aria-hidden="true"></i> {{ $recorded ? 'Status percentages exclude unmarked teachers.' : 'No attendance recorded yet. Unmarked teachers are not counted as absent.' }} {{ $attendanceScope ?? 'Results reflect the selected date, program and teacher filters.' }}<a href="{{ route('teacher-attendance.monthly', array_filter(['month' => substr($date, 0, 7), 'program' => $filters['program'] ?? null, 'session' => $filters['session'] ?? null])) }}" class="btn btn-sm btn-outline-primary ms-auto" aria-label="View monthly teacher attendance" title="View monthly teacher attendance"><i class="bi bi-eye" aria-hidden="true"></i></a></footer>
-    @endunless
+    <footer class="attendance-insight-footer d-flex align-items-center gap-2"><i class="bi bi-info-circle" aria-hidden="true"></i> {{ $holiday ? __('View attendance for the whole month.') : ($recorded ? 'Status percentages exclude unmarked teachers.' : 'No attendance recorded yet. Unmarked teachers are not counted as absent.') }} @unless($holiday){{ $attendanceScope ?? 'Results reflect the selected date, program and teacher filters.' }}@endunless<a href="{{ route('teacher-attendance.monthly', array_filter(['month' => substr($date, 0, 7), 'program' => $filters['program'] ?? null, 'session' => $filters['session'] ?? null])) }}" class="btn btn-sm btn-outline-primary ms-auto" aria-label="View monthly teacher attendance" title="View monthly teacher attendance"><i class="bi bi-eye" aria-hidden="true"></i></a></footer>
 </section>
