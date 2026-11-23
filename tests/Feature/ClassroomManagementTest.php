@@ -53,6 +53,10 @@ class ClassroomManagementTest extends TestCase
         $this->assertSame('available', $status('2026-11-23'));
         $this->assertSame('busy', $status('2026-11-30'));
 
+        $monthly = route('teacher-attendance.monthly', ['month' => '2026-11']);
+        $this->get($monthly)->assertOk()->assertSee(['Water Festival', '23, 24, 25 Nov 2026', 'No scans'])
+            ->assertSee('mark-school-holiday', false);
+
         $dashboard = route('dashboard.data', ['date' => '2026-11-23']);
         $this->getJson($dashboard)->assertOk()->assertJsonPath('summary.attendanceCount', 0)
             ->assertJsonPath('charts.teacherAttendance.1', 0)
@@ -73,6 +77,7 @@ class ClassroomManagementTest extends TestCase
             ->assertJsonPath('html', fn ($html) => str_contains($html, '>Absent</span>'));
         $this->getJson($dashboard)->assertOk()->assertJsonPath('summary.absentCount', 1)
             ->assertJsonPath('charts.teacherAttendance.1', 1);
+        $this->get($monthly)->assertOk()->assertDontSee('mark-school-holiday', false);
         $this->postJson($studentAttendance, $mark)->assertOk();
     }
 

@@ -1,7 +1,8 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\Services\SchoolHolidayClosure;use App\Models\Program;
+use App\Models\Program;
+use App\Services\SchoolHolidayClosure;
 use App\Support\AttendanceSession;
 use App\Models\TeacherAttendance;
 use App\Models\User;
@@ -78,7 +79,15 @@ class TeacherAttendanceController extends Controller
                 }
             }
         }
-        return view('school.attendance.teacher-monthly', compact('groups', 'month', 'filters', 'summaryMarks', 'summaryDate'));
+        $holidayDays = collect();
+        if (app(SchoolHolidayClosure::class)->enabled()) {
+            $holidayDays = collect(config('khmer-holidays.'.$month->year, []))
+                ->filter(fn ($name, $date) => str_starts_with($date, $month->month.'-'))
+                ->mapWithKeys(fn ($name, $date) => [(int) explode('-', $date)[1] => __('khmer-calendar.holidays.'.$name)])
+                ->sortKeys();
+        }
+
+        return view('school.attendance.teacher-monthly', compact('groups', 'month', 'filters', 'summaryMarks', 'summaryDate', 'holidayDays'));
     }
 
     public function bulk(Request $request, string $action) {

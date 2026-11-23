@@ -24,9 +24,20 @@ $summaryCount = $summaryMarks->where('status', $summaryStatus)->count();
 <div class="col-md-4"><label class="form-label" for="grid-date">Filter status by day (optional)</label><input id="grid-date" class="form-control" type="date" name="date" value="{{ $filters['date'] ?? '' }}"><small class="text-secondary">Leave empty to check the whole month.</small></div>
 <div class="col-md-8 d-flex gap-2"><a class="btn btn-outline-primary" href="{{ request()->fullUrlWithQuery(['date' => today()->toDateString(), 'month' => today()->format('Y-m')]) }}">Today</a><a class="btn btn-outline-primary" href="{{ request()->fullUrlWithQuery(['date' => null, 'month' => $month->format('Y-m')]) }}">Whole month</a></div>
 </form></section>
+@if($holidayDays->isNotEmpty())
+    <section class="panel p-3 mb-4" aria-labelledby="teacher-monthly-holidays">
+        <h2 class="h6 mb-1" id="teacher-monthly-holidays"><i class="bi bi-calendar-event me-1" aria-hidden="true"></i>{{ __('Khmer holidays') }}</h2>
+        <p class="small mb-2">{{ __('School is closed on these dates. No classes, work, or attendance scans are required.') }}</p>
+        <ul class="small mb-0">
+            @foreach($holidayDays->groupBy(fn ($name) => $name, preserveKeys: true) as $name => $dates)
+                <li>{{ $name }} &middot; {{ $dates->keys()->join(', ') }} {{ $month->translatedFormat('M Y') }}</li>
+            @endforeach
+        </ul>
+    </section>
+@endif
 @forelse($groups as $program => $rows)
 <section class="panel mb-4 teacher-attendance-panel"><div class="panel-header"><h2><i class="bi bi-people-fill" aria-hidden="true"></i> {{ $program }} <small class="text-secondary">&middot; {{ $rows->pluck('teacher.id')->unique()->count() }} teachers</small></h2><button type="button" class="btn btn-outline-primary" onclick="window.print()"><i class="bi bi-printer" aria-hidden="true"></i> Print</button></div>
-<div class="table-responsive"><table class="teacher-monthly-grid" data-attendance-grid><thead><tr><th>No.</th><th>Teacher's name</th><th>Sex</th><th>Assigned sessions</th><th>Session</th>@for($day = 1; $day <= $month->daysInMonth; $day++)<th @class(['is-weekend' => $month->copy()->day($day)->isWeekend()])>{{ $day }}</th>@endfor</tr></thead><tbody>
+<div class="table-responsive"><table class="teacher-monthly-grid" data-attendance-grid><thead><tr><th>No.</th><th>Teacher's name</th><th>Sex</th><th>Assigned sessions</th><th>Session</th>@for($day = 1; $day <= $month->daysInMonth; $day++)<th scope="col" @class(['is-weekend' => $month->copy()->day($day)->isWeekend(), 'is-school-holiday' => $holidayDays->has($day)]) title="{{ $holidayDays->get($day) }}">{{ $day }}@if($holidayDays->has($day))<small class="d-block">{{ __('Holiday') }}<span class="visually-hidden"> {{ $holidayDays->get($day) }}</span></small>@endif</th>@endfor</tr></thead><tbody>
 @php
 $teacherIds = $rows->pluck('teacher.id')->unique()->values();
 $previousTeacherId = null;
@@ -39,6 +50,12 @@ $previousTeacherId = $row['teacher']->id;
 @endphp
 <tr class="teacher-attendance-band-{{ $teacherBand }}{{ $teacherGroupStart ? ' teacher-group-start' : '' }}"><td>{{ $loop->iteration }}</td><th scope="row"><div class="teacher-grid-person">@include('school.partials.avatar', ['person' => $row['teacher'], 'avatarClass' => 'teacher-grid-avatar', 'teacherIcon' => true, 'size' => 38])<span>{{ $row['teacher']->name }}</span></div></th><td><span class="teacher-gender teacher-gender-{{ strtolower($row['teacher']->gender ?? 'unspecified') }}" title="{{ ucfirst($row['teacher']->gender ?: 'Not specified') }}"><i class="bi bi-{{ match (strtolower($row['teacher']->gender ?? '')) { 'female' => 'gender-female', 'male' => 'gender-male', default => 'person' } }}" aria-hidden="true"></i><span class="visually-hidden">{{ ucfirst($row['teacher']->gender ?: 'Not specified') }}</span></span></td><td>{{ $row['assigned']->count() }}<small class="d-block">{{ $row['assigned']->implode(', ') ?: 'No sessions assigned' }}</small></td><td>{{ $row['session'] ?: 'Unassigned' }}</td>
 @for($day = 1; $day <= $month->daysInMonth; $day++)
+@if($holiday = $holidayDays->get($day))
+    <td class="attendance-mark mark-school-holiday" title="{{ $holiday }}" aria-label="{{ $holiday }}. {{ __('No attendance required') }}">
+        <i class="bi bi-calendar-event d-block" aria-hidden="true"></i>{{ __('No scans') }}
+    </td>
+    @continue
+@endif
 @php
 $record = $row['marks']->get($day);
 $status = $record?->status;

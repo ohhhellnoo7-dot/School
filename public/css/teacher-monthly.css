@@ -164,3 +164,11 @@
 .teacher-monthly-grid tbody tr:hover { --teacher-row-bg:color-mix(in srgb,var(--primary) 12%,var(--surface)); }
 .teacher-monthly-grid .attendance-scan-out { border-top-color:color-mix(in srgb,var(--primary) 14%,var(--border-color)); }
 .teacher-monthly-grid tbody tr > th:nth-child(2) { border-right-color:var(--teacher-divider); }
+
+.teacher-monthly-grid thead th.is-school-holiday,
+.teacher-monthly-grid tbody tr > td.mark-school-holiday {
+    background: color-mix(in srgb, var(--warning, #ba904d) 18%, var(--surface, #fff));
+    color: var(--text-primary, #202c36);
+    font-weight: 700;
+}
+.teacher-monthly-grid thead th.is-school-holiday small { margin: 0; }
