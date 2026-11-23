@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\SchoolHolidayClosure;
 use App\Models\ClassGroup;
 use App\Models\ClassSession;
 use App\Models\Classroom;
@@ -39,6 +40,15 @@ class ClassroomController extends Controller
             'buildings' => \App\Models\Building::orderBy('name')->get(),
             'programs' => \App\Models\Program::names(),
         ]);
+    }
+
+    public function updateHolidayClosure(Request $request, SchoolHolidayClosure $closure): RedirectResponse
+    {
+        $request->validate(['enabled' => 'required|boolean']);
+        $enabled = $request->boolean('enabled');
+        $closure->setEnabled($enabled);
+
+        return back()->with('success', $enabled ? __('Khmer holiday closures enabled.') : __('Khmer holiday closures disabled.'));
     }
 
     public function data(Request $request, ClassroomAvailabilityService $availabilityService): JsonResponse
@@ -159,6 +169,7 @@ class ClassroomController extends Controller
         return view('school.classrooms.show', [
             'attendanceMonth' => $attendanceMonth,
             'attendanceDate' => $attendanceDate,
+            'attendanceHoliday' => app(SchoolHolidayClosure::class)->holiday($attendanceDate),
             'attendanceClasses' => $attendanceClasses,
             'curriculumProfiles' => $attendanceClasses->where('program','Khmer')->map(fn ($class) => app(\App\Services\KhmerCurriculumService::class)->profileFor($class))->filter()->unique('id')->values(),
             'classAttendance' => $classAttendance,
@@ -192,6 +203,7 @@ class ClassroomController extends Controller
             'statuses' => ['required', 'array', 'max:500'],
             'statuses.*' => ['nullable', Rule::in(['present', 'absent', 'late', 'excused'])],
         ]);
+        app(SchoolHolidayClosure::class)->ensureOpen($data['attendance_date']);
         $class = \App\Models\SchoolClass::findOrFail($data['school_class_id']);
         $teacherId = $request->user()->id;
         abort_unless($request->user()->role === 'administrator' || $class->teacher_id === $teacherId
@@ -259,6 +271,7 @@ class ClassroomController extends Controller
             'target_schedule_id' => ['required', 'integer'],
         ]);
         $moment = $request->boolean('live') ? CarbonImmutable::now(config('app.timezone')) : $this->moment($filters);
+        app(SchoolHolidayClosure::class)->ensureOpen($moment);
         $filters['date'] = $moment->toDateString();
         $filters['time'] = $moment->format('H:i');
         $study = \Illuminate\Support\Facades\DB::transaction(function () use ($classroom, $filters, $moment, $request, $availabilityService) {
@@ -486,7 +499,11 @@ class ClassroomController extends Controller
                 ->values();
         }
 
-        return compact('availability', 'stats', 'filters', 'moment', 'awaitingSetup');
+        $closure = app(SchoolHolidayClosure::class);
+        $holiday = $closure->holiday($moment);
+        $holidayClosuresEnabled = $request->user()->role === 'administrator' && $closure->enabled();
+
+        return compact('availability', 'stats', 'filters', 'moment', 'awaitingSetup', 'holiday', 'holidayClosuresEnabled');
     }
 
     /** @param array<string, mixed> $filters */

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\SchoolHolidayClosure;
 use App\Models\Announcement;
 use App\Models\Attendance;
 use App\Models\ClassAttendance;
@@ -26,6 +27,7 @@ class DashboardController extends Controller
     {
         abort_unless($request->user()->role === 'administrator', 403);
         $session = AttendanceSession::selected($request);
+        app(SchoolHolidayClosure::class)->ensureOpen(today());
         $counts = DB::transaction(function () use ($session) {
             $students = AttendanceSession::students(Student::query(), $session)->pluck('id')->shuffle()->values();
             $total = $students->count();
@@ -50,6 +52,7 @@ class DashboardController extends Controller
     {
         abort_unless($request->user()->role === 'administrator', 403);
         $session = AttendanceSession::selected($request);
+        app(SchoolHolidayClosure::class)->ensureOpen(today());
         $count = DB::transaction(function () use ($session) {
             $date = today()->toDateString();
             $students = AttendanceSession::students(Student::query(), $session);
@@ -209,7 +212,7 @@ class DashboardController extends Controller
             'staffChildCount' => in_array($user->role, User::STAFF_ROLES, true) ? $user->children()->count() : 0,
             'reportDate' => $reportDate,
             'programBreakdowns' => $programBreakdowns,
-            'todayClasses' => $user->role === 'student' ? SchoolModules::query('schedules', $user)->with('subject')->where('day', today()->format('l'))->orderBy('starts_at')->get() : collect(),
+            'todayClasses' => $user->role === 'student' && ! app(SchoolHolidayClosure::class)->holiday(today()) ? SchoolModules::query('schedules', $user)->with('subject')->where('day', today()->format('l'))->orderBy('starts_at')->get() : collect(),
             'todayTeachingPeriods' => $user->role === 'teacher'
                 ? Schedule::with(['subject.schoolClass', 'schoolClass', 'classroom.buildingRecord'])
                     ->where('teacher_id', $user->id)

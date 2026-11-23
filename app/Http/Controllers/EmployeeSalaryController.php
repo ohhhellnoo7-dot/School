@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\SchoolHolidayClosure;
 use App\Models\{EmployeeSalaryAttendance, EmployeeSalaryPayment, EmployeeSalaryProfile, TeacherAttendance, TeacherSessionAttendance, User};
 use App\Services\EmployeeSalaryCalculator;
 use App\Services\TeacherManagementService;
@@ -178,6 +179,7 @@ class EmployeeSalaryController extends Controller
         $data = $request->validate(['date' => 'required|date_format:Y-m-d|before_or_equal:today',
             'session' => 'required|in:All,Morning,Afternoon,Evening', 'status' => 'required|in:present,absent,late,excused',
             'notes' => 'nullable|string|max:1000']);
+        app(SchoolHolidayClosure::class)->ensureOpen($data['date']);
         DB::transaction(function () use ($teacher, $data, $request) {
             User::whereKey($teacher->id)->lockForUpdate()->firstOrFail();
             $month = Carbon::parse($data['date'])->startOfMonth();

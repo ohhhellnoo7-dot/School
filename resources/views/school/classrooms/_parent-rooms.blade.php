@@ -6,7 +6,7 @@
             'busy' => ['In use', 'people-fill'],
             'upcoming' => ['Upcoming class', 'clock'],
             'out_of_service' => ['Out of service', 'tools'],
-            default => ['Available', 'check-circle-fill'],
+            default => $entry['holiday'] ? ['School holiday ? No class', 'calendar-event'] : ['Available', 'check-circle-fill'],
         };
     @endphp
     <article class="parent-classroom-card" data-room-status="{{ $entry['status'] }}">

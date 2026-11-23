@@ -384,6 +384,7 @@ class SchoolModuleController extends Controller
         }
         if ($record instanceof Schedule && ($class = Subject::find($request->input('subject_id'))?->schoolClass) && $class->program === 'Khmer' && $class->class_group_id) return app(UnifiedTimetableController::class)->store($request, app(\App\Services\LessonManagementService::class));
         $data = $this->validated($request, $module, $record);
+        if ($module === 'attendance') app(\App\Services\SchoolHolidayClosure::class)->ensureOpen($data['date']);
         DB::transaction(function () use ($record, $data, $module) {
             $record->fill($data);
             if (in_array($module, ['teachers', 'parents'])) {
@@ -419,6 +420,7 @@ class SchoolModuleController extends Controller
         $this->authorizeTeacherGrade($request, $record);
         if ($record instanceof Schedule && $record->schoolClass?->program === 'Khmer' && $record->schoolClass?->class_group_id) return app(UnifiedTimetableController::class)->update($request, $record, app(\App\Services\LessonManagementService::class));
         $data = $this->validated($request, $module, $record);
+        if ($module === 'attendance') app(\App\Services\SchoolHolidayClosure::class)->ensureOpen($data['date']);
         if ($record instanceof User && isset($data['role']) && $data['role'] !== $record->role) {
             // Linked records must be explicitly unlinked before an account changes purpose.
             if (Student::where('user_id', $record->id)->orWhere('parent_id', $record->id)->exists()

@@ -23,6 +23,50 @@ class ClassroomManagementTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_khmer_holiday_switch_pauses_classes_and_attendance_until_disabled(): void
+    {
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-23 09:00'));
+        $room = $this->classroom('HOLIDAY');
+        $group = $this->classGroup('Khmer', 8, 'A');
+        $session = $this->classSession($group, 'Morning', '07:00', '11:00');
+        $student = Student::factory()->create(['status' => 'active']);
+        $teacher = $this->user('teacher');
+        ClassroomBooking::create(collect($this->bookingData($group, $session, $room, $teacher))->except('session')->all());
+        $admin = $this->user('administrator');
+        $existing = \App\Models\TeacherAttendance::create([
+            'teacher_id' => $teacher->id, 'date' => '2026-11-23',
+            'program' => 'Khmer', 'status' => 'absent', 'recorded_by' => $admin->id,
+        ]);
+        $switch = route('classrooms.holiday-closure');
+        $classrooms = route('classrooms.index', ['date' => '2026-11-23', 'time' => '09:00']);
+        $status = fn (string $date) => app(ClassroomAvailabilityService::class)->forDateAndTime($date, '09:00')
+            ->first(fn ($entry) => $entry['classroom']->is($room))['status'];
+
+        $this->actingAs($teacher)->put($switch, ['enabled' => 1])->assertForbidden();
+        $this->assertSame('busy', $status('2026-11-23'));
+
+        $this->actingAs($admin)->from($classrooms)->put($switch, ['enabled' => 1])->assertRedirect($classrooms);
+        $this->get($classrooms)->assertOk()->assertSee('School closed for')->assertSee('aria-pressed="true"', false);
+        $this->getJson(route('classrooms.data', ['date' => '2026-11-23', 'time' => '09:00']))->assertOk()
+            ->assertJsonPath('html', fn ($html) => str_contains($html, 'School holiday') && ! str_contains($html, '>Absent</span>'));
+        $this->assertSame('available', $status('2026-11-23'));
+        $this->assertSame('busy', $status('2026-11-30'));
+
+        $studentAttendance = route('students.attendance.store', $student);
+        $mark = ['date' => '2026-11-23', 'status' => 'present'];
+        $this->postJson($studentAttendance, $mark)->assertUnprocessable()->assertJsonValidationErrors('date');
+        $this->postJson(route('dashboard.teacher-attendance.bulk', 'all-present'))->assertUnprocessable();
+        $this->actingAs($teacher)->postJson(route('school.map.scan'))->assertUnprocessable()->assertJsonPath('reason', 'school_holiday');
+        $this->assertDatabaseMissing('attendances', ['student_id' => $student->id, 'date' => '2026-11-23']);
+        $this->assertSame('absent', $existing->refresh()->status);
+
+        $this->actingAs($admin)->put($switch, ['enabled' => 0])->assertRedirect();
+        $this->assertSame('busy', $status('2026-11-23'));
+        $this->getJson(route('classrooms.data', ['date' => '2026-11-23', 'time' => '09:00']))->assertOk()
+            ->assertJsonPath('html', fn ($html) => str_contains($html, '>Absent</span>'));
+        $this->postJson($studentAttendance, $mark)->assertOk();
+    }
+
     public function test_parent_my_class_shows_only_linked_classrooms_and_enrollment_counts(): void
     {
         $parent = $this->user('parent');

@@ -132,6 +132,7 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent', \App\Htt
     Route::get('/class-groups/{classGroup}', [ClassGroupController::class, 'show'])->name('class-groups.show');
 
     Route::get('/school/classrooms', [ClassroomController::class, 'index'])->name('classrooms.index');
+    Route::put('/school/classrooms/holiday-closure', [ClassroomController::class, 'updateHolidayClosure'])->middleware('role:administrator')->name('classrooms.holiday-closure');
     Route::get('/school/classrooms/data', [ClassroomController::class, 'data'])->name('classrooms.data');
     Route::get('/school/classrooms/create', [ClassroomController::class, 'create'])->middleware('role:administrator')->name('classrooms.create');
     Route::get('/school/classrooms/setup-options', [\App\Http\Controllers\ClassroomSetupController::class, 'options'])->middleware('role:administrator')->name('classrooms.setup-options');

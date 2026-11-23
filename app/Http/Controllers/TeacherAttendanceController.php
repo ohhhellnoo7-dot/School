@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
-use App\Models\Program;
+
+use App\Services\SchoolHolidayClosure;use App\Models\Program;
 use App\Support\AttendanceSession;
 use App\Models\TeacherAttendance;
 use App\Models\User;
@@ -84,6 +85,7 @@ class TeacherAttendanceController extends Controller
         abort_unless($request->user()->role === 'administrator', 403);
         abort_unless(in_array($action, ['all-present', 'random', 'scan-in', 'scan-out'], true), 404);
         $session = AttendanceSession::selected($request);
+        app(SchoolHolidayClosure::class)->ensureOpen(today());
         if (in_array($action, ['scan-in', 'scan-out'], true)) {
             return $this->bulkScan($request, $action, $session);
         }
@@ -268,6 +270,7 @@ class TeacherAttendanceController extends Controller
             'records.*.status' => 'nullable|in:present,absent,late,excused',
             'records.*.notes' => 'nullable|string|max:1000',
         ]);
+        app(SchoolHolidayClosure::class)->ensureOpen($data['date']);
         $saved = DB::transaction(function () use ($data, $request) {
             $teachers = AttendanceSession::teachers(User::where('role', 'teacher'), $data['session'] ?? null)->whereIn('id', array_column($data['records'], 'teacher_id'))->lockForUpdate()->get()->keyBy('id');
             $saved = 0;

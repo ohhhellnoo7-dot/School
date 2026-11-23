@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\SchoolHolidayClosure;
 use App\Models\Attendance;
 use App\Models\SchoolClass;
 use App\Models\Student;
@@ -109,6 +110,7 @@ class StudentController extends Controller
             'date' => 'required|date_format:Y-m-d|before_or_equal:today',
             'status' => 'required|in:present,absent,late,excused',
         ]);
+        app(SchoolHolidayClosure::class)->ensureOpen($data['date']);
         DB::transaction(function () use ($student, $data) {
             Student::whereKey($student->id)->lockForUpdate()->firstOrFail();
             $attendance = Attendance::where('student_id', $student->id)->whereDate('date', $data['date'])->first()

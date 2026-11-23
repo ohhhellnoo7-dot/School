@@ -120,31 +120,64 @@
         const teacherTotal = teacherValues.reduce((sum, value) => sum + value, 0);
         create('teacherAttendanceChart', {type: 'doughnut', data: {labels: teacherTotal ? ['Present', 'Absent', 'Late', 'Excused'] : ['No records'], datasets: [{data: teacherTotal ? teacherValues : [1], backgroundColor: teacherTotal ? ['#329c7c', '#d45669', '#c68b25', '#8d96af'] : ['#dce5e2'], borderWidth: 0}]}, options: {...options, cutout: '77%', plugins: {legend: {display: false}, tooltip: {enabled: teacherTotal > 0}}}});
         const dashboardColor = (name, fallback) => palette.getPropertyValue('--dashboard-' + name).trim() || fallback;
-        const trendColor = dashboardColor('line', '#128443');
-        create('revenueChart', {
-            type: 'line',
-            data: {labels: data.labels, datasets: [{
-                label: payload.showRevenue ? 'Collected (USD)' : 'New students',
-                data: payload.showRevenue ? data.revenue : data.enrollment,
-                borderColor: trendColor,
-                backgroundColor: ({chart}) => {
-                    if (!chart.chartArea) return 'transparent';
-                    const gradient = chart.ctx.createLinearGradient(0, chart.chartArea.top, 0, chart.chartArea.bottom);
-                    gradient.addColorStop(0, `color-mix(in srgb, ${trendColor} 45%, transparent)`);
-                    gradient.addColorStop(1, 'transparent');
-                    return gradient;
+        if (content.querySelector('#revenueChart')) {
+            const revenue = data.revenue;
+            const peak = Math.max(...revenue);
+            const accent = dashboardColor('line', '#007c89');
+            const ink = palette.getPropertyValue('--ink').trim() || '#253c34';
+            const format = new Intl.NumberFormat(document.documentElement.lang || undefined, {maximumFractionDigits: 2});
+            const money = new Intl.NumberFormat(document.documentElement.lang || undefined, {style: 'currency', currency: 'USD'});
+            const revenueAxes = axes();
+
+            create('revenueChart', {
+                type: 'bar',
+                data: {labels: data.labels, datasets: [{
+                    data: revenue,
+                    backgroundColor: ({raw}) => raw === 0 ? `color-mix(in srgb, ${accent} 22%, transparent)`
+                        : raw === peak ? accent : `color-mix(in srgb, ${accent} 62%, transparent)`,
+                    borderRadius: 8,
+                    borderSkipped: 'bottom',
+                    maxBarThickness: 68,
+                    minBarLength: 3,
+                }]},
+                options: {
+                    ...options,
+                    layout: {padding: {top: 20, right: 8}},
+                    scales: {
+                        x: {...revenueAxes.x, ticks: {maxRotation: 0}},
+                        y: {...revenueAxes.y, suggestedMax: peak > 0 ? peak * 1.1 : 1,
+                            border: {...revenueAxes.y.border, dash: [4, 4]},
+                            ticks: {...revenueAxes.y.ticks, callback: value => format.format(value)}},
+                    },
+                    interaction: {mode: 'index', intersect: false},
+                    plugins: {...options.plugins, tooltip: {callbacks: {label: ({raw}) => money.format(raw)}}},
                 },
-                fill: true,
-                tension: .35,
-                cubicInterpolationMode: 'monotone',
-                borderWidth: 3,
-                pointRadius: 4,
-                pointBackgroundColor: trendColor,
-                pointBorderColor: palette.getPropertyValue('--surface').trim() || '#fff',
-                pointBorderWidth: 2,
-            }]},
-            options: {...options, scales: axes()},
-        });
+                plugins: [{
+                    id: 'revenueLabels',
+                    afterDatasetsDraw(chart) {
+                        const {ctx, chartArea} = chart;
+                        const slotWidth = chartArea.width / revenue.length;
+                        ctx.save();
+                        ctx.font = '600 11px Inter, system-ui, sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        chart.getDatasetMeta(0).data.forEach(({x, y, base}, index) => {
+                            const label = format.format(revenue[index]);
+                            const width = ctx.measureText(label).width + 12;
+                            if (width > slotWidth - 2) return;
+                            const top = Math.min(y, base) - 23;
+                            ctx.beginPath();
+                            ctx.roundRect(x - width / 2, top, width, 18, 6);
+                            ctx.fillStyle = `color-mix(in srgb, ${accent} 14%, ${palette.getPropertyValue('--surface').trim() || '#fff'})`;
+                            ctx.fill();
+                            ctx.fillStyle = ink;
+                            ctx.fillText(label, x, top + 9);
+                        });
+                        ctx.restore();
+                    },
+                }],
+            });
+        }
         const genderColors = [dashboardColor('female', '#e54b99'), dashboardColor('male', '#168be4'), dashboardColor('other', '#8060d6')];
         if (data.gender.some(Boolean)) {
             doughnut('genderChart', ['Female', 'Male', 'Other'], data.gender, genderColors);

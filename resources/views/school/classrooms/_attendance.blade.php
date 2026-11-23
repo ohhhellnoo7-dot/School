@@ -72,6 +72,9 @@ $records = collect(range(1, $attendanceMonth->daysInMonth))->map(fn ($day) => $c
                 <label>Attendance date<input class="form-control" type="date" name="attendance_date" value="{{ $attendanceDate }}" required></label>
                 <button class="btn btn-outline-primary">Open date</button>
             </form>
+            @if($attendanceHoliday)
+                <p class="alert alert-warning">{{ app(\App\Services\SchoolHolidayClosure::class)->message($attendanceHoliday) }}</p>
+            @else
             <form method="post" action="{{ route('classrooms.attendance.store', $classroom) }}" class="mt-3">
                 @csrf
                 <input type="hidden" name="evening_period" value="{{ $selectedEveningPeriod }}">
@@ -94,6 +97,7 @@ $currentMark = $classAttendance->get($attendanceClass->id.':'.$student->id.':'.$
                 @endforeach
                 <button class="btn btn-primary mt-2">Save attendance</button>
             </form>
+            @endif
         </details>
         @endif
     @empty<p>No classes assigned to this program and session.</p>@endforelse

@@ -1,3 +1,6 @@
+@if($holiday = data_get($snapshot, 'holiday'))
+    <p class="alert alert-warning">{{ app(\App\Services\SchoolHolidayClosure::class)->message($holiday) }}</p>
+@endif
 @include('school.classrooms._study-arrangement', ['entry' => $snapshot])
 @php($lesson = data_get($snapshot, 'currentLesson'))
 @php($nextLesson = data_get($snapshot, 'nextLesson'))

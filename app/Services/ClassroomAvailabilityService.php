@@ -45,7 +45,8 @@ class ClassroomAvailabilityService
         $selected = $moment instanceof CarbonInterface
             ? CarbonImmutable::instance($moment)->setTimezone($timezone)
             : CarbonImmutable::parse($moment, $timezone);
-        $dailyTeacherStatuses = \App\Models\TeacherAttendance::whereDate('date', $selected->toDateString())->pluck('status', 'teacher_id');
+        $holiday = app(SchoolHolidayClosure::class)->holiday($selected);
+        $dailyTeacherStatuses = $holiday ? collect() : \App\Models\TeacherAttendance::whereDate('date', $selected->toDateString())->pluck('status', 'teacher_id');
         $teacherAttendance = $dailyTeacherStatuses->filter(fn ($status) => in_array($status, ['absent', 'excused'], true));
         $activeStudies = \App\Models\TemporaryClassStudy::whereDate('date', $selected->toDateString())
             ->where('starts_at', '<=', $selected->format('H:i:s'))->where('ends_at', '>', $selected->format('H:i:s'))->get();
@@ -63,7 +64,7 @@ class ClassroomAvailabilityService
         $weeklyLessons = $weeklyLessons->filter(fn ($lesson) =>
             (! $scopeProgram || $lesson->schoolClass?->program === $scopeProgram) &&
             (! $scopeSession || $lesson->schoolClass?->session === $scopeSession) && ChineseEveningPeriod::matches($lesson, $period));
-        $lessons = $weeklyLessons->where('day', $day);
+        $lessons = $holiday ? collect() : $weeklyLessons->where('day', $day);
         $weeklyBookings = ClassroomBooking::with('classGroup', 'classSession', 'teacher')->get()->filter(fn ($booking) => (! $scopeProgram || $booking->classGroup?->program === $scopeProgram) && (! $scopeSession || $booking->classSession?->session === $scopeSession) && ChineseEveningPeriod::matches($booking, $period))->groupBy('classroom_id');
         $programsByRoom = $weeklyLessons->groupBy('classroom_id')->map(fn ($entries) => $entries->pluck('schoolClass.program')->filter());
         $cohorts = \App\Models\SchoolClass::with(['classGroup', 'subjects.teacher'])->withCount(['students as enrolled_count' => fn ($query) => $query->where('status', 'active')])->get();
@@ -74,18 +75,18 @@ class ClassroomAvailabilityService
         $programSessionMap = \App\Models\Program::sessionMap();
         $rooms = Classroom::query()
             ->with(['buildingRecord', 'bookings' => fn ($query) => $query
-                ->where('day_of_week', $day)
+                ->where('day_of_week', $holiday ? null : $day)
                 ->with(['classGroup', 'classSession', 'teacher'])
                 ->orderBy('starts_minute')])
             ->orderBy('room_number')
             ->get();
 
         return $rooms
-            ->map(function (Classroom $classroom) use ($minute, $day, $lessons, $weeklyBookings, $programsByRoom, $cohorts, $lessonsByRoom, $visibleStudyClasses, $scopeProgram, $scopeSession, $filters, $teacherAttendance, $activeStudies, $dailyTeacherStatuses, $period, $scheduledOwnerIds, $scheduledSubjectIds, $programSessionMap) {
+            ->map(function (Classroom $classroom) use ($minute, $day, $lessons, $weeklyBookings, $programsByRoom, $cohorts, $lessonsByRoom, $visibleStudyClasses, $scopeProgram, $scopeSession, $filters, $teacherAttendance, $activeStudies, $dailyTeacherStatuses, $period, $scheduledOwnerIds, $scheduledSubjectIds, $programSessionMap, $holiday) {
                 $programs = ($programsByRoom->get($classroom->id) ?? collect())
                     ->merge(($weeklyBookings->get($classroom->id) ?? collect())->pluck('classGroup.program'))
                     ->filter()->unique()->sort()->values();
-                $buildProgramDetails = function ($program, $detailSession = null) use ($classroom, $weeklyBookings, $lessonsByRoom, $cohorts, $visibleStudyClasses, $day, $minute, $teacherAttendance, $period, $scheduledOwnerIds, $scheduledSubjectIds) {
+                $buildProgramDetails = function ($program, $detailSession = null) use ($classroom, $weeklyBookings, $lessonsByRoom, $cohorts, $visibleStudyClasses, $day, $minute, $teacherAttendance, $period, $scheduledOwnerIds, $scheduledSubjectIds, $holiday) {
                     $programLessons = ($lessonsByRoom->get($classroom->id) ?? collect())->filter(fn ($lesson) => $lesson->schoolClass?->program === $program && (! $detailSession || $lesson->schoolClass?->session === $detailSession));
                     $programBookings = ($weeklyBookings->get($classroom->id) ?? collect())->filter(fn ($booking) => $booking->classGroup?->program === $program && (! $detailSession || $booking->classSession?->session === $detailSession));
                     if ($visibleStudyClasses !== null) {
@@ -96,7 +97,7 @@ class ClassroomAvailabilityService
                     $ownerIds = $programLessons->pluck('school_class_id');
                     $classes = $cohorts->filter(fn ($class) => $class->program === $program && (! $detailSession || $class->session === $detailSession) && ($ownerIds->contains($class->timetableOwnerId()) ||
                         ((! $period || ! $scheduledOwnerIds->contains($class->timetableOwnerId())) && $programBookings->contains(fn ($booking) => $booking->class_group_id === $class->class_group_id && $booking->classSession?->session === $class->session))));
-                    $todayLessons = $programLessons->where('day', $day)->sortBy('starts_at');
+                    $todayLessons = $holiday ? collect() : $programLessons->where('day', $day)->sortBy('starts_at');
                     $displayLesson = $todayLessons->first(fn ($lesson) => TeacherManagementService::minute($lesson->starts_at) <= $minute && TeacherManagementService::minute($lesson->ends_at) > $minute)
                         ?? $todayLessons->first(fn ($lesson) => TeacherManagementService::minute($lesson->starts_at) > $minute);
                     $teacherLessons = $programLessons;
@@ -164,6 +165,7 @@ class ClassroomAvailabilityService
                 };
 
                 $activity = app(RoomLessonService::class)->activity($classroom, $lessons, $minute, $current);
+                if ($holiday) $activity['activity'] = __('No class ? School holiday');
                 if ($activity['currentLesson'] && $status !== self::STATUS_OUT_OF_SERVICE) $status = self::STATUS_BUSY;
                 if ($activity['nextLesson'] && $status === self::STATUS_AVAILABLE) $status = self::STATUS_UPCOMING;
                 $roomLessons = app(RoomLessonService::class)->lessons($classroom, $lessons);
@@ -191,7 +193,7 @@ class ClassroomAvailabilityService
                 // Room membership comes from the full weekly timetable, even on non-teaching days.
                 $assignedLessons = $lessonsByRoom->get($classroom->id) ?? collect();
                 $assignedBookings = $weeklyBookings->get($classroom->id) ?? collect();
-                return compact('classroom', 'status', 'current', 'next', 'roomLessons', 'programs', 'programDetails', 'cardProgramDetails', 'assignedLessons', 'assignedBookings') + $activity;
+                return compact('classroom', 'status', 'current', 'next', 'roomLessons', 'programs', 'programDetails', 'cardProgramDetails', 'assignedLessons', 'assignedBookings', 'holiday') + $activity;
             })
             ->filter(fn (array $entry) => $this->matchesFilters($entry, $filters))
             ->values();

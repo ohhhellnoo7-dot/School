@@ -224,7 +224,7 @@
 @endunless
 <div class="row g-3 dashboard-feature-row">
     @if($role === 'administrator')
-    <div class="col-lg-8"><section class="panel h-100"><div class="panel-header"><div class="dashboard-panel-title"><span aria-hidden="true">&#129689;</span><div><h2>Monthly revenue</h2><p>{{ in_array(auth()->user()->role, ['administrator', 'parent']) ? 'Recorded fee payments · USD' : 'New students joining your classes' }}</p></div></div><div class="chart-key"><span>{{ in_array(auth()->user()->role, ['administrator', 'parent']) ? 'Collected fees' : 'New students' }}</span></div></div><div class="chart-wrap"><canvas id="revenueChart" role="img" aria-label="Monthly trend chart"></canvas></div></section></div>
+    <div class="col-lg-8">@include('school.partials.dashboard-revenue')</div>
     @endif
     @if($isParent)
         <div class="col-12 col-lg-6">@include('school.partials.dashboard-payment-coverage')</div>

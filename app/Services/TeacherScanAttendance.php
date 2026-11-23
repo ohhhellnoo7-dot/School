@@ -25,7 +25,7 @@ class TeacherScanAttendance
 
     public function sessions(User $teacher, string $date): Collection
     {
-        if (Carbon::parse($date)->isWeekend()) {
+        if (Carbon::parse($date)->isWeekend() || app(SchoolHolidayClosure::class)->holiday($date)) {
             return collect();
         }
 
@@ -73,6 +73,7 @@ class TeacherScanAttendance
 
     public function refresh(User $teacher, string $date): void
     {
+        if (app(SchoolHolidayClosure::class)->holiday($date)) return;
         DB::transaction(function () use ($teacher, $date) {
             User::whereKey($teacher->id)->lockForUpdate()->firstOrFail();
             foreach ($this->sessions($teacher, $date) as $session => $times) {
@@ -98,6 +99,7 @@ class TeacherScanAttendance
 
     public function checkout(User $teacher, array $location): array
     {
+        app(SchoolHolidayClosure::class)->ensureOpen(today());
         $now = now();
         $record = TeacherSessionAttendance::where('teacher_id', $teacher->id)->whereDate('date', $now)
             ->whereNotNull('scanned_at')->orderByDesc('scanned_at')->lockForUpdate()->first();
@@ -142,7 +144,7 @@ class TeacherScanAttendance
 
     public function refreshDate(string $date): void
     {
-        if ($date > today()->toDateString()) return;
+        if ($date > today()->toDateString() || app(SchoolHolidayClosure::class)->holiday($date)) return;
         User::where('role', 'teacher')->where(fn ($q) => $q->where('status', 'active')->orWhereNull('status'))
             ->each(fn ($teacher) => $this->refresh($teacher, $date));
     }

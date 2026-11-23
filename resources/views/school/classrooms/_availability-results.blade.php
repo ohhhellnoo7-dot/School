@@ -33,8 +33,25 @@
         </div>
         <p>{{ $availability->count() }} {{ \Illuminate\Support\Str::plural('room', $availability->count()) }} match the selected date, time, and filters.<span data-lesson-selection></span></p>
     </div>
-    <span class="status-legend"><span class="legend-available">{{ __('Available') }}</span><span class="legend-busy">Busy</span><span class="legend-upcoming">Upcoming</span><span class="legend-out">Out of service</span></span>
+    <div class="d-flex flex-wrap align-items-center gap-3">
+        @if(auth()->user()->role === 'administrator')
+            <form method="post" action="{{ route('classrooms.holiday-closure') }}" class="m-0">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="enabled" value="{{ $holidayClosuresEnabled ? 0 : 1 }}">
+                <button type="submit" class="btn {{ $holidayClosuresEnabled ? 'btn-primary' : 'btn-outline-primary' }} rounded-pill" aria-pressed="{{ $holidayClosuresEnabled ? 'true' : 'false' }}" aria-label="{{ __('Khmer holiday closures') }}">
+                    <i class="bi bi-calendar-event me-1" aria-hidden="true"></i>
+                    {{ __('Khmer holidays') }} ? {{ $holidayClosuresEnabled ? __('On') : __('Off') }}
+                </button>
+            </form>
+        @endif
+        <span class="status-legend"><span class="legend-available">{{ __('Available') }}</span><span class="legend-busy">Busy</span><span class="legend-upcoming">Upcoming</span><span class="legend-out">Out of service</span></span>
+    </div>
 </div>
+
+@if($holiday)
+    <p class="alert alert-warning" role="status">{{ app(\App\Services\SchoolHolidayClosure::class)->message($holiday) }}</p>
+@endif
 
 @if(auth()->user()->role === 'administrator')
 <section data-awaiting-panel data-awaiting-count="{{ $awaitingSetup->count() }}" hidden aria-label="Classes awaiting setup">
@@ -116,6 +133,8 @@
                 @endif
                 @if($status === 'out_of_service')
                     <div class="room-empty-message"><strong>Temporarily unavailable</strong><span>{{ $room->notes ?: 'This room is marked out of service.' }}</span></div>
+                @elseif($holiday)
+                    <div class="room-empty-message"><strong>{{ __('School holiday') }}</strong><span>{{ __('No class') }} &middot; {{ $holiday }}</span></div>
                 @elseif($displayBooking)
                     <div class="booking-context"><small>{{ $current ? 'Current class' : 'Next scheduled class' }}</small><strong>{{ $group?->display_name ?? 'Scheduled class' }}</strong><span class="program-badge program-{{ strtolower($group?->program ?? '') }}">{{ $group?->program ?? 'Program not set' }}</span></div>
                     <dl class="room-facts">
@@ -134,7 +153,7 @@
                 @foreach($programDetails as $previewProgram => $previewDetails)
                     @if($previewProgram !== $activeOverviewProgram)
                     <div data-room-program-overview="{{ $previewProgram }}" @if($previewProgram !== $selectedProgram) hidden @endif>
-                        <span class="lesson-state">Not active at the selected time</span>
+                        <span class="lesson-state">{{ $holiday ? __('School holiday ? No class') : __('Not active at the selected time') }}</span>
                         <div class="booking-context"><small>Program classes</small><strong>{{ collect($previewDetails['classes'])->join(', ') ?: $previewProgram }}</strong><span class="program-badge program-{{ strtolower($previewProgram) }}">{{ $previewProgram }}</span></div>
                         <dl class="room-facts"><div><dt>@include('school.classrooms._session-picker', ['pickerProgram' => $previewProgram, 'pickerDetails' => $previewDetails])</dt><dd>{{ collect($previewDetails['session_times'])->join(', ') ?: collect($previewDetails['sessions'])->join(', ') }}</dd></div></dl>
                         @php($previewLesson = $previewDetails['display_lesson'])

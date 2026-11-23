@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\SchoolHolidayClosure;
 use App\Models\SchoolLocation;
 use App\Models\TeacherAttendance;
 use App\Models\User;
@@ -133,6 +134,14 @@ class SchoolMapController extends Controller
     public function scan(Request $request)
     {
         abort_unless(in_array($request->user()->role, ['administrator', 'teacher'], true), 403);
+        $closure = app(SchoolHolidayClosure::class);
+        if ($request->user()->role === 'teacher' && ($holiday = $closure->holiday(today()))) {
+            return response()->json([
+                'success' => false,
+                'reason' => 'school_holiday',
+                'message' => $closure->message($holiday),
+            ], 422);
+        }
         if ($request->user()->role === 'teacher' && today(config('classrooms.timezone'))->isWeekend()) {
             return response()->json([
                 'success' => false,
