@@ -70,16 +70,6 @@
         pointer-events: none;
     }
 
-    & .scholar-workspace .teacher-attendance-hero {
-        background-image: linear-gradient(90deg, var(--surface) 10%, color-mix(in srgb, var(--surface) 90%, transparent) 54%, transparent), var(--windy-campus);
-        background-size: cover;
-        background-position: right 56%;
-    }
-
-    & .scholar-workspace .teacher-attendance-hero::before {
-        background-image: var(--windy-campus);
-    }
-
     & .school-auth .auth-story {
         background-image: var(--windy-campus);
     }

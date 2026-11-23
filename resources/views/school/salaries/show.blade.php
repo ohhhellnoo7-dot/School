@@ -2,6 +2,10 @@
 @section('title', 'Salary · '.$teacher->name)
 @section('content')
 <div class="page-heading"><div><div class="eyebrow">EMPLOYEE SALARY</div><h1 class="payroll-person">@include('school.partials.avatar', ['person' => $teacher, 'avatarClass' => 'payroll-avatar', 'teacherIcon' => true]){{ $teacher->name }}</h1><p>{{ $teacher->profile_number ?: $teacher->email }} · {{ $teacher->program ?: 'Teacher' }}</p></div><a class="btn btn-outline-primary" href="{{ route('employee-salaries.index', ['month' => $month->format('Y-m')]) }}">Back to payroll</a></div>
+<div class="d-flex flex-wrap gap-2 mb-3" aria-label="Teacher payroll reports">
+    @include('school.salaries._slip-link', ['reportTeacher' => $teacher, 'reportType' => 'salary'])
+    @include('school.salaries._slip-link', ['reportTeacher' => $teacher, 'reportType' => 'leave'])
+</div>
 <form class="panel salary-month-select" method="get"><label for="detail-month" class="form-label">Salary month</label><input id="detail-month" class="form-control" type="month" name="month" value="{{ $month->format('Y-m') }}"><button class="btn btn-primary">View month</button></form>
 @php($displaySalary = $payment ? $payment->only(['base_cents', 'raise_cents', 'total_cents', 'deduction_cents']) : $salary)
 <div class="salary-summary-grid">

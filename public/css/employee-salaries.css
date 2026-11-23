@@ -504,3 +504,64 @@
     .payroll-chart-card, .payroll-status-chart { min-height: 13.3rem; }
     .payroll-bar-chart { --plot-height: 7.25rem; margin-inline-start: 2.35rem; }
 }
+
+.payroll-slip-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+    color: #202020;
+    background: #fff;
+    font-family: 'Noto Sans Khmer', 'Khmer OS System', 'Leelawadee UI', system-ui, sans-serif;
+    font-size: .82rem;
+    font-variant-numeric: tabular-nums;
+}
+.payroll-slip-table :is(th, td) {
+    border: 1px solid #777;
+    padding: .5rem .48rem;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+.payroll-slip-table thead th { background: #f4f3f0; font-weight: 700; }
+.payroll-slip-table tbody th { text-align: start; font-weight: 500; }
+.payroll-slip-table .payroll-strip-amount { background: #fbebd8; }
+.payroll-slip-table .payroll-strip-total { background: #ffdf35; font-weight: 800; }
+@page payroll-slip { size: A4 landscape; margin: 10mm; }
+@media print {
+    body:has(:is(.payroll-slip, #teacher-payroll-report-results)) { page: payroll-slip; }
+    body:has(:is(.payroll-slip, #teacher-payroll-report-results)) :is(.sidebar, .topbar, .page-footer, .skip-link) { display: none !important; }
+    body:has(:is(.payroll-slip, #teacher-payroll-report-results)) :is(.workspace, .main-content) { margin: 0 !important; padding: 0 !important; }
+    .payroll-slip { break-inside: avoid; border: 0; box-shadow: none; color: #111; background: #fff; padding: 0 !important; }
+    .payroll-slip .table-responsive, .salary-report-book .table-responsive { overflow: visible; }
+    .salary-report-book {
+        padding: 0 !important;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        color: #111;
+        background: #fff;
+    }
+    .salary-report-teacher { break-inside: avoid; }
+    .salary-report-teacher a { color: #111; text-decoration: none; }
+    .salary-report-teacher a::after { content: none !important; }
+    .payroll-slip-table { font-size: 8.5pt; print-color-adjust: exact; }
+    .payroll-slip-table :is(th, td) { padding: 2mm 1mm; white-space: normal; }
+}
+
+.salary-report-filters {
+    display: grid;
+    grid-template-columns: minmax(11rem, 1.5fr) repeat(4, minmax(8rem, 1fr)) auto;
+    align-items: end;
+    gap: .75rem;
+    padding: 1.15rem;
+    margin-bottom: 1rem;
+}
+.salary-report-book { padding: clamp(.85rem, 2vw, 1.4rem); margin-bottom: 1rem; }
+.salary-report-teacher + .salary-report-teacher { padding-top: .65rem; border-top: 1px solid var(--border-color); }
+.salary-report-teacher > .table-responsive { margin-bottom: .6rem !important; }
+#teacher-payroll-report-results[aria-busy="true"] { opacity: .65; }
+@media (max-width: 1100px) {
+    .salary-report-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+    .salary-report-filters { grid-template-columns: 1fr; }
+}

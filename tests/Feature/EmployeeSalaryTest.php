@@ -259,6 +259,73 @@ class EmployeeSalaryTest extends TestCase
         \App\Models\Schedule::where('teacher_id', $teacher->id)->delete();
         $this->get(route('employee-salaries.show', ['teacher' => $teacher, 'month' => '2026-11']))->assertOk()->assertSee('$327.50')->assertSee('Bank transfer 123');
         $this->get(route('employee-salaries.index', ['month' => '2026-11']))->assertOk()->assertSee('$327.50')->assertSee('Paid');
+        $slip = ['teacher' => $teacher, 'month' => '2026-11', 'slip' => 'salary'];
+        $this->get(route('employee-salaries.show', $slip))
+            ->assertOk()->assertSee(['Salary slip', '312.50 USD', '327.50 USD', 'Bank transfer 123']);
+    }
+
+    public function test_annual_leave_report_uses_excused_days_and_hides_closed_holidays(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = $this->employee();
+        foreach (['2026-10-21', '2026-11-16', '2026-11-23'] as $date) {
+            \App\Models\TeacherAttendance::create([
+                'teacher_id' => $teacher->id, 'date' => $date, 'status' => 'excused',
+                'program' => $teacher->program, 'recorded_by' => $admin->id,
+            ]);
+        }
+        app(\App\Services\SchoolHolidayClosure::class)->setEnabled(true);
+        $url = route('employee-salaries.show', ['teacher' => $teacher, 'month' => '2026-11', 'slip' => 'leave']);
+        $grid = route('teacher-attendance.monthly', ['month' => '2026-11']);
+        $reportList = route('employee-salaries.teacher-reports', ['month' => '2026-11']);
+        $this->actingAs($admin)->get($grid)->assertOk()->assertSee('Teacher reports')
+            ->assertSee($reportList)->assertDontSee('attendance-report-heading', false);
+        $this->get($reportList)->assertOk()->assertSee([$teacher->name, 'Salary slip', 'Annual leave record']);
+        $this->get($url)->assertOk()->assertSee('Annual leave record')
+            ->assertViewHas('leaveMonths', fn ($months) => $months[10] === 1 && $months[11] === 1 && $months->sum() === 2);
+        $this->actingAs($teacher)->get($grid)->assertOk()->assertDontSee('Salary slip');
+        $this->get($url)->assertForbidden();
+    }
+
+    public function test_teacher_reports_filter_both_slips_by_name_program_and_session(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $match = User::factory()->create(['role' => 'teacher', 'name' => 'Sok Dara', 'program' => 'Khmer']);
+        $others = [
+            User::factory()->create(['role' => 'teacher', 'name' => 'Chan Dara', 'program' => 'Khmer']),
+            User::factory()->create(['role' => 'teacher', 'name' => 'Sam Dara', 'program' => 'English']),
+            User::factory()->create(['role' => 'teacher', 'name' => 'Kim Sopheak', 'program' => 'Khmer']),
+        ];
+        foreach ([$match, ...$others] as $index => $teacher) {
+            \App\Models\SchoolClass::create([
+                'name' => 'Grade '.($index + 1), 'section' => 'A', 'program' => $teacher->program,
+                'session' => $index === 1 ? 'Afternoon' : 'Morning', 'teacher_id' => $teacher->id,
+            ]);
+        }
+
+        $url = route('employee-salaries.teacher-reports', [
+            'month' => '2026-11', 'program' => 'Khmer', 'session' => 'Morning', 'search' => 'Dara',
+        ]);
+        $this->actingAs($admin)->get($url, ['X-Requested-With' => 'XMLHttpRequest'])
+            ->assertOk()->assertSee(['Sok Dara', 'Salary slip', 'Annual leave record'])
+            ->assertDontSee(['Chan Dara', 'Sam Dara', 'Kim Sopheak']);
+        $all = $this->get(route('employee-salaries.teacher-reports', ['month' => '2026-11']), ['X-Requested-With' => 'XMLHttpRequest'])
+            ->assertOk()->getContent();
+        $this->assertSame(8, substr_count($all, 'class="payroll-slip-table"'));
+        $this->assertSame(4, substr_count($all, 'class="salary-report-teacher"'));
+        $this->assertStringContainsString('class="salary-report-teacher" aria-label="Sok Dara"', $all);
+        $this->assertSame(2, substr_count($all, '>Sok Dara</a>'));
+        $this->assertSame(2, substr_count($all, '>Chan Dara</a>'));
+        $teacherQuery = ['month' => '2026-11', 'teacher' => $match->id];
+        $salaryOnly = $this->get(route('employee-salaries.teacher-reports', $teacherQuery + ['report' => 'salary']), ['X-Requested-With' => 'XMLHttpRequest'])
+            ->assertOk()->assertSee('aria-label="Salary slip"', false)
+            ->assertDontSee(['aria-label="Annual leave record"', 'Chan Dara'], false);
+        $this->assertSame(1, substr_count($salaryOnly->getContent(), 'class="payroll-slip-table"'));
+        $this->get(route('employee-salaries.teacher-reports', $teacherQuery + ['report' => 'leave']), ['X-Requested-With' => 'XMLHttpRequest'])
+            ->assertOk()->assertSee('aria-label="Annual leave record"', false)->assertDontSee('aria-label="Salary slip"', false);
+        $this->get(route('teacher-attendance.monthly', ['month' => '2026-11']))
+            ->assertOk()->assertSee(route('employee-salaries.teacher-reports', $teacherQuery));
+        $this->actingAs($match)->get($url)->assertForbidden();
     }
 
     public function test_salary_payments_require_confirmation_current_amount_and_valid_month(): void

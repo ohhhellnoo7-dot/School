@@ -6,10 +6,12 @@ use App\Services\SchoolHolidayClosure;
 use App\Models\{EmployeeSalaryAttendance, EmployeeSalaryPayment, EmployeeSalaryProfile, TeacherAttendance, TeacherSessionAttendance, User};
 use App\Services\EmployeeSalaryCalculator;
 use App\Services\TeacherManagementService;
+use App\Support\AttendanceSession;
 use App\Support\Money;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class EmployeeSalaryController extends Controller
@@ -121,6 +123,63 @@ class EmployeeSalaryController extends Controller
         ]);
     }
 
+    public function teacherReports(Request $request, EmployeeSalaryCalculator $calculator, \App\Services\EmployeeSalaryDeductions $deductions)
+    {
+        $month = $this->month($request);
+        $asOf = $this->assessmentDate($month);
+        $filters = $request->validate([
+            'search' => 'nullable|string|max:255',
+            'report' => 'nullable|in:all,salary,leave',
+            'teacher' => 'nullable|integer',
+            'program' => ['nullable', Rule::in(\App\Models\Program::names())],
+        ]);
+        $filters['session'] = AttendanceSession::selected($request);
+        $filters['report'] ??= 'all';
+        $teacherOptions = User::where('role', 'teacher')->orderBy('name')->orderBy('id')->get(['id', 'name', 'profile_number']);
+        $search = mb_strtolower(trim($filters['search'] ?? ''));
+        $teachers = AttendanceSession::teachers(User::where('role', 'teacher'), $filters['session'])
+            ->when($filters['teacher'] ?? null, fn ($query, $teacherId) => $query->whereKey($teacherId))
+            ->when($filters['program'] ?? null, fn ($query, $program) => $query->where('program', $program))
+            ->when($search !== '', fn ($query) => $query->whereRaw('LOWER(name) LIKE ?', ['%'.$search.'%']))
+            ->orderBy('name')->orderBy('id')->paginate(25)->withQueryString();
+        $ids = $teachers->modelKeys();
+        $year = [$month->copy()->startOfYear()->toDateString(), $month->copy()->endOfYear()->toDateString()];
+        $profiles = EmployeeSalaryProfile::whereIn('teacher_id', $ids)->get()->keyBy('teacher_id');
+        $payments = EmployeeSalaryPayment::whereIn('teacher_id', $ids)->whereDate('salary_month', $month)->get()->keyBy('teacher_id');
+        $daily = TeacherAttendance::whereIn('teacher_id', $ids)->whereBetween('date', $year)->get()->groupBy('teacher_id');
+        $sessions = TeacherSessionAttendance::whereIn('teacher_id', $ids)->whereBetween('date', $year)->get()->groupBy('teacher_id');
+        $overrides = EmployeeSalaryAttendance::whereIn('teacher_id', $ids)->whereBetween('date', $year)->get()->groupBy('teacher_id');
+        $minutes = $calculator->assignedMinutes($ids);
+        $reports = $teachers->getCollection()->map(function (User $teacher) use ($month, $asOf, $profiles, $payments, $daily, $sessions, $overrides, $minutes, $calculator, $deductions) {
+            $id = $teacher->id;
+            $profile = $profiles->get($id);
+            $payment = $payments->get($id);
+            $byMonth = fn ($record) => $record->date->month;
+            $dailyMonths = $daily->get($id, collect())->groupBy($byMonth);
+            $sessionMonths = $sessions->get($id, collect())->groupBy($byMonth);
+            $overrideMonths = $overrides->get($id, collect())->groupBy($byMonth);
+            $marks = [
+                $dailyMonths->get($month->month, collect()),
+                $sessionMonths->get($month->month, collect()),
+                $overrideMonths->get($month->month, collect()),
+            ];
+            $salary = $profile && !$payment ? $deductions->apply(
+                $calculator->calculate($profile, $asOf, $minutes->get($id, 0)), $profile,
+                $marks[0], $marks[1], $marks[2], $asOf,
+            ) : null;
+
+            return compact('teacher', 'payment', 'salary') + [
+                'counts' => $deductions->counts(...$marks),
+                'leaveMonths' => $this->countLeaveMonths($dailyMonths, $sessionMonths, $overrideMonths, $deductions),
+            ];
+        });
+        $view = view('school.salaries.teacher-reports', compact('month', 'teachers', 'reports', 'filters', 'teacherOptions'));
+
+        return $request->ajax()
+            ? response($view->fragment('teacher-payroll-reports'))->header('Cache-Control', 'private, no-store')
+            : $view;
+    }
+
     public function show(Request $request, User $teacher, EmployeeSalaryCalculator $calculator)
     {
         $this->teacher($teacher);
@@ -129,7 +188,7 @@ class EmployeeSalaryController extends Controller
         $profile = EmployeeSalaryProfile::where('teacher_id', $teacher->id)->first();
         $payment = EmployeeSalaryPayment::where('teacher_id', $teacher->id)->whereDate('salary_month', $month)->first();
         $salary = $profile ? $this->salary($profile, $month, $calculator) : null;
-        $history = EmployeeSalaryPayment::where('teacher_id', $teacher->id)->latest('salary_month')->limit(12)->get();
+        $slip = $request->validate(['slip' => 'nullable|in:salary,leave'])['slip'] ?? null;
         $attendance = TeacherAttendance::where('teacher_id', $teacher->id)
             ->whereBetween('date', [$month->toDateString(), $month->copy()->endOfMonth()->toDateString()])->get()->keyBy(fn ($record) => $record->date->toDateString());
         $scans = TeacherSessionAttendance::where('teacher_id', $teacher->id)
@@ -137,7 +196,42 @@ class EmployeeSalaryController extends Controller
         $overrides = EmployeeSalaryAttendance::where('teacher_id', $teacher->id)->whereBetween('date', [$month->toDateString(), $month->copy()->endOfMonth()->toDateString()])->get()->groupBy(fn ($record) => $record->date->toDateString());
         $counts = app(\App\Services\EmployeeSalaryDeductions::class)->counts($attendance->values(), $scans->flatten(1), $overrides->flatten(1));
 
+        if ($slip) {
+            $leaveMonths = $slip === 'leave' ? $this->leaveMonths($teacher, $month) : collect();
+
+            return view('school.salaries.slip', compact('slip', 'teacher', 'month', 'profile', 'salary', 'payment', 'counts', 'leaveMonths'));
+        }
+
+        $history = EmployeeSalaryPayment::where('teacher_id', $teacher->id)->latest('salary_month')->limit(12)->get();
+
         return view('school.salaries.show', compact('teacher', 'month', 'profile', 'salary', 'payment', 'history', 'attendance', 'scans', 'asOf', 'overrides', 'counts'));
+    }
+
+    private function leaveMonths(User $teacher, Carbon $month): \Illuminate\Support\Collection
+    {
+        $range = [$month->copy()->startOfYear()->toDateString(), $month->copy()->endOfYear()->toDateString()];
+        $byMonth = fn ($record) => $record->date->month;
+        $daily = TeacherAttendance::where('teacher_id', $teacher->id)->whereBetween('date', $range)->get()->groupBy($byMonth);
+        $sessions = TeacherSessionAttendance::where('teacher_id', $teacher->id)->whereBetween('date', $range)->get()->groupBy($byMonth);
+        $overrides = EmployeeSalaryAttendance::where('teacher_id', $teacher->id)->whereBetween('date', $range)->get()->groupBy($byMonth);
+        $deductions = app(\App\Services\EmployeeSalaryDeductions::class);
+
+        return $this->countLeaveMonths($daily, $sessions, $overrides, $deductions);
+    }
+
+    private function countLeaveMonths(
+        \Illuminate\Support\Collection $daily,
+        \Illuminate\Support\Collection $sessions,
+        \Illuminate\Support\Collection $overrides,
+        \App\Services\EmployeeSalaryDeductions $deductions,
+    ): \Illuminate\Support\Collection {
+        return collect(range(1, 12))->mapWithKeys(fn ($number) => [
+            $number => $deductions->counts(
+                $daily->get($number, collect()),
+                $sessions->get($number, collect()),
+                $overrides->get($number, collect()),
+            )->get('excused', 0),
+        ]);
     }
 
     public function update(Request $request, User $teacher)

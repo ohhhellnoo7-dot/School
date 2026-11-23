@@ -2,37 +2,105 @@
 @section('title', 'Monthly teacher attendance')
 @section('content')
 <link href="{{ asset('css/teacher-monthly.css') }}?v={{ filemtime(public_path('css/teacher-monthly.css')) }}" rel="stylesheet">
-<div class="teacher-attendance-page">
-<header class="teacher-attendance-hero"><span class="teacher-attendance-hero-icon"><i class="bi bi-people-fill" aria-hidden="true"></i></span><div><a href="{{ route('teacher-attendance.index') }}">Teacher attendance</a><h1>Teachers &middot; Attendance Overview</h1><p>Manage and track teacher attendance for each scheduled session.</p></div></header>
-<div class="teacher-attendance-summary" aria-label="Teacher totals for {{ $summaryDate->format('d M Y') }}" title="Teacher totals for {{ $summaryDate->format('d M Y') }}">
-@foreach(['present' => ['check-lg', 'Present'], 'late' => ['clock', 'Late'], 'absent' => ['x-lg', 'Absent'], 'excused' => ['file-earmark-text', 'Excused']] as $summaryStatus => [$summaryIcon, $summaryLabel])
 @php
-$summaryCount = $summaryMarks->where('status', $summaryStatus)->count();
+    $canViewPayrollReports = !$printing && auth()->user()->role === 'administrator';
 @endphp
-<div class="teacher-summary-card teacher-summary-{{ $summaryStatus }}"><span class="teacher-summary-icon"><i class="bi bi-{{ $summaryIcon }}" aria-hidden="true"></i></span><div><h2>{{ $summaryLabel }}</h2><strong>{{ $summaryCount }}</strong></div></div>
-@endforeach
+<div class="teacher-attendance-page">
+<header class="teacher-attendance-hero">
+    <img class="teacher-attendance-campus-art" src="{{ asset('images/teacher-attendance-campus.png') }}" width="980" height="327" alt="" decoding="async">
+    <svg class="teacher-attendance-banner-wave" viewBox="0 0 1000 150" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 77C198 42 241-24 384 0c141 24 150 113 338 60L1000 0v150H0Z" fill="currentColor"/>
+    </svg>
+    <span class="teacher-attendance-hero-icon"><i class="bi bi-calendar-check" aria-hidden="true"></i></span>
+    <div>
+        <h1>{{ __('Teacher Attendance') }}</h1>
+        <p>{{ __('Track and manage teacher attendance, leaves, and holiday schedules.') }}</p>
+    </div>
+</header>
+<div class="teacher-attendance-summary" aria-label="Teacher totals for {{ $summaryDate->format('d M Y') }}" title="Teacher totals for {{ $summaryDate->format('d M Y') }}">
+    @foreach(['present' => ['check-lg', 'Present', 'people-fill'], 'late' => ['clock', 'Late', 'clock'], 'absent' => ['x-lg', 'Absent', 'calendar-x'], 'excused' => ['file-earmark-text', 'Excused', 'file-earmark-check']] as $status => [$icon, $label, $art])
+        <div class="teacher-summary-card teacher-summary-{{ $status }}">
+            <span class="teacher-summary-icon"><i class="bi bi-{{ $icon }}" aria-hidden="true"></i></span>
+            <div><h2>{{ __($label) }}</h2><strong>{{ $summaryMarks->where('status', $status)->count() }}</strong></div>
+            <i class="bi bi-{{ $art }} teacher-summary-art" aria-hidden="true"></i>
+            <svg class="teacher-summary-wave" viewBox="0 0 360 46" preserveAspectRatio="none" aria-hidden="true"><path d="M0 12C53-5 81 51 153 33S234 7 280 9s47-8 80-1v38H0Z" fill="currentColor"/></svg>
+        </div>
+    @endforeach
 </div>
-<section class="panel p-4 mb-4"><form method="get" class="row g-3 align-items-end" id="teacher-monthly-filters" data-status="{{ $filters['status'] ?? '' }}">
-<div class="col-md-4"><label class="form-label" for="grid-month">Month</label><input id="grid-month" class="form-control" type="month" name="month" value="{{ $month->format('Y-m') }}" required></div>
-<div class="col-md-4"><label class="form-label" for="grid-program">Program</label><select id="grid-program" name="program" class="form-select"><option value="">All programs</option>@foreach(\App\Models\Program::names() as $program)<option @selected(($filters['program'] ?? '') === $program)>{{ $program }}</option>@endforeach</select></div>
-<div class="col-md-4"><label class="form-label" for="grid-session">Session</label><select id="grid-session" name="session" class="form-select"><option value="">All sessions</option>@foreach(\App\Support\AttendanceSession::OPTIONS as $session)<option @selected(($filters['session'] ?? '') === $session)>{{ $session }}</option>@endforeach</select></div>
-<div class="col-12"><label class="form-label d-block">Attendance status</label><div class="d-flex flex-wrap gap-2" role="group" aria-label="Filter attendance by status">
-@foreach(['' => 'All statuses', 'present' => 'Present', 'absent' => 'Absent', 'late' => 'Late', 'excused' => 'Excused'] as $value => $label)
-<button type="submit" name="status" value="{{ $value }}" @class(['btn', 'btn-primary' => ($filters['status'] ?? '') === $value, 'btn-outline-primary' => ($filters['status'] ?? '') !== $value]) aria-pressed="{{ ($filters['status'] ?? '') === $value ? 'true' : 'false' }}">{{ $label }}</button>
-@endforeach
-</div><small class="text-secondary">@if(!empty($filters['date']))Show teachers with this status on {{ \Carbon\Carbon::parse($filters['date'])->format('d M Y') }} in the selected session.@else Show teachers with this status on at least one day in the selected month and session.@endif</small></div>
-<div class="col-md-4"><label class="form-label" for="grid-date">Filter status by day (optional)</label><input id="grid-date" class="form-control" type="date" name="date" value="{{ $filters['date'] ?? '' }}"><small class="text-secondary">Leave empty to check the whole month.</small></div>
-<div class="col-md-8 d-flex gap-2"><a class="btn btn-outline-primary" href="{{ request()->fullUrlWithQuery(['date' => today()->toDateString(), 'month' => today()->format('Y-m')]) }}">Today</a><a class="btn btn-outline-primary" href="{{ request()->fullUrlWithQuery(['date' => null, 'month' => $month->format('Y-m')]) }}">Whole month</a></div>
-</form></section>
-@if($holidayDays->isNotEmpty())
-    <section class="panel p-3 mb-4" aria-labelledby="teacher-monthly-holidays">
-        <h2 class="h6 mb-1" id="teacher-monthly-holidays"><i class="bi bi-calendar-event me-1" aria-hidden="true"></i>{{ __('Khmer holidays') }}</h2>
-        <p class="small mb-2">{{ __('School is closed on these dates. No classes, work, or attendance scans are required.') }}</p>
-        <ul class="small mb-0">
-            @foreach($holidayDays->groupBy(fn ($name) => $name, preserveKeys: true) as $name => $dates)
-                <li>{{ $name }} &middot; {{ $dates->keys()->join(', ') }} {{ $month->translatedFormat('M Y') }}</li>
-            @endforeach
+<section class="panel teacher-monthly-filter-panel" aria-labelledby="teacher-monthly-filter-heading">
+    <header class="teacher-monthly-filter-title">
+        <i class="bi bi-funnel" aria-hidden="true"></i>
+        <div>
+            <h2 id="teacher-monthly-filter-heading">{{ __('Filter Attendance') }}</h2>
+            <p>{{ __('Find teacher attendance by month, program, session, and status.') }}</p>
+        </div>
+    </header>
+    <form method="get" class="teacher-monthly-filter-form" id="teacher-monthly-filters" data-status="{{ $filters['status'] ?? '' }}">
+        <div class="teacher-monthly-filter-main">
+            <div class="teacher-monthly-selects">
+                <div>
+                    <label class="form-label" for="grid-month"><i class="bi bi-calendar3" aria-hidden="true"></i> {{ __('Month') }}</label>
+                    <input id="grid-month" class="form-control" type="month" name="month" value="{{ $month->format('Y-m') }}" required>
+                </div>
+                <div>
+                    <label class="form-label" for="grid-program"><i class="bi bi-stack" aria-hidden="true"></i> {{ __('Program') }}</label>
+                    <select id="grid-program" name="program" class="form-select">
+                        <option value="">{{ __('All programs') }}</option>
+                        @foreach(\App\Models\Program::names() as $program)<option @selected(($filters['program'] ?? '') === $program)>{{ $program }}</option>@endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label" for="grid-session"><i class="bi bi-clock" aria-hidden="true"></i> {{ __('Session') }}</label>
+                    <select id="grid-session" name="session" class="form-select">
+                        <option value="">{{ __('All sessions') }}</option>
+                        @foreach(\App\Support\AttendanceSession::OPTIONS as $session)<option @selected(($filters['session'] ?? '') === $session)>{{ $session }}</option>@endforeach
+                    </select>
+                </div>
+            </div>
+            <fieldset class="teacher-monthly-status-filter">
+                <legend><i class="bi bi-people" aria-hidden="true"></i> {{ __('Attendance Status') }}</legend>
+                <div class="d-flex flex-wrap gap-2">
+                    @foreach(['' => ['grid', 'All statuses'], 'present' => ['check-lg', 'Present'], 'late' => ['clock', 'Late'], 'absent' => ['x-lg', 'Absent'], 'excused' => ['file-earmark-text', 'Excused']] as $value => [$icon, $label])
+                        <button type="submit" name="status" value="{{ $value }}" data-filter-status="{{ $value }}" @class(['btn', 'btn-primary' => ($filters['status'] ?? '') === $value, 'btn-outline-primary' => ($filters['status'] ?? '') !== $value]) aria-pressed="{{ ($filters['status'] ?? '') === $value ? 'true' : 'false' }}">
+                            <i class="bi bi-{{ $icon }}" aria-hidden="true"></i> {{ __($label) }}
+                        </button>
+                    @endforeach
+                    @if($canViewPayrollReports)
+                        <a class="btn btn-outline-primary teacher-monthly-reports-trigger" href="{{ route('employee-salaries.teacher-reports', array_filter(['month' => $month->format('Y-m'), 'program' => $filters['program'] ?? null, 'session' => $filters['session'] ?? null])) }}">
+                            <i class="bi bi-file-earmark-text" aria-hidden="true"></i> {{ __('Teacher reports') }}
+                        </a>
+                    @endif
+                </div>
+            </fieldset>
+        </div>
+        <div class="teacher-monthly-filter-day">
+            <div>
+                <label class="form-label" for="grid-date"><i class="bi bi-calendar-event" aria-hidden="true"></i> {{ __('Filter by Day (Optional)') }}</label>
+                <input id="grid-date" class="form-control" type="date" name="date" value="{{ $filters['date'] ?? '' }}">
+            </div>
+            <div class="teacher-monthly-date-actions">
+                <a class="btn btn-outline-primary" href="{{ request()->fullUrlWithQuery(['date' => today()->toDateString(), 'month' => today()->format('Y-m')]) }}"><i class="bi bi-calendar-check" aria-hidden="true"></i> {{ __('Today') }}</a>
+                <a class="btn btn-outline-primary" href="{{ request()->fullUrlWithQuery(['date' => null, 'month' => $month->format('Y-m')]) }}"><i class="bi bi-calendar-week" aria-hidden="true"></i> {{ __('Whole month') }}</a>
+            </div>
+        </div>
+    </form>
+</section>
+@if($activeHoliday)
+    <section class="panel teacher-monthly-holiday-panel" aria-labelledby="teacher-monthly-holidays">
+        <div class="teacher-monthly-holiday-heading">
+            <i class="bi bi-calendar-event" aria-hidden="true"></i>
+            <div>
+                <h2 id="teacher-monthly-holidays">{{ $activeHoliday }}</h2>
+                <p>{{ __('Khmer holiday. School is closed. No classes, work, or attendance scans are required.') }}</p>
+            </div>
+        </div>
+        <ul>
+            <li><strong>{{ $activeHolidayDays->join(', ') }} {{ $month->translatedFormat('M Y') }}</strong></li>
         </ul>
+        <svg class="teacher-monthly-holiday-art" viewBox="0 0 340 100" aria-hidden="true">
+            <path fill="currentColor" d="M0 98q16-12 30-12l7-7 15 1 9-12 13 3 9-6 14 3V58h12V41h5v-9l5-7 6 7v10h5v15h12V43h8V30h5V19l8-9 6-9 6 9 8 9v11h5v13h8v14h14V42h5V32l6-7 5 7v9h5v17h11v20h14l10-7 11 7 9-4 13 6 12 2 8 7 14 9Z"/>
+            <path fill="currentColor" d="M279 91q9-20 9-45-15-1-23 8 4-14 23-14-12-9-21-7 11-9 23 1-2-15-12-20 14-3 17 17 5-19 17-18-10 8-11 22 12-12 25-7-12 3-22 12 17-4 24 9-11-5-24-4 2 23 12 46ZM41 24q6-4 11 3 6-6 12-4-6 2-12 8-5-5-11-7Z"/>
+        </svg>
     </section>
 @endif
 @forelse($rosterPages as $program => $roster)
@@ -45,13 +113,14 @@ $summaryCount = $summaryMarks->where('status', $summaryStatus)->count();
             <a class="btn btn-outline-primary" href="{{ request()->fullUrlWithQuery(['print' => 1]) }}" target="_blank"><i class="bi bi-printer" aria-hidden="true"></i> Print full report</a>
         @endif
     </div>
-<div class="table-responsive" tabindex="0" role="region" aria-label="{{ __('Monthly attendance for :program', ['program' => $program]) }}"><table class="teacher-monthly-grid" style="--attendance-days: {{ $month->daysInMonth }}">
+<div class="table-responsive" tabindex="0" role="region" aria-label="{{ __('Monthly attendance for :program', ['program' => $program]) }}"><table class="teacher-monthly-grid" style="--attendance-days: {{ $month->daysInMonth }}; --attendance-report-width: {{ $canViewPayrollReports ? '94px' : '0px' }}">
 <colgroup>
     <col class="attendance-number"><col class="attendance-name"><col class="attendance-sex">
     <col class="attendance-assigned"><col class="attendance-session">
     <col class="attendance-date" span="{{ $month->daysInMonth }}">
+    @if($canViewPayrollReports)<col class="attendance-report">@endif
 </colgroup>
-<thead><tr><th>No.</th><th>Teacher's name</th><th>Sex</th><th>Assigned sessions</th><th>Session</th>@for($day = 1; $day <= $month->daysInMonth; $day++)<th scope="col" @class(['is-weekend' => $month->copy()->day($day)->isWeekend(), 'is-school-holiday' => $holidayDays->has($day)]) title="{{ $holidayDays->get($day) }}">{{ $day }}@if($holidayDays->has($day))<small class="d-block">{{ __('Holiday') }}<span class="visually-hidden"> {{ $holidayDays->get($day) }}</span></small>@endif</th>@endfor</tr></thead><tbody>
+<thead><tr><th>No.</th><th>Teacher's name</th><th>Sex</th><th>Assigned sessions</th><th>Session</th>@for($day = 1; $day <= $month->daysInMonth; $day++)<th scope="col" @class(['is-weekend' => $month->copy()->day($day)->isWeekend(), 'is-school-holiday' => $holidayDays->has($day)]) title="{{ $holidayDays->get($day) }}">{{ $day }}@if($holidayDays->has($day))<small class="d-block">{{ __('Holiday') }}<span class="visually-hidden"> {{ $holidayDays->get($day) }}</span></small>@endif</th>@endfor @if($canViewPayrollReports)<th scope="col" class="attendance-report-cell">{{ __('Reports') }}</th>@endif</tr></thead><tbody>
 @php
 $teacherIds = $roster->pluck('teacher.id')->unique()->values();
 $previousTeacherId = null;
@@ -118,7 +187,17 @@ $description = $dateLabel.' · '.($status ?: 'Not recorded').($record?->scanned_
 @if($departure)<div class="attendance-detail">Out {{ $departure->format('H:i') }}</div>@endif
 </div>
 </td>
-@endfor</tr>
+@endfor
+@if($canViewPayrollReports)
+    <td class="attendance-report-cell">
+        @if($teacherGroupStart)
+            <a class="btn btn-sm btn-outline-primary"
+                href="{{ route('employee-salaries.teacher-reports', ['month' => $month->format('Y-m'), 'teacher' => $row['teacher']->id]) }}"
+                aria-label="{{ __('Reports for :teacher', ['teacher' => $row['teacher']->name]) }}">{{ __('Reports') }}</a>
+        @endif
+    </td>
+@endif
+</tr>
 @endforeach
 </tbody></table></div>
 @if($roster->hasPages())

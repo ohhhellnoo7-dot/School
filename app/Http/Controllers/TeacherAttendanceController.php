@@ -89,6 +89,9 @@ class TeacherAttendanceController extends Controller
                 ->sortKeys();
         }
 
+        $activeHoliday = $summaryDate->isSameMonth($month) ? $holidayDays->get($summaryDate->day) : null;
+        $activeHolidayDays = $activeHoliday ? $holidayDays->filter(fn ($name) => $name === $activeHoliday)->keys() : collect();
+
         $printing = $request->boolean('print');
         $rosterPages = $groups->map(function ($programRows, $program) use ($request, $printing) {
             $slug = \Illuminate\Support\Str::slug($program);
@@ -104,7 +107,7 @@ class TeacherAttendanceController extends Controller
             );
         });
 
-        return view('school.attendance.teacher-monthly', compact('rosterPages', 'month', 'filters', 'summaryMarks', 'summaryDate', 'holidayDays', 'printing'))
+        return view('school.attendance.teacher-monthly', compact('rosterPages', 'month', 'filters', 'summaryMarks', 'summaryDate', 'holidayDays', 'activeHoliday', 'activeHolidayDays', 'printing'))
             ->with('groups', $rosterPages->map(fn ($page) => $page->getCollection()));
     }
 
