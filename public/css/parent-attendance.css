@@ -1,0 +1,129 @@
+:root[data-theme]:root:root:root:root:root:root:root:root:root:has(.parent-attendance) .scholar-workspace {
+    --pa-purple: #742bec;
+    --pa-border: color-mix(in srgb, #a58ce8 34%, var(--border-color));
+    --pa-pale: color-mix(in srgb, #b3a0f4 15%, var(--surface-raised));
+    --pa-shadow: 0 4px 12px #5c43aa1c;
+}
+:root[data-theme]:root:root:root:root:root:root:root:root:root:has(.parent-attendance) .scholar-workspace .workspace {
+    background: radial-gradient(ellipse at 95% 0, #aba5f447, transparent 50rem),
+        linear-gradient(145deg, var(--surface-raised), var(--pa-pale));
+}
+:root:has(.parent-attendance) .topbar { background: color-mix(in srgb, #b6abf5 19%, var(--surface-raised)); }
+:root:root:root:root:root .scholar-workspace .main-content:has(> .parent-attendance) { padding-block-start: 0; }
+
+.parent-attendance { display: grid; gap: .85rem; min-width: 0; }
+.pa-hero {
+    display: grid;
+    align-content: start;
+    gap: .95rem;
+    min-height: 10.1rem;
+    padding: .72rem .75rem 1.1rem;
+    background:
+        linear-gradient(90deg, var(--surface-raised) 4%, color-mix(in srgb, #ddd4fa 50%, var(--surface-raised)) 30%, transparent 62%),
+        url('../images/school-hero.png') right 36% / 74% auto no-repeat;
+}
+.pa-hero nav { display: flex; align-items: center; gap: .65rem; font-size: .86rem; font-weight: 750; }
+.pa-hero nav a { color: var(--pa-purple); }
+.pa-hero nav i { color: var(--pa-purple); font-size: .7rem; }
+.pa-hero-copy { display: flex; align-items: center; gap: 1.1rem; }
+.pa-hero-icon {
+    display: grid;
+    place-items: center;
+    width: clamp(3.1rem, 5vw, 5.15rem);
+    aspect-ratio: 1;
+    border-radius: 1.15rem;
+    background: linear-gradient(145deg, #b56cfb, #6e21e9);
+    color: #fff;
+    box-shadow: 0 5px 12px #7435d64f, inset 0 2px 4px #ead2ff8a;
+    font-size: clamp(1.65rem, 3vw, 2.85rem);
+}
+.pa-hero h1 { margin: 0 0 .28rem; font-size: clamp(1.95rem, 3vw, 3rem); letter-spacing: -.05em; font-weight: 850; line-height: 1.1; }
+.pa-hero p { margin: 0; font-size: .96rem; font-weight: 600; }
+.pa-overview { display: grid; grid-template-columns: minmax(0, 2.45fr) repeat(4, minmax(0, 1fr)); gap: .75rem; }
+.pa-child-card, .pa-status-card, .pa-panel {
+    border: 1px solid var(--pa-border);
+    border-radius: 1.15rem;
+    background: linear-gradient(140deg, var(--surface-raised), color-mix(in srgb, #b39be9 8%, var(--surface-raised)));
+    box-shadow: var(--pa-shadow);
+}
+.pa-child-card, .pa-status-card { display: flex; align-items: center; min-width: 0; gap: .7rem; padding: .65rem .8rem; }
+.pa-child-card .student-avatar { border-radius: 50%; box-shadow: 0 0 0 2px #b49ae9, 0 3px 6px #664ad427; }
+.pa-child-card h2 { margin: 0 0 .3rem; font-size: clamp(1.15rem, 1.8vw, 1.75rem); font-weight: 850; overflow-wrap: anywhere; }
+.pa-student-number { display: inline-block; padding: .18rem .45rem; border-radius: .55rem; background: var(--pa-pale); font-size: .78rem; font-weight: 750; }
+.pa-child-class { display: grid; gap: .3rem; min-width: 0; padding-inline-start: .65rem; margin-inline-start: auto; border-inline-start: 1px solid var(--pa-border); font-size: .82rem; }
+.pa-child-class i { color: var(--pa-purple); margin-inline-end: .25rem; }
+.pa-child-class .form-select { min-height: 1.7rem; padding-block: .15rem; font-size: .75rem; }
+.parent-attendance [data-attendance-status="present"] { --pa-status: #0bad58; --pa-status-deep: #007d30; }
+.parent-attendance [data-attendance-status="absent"] { --pa-status: #ef295c; --pa-status-deep: #cf003c; }
+.parent-attendance [data-attendance-status="late"] { --pa-status: #f7a12a; --pa-status-deep: #bd6500; }
+.parent-attendance [data-attendance-status="excused"] { --pa-status: #9a50f4; --pa-status-deep: #7120d9; }
+.pa-status-card { min-height: 6.25rem; background: linear-gradient(145deg, var(--surface-raised), color-mix(in srgb, var(--pa-status) 17%, var(--surface-raised))); }
+.pa-status-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: clamp(1.8rem, 3.4vw, 3.55rem);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: linear-gradient(145deg, color-mix(in srgb, var(--pa-status) 65%, white), var(--pa-status-deep));
+    box-shadow: inset 0 1px 3px #fff8, 0 3px 6px color-mix(in srgb, var(--pa-status) 35%, transparent);
+    color: #fff;
+    font-size: clamp(.95rem, 2vw, 1.9rem);
+}
+.pa-status-card h3 { margin: 0 0 .08rem; font-size: .91rem; }
+.pa-status-card strong { display: block; font-size: 1rem; font-weight: 850; }
+.pa-status-card small, .pa-record-status { display: inline-flex; align-items: center; gap: .3rem; padding: .15rem .45rem; border-radius: 2rem; background: color-mix(in srgb, var(--pa-status, #8b71c7) 18%, var(--surface-raised)); color: var(--text-primary); font-size: .78rem; font-weight: 750; }
+.pa-status-card small { margin-top: .18rem; }
+
+.pa-charts { display: grid; grid-template-columns: minmax(0, .89fr) minmax(0, 1.11fr); gap: .8rem; }
+.pa-panel { min-width: 0; padding: .75rem 1rem; }
+.pa-panel h2 { display: flex; align-items: center; gap: .65rem; margin: 0 0 .5rem; font-size: clamp(1rem, 1.5vw, 1.4rem); font-weight: 850; letter-spacing: -.025em; }
+.pa-panel h2 i { color: var(--pa-purple); font-size: 1.5rem; }
+.pa-rate-layout { display: grid; grid-template-columns: minmax(6rem, .85fr) minmax(0, 1fr); align-items: center; gap: clamp(.6rem, 2vw, 1.6rem); }
+.pa-rate-ring {
+    display: grid;
+    place-items: center;
+    justify-self: center;
+    width: min(100%, 10.65rem);
+    aspect-ratio: 1;
+    padding: .88rem;
+    border-radius: 50%;
+    background: conic-gradient(#12b95c 0 var(--pa-present-stop), #ef2855 var(--pa-present-stop) var(--pa-absent-stop), #fca626 var(--pa-absent-stop) var(--pa-late-stop), #9a50f4 var(--pa-late-stop) 100%);
+}
+.pa-rate-ring[data-recorded="no"] { background: var(--pa-pale); }
+.pa-rate-ring > div { display: grid; place-content: center; width: 100%; height: 100%; border-radius: 50%; background: var(--surface-raised); text-align: center; }
+.pa-rate-ring i { color: #13ad5c; font-size: 1.65rem; }
+.pa-rate-ring strong { font-size: clamp(1.1rem, 2vw, 1.9rem); line-height: 1.14; font-weight: 850; }
+.pa-rate-ring span { font-size: .76rem; font-weight: 700; }
+.pa-rate-legend { margin: 0; padding: .42rem .7rem; border-radius: .85rem; background: var(--pa-pale); }
+.pa-rate-legend > div { display: flex; justify-content: space-between; align-items: center; gap: .3rem; padding: .32rem 0; font-size: .81rem; }
+.pa-rate-legend > div + div { border-top: 1px solid var(--pa-border); }
+.pa-rate-legend dt::before { content: ""; display: inline-block; width: .72rem; aspect-ratio: 1; margin-inline-end: .4rem; border-radius: 50%; background: var(--pa-status); }
+.pa-rate-legend dd { margin: 0; white-space: nowrap; }
+.pa-rate-note { margin: .45rem 0 0; color: var(--text-secondary); font-size: .72rem; }
+.pa-chart { position: relative; height: 11.8rem; }
+.pa-chart-empty { margin: 2rem 0; color: var(--text-secondary); text-align: center; }
+
+.pa-records { scroll-margin-top: 5rem; }
+.pa-records header { display: flex; justify-content: space-between; align-items: center; gap: .45rem; padding-bottom: .6rem; }
+.pa-records header h2 { margin: 0; }
+.pa-records .form-control { min-height: 2rem; border-color: var(--pa-border); border-radius: .75rem; }
+.pa-records .table-responsive { border-radius: .75rem; }
+.pa-records .table { margin: 0; }
+:root:root:root:root .pa-records .table :is(td, th) { padding: .35rem .65rem; border-color: var(--pa-border); font-size: .86rem; }
+:root[data-theme]:root:root:root:root:root:root:root:root:root .parent-attendance .pa-records .table thead th { background: color-mix(in srgb, #b39be9 23%, var(--surface-raised)); color: var(--text-primary); font-weight: 800; }
+.pa-records td:first-child i { margin-inline-end: .38rem; color: var(--pa-purple); }
+.pa-record-status > i { color: var(--pa-status-deep); }
+@media (max-width: 1190px) {
+    .pa-overview { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .pa-child-card { grid-column: 1 / -1; }
+}
+@media (max-width: 720px) {
+    .pa-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .pa-charts { grid-template-columns: 1fr; }
+    .pa-hero { background-size: auto, auto 100%; }
+}
+@media (max-width: 390px) {
+    .pa-records header, .pa-child-card { flex-wrap: wrap; }
+    .pa-child-class { margin-inline-start: 0; }
+}

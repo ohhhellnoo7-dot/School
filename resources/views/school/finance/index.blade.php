@@ -18,9 +18,14 @@
 @endif
 
 @if(!$isParent && $studentSummaries->isNotEmpty())<div class="finance-summary-grid mb-4">@foreach($studentSummaries as $studentSummary)<section class="panel p-4"><h2 class="h5">{{ $studentSummary['student']->name }}</h2><p class="form-text">{{ $studentSummary['student']->student_number }}</p>@foreach($studentSummary['currencies'] as $currency => $balance)<p>Remaining balance: <strong>{{ \App\Support\Money::display($balance['balance']) }} {{ $currency }}</strong></p><p>Next unpaid due date: <strong>{{ $balance['next_due'] ?: 'No unpaid invoices' }}</strong></p>@endforeach</section>@endforeach</div>@endif
+<div data-invoice-summary>
 @if(!request()->attributes->get('finance_archive') || $fees->isNotEmpty())
+@if($feeReport)
+    @include('school.finance._period-report')
+@endif
 @include('school.finance._summary')
 @endif
+</div>
 @if($isParent)
     @include('school.finance._parent-progress')
 @elseif(!request()->attributes->get('finance_archive'))
@@ -35,7 +40,10 @@
     </header>
 @else
 <div class="panel-header"><h2>{{ request()->attributes->get('finance_archive') ? 'Archived invoices' : 'Invoices & balances' }} <small>({{ $fees->total() }})</small></h2><a class="btn btn-outline-primary" href="{{ $exportInvoicesUrl }}">Export filtered invoices (CSV)</a></div><div class="panel-body"><form method="get" action="{{ url()->current() }}#invoice-list" class="finance-filters invoice-filters" data-invoice-filters>
-<div><label class="form-label" for="search">{{ auth()->user()->role === 'administrator' ? 'Parent or student' : 'Student' }}</label><input class="form-control" id="search" name="search" value="{{ request('search') }}" placeholder="Name or student number" enterkeyhint="search"></div>
+@foreach(request()->only(['report_scope', 'report_month', 'report_year']) as $key => $value)
+    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+@endforeach
+<div><label class="form-label" for="search">{{ auth()->user()->role === 'administrator' ? 'Parent or student' : 'Student' }}</label><input class="form-control" type="search" id="search" name="search" value="{{ request('search') }}" placeholder="Name or student number" maxlength="100" enterkeyhint="search"></div>
 <div><label class="form-label" for="program">Program</label><select class="form-select" id="program" name="program"><option value="">All programs</option>@foreach(['Khmer', 'English', 'Chinese', 'Japan'] as $program)<option value="{{ $program }}" @selected(request('program') === $program)>{{ $program === 'Japan' ? 'Japanese' : $program }}</option>@endforeach</select></div>
 <div><label class="form-label" for="grade">Grade</label><select class="form-select" id="grade" name="grade"><option value="">All grades</option>@foreach(range(1,12) as $grade)<option @selected((string) request('grade') === (string) $grade)>{{ $grade }}</option>@endforeach</select></div>
 <div><label class="form-label" for="academic_year">Academic year</label><input class="form-control" id="academic_year" name="academic_year" value="{{ request('academic_year') }}" placeholder="2026-2027" pattern="[0-9]{4}-[0-9]{4}"></div>
@@ -54,24 +62,35 @@
 </div>
 <a class="btn btn-light invoice-filter-reset" href="{{ url()->current() }}#invoice-list">{{ __('Reset') }}</a>
 <button type="submit" hidden>{{ __('Search invoices') }}</button>
-</form><p class="form-text mb-0">Summary cards follow the search, program, grade and academic year. Status and paid period filter the invoice list.</p></div>
+</form><p class="form-text mb-0">Summary cards follow the search, program, grade and academic year. Status and paid period filter the invoice list.</p><p class="form-text mb-0" data-invoice-search-status role="status"></p></div>
 @endif
-<div class="table-responsive"><table class="table"><thead><tr><th>Invoice / student</th><th>Program / year</th><th>Net billed</th><th>Paid</th><th>Balance</th><th>Due date</th><th>Status</th><th>View</th></tr></thead><tbody>@forelse($fees as $fee)<tr><td><a href="{{ route('finance.invoice', $fee) }}">{{ $fee->display_number }}</a><br>{{ $fee->student->name }} <small>{{ $fee->student->student_number }}</small>
+<div data-invoice-rows><div class="table-responsive"><table class="table"><thead><tr><th>Invoice / student</th><th>Program / year</th><th>Net billed</th><th>Paid</th><th>Balance</th><th class="text-nowrap">{{ __("Date Paid") }}</th><th>Due date</th><th>Status</th><th>View</th></tr></thead><tbody>@forelse($fees as $fee)
+@php
+    $receipt = $fee->payments->sortBy([['paid_on', 'desc'], ['id', 'desc']])->first();
+    $datePaid = $receipt?->paid_on ?? $fee->paid_at;
+@endphp
+<tr><td><a href="{{ route('finance.invoice', $fee) }}">{{ $fee->display_number }}</a><br>{{ $fee->student->name }} <small>{{ $fee->student->student_number }}</small>
 @if(auth()->user()->role === 'administrator' && $fee->student->parent?->role === 'parent')
     <small class="d-block text-secondary">{{ __('Parent: :name', ['name' => $fee->student->parent->name]) }}</small>
 @endif
-</td><td>{{ $fee->program === 'Japan' ? 'Japanese' : ($fee->program ?: 'Legacy / unclassified') }} {{ $fee->grade ? 'Grade '.$fee->grade : '' }}<br><small>{{ $fee->academic_year ?: 'Historical record' }}</small></td><td>{{ \App\Support\Money::display($fee->netCents()) }} {{ $fee->currency }}</td><td>{{ $fee->paid }} {{ $fee->currency }}</td><td><strong>{{ $fee->balance }} {{ $fee->currency }}</strong></td><td>{{ $fee->due_date->format('d M Y') }}</td><td><span class="status-badge {{ $fee->payment_status }}">{{ ucwords(str_replace('_',' ', $fee->payment_status)) }}</span></td><td><a class="btn btn-sm btn-outline-primary" href="{{ route('finance.invoice', $fee) }}" aria-label="View invoice {{ $fee->display_number }}" title="View invoice details"><i class="bi bi-eye" aria-hidden="true"></i></a></td></tr>@empty<tr><td colspan="8" class="p-4 text-center">@if(request()->attributes->get('finance_archive'))
+</td><td>{{ $fee->program === 'Japan' ? 'Japanese' : ($fee->program ?: 'Legacy / unclassified') }} {{ $fee->grade ? 'Grade '.$fee->grade : '' }}<br><small>{{ $fee->academic_year ?: 'Historical record' }}</small></td><td>{{ \App\Support\Money::display($fee->netCents()) }} {{ $fee->currency }}</td><td>{{ $fee->paid }} {{ $fee->currency }}</td><td><strong>{{ $fee->balance }} {{ $fee->currency }}</strong></td><td class="text-nowrap">@if($datePaid)<time datetime="{{ $datePaid->toDateString() }}">{{ $datePaid->translatedFormat('d M Y') }}</time>@else &mdash; @endif</td><td>{{ $fee->due_date->format('d M Y') }}</td><td><span class="status-badge {{ $fee->payment_status }}">{{ ucwords(str_replace('_',' ', $fee->payment_status)) }}</span></td><td>
+    @if($receipt)
+        <a class="btn btn-sm btn-outline-primary" href="{{ route('finance.receipt', $receipt) }}" aria-label="{{ __('View receipt for :invoice', ['invoice' => $fee->display_number]) }}" title="{{ __('View payment receipt') }}"><i class="bi bi-eye" aria-hidden="true"></i></a>
+    @else
+        <span class="text-secondary" title="{{ __('No payment receipt') }}"><span aria-hidden="true">&mdash;</span><span class="visually-hidden">{{ __('No payment receipt') }}</span></span>
+    @endif
+</td></tr>@empty<tr><td colspan="9" class="p-4 text-center">@if(request()->attributes->get('finance_archive'))
 No archived invoices match these filters. Newly paid invoices are in the current invoice list.
 <a class="d-block mt-2" href="{{ route('finance.index') }}#invoice-list">View current invoices &amp; payments</a>
 @else
 No invoices match these filters. <a href="{{ route('finance.index') }}#invoice-list">Clear filters</a>
 @endif
-</td></tr>@endforelse</tbody></table></div><div class="p-3">{{ $fees->links() }}</div></section>
+</td></tr>@endforelse</tbody></table></div><div class="p-3">{{ $fees->links() }}</div></div></section>
 @if($isParent)</div>@endif
 @endsection
 
 @push('scripts')
-    @if($summary && auth()->user()->role !== 'parent')
+    @if(auth()->user()->role !== 'parent')
         <script src="{{ asset('vendor/chart/chart.umd.min.js') }}" defer></script>
     @endif
     <script src="{{ asset('js/finance-overview.js') }}?v={{ filemtime(public_path('js/finance-overview.js')) }}" defer></script>

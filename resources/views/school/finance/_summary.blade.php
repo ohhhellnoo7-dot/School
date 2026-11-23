@@ -7,7 +7,9 @@
             'overdue' => ['Overdue balance', 'clock', 'rose'],
             'month' => ['Net receipts this month', 'receipt-cutoff', 'violet'],
         ];
-        $currentMonth = today()->startOfMonth();
+        $currentMonth = isset($feeReport) && $feeReport['scope'] !== 'all'
+            ? today()->startOfYear()->setYear($feeReport['year'])->addMonths($feeReport['year'] === today()->year ? today()->month - 1 : 11)
+            : today()->startOfMonth();
         $months = collect(range(0, $currentMonth->month - 1))->map(fn ($offset) => $currentMonth->copy()->startOfYear()->addMonths($offset));
         $labels = $months->map(fn ($month) => $month->translatedFormat('M'));
         $values = $months->map(fn ($month) => ($s['trend'][$month->format('Y-m')] ?? 0) / 100);
@@ -18,6 +20,7 @@
         $progress = $s['billed'] > 0 ? 100 * $s['paid'] / $s['billed'] : null;
     @endphp
     <section class="finance-overview" aria-label="{{ $currency }} overview">
+        @if(empty($feeReport))
         <dl class="finance-metric-grid">
             @foreach($metrics as $key => [$label, $icon, $tone])
                 <div class="finance-overview-metric" data-tone="{{ $tone }}">
@@ -26,6 +29,7 @@
                 </div>
             @endforeach
         </dl>
+        @endif
 
         @unless(auth()->user()->role === 'parent')
         <div class="finance-collection-grid">
@@ -54,7 +58,7 @@
                         @foreach($months as $month)
                             <div><span>{{ $month->translatedFormat('M Y') }}</span><strong>{{ \App\Support\Money::display($s['trend'][$month->format('Y-m')] ?? 0) }} {{ $currency }}</strong></div>
                         @endforeach
-                        @foreach(array_slice(array_filter($s['trend'], fn ($month) => $month < $currentMonth->format('Y').'-01', ARRAY_FILTER_USE_KEY), -12, null, true) as $month => $amount)
+                        @foreach(empty($feeReport) ? array_slice(array_filter($s['trend'], fn ($month) => $month < $currentMonth->format('Y').'-01', ARRAY_FILTER_USE_KEY), -12, null, true) : [] as $month => $amount)
                             <div><span>{{ $month }}</span><strong>{{ \App\Support\Money::display($amount) }} {{ $currency }}</strong></div>
                         @endforeach
                     </div>
@@ -64,7 +68,7 @@
 
             <section class="panel finance-collection-panel">
                 <header class="finance-collection-header">
-                    <div class="finance-collection-title"><i class="bi bi-pie-chart" aria-hidden="true"></i><h2>{{ __('Collected by Program') }}</h2></div>
+                    <div class="finance-collection-title"><i class="bi bi-pie-chart" aria-hidden="true"></i><div><h2>{{ __('Collected by Program') }}</h2>@if(!empty($feeReport))<p>{{ __('All time') }}</p>@endif</div></div>
                 </header>
                 <div class="finance-program-chart-layout">
                     <div class="finance-program-donut">

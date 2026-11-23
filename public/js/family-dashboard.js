@@ -5,6 +5,7 @@
 
     const children = [...rotation.querySelectorAll('[data-family-child]')];
     const selectors = [...controls.querySelectorAll('[data-family-child-select]')];
+    const showAll = controls.querySelector('[data-family-show-all]');
     const toggle = controls.querySelector('[data-family-rotation-toggle]');
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     let selected = 0;
@@ -13,6 +14,8 @@
 
     function showChild(index) {
         selected = index;
+        rotation.setAttribute('data-family-rotating', '');
+        showAll.setAttribute('aria-pressed', 'false');
         children.forEach((child, position) => {
             child.hidden = position !== selected;
             selectors[position].setAttribute('aria-pressed', String(position === selected));
@@ -38,7 +41,17 @@
         showChild(index);
         setPaused(true);
     }));
-    toggle.addEventListener('click', () => setPaused(!paused));
+    showAll.addEventListener('click', () => {
+        setPaused(true);
+        rotation.removeAttribute('data-family-rotating');
+        showAll.setAttribute('aria-pressed', 'true');
+        children.forEach(child => { child.hidden = false; });
+        selectors.forEach(button => button.setAttribute('aria-pressed', 'false'));
+    });
+    toggle.addEventListener('click', () => {
+        if (paused) showChild(selected);
+        setPaused(!paused);
+    });
     rotation.addEventListener('pointerenter', scheduleNext);
     rotation.addEventListener('pointerleave', scheduleNext);
     rotation.addEventListener('focusin', scheduleNext);
@@ -48,7 +61,6 @@
         if (event.matches) setPaused(true);
     });
 
-    rotation.setAttribute('data-family-rotating', '');
     controls.hidden = false;
     showChild(0);
     setPaused(paused);

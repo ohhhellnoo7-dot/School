@@ -23,6 +23,36 @@ class ClassroomManagementTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_parent_my_class_shows_only_linked_classrooms_and_enrollment_counts(): void
+    {
+        $parent = $this->user('parent');
+        foreach (['LINKED' => 8, 'UNRELATED' => 9] as $number => $grade) {
+            $group = $this->classGroup('Khmer', $grade, 'A');
+            $session = $this->classSession($group, 'Morning', '07:00', '11:00');
+            $room = $this->classroom($number);
+            ClassroomBooking::create(collect($this->bookingData($group, $session, $room))->except('session')->all());
+            $class = SchoolClass::create(['name' => 'Grade '.$grade, 'section' => 'A', 'program' => 'Khmer', 'session' => 'Morning', 'class_group_id' => $group->id]);
+            Student::factory()->create(['school_class_id' => $class->id, 'parent_id' => $grade === 8 ? $parent->id : null]);
+            Student::factory()->create(['school_class_id' => $class->id, 'name' => 'Private Classmate']);
+        }
+
+        $this->actingAs($parent)->get(route('classrooms.index'))->assertOk()
+            ->assertSee(['My Class', 'Room LINKED', 'Total students', 'Morning'])
+            ->assertDontSee(['Room UNRELATED', 'Private Classmate'], false)
+            ->assertViewHas('cards', fn ($cards) => $cards->count() === 1 && (int) $cards->first()['class']->enrolled_count === 2);
+        $this->getJson(route('classrooms.data'))->assertOk()
+            ->assertJsonPath('html', fn ($html) => str_contains($html, 'Room LINKED') && ! str_contains($html, 'Room UNRELATED'));
+
+        $teacher = $this->user('teacher');
+        $parent->children()->update(['parent_id' => $teacher->id]);
+        $this->actingAs($teacher)->get(route('classrooms.index'))->assertOk()
+            ->assertSee(['Student classrooms', 'My children’s classrooms']);
+        $this->get(route('classrooms.index', ['my_children' => 1]))->assertOk()
+            ->assertSee(['My children’s classrooms', 'Room LINKED'])->assertDontSee('Room UNRELATED');
+        $this->getJson(route('classrooms.data', ['my_children' => 1]))->assertOk()
+            ->assertJsonPath('html', fn ($html) => str_contains($html, 'Room LINKED') && ! str_contains($html, 'Room UNRELATED'));
+    }
+
     public function test_cards_offer_program_sessions_and_restore_time_based_defaults(): void
     {
         $this->actingAs($this->user('administrator'));

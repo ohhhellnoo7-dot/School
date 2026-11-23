@@ -12,6 +12,23 @@ class StudentDirectoryAttendanceTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_weekly_trend_and_csv_use_matching_students(): void
+    {
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-20'));
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $matching = Student::factory()->create(['name' => 'Filtered Learner']);
+        $other = Student::factory()->create(['name' => 'Other Learner']);
+        Attendance::create(['student_id' => $matching->id, 'date' => '2026-11-16', 'status' => 'late']);
+        Attendance::create(['student_id' => $other->id, 'date' => '2026-11-16', 'status' => 'absent']);
+
+        $filters = ['search' => 'Filtered Learner', 'attendance_date' => '2026-11-16'];
+        $this->actingAs($admin)->get(route('students.index', $filters))->assertOk()
+            ->assertViewHas('attendanceWeek', fn ($week) => $week->pluck('rate')->all() === [100.0, null, null, null, null]);
+        $response = $this->get(route('students.index', $filters + ['download' => 'csv']))->assertDownload('students.csv');
+        $this->assertStringContainsString('Filtered Learner', $response->streamedContent());
+        $this->assertStringNotContainsString('Other Learner', $response->streamedContent());
+    }
+
     public function test_directory_can_save_all_four_statuses_without_duplicate_daily_records(): void
     {
         $admin = User::factory()->create(['role' => 'administrator']);

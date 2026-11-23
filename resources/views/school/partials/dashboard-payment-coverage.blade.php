@@ -9,14 +9,21 @@
         </div>
     </header>
     <div class="panel-body pt-0">
-        <ul class="family-payment-list">
+        <ul class="family-payment-list @if(($groupCoverageByChild ?? false) && $dashboardChildren->count() > 1) family-payment-list--by-child @endif">
             @foreach($dashboardChildren as $child)
                 @php
-                    $coverage = $paymentCoverage->get($child->id);
+                    $programCoverages = $paymentCoverage->get($child->id);
                     $balances = $familyFeeTotals->get($child->id);
-                    $active = $coverage && $coverage['daysLeft'] > 0;
                 @endphp
                 <li class="family-payment-child">
+                    <div class="family-payment-child-heading">
+                        <h3><i class="bi bi-person" aria-hidden="true"></i> {{ $child->name }}</h3>
+                        <a class="btn btn-primary" href="{{ route('students.family.show', [$child, 'tab' => 'fees']) }}">{{ __('View Fees') }} <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                    </div>
+                    <div class="family-payment-programs @if($programCoverages->count() > 1) family-payment-programs--multiple @endif">
+                    @foreach($programCoverages as $program => $coverage)
+                        @php($active = $coverage && $coverage['daysLeft'] > 0)
+                        <div class="family-payment-program">
                     <div class="family-payment-entry">
                         <div class="family-payment-ring" style="--coverage: {{ $coverage['percent'] ?? 0 }}%">
                             <div>
@@ -31,24 +38,44 @@
                             </div>
                         </div>
                         <div class="family-payment-copy">
-                            <h3><i class="bi bi-person" aria-hidden="true"></i> {{ $child->name }}</h3>
+                            <h4>{{ __($program === 'Japan' ? 'Japanese' : $program) }}</h4>
                             @if($coverage)
                                 <p class="family-payment-status" data-covered="{{ $active ? 'yes' : 'no' }}">
                                     <i class="bi bi-{{ $active ? 'check-circle-fill' : 'exclamation-circle-fill' }}" aria-hidden="true"></i>
                                     {{ $active ? __('Paid period active') : __('Paid period ended') }}
                                 </p>
                                 <p><i class="bi bi-calendar3" aria-hidden="true"></i> {{ trans_choice(':count month|:count months', $coverage['months']) }}
-                                    @if($coverage['invoice']->program) &middot; {{ __($coverage['invoice']->program === 'Japan' ? 'Japanese' : $coverage['invoice']->program) }} @endif
+                                    &middot; {{ __(':percent% remaining', ['percent' => round($coverage['percent'])]) }}
                                 </p>
                                 <p><i class="bi bi-calendar-check" aria-hidden="true"></i> {{ __('Renewal date') }} <time datetime="{{ $coverage['end']->toDateString() }}">{{ $coverage['end']->translatedFormat('M j, Y') }}</time></p>
                             @else
                                 <p>{{ __('No dated tuition payment with a known period is on record.') }}</p>
                             @endif
-                            <a class="btn btn-primary" href="{{ route('students.family.show', [$child, 'tab' => 'fees']) }}">{{ __('View Fees') }} <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
                         </div>
                         <img class="family-payment-art" src="{{ asset('images/student-fees-banner.png') }}" alt="">
                     </div>
 
+                    @if($coverage)
+                        <section class="family-payment-timeline" aria-label="{{ __('Payment Timeline') }}">
+                            <header>
+                                <h3><i class="bi bi-calendar-week" aria-hidden="true"></i> {{ __('Payment Timeline') }}</h3>
+                                <span><i class="bi bi-calendar3" aria-hidden="true"></i> {{ trans_choice('Billing cycle: :count month|Billing cycle: :count months', $coverage['months']) }}</span>
+                            </header>
+                            <ol>
+                                <li data-step="paid"><span><i class="bi bi-check-lg" aria-hidden="true"></i></span><time datetime="{{ $coverage['paidOn']->toDateString() }}">{{ $coverage['paidOn']->translatedFormat('M j, Y') }}</time><small>{{ __('First payment') }}</small></li>
+                                @if($active)
+                                    <li data-step="current"><span><i class="bi bi-check-lg" aria-hidden="true"></i></span><time datetime="{{ $paymentToday->toDateString() }}">{{ $paymentToday->translatedFormat('M j, Y') }}</time><small>{{ __('Today') }}</small></li>
+                                @endif
+                                <li data-step="{{ $active ? 'upcoming' : 'ended' }}"><span><i class="bi bi-{{ $active ? 'diamond-fill' : 'exclamation-lg' }}" aria-hidden="true"></i></span><time datetime="{{ $coverage['end']->toDateString() }}">{{ $coverage['end']->translatedFormat('M j, Y') }}</time><small>{{ $active ? __('Renewal') : __('Period ended') }}</small></li>
+                                @unless($active)
+                                    <li data-step="ended"><span><i class="bi bi-dot" aria-hidden="true"></i></span><time datetime="{{ $paymentToday->toDateString() }}">{{ $paymentToday->translatedFormat('M j, Y') }}</time><small>{{ __('Today') }}</small></li>
+                                @endunless
+                            </ol>
+                        </section>
+                    @endif
+                        </div>
+                    @endforeach
+                    </div>
                     <dl class="family-payment-metrics" aria-label="{{ __('Fee totals for :name', ['name' => $child->name]) }}">
                         @foreach([
                             'billed' => ['Total Fee', 'database-fill'],
@@ -65,31 +92,7 @@
                                 @endforelse
                             </div>
                         @endforeach
-                        <div data-metric="coverage">
-                            <i class="bi bi-percent" aria-hidden="true"></i>
-                            <dt>{{ __('Coverage') }}</dt>
-                            <dd>{{ $coverage ? round($coverage['percent']).'%' : '—' }}</dd>
-                        </div>
                     </dl>
-
-                    @if($coverage)
-                        <section class="family-payment-timeline" aria-label="{{ __('Payment Timeline') }}">
-                            <header>
-                                <h3><i class="bi bi-calendar-week" aria-hidden="true"></i> {{ __('Payment Timeline') }}</h3>
-                                <span><i class="bi bi-calendar3" aria-hidden="true"></i> {{ trans_choice('Billing cycle: :count month|Billing cycle: :count months', $coverage['months']) }}</span>
-                            </header>
-                            <ol>
-                                <li data-step="paid"><span><i class="bi bi-check-lg" aria-hidden="true"></i></span><time datetime="{{ $coverage['start']->toDateString() }}">{{ $coverage['start']->translatedFormat('M j, Y') }}</time><small>{{ __('Paid') }}</small></li>
-                                @if($active)
-                                    <li data-step="current"><span><i class="bi bi-check-lg" aria-hidden="true"></i></span><time datetime="{{ $paymentToday->toDateString() }}">{{ $paymentToday->translatedFormat('M j, Y') }}</time><small>{{ __('Today') }}</small></li>
-                                @endif
-                                <li data-step="{{ $active ? 'upcoming' : 'ended' }}"><span><i class="bi bi-{{ $active ? 'diamond-fill' : 'exclamation-lg' }}" aria-hidden="true"></i></span><time datetime="{{ $coverage['end']->toDateString() }}">{{ $coverage['end']->translatedFormat('M j, Y') }}</time><small>{{ $active ? __('Renewal') : __('Period ended') }}</small></li>
-                                @unless($active)
-                                    <li data-step="ended"><span><i class="bi bi-dot" aria-hidden="true"></i></span><time datetime="{{ $paymentToday->toDateString() }}">{{ $paymentToday->translatedFormat('M j, Y') }}</time><small>{{ __('Today') }}</small></li>
-                                @endunless
-                            </ol>
-                        </section>
-                    @endif
                 </li>
             @endforeach
         </ul>

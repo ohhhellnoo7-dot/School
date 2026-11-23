@@ -9,6 +9,7 @@ use App\Models\Student;
 use App\Models\Subject;
 use App\Models\User;
 use App\Services\MonthlyStudentAttendance;
+use App\Services\TuitionPaymentCoverage;
 use App\Support\AcademicYear;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
@@ -64,7 +65,18 @@ class FamilyDashboardController extends Controller
         $announcements = $children->isEmpty() ? collect()
             : ($showAllUpdates ? $updates->paginate(10)->withQueryString() : $updates->limit(3)->get());
 
-        return view('school.family.index', compact('guardian', 'children', 'childCount', 'search', 'classes', 'subjects', 'upcoming', 'announcements', 'showAllUpdates') + ['myChildren' => true]);
+        $paymentData = [];
+        if ($guardian->role === 'teacher' && $children->isNotEmpty()) {
+            $coverage = app(TuitionPaymentCoverage::class);
+            $paymentToday = today()->toImmutable();
+            $paymentData = [
+                'paymentToday' => $paymentToday,
+                'paymentCoverage' => $coverage->forChildren($children, $paymentToday),
+                'familyFeeTotals' => $coverage->feeTotals($children),
+            ];
+        }
+
+        return view('school.family.index', compact('guardian', 'children', 'childCount', 'search', 'classes', 'subjects', 'upcoming', 'announcements', 'showAllUpdates') + $paymentData + ['myChildren' => true]);
     }
 
     public function parentAttendance(Request $request)
@@ -195,7 +207,7 @@ class FamilyDashboardController extends Controller
 
         return [
             'month' => $start, 'records' => $records->keyBy(fn ($record) => $record->date->toDateString()),
-            'counts' => $counts, 'rate' => $recorded ? round(100 * ($counts->get('present', 0) + $counts->get('late', 0)) / $recorded) : null,
+            'counts' => $counts, 'rate' => $recorded ? round(100 * ($counts->get('present', 0) + $counts->get('late', 0)) / $recorded, $withTrend ? 1 : 0) : null,
             'trend' => $trend,
         ];
     }

@@ -1,0 +1,120 @@
+.parent-announcements {
+    --pa-ink: var(--text-primary, #092745);
+    --pa-teal: var(--action, #007c89);
+    --pa-edge: color-mix(in srgb, var(--pa-teal) 22%, transparent);
+    --pa-surface: var(--surface, #fff);
+    color: var(--pa-ink);
+    display: grid;
+    gap: 14px;
+}
+.pa-hero {
+    min-height: 175px;
+    padding: 14px 18px;
+    border-radius: 20px;
+    background: linear-gradient(90deg, #e2f4fc 4%, #f8fbfc 27%, #e4f6fe99 44%, transparent 69%),
+        #dbf4ff url('../images/school-hero.png') right 46% / max(65%, 650px) auto no-repeat;
+    color: #092745;
+}
+.pa-breadcrumb { display: flex; align-items: center; gap: 10px; color: #006d79; font-size: .9rem; font-weight: 700; }
+.pa-heading { display: flex; align-items: center; gap: clamp(14px, 2vw, 28px); padding-top: 17px; }
+.pa-heading h1 { margin: 0; font-size: clamp(2rem, 3.05vw, 3.1rem); line-height: 1.06; font-weight: 800; letter-spacing: -.045em; }
+.pa-heading p { margin: 6px 0 0; }
+.pa-eyebrow { color: #006d79; font-size: .74rem; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; margin-bottom: 4px; }
+.pa-megaphone {
+    width: clamp(63px, 7vw, 124px); aspect-ratio: 1.05; flex-shrink: 0;
+    background: url('../images/student-announcements-banner.png') left center / auto 100% no-repeat;
+    mask-image: linear-gradient(90deg, #000 78%, transparent), linear-gradient(180deg, #000 86%, transparent);
+    mask-composite: intersect;
+}
+.pa-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.pa-stat {
+    --pa-tint: #66d3df;
+    --pa-bubble: #caeff7;
+    display: flex; align-items: center; gap: 18px; min-height: 92px; padding: 12px clamp(12px, 1.6vw, 26px);
+    border-radius: 21px; border: 1px solid color-mix(in srgb, var(--pa-tint) 50%, transparent);
+    background: linear-gradient(125deg, var(--pa-surface), color-mix(in srgb, var(--pa-bubble) 54%, var(--pa-surface)));
+    box-shadow: 0 4px 10px #12536519;
+}
+.pa-stat-month { --pa-tint: #52cfb5; --pa-bubble: #c4f3ef; }
+.pa-stat-important { --pa-tint: #e8ba60; --pa-bubble: #ffedbd; }
+.pa-stat-unread { --pa-tint: #e895bf; --pa-bubble: #ffdaee; }
+.pa-stat-icon { width: 54px; height: 54px; flex: 0 0 54px; display: grid; place-items: center; border-radius: 50%; background: var(--pa-bubble); color: #17485c; font-size: 1.5rem; }
+.pa-stat strong { display: block; font-size: 1.85rem; line-height: 1.08; font-weight: 800; }
+.pa-stat span { font-size: .93rem; font-weight: 650; }
+.pa-results { padding: 4px 5px 12px; background: color-mix(in srgb, var(--pa-surface) 65%, transparent); border-radius: 18px; box-shadow: 0 6px 18px #12536518; }
+.pa-categories, .pa-toolbar, .pa-filters, .pa-views { display: flex; align-items: center; gap: 10px; }
+.pa-categories { flex-wrap: wrap; padding: 0 0 12px; }
+.pa-categories a, .pa-views a, .pa-action a, .pa-select, .pa-search {
+    text-decoration: none; color: var(--pa-ink); background: var(--pa-surface);
+    border: 1px solid var(--pa-edge); border-radius: 999px; min-height: 43px;
+}
+.pa-categories a, .pa-views a { display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 0 20px; font-weight: 700; font-size: .91rem; white-space: nowrap; }
+.pa-categories a[aria-current], .pa-views a[aria-current] { background: linear-gradient(120deg, #008a97, #006575); color: white; }
+.pa-categories i, .pa-views i { font-size: 1.15rem; }
+.pa-toolbar { justify-content: space-between; gap: 16px; margin-bottom: 13px; }
+.pa-filters { flex: 1; max-width: 1060px; }
+.pa-search, .pa-select { display: flex; align-items: center; padding: 0 13px; gap: 8px; min-width: 0; }
+.pa-search { flex: 2; }
+.pa-select { flex: 1; }
+.pa-filters input, .pa-filters select, .pa-search button { background: transparent; border: 0; color: inherit; min-width: 0; font: inherit; font-size: .9rem; }
+.pa-filters input, .pa-filters select { width: 100%; padding: 8px 0; }
+.pa-filters select { cursor: pointer; font-weight: 650; }
+.pa-filters option { background: var(--pa-surface); }
+.pa-search button { padding: 3px; color: var(--pa-teal); font-size: 1.15rem; }
+.pa-select i, .pa-date i { color: var(--pa-teal); }
+.pa-views { gap: 0; border-radius: 999px; border: 1px solid var(--pa-edge); background: var(--pa-surface); }
+.pa-views a { border: 0; padding: 0 17px; }
+.pa-columns, .pa-items-list .pa-item { display: grid; grid-template-columns: 64px minmax(0, 1fr) minmax(96px, 13%) minmax(128px, 16%) 112px; align-items: center; gap: 10px; }
+.pa-columns { min-height: 35px; background: color-mix(in srgb, var(--pa-teal) 15%, var(--pa-surface)); border-radius: 13px; font-weight: 750; font-size: .88rem; padding: 0 10px; }
+.pa-columns span:first-child, .pa-columns span:last-child, .pa-id, .pa-action { text-align: center; }
+.pa-item { --pa-item-accent: #008da6; --pa-item-tint: #dff5fb; background: var(--pa-surface); border-radius: 12px; border-inline-start: 4px solid var(--pa-item-accent); padding: 7px 10px 7px 6px; min-height: 58px; box-shadow: 0 1px 2px #1538511b; font-size: .9rem; }
+.pa-item-academic { --pa-item-accent: #187de8; --pa-item-tint: #e1efff; }
+.pa-item-activities { --pa-item-accent: #b96f00; --pa-item-tint: #fff1d5; }
+.pa-item-events { --pa-item-accent: #7650cf; --pa-item-tint: #eee5ff; }
+.pa-item-important { --pa-item-accent: #c82061; --pa-item-tint: #fde4ef; }
+.pa-id { font-weight: 750; }
+.pa-message { display: flex; align-items: center; gap: 13px; min-width: 0; }
+.pa-message p { margin: 0; font-size: .87rem; }
+.pa-item-icon { display: grid; place-items: center; flex: 0 0 50px; height: 43px; border-radius: 12px; background: var(--pa-item-tint); color: var(--pa-item-accent); font-size: 1.4rem; }
+.pa-title { color: var(--pa-ink); font-size: .98rem; font-weight: 800; text-decoration: none; }
+.pa-title:hover { text-decoration: underline; }
+.pa-important, .pa-audience span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; padding: 4px 10px; border-radius: 999px; font-weight: 700; }
+.pa-important { margin-inline-start: 4px; color: #a3114c; background: #fde4ef; font-size: .72rem; }
+.pa-unread { display: inline-block; width: 7px; height: 7px; margin-inline-start: 5px; vertical-align: middle; border-radius: 50%; background: #00889c; }
+.pa-audience-all { background: #dcf3eb; color: #0c6542; }
+.pa-audience-parent { background: #d9f0ff; color: #074764; }
+.pa-date { font-weight: 650; white-space: nowrap; }
+.pa-date i { margin-inline-end: 5px; }
+.pa-action a { display: inline-grid; place-items: center; min-height: 34px; min-width: 47px; color: var(--pa-teal); }
+.pa-action a:hover, .pa-categories a:hover, .pa-views a:hover { box-shadow: inset 0 0 0 2px var(--pa-edge); }
+.pa-items-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 275px), 1fr)); }
+.pa-items-grid .pa-item { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 14px; }
+.pa-items-grid .pa-id { display: none; }
+.pa-items-grid .pa-message { grid-column: 1 / -1; align-self: start; }
+.pa-items-grid .pa-date { grid-column: 1; }
+.pa-items-grid .pa-action { grid-column: 2; grid-row: 2 / span 2; }
+.pa-pages { padding: 16px 10px 0; }
+.pa-empty { padding: 28px 20px; text-align: center; margin: 0; }
+@media (max-width: 1050px) {
+    .pa-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .pa-columns, .pa-items-list .pa-item { grid-template-columns: 35px minmax(0, 1fr) 88px 112px 57px; gap: 6px; }
+    .pa-filters { flex-wrap: wrap; }
+    .pa-toolbar { align-items: start; }
+}
+@media (max-width: 650px) {
+    .pa-hero { background-image: linear-gradient(90deg, #e2f4fcf5, #e2f4fccf 75%, #e2f4fc70), url('../images/school-hero.png'); }
+    .pa-summary { gap: 8px; }
+    .pa-stat { gap: 8px; min-height: 75px; }
+    .pa-stat-icon { width: 32px; height: 32px; flex-basis: 32px; font-size: 1rem; }
+    .pa-stat span { font-size: .78rem; }
+    .pa-toolbar { flex-wrap: wrap; }
+    .pa-filters { flex-basis: 100%; }
+    .pa-search { flex-basis: 100%; }
+    .pa-categories a { min-height: 35px; padding-inline: 11px; font-size: .8rem; }
+    .pa-columns { display: none; }
+    .pa-items-list .pa-item { grid-template-columns: 1fr auto; padding: 12px; margin-bottom: 7px; }
+    .pa-items-list .pa-id { display: none; }
+    .pa-items-list .pa-message { grid-column: 1 / -1; }
+    .pa-items-list .pa-date { grid-column: 1; }
+    .pa-items-list .pa-action { grid-column: 2; grid-row: 2 / span 2; }
+}

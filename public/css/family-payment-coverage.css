@@ -1,0 +1,173 @@
+.family-payment-panel {
+    container-type: inline-size;
+    border: 1px solid color-mix(in srgb, #129eac 54%, var(--border-color));
+    border-radius: 1.45rem;
+    background: linear-gradient(140deg, var(--surface-raised) 38%, color-mix(in srgb, var(--action) 5%, var(--surface-raised)));
+    box-shadow: 0 8px 20px #075b7322;
+}
+.family-page .family-payment-panel { margin-bottom: 1rem; }
+.family-payment-heading .dashboard-panel-title { display: flex; align-items: center; gap: .9rem; }
+.family-payment-heading h2 { font-size: clamp(1.25rem, 1.8vw, 1.95rem); font-weight: 850; letter-spacing: -.025em; }
+.family-payment-heading .family-payment-icon {
+    color: #bd730c;
+    font-size: clamp(2rem, 3.1vw, 3.4rem);
+    line-height: 1;
+}
+.family-payment-list { display: grid; gap: 1.15rem; margin: 0; padding: 0; list-style: none; }
+.family-payment-list--by-child { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+.family-payment-list--by-child > .family-payment-child {
+    container-type: inline-size;
+    min-width: 0;
+    padding: clamp(.85rem, 1.5vw, 1.4rem);
+    border: 1px solid var(--border-color);
+    border-radius: 1.2rem;
+    background: var(--surface-raised);
+}
+@container (max-width: 900px) {
+    .family-payment-list--by-child { grid-template-columns: minmax(0, 1fr); }
+}
+.family-payment-child { display: grid; gap: .9rem; }
+.family-payment-child-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
+.family-payment-child-heading h3 { font-size: 1.2rem; margin: 0; }
+.family-payment-programs { display: grid; grid-template-columns: minmax(0, 1fr); gap: .9rem; }
+.family-payment-programs--multiple { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.family-payment-program { display: flex; flex-direction: column; gap: .75rem; min-width: 0; }
+.family-payment-programs--multiple .family-payment-entry { grid-template-columns: minmax(0, .9fr) minmax(0, 1fr); flex: 1; }
+.family-payment-programs--multiple .family-payment-art { display: none; }
+.family-payment-copy h4 { margin: 0 0 .35rem; font-size: clamp(1.05rem, 1.55vw, 1.55rem); font-weight: 850; }
+@container (max-width: 760px) {
+    .family-payment-programs--multiple { grid-template-columns: minmax(0, 1fr); }
+}
+@container (max-width: 325px) {
+    .family-payment-programs--multiple .family-payment-entry { grid-template-columns: 1fr; }
+}
+.family-payment-entry {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: minmax(0, 39fr) minmax(0, 38fr) minmax(0, 23fr);
+    align-items: center;
+    gap: clamp(.6rem, 1.35vw, 1.3rem);
+    padding: .8rem .85rem;
+    overflow: hidden;
+    border-radius: 1.1rem;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--action) 4%, var(--surface-raised)), color-mix(in srgb, var(--action) 9%, var(--surface-raised)));
+}
+.family-payment-art {
+    position: absolute;
+    inset: auto 0 .75rem auto;
+    z-index: -1;
+    width: 28%;
+    height: auto;
+    filter: drop-shadow(0 .25rem .3rem #0e2b4726);
+    pointer-events: none;
+}
+.family-payment-ring {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    max-width: 15rem;
+    aspect-ratio: 1;
+    padding: clamp(.55rem, 1vw, .95rem);
+    border-radius: 50%;
+    background: conic-gradient(#00a45f 0 var(--coverage), #e44360 var(--coverage) 100%);
+    box-shadow: inset 0 0 12px #132a441c;
+}
+.family-payment-ring > div {
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: .22rem;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: var(--surface-raised);
+    text-align: center;
+}
+.family-ring-cap { color: #087288; font-size: clamp(1.15rem, 2.5vw, 2.5rem); line-height: 1; }
+.family-payment-ring strong { font-size: clamp(1.85rem, 3.7vw, 3.75rem); font-weight: 850; line-height: 1; }
+.family-payment-ring small { font-size: clamp(.7rem, 1vw, .98rem); font-weight: 750; }
+.family-ring-date, .family-payment-timeline header > span {
+    padding: .23rem .52rem;
+    border: 1px solid color-mix(in srgb, var(--action) 20%, var(--border-color));
+    border-radius: 2rem;
+    background: color-mix(in srgb, var(--action) 6%, var(--surface-raised));
+    font-size: .73rem;
+    font-weight: 700;
+}
+.family-payment-copy h3 { margin: 0 0 .35rem; font-size: clamp(1.15rem, 1.6vw, 1.65rem); font-weight: 850; }
+.family-payment-copy h3 i { color: var(--action); }
+.family-payment-copy p { margin: .32rem 0; font-size: .86rem; }
+.family-payment-copy p i { margin-inline-end: .18rem; }
+.family-payment-copy .family-payment-status {
+    display: inline-block;
+    margin: 0 0 .4rem;
+    padding: .22rem .45rem;
+    border-radius: .5rem;
+    background: #a6f6cc;
+    color: #075f3d;
+    font-weight: 800;
+}
+.family-payment-copy .family-payment-status[data-covered="no"] { background: #fbd6de; color: #982740; }
+.family-payment-copy time { font-weight: 750; }
+.family-payment-copy .btn { margin-top: .55rem; padding-inline: 1rem; border-radius: 2rem; font-weight: 750; }
+.family-payment-copy .btn i { margin-inline-start: .3rem; }
+
+.family-payment-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .55rem; margin: 0; }
+.family-payment-metrics > div {
+    --payment-accent: #b67800;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-content: start;
+    gap: .2rem .45rem;
+    padding: .7rem .55rem;
+    border: 1px solid color-mix(in srgb, var(--payment-accent) 14%, var(--border-color));
+    border-radius: .9rem;
+    background: color-mix(in srgb, var(--payment-accent) 6%, var(--surface-raised));
+    box-shadow: 0 2px 5px #16344b0f;
+}
+.family-payment-metrics [data-metric="paid"] { --payment-accent: #009460; }
+.family-payment-metrics [data-metric="remaining"] { --payment-accent: #c93955; }
+.family-payment-metrics [data-metric="coverage"] { --payment-accent: #008c9b; }
+.family-payment-metrics i { grid-row: span 2; color: var(--payment-accent); font-size: clamp(1rem, 1.7vw, 1.6rem); line-height: 1.3; }
+.family-payment-metrics dt { font-size: .82rem; font-weight: 650; }
+.family-payment-metrics dd { grid-column: 2; margin: 0; overflow-wrap: anywhere; font-size: .92rem; font-weight: 850; }
+.family-payment-metrics dd small { font-size: .75em; white-space: nowrap; }
+
+.family-payment-timeline {
+    padding: .85rem;
+    border: 1px solid color-mix(in srgb, var(--action) 25%, var(--border-color));
+    border-radius: 1rem;
+    background: var(--surface-raised);
+    box-shadow: 0 3px 8px #16344b10;
+}
+.family-payment-timeline header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .45rem; }
+.family-payment-timeline h3 { margin: 0; font-size: .96rem; font-weight: 850; }
+.family-payment-timeline h3 i { margin-inline-end: .3rem; color: var(--action); font-size: 1.2rem; }
+.family-payment-timeline ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: .85rem 0 0; padding: 0; list-style: none; }
+.family-payment-timeline li { position: relative; isolation: isolate; display: grid; justify-items: center; gap: .2rem; text-align: center; font-size: .77rem; }
+.family-payment-timeline li:not(:last-child)::after {
+    position: absolute;
+    z-index: -1;
+    inset: .91rem auto auto 50%;
+    width: 100%;
+    height: .19rem;
+    background: #a7b3c3;
+    content: "";
+}
+.family-payment-timeline li[data-step="paid"]:has(+ [data-step="current"])::after { background: #00a45f; }
+.family-payment-timeline li > span { display: grid; place-items: center; width: 2rem; aspect-ratio: 1; margin-bottom: .2rem; border-radius: 50%; color: #fff; background: #73849a; }
+.family-payment-timeline li:is([data-step="paid"], [data-step="current"]) > span { background: #00995b; }
+.family-payment-timeline li[data-step="ended"] > span { background: #c93955; }
+.family-payment-timeline time { font-weight: 800; }
+.family-payment-timeline small { color: var(--text-secondary); }
+@container (max-width: 510px) {
+    .family-payment-entry { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); }
+    .family-payment-art { display: none; }
+    .family-payment-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container (max-width: 325px) {
+    .family-payment-entry { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+    .family-payment-ring { max-width: 10rem; }
+}
+

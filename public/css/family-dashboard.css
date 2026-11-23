@@ -137,6 +137,39 @@
 .family-rotation-controls button { min-height: 40px; border: 1px solid var(--family-border); }
 .family-rotation-controls [aria-pressed="true"] { border-color: var(--family-primary); background: var(--action); color: var(--on-action); }
 .family-child-group { min-width: 0; container-type: inline-size; }
+@media (min-width: 768px) {
+    .family-child-grid[data-family-rotation]:not([data-family-rotating]) > .family-child-group {
+        display: grid;
+        grid-row: span 2;
+        grid-template-rows: subgrid;
+        container-type: normal;
+    }
+    .family-child-grid[data-family-rotation]:not([data-family-rotating]) .family-child {
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-rows: minmax(min-content, 1fr) auto auto;
+        transform: none;
+    }
+    .family-child-grid[data-family-rotation]:not([data-family-rotating]) .family-child > .student-avatar {
+        width: 84px !important;
+        height: 84px !important;
+    }
+    .family-child-grid[data-family-rotation]:not([data-family-rotating]) .family-child > :is(.student-avatar, .family-child-identity) {
+        align-self: start;
+    }
+    .family-child-grid[data-family-rotation]:not([data-family-rotating]) :is(.family-today, .family-view-profile) {
+        grid-column: 1 / -1;
+        justify-self: start;
+    }
+    .family-child-grid[data-family-rotation]:not([data-family-rotating]) .family-today {
+        padding-inline-start: 0;
+        border-inline-start: 0;
+    }
+    .family-child-grid[data-family-rotation]:not([data-family-rotating]) .family-shortcuts {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+        grid-auto-rows: 1fr;
+        margin-top: 0;
+    }
+}
 .family-child, .family-panel, .family-empty, .family-fee-summary {
     min-width: 0;
     padding: clamp(1rem, 2.2vw, 1.6rem);

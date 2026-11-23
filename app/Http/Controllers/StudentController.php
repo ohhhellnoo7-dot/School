@@ -40,13 +40,15 @@ class StudentController extends Controller
         $request->validate(['attendance_date' => 'nullable|date_format:Y-m-d|before_or_equal:today',
             'attendance_status' => 'nullable|in:present,absent,late,excused,unrecorded']);
         $attendanceDate = $request->input('attendance_date', today()->toDateString());
+        $request->validate(['grade' => 'nullable|integer|between:1,32767']);
         $visibleStudents = Student::visibleTo($viewer);
         $studentQuery = (clone $visibleStudents)->with(['schoolClass', 'studyClasses', 'user', 'parent',
             'attendances' => fn ($query) => $query->whereDate('date', $attendanceDate)])
             ->search($request->input('search'))
-            ->when($request->class || $request->program || $request->session, fn ($q) => $q->whereHas('studyClasses', fn ($classes) => $classes
+            ->when($request->class || $request->program || $request->session || $request->grade, fn ($q) => $q->whereHas('studyClasses', fn ($classes) => $classes
                 ->when($request->class, fn ($c, $id) => $c->where('school_classes.id', $id))
                 ->when($request->program, fn ($c, $program) => $c->where('program', $program))
+                ->when($request->grade, fn ($c, $grade) => $c->whereHas('classGroup', fn ($group) => $group->where('grade', $grade)))
                 ->when($request->session, fn ($c, $session) => $c->where('session', $session))))
             ->when($request->status, fn ($q, $status) => $q->where('status', $status));
         // Counts span every matching student, independent of pagination and the status tab.
@@ -57,13 +59,38 @@ class StudentController extends Controller
             ->selectRaw('status, COUNT(*) AS total')->groupBy('status')->pluck('total', 'status');
         foreach (['present', 'absent', 'late', 'excused'] as $status) $attendanceCounts[$status] = (int) $dailyCounts->get($status, 0);
         $attendanceCounts['unrecorded'] = $attendanceCounts['total'] - array_sum(array_intersect_key($attendanceCounts, array_flip(['present', 'absent', 'late', 'excused'])));
+        $monday = CarbonImmutable::parse($attendanceDate)->startOfWeek(CarbonImmutable::MONDAY);
+        $weeklyCounts = Attendance::whereBetween('date', [$monday->toDateString(), $monday->addDays(4)->toDateString()])
+            ->where('date', '<=', today()->toDateString())
+            ->whereIn('student_id', (clone $studentQuery)->select('students.id'))
+            ->selectRaw('date, status, COUNT(*) AS total')->groupBy('date', 'status')->get()
+            ->groupBy(fn ($record) => $record->date->toDateString());
+        $attendanceWeek = collect(range(0, 4))->map(function ($offset) use ($monday, $weeklyCounts) {
+            $date = $monday->addDays($offset);
+            $counts = $weeklyCounts->get($date->toDateString(), collect())->pluck('total', 'status');
+            return [
+                'date' => $date,
+                'rate' => $counts->sum() ? round(100 * ($counts->get('present', 0) + $counts->get('late', 0)) / $counts->sum(), 1) : null,
+            ];
+        });
         $students = $studentQuery
             ->when($request->attendance_status, function ($query, $status) use ($attendanceDate) {
                 return $status === 'unrecorded'
                     ? $query->whereDoesntHave('attendances', fn ($q) => $q->whereDate('date', $attendanceDate))
                     : $query->whereHas('attendances', fn ($q) => $q->whereDate('date', $attendanceDate)->where('status', $status));
-            })
-            ->orderBy($request->input('sort', 'name'), $request->input('direction', 'asc'))->orderBy('id')->paginate(12)->withQueryString();
+            })->orderBy($request->input('sort', 'name'), $request->input('direction', 'asc'))->orderBy('id');
+        if ($request->input('download') === 'csv') {
+            return response()->streamDownload(function () use ($students) {
+                $output = fopen('php://output', 'w');
+                fputcsv($output, ['Student ID', 'Name', 'Class', 'Gender', 'Enrollment', 'Attendance'], ',', '"', '');
+                foreach ($students->lazy(200) as $student) {
+                    $row = [$student->student_number, $student->name, $student->schoolClass?->label, $student->gender, $student->status, $student->attendances->first()?->status ?? 'Not Marked'];
+                    fputcsv($output, array_map(fn ($value) => preg_match('/^[\s]*[=+@-]|^[\t\r\n]/', (string) $value) ? "'".$value : $value, $row), ',', '"', '');
+                }
+                fclose($output);
+            }, 'students.csv');
+        }
+        $students = $students->paginate(12)->withQueryString();
 
         $studentSummary = [
             'total' => (clone $visibleStudents)->count(),
@@ -72,7 +99,7 @@ class StudentController extends Controller
             'new' => (clone $visibleStudents)->whereBetween('enrollment_date', [now()->startOfMonth()->toDateString(), now()->toDateString()])->count(),
         ];
 
-        return view('school.students.index', ['students' => $students, 'attendanceDate' => $attendanceDate, 'attendanceCounts' => $attendanceCounts, 'studentSummary' => $studentSummary, 'classes' => SchoolClass::orderBy('name')->get()]);
+        return view('school.students.index', ['students' => $students, 'attendanceDate' => $attendanceDate, 'attendanceCounts' => $attendanceCounts, 'attendanceWeek' => $attendanceWeek, 'studentSummary' => $studentSummary, 'classes' => SchoolClass::with('classGroup')->orderBy('name')->get()]);
     }
 
     public function saveAttendance(Request $request, Student $student)

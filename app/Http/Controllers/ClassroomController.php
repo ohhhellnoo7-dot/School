@@ -27,6 +27,9 @@ class ClassroomController extends Controller
 
     public function index(Request $request, ClassroomAvailabilityService $availabilityService): View
     {
+        if ($this->isFamilyClassroomView($request)) {
+            return view('school.classrooms.parent', $this->familyRooms($request->user(), $availabilityService));
+        }
         $payload = $this->availabilityPayload($request, $availabilityService);
 
         return view('school.classrooms.index', $payload + [
@@ -40,6 +43,12 @@ class ClassroomController extends Controller
 
     public function data(Request $request, ClassroomAvailabilityService $availabilityService): JsonResponse
     {
+        if ($this->isFamilyClassroomView($request)) {
+            $payload = $this->familyRooms($request->user(), $availabilityService);
+
+            return response()->json(['html' => view('school.classrooms._parent-rooms', $payload)->render()])
+                ->header('Cache-Control', 'private, no-store');
+        }
         $payload = $this->availabilityPayload($request, $availabilityService);
 
         return response()->json([
@@ -47,6 +56,31 @@ class ClassroomController extends Controller
             'refreshed_at' => now()->timezone(config('app.timezone'))->toIso8601String(),
             'label' => $payload['moment']->format('D, M j, Y · H:i'),
         ]);
+    }
+
+    private function isFamilyClassroomView(Request $request): bool
+    {
+        return $request->user()->role === 'parent'
+            || ($request->user()->role === 'teacher' && $request->boolean('my_children'));
+    }
+
+    private function familyRooms(User $guardian, ClassroomAvailabilityService $availabilityService): array
+    {
+        $children = $guardian->children()->with(['studyClasses' => fn ($classes) => $classes
+            ->withCount(['students as enrolled_count' => fn ($students) => $students->where('students.status', 'active')])])
+            ->orderBy('name')->get();
+        if ($children->isEmpty()) {
+            return ['cards' => collect()];
+        }
+
+        $moment = CarbonImmutable::now(config('classrooms.timezone'));
+        $availability = $availabilityService->forMoment($moment);
+        $cards = $children->flatMap(fn ($child) => $child->studyClasses->flatMap(function ($class) use ($child, $availability) {
+            return $availability->filter(fn ($room) => collect(data_get($room, "programDetails.{$class->program}.class_ids", []))
+                ->contains($class->id))->map(fn ($room) => ['child' => $child, 'class' => $class, 'room' => $room]);
+        }));
+
+        return compact('cards');
     }
 
     public function show(Request $request, Classroom $classroom, ClassroomAvailabilityService $availabilityService): View

@@ -27,6 +27,7 @@
             @if($children->count() > 1)
                 <div class="family-rotation-controls" data-family-rotation-controls hidden>
                     <div class="family-child-selectors" role="group" aria-label="{{ __('Choose a child') }}">
+                        <button type="button" class="family-pill family-action-link" data-family-show-all aria-controls="family-child-grid" aria-pressed="false">{{ __('Show All') }}</button>
                         @foreach($children as $child)
                             <button type="button" class="family-pill family-action-link" data-family-child-select="{{ $loop->index }}" aria-controls="family-child-{{ $child->id }}" aria-pressed="{{ $loop->first ? 'true' : 'false' }}">{{ $child->name }}</button>
                         @endforeach
@@ -35,7 +36,7 @@
                 </div>
             @endif
         </div>
-        <div class="family-child-grid {{ $children->count() === 1 ? 'family-child-grid--single' : '' }}" @if($children->count() > 1) data-family-rotation @endif>
+        <div id="family-child-grid" class="family-child-grid {{ $children->count() === 1 ? 'family-child-grid--single' : '' }}" @if($children->count() > 1) data-family-rotation @endif>
             @forelse($children as $child)
                 @php
                     $attendance = $child->attendances->first();
@@ -94,6 +95,10 @@
             @endforelse
         </div>
     </section>
+
+    @if(isset($paymentCoverage))
+        @include('school.partials.dashboard-payment-coverage', ['dashboardChildren' => $children, 'groupCoverageByChild' => true])
+    @endif
 
     @if($children->isNotEmpty())
         <div class="family-bottom-grid">

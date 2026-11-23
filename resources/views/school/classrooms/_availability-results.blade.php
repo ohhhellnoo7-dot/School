@@ -12,8 +12,9 @@
     @endforeach
 </section>
 
-<div class="room-grid-heading">
+<div class="room-grid-heading" id="classroom-view" style="scroll-margin-top: 105px">
     <div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
         <div class="lesson-picker">
             <h2><i class="bi bi-buildings room-section-icon" aria-hidden="true"></i> <button type="button" class="lesson-picker-toggle" data-lesson-toggle aria-expanded="false" aria-controls="lesson-filter-options">Physical classrooms <i class="bi bi-chevron-down" aria-hidden="true"></i></button></h2>
             <div class="lesson-picker-menu" id="lesson-filter-options">
@@ -25,6 +26,10 @@
                     @if(auth()->user()->role === 'administrator')<button type="button" data-lesson-filter="awaiting" aria-pressed="false"><i class="bi bi-hourglass-split" aria-hidden="true"></i> Classes awaiting setup <span data-lesson-count="awaiting">{{ $awaitingSetup->count() }}</span></button>@endif
                 </div>
             </div>
+        </div>
+        @if(auth()->user()->role === 'teacher')
+            @include('school.classrooms._teacher-room-switch', ['familyRoomView' => false])
+        @endif
         </div>
         <p>{{ $availability->count() }} {{ \Illuminate\Support\Str::plural('room', $availability->count()) }} match the selected date, time, and filters.<span data-lesson-selection></span></p>
     </div>

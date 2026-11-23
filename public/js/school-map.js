@@ -281,11 +281,8 @@
         const retry = add('button', 'checkin-failure-retry', '');
         retry.type = 'button';
         add('i', 'bi bi-arrow-repeat', '', retry).setAttribute('aria-hidden', 'true');
-        add('span', '', 'Try Again', retry);
-        retry.addEventListener('click', () => {
-            nextScanAction = data.action || 'check_in';
-            scanner?.click();
-        });
+        add('span', '', 'Refresh location', retry);
+        retry.addEventListener('click', () => scanner?.click());
         if (outsideSession) {
             retry.replaceChildren();
             add('i', 'bi bi-calendar3', '', retry).setAttribute('aria-hidden', 'true');
@@ -308,9 +305,19 @@
         if (state) target.classList.add(state === 'success' ? 'text-success' : 'text-danger');
     };
     const mapInput = document.getElementById('map-location');
+    const inlineResult = document.querySelector('.campus-scan-result');
+    const refreshLocation = document.querySelector('[data-refresh-scan-location]');
+    refreshLocation?.addEventListener('click', () => scanner?.click());
+    const setInlineResult = (message, tone = '', canRetry = tone === 'error') => {
+        if (!inlineResult) return;
+        inlineResult.textContent = message;
+        inlineResult.dataset.tone = tone;
+        if (refreshLocation) refreshLocation.hidden = !canRetry;
+    };
     let targetVersion = 0;
     mapInput?.addEventListener('input', () => {
         targetVersion++;
+        setInlineResult('Save the changed coordinates before scanning.');
         if (result && scanner?.dataset.checkTarget === 'true') {
             show(result, 'Location coordinates changed. Click Set attendance location before scanning.');
         }
@@ -345,7 +352,10 @@
             if (!remaining) {
                 const summary = document.querySelector('[data-active-location-summary]');
                 if (summary) summary.textContent = 'No active attendance location. Save or activate a location before scanning.';
+                document.querySelector('[data-map-zone-label]')?.remove();
+                document.dispatchEvent(new Event('attendance-boundary-removed'));
             }
+            setInlineResult('Locations changed. Start a new scan against the active attendance location.');
             if (result) show(result, remaining
                 ? 'Locations changed. Start a new scan against the active attendance location.'
                 : 'No active attendance location. Save or activate a location before scanning.');
@@ -362,6 +372,13 @@
         const menu = document.getElementById('map-location-history');
         const key = historyRoot.dataset.historyKey;
         const saved = JSON.parse(historyRoot.dataset.savedLocations);
+        const radius = document.getElementById('map-radius');
+        input.addEventListener('input', () => {
+            if (!radius) return;
+            const normalize = value => value.split(',').map(part => part.trim() === '' ? NaN : Number(part)).join(',');
+            const coordinates = normalize(input.value);
+            radius.value = saved.find(entry => normalize(entry.value) === coordinates)?.radius ?? 100;
+        });
         let recent = [];
         try {
             const stored = JSON.parse(localStorage.getItem(key) || '[]');
@@ -495,6 +512,7 @@
         const version = targetVersion;
         const target = scanner.dataset.checkTarget === 'true' ? mapInput.value.trim() : undefined;
         scanner.disabled = true;
+        setInlineResult('Checking your device location…');
         const minimumLoading = new Promise(resolve => setTimeout(resolve, 3000));
         showLoading();
         headerScanner?.setAttribute('aria-disabled', 'true');
@@ -523,18 +541,22 @@
             await new Promise(resolve => setTimeout(resolve, 350));
             if (version !== targetVersion) return;
             if (response.ok && data.success && data.teacher_name && ['present', 'late'].includes(data.status)) {
+                setInlineResult('Your device is within the attendance zone.', 'success');
                 showReceipt(data);
                 return;
             }
             const message = data.message || 'The location check could not be completed. Please scan again.';
             if (!data.success) {
+                setInlineResult(message, 'error', !['weekend', 'outside_session'].includes(data.reason));
                 showFailure({ ...data, action, message, device_location: position.coords });
                 return;
             }
+            setInlineResult(message, response.ok ? 'success' : 'error');
             show(result, message + (data.location_name ? ` Area: ${data.location_name}.` : '') + (data.distance_meters !== undefined ? ` Estimated distance: ${data.distance_meters} m. Location accuracy: ±${data.accuracy_meters} m. Allowed radius: ${data.radius_meters} m.` : ''), response.ok && data.success ? 'success' : 'error');
         } catch (error) {
             await minimumLoading;
             if (version !== targetVersion) return;
+            setInlineResult(error instanceof TypeError ? 'Could not reach the server. Check your connection and scan again.' : error.message, 'error');
             show(result, error instanceof TypeError ? 'Could not reach the server. Check your connection and scan again.' : error.message, 'error');
         } finally {
             clearInterval(loadingTimer);

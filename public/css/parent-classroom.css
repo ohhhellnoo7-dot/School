@@ -1,0 +1,54 @@
+.parent-classroom { display: grid; gap: 14px; }
+.parent-classroom-hero {
+    min-height: 148px; display: flex; align-items: center; gap: clamp(12px, 2vw, 25px);
+    padding: clamp(15px, 3vw, 36px); border-radius: 20px;
+    background: linear-gradient(90deg, var(--surface) 25%, color-mix(in srgb, var(--surface) 80%, transparent) 46%, transparent 72%),
+        var(--surface-tint) url('../images/school-hero.png') right 46% / max(68%, 625px) auto no-repeat;
+}
+.parent-classroom-hero-icon, .parent-classroom-symbol { display: grid; place-items: center; flex: none; border-radius: 21%; aspect-ratio: 1; }
+.parent-classroom-hero-icon { width: clamp(54px, 5vw, 76px); background: linear-gradient(135deg, #049da6, #00697b); color: #fff; font-size: clamp(1.6rem, 2.5vw, 2.45rem); }
+.parent-classroom-hero h1 { margin: 0; font-size: clamp(2rem, 3.5vw, 3.25rem); font-weight: 850; }
+.parent-classroom-hero p { margin: .28rem 0 0; font-size: clamp(.88rem, 1.25vw, 1.14rem); }
+.parent-classroom-rooms { display: grid; gap: 14px; }
+.parent-classroom-card {
+    --room-state: var(--success);
+    display: grid; grid-template-columns: minmax(0, .92fr) minmax(0, 1.3fr); align-items: center; gap: clamp(14px, 2vw, 28px);
+    padding: clamp(14px, 2.3vw, 34px); border: 1px solid var(--border-color); border-radius: clamp(22px, 3vw, 38px);
+    background: var(--surface); box-shadow: 0 10px 25px var(--shadow-color);
+}
+.parent-classroom-card[data-room-status="busy"] { --room-state: var(--action); }
+.parent-classroom-card[data-room-status="upcoming"] { --room-state: var(--warning); }
+.parent-classroom-card[data-room-status="out_of_service"] { --room-state: var(--danger); }
+.parent-classroom-photo { position: relative; border-radius: 20px; overflow: hidden; }
+.parent-classroom-photo img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
+.parent-classroom-photo .parent-classroom-status { position: absolute; inset: .75rem .75rem auto auto; background: var(--surface); text-transform: uppercase; padding: .5rem .75rem; }
+.parent-classroom-status { display: inline-flex; gap: .35rem; align-items: center; color: var(--room-state); background: color-mix(in srgb, var(--room-state) 13%, var(--surface)); padding: .18rem .55rem; border-radius: 999px; font-size: .78rem; font-weight: 800; }
+.parent-classroom-copy { min-width: 0; container-type: inline-size; }
+.parent-classroom-heading, .parent-classroom-room, .parent-classroom-program { display: flex; align-items: center; gap: clamp(9px, 1.25vw, 18px); }
+.parent-classroom-heading { justify-content: space-between; margin-bottom: clamp(.85rem, 2vw, 1.6rem); flex-wrap: wrap; }
+.parent-classroom-room h2 { font-size: clamp(2rem, 4vw, 3.65rem); margin: 0; font-weight: 850; line-height: 1; }
+.parent-classroom-room p, .parent-classroom-room small { margin: .3rem 0 0; color: var(--text-secondary); display: block; }
+.parent-classroom-symbol { width: clamp(36px, 3.5vw, 52px); color: var(--action); background: var(--surface-tint); font-size: clamp(1rem, 1.9vw, 1.7rem); }
+.parent-classroom-room > .parent-classroom-symbol { width: clamp(47px, 5.5vw, 82px); font-size: clamp(1.35rem, 3vw, 2.4rem); }
+.parent-classroom-program { border: 1px solid var(--border-color); border-radius: 18px; padding: .65rem .8rem; background: var(--surface-tint); }
+.parent-classroom-program strong { display: block; font-size: 1.12rem; }
+.parent-classroom-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem; margin: 0; }
+.parent-classroom-facts > div { --fact: #42b589; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: .15rem .45rem; padding: clamp(.55rem, 1.3vw, 1.15rem); border-radius: 19px; background: color-mix(in srgb, var(--fact) 12%, var(--surface)); }
+.parent-classroom-facts > div:nth-child(2) { --fact: #52a8eb; }
+.parent-classroom-facts > div:nth-child(3) { --fact: #9c85eb; }
+.parent-classroom-facts .parent-classroom-symbol { grid-row: span 2; }
+.parent-classroom-facts dt { font-size: .85rem; font-weight: 650; }
+.parent-classroom-facts dd { margin: 0; font-size: clamp(1rem, 2vw, 1.6rem); font-weight: 850; overflow-wrap: anywhere; }
+.parent-classroom-facts > div:last-child dd { font-size: clamp(.92rem, 3.1cqi, 1.4rem); white-space: nowrap; }
+@container (max-width: 590px) {
+    .parent-classroom-facts > div { grid-template-columns: minmax(0, 1fr); }
+    .parent-classroom-facts .parent-classroom-symbol { grid-row: auto; }
+}
+@media (max-width: 1050px) {
+    .parent-classroom-card { grid-template-columns: 1fr; }
+    .parent-classroom-photo img { max-height: 350px; }
+}
+@media (max-width: 560px) {
+    .parent-classroom-facts { grid-template-columns: 1fr; }
+    .parent-classroom-hero { background-image: linear-gradient(90deg, var(--surface), color-mix(in srgb, var(--surface) 78%, transparent)), url('../images/school-hero.png'); }
+}

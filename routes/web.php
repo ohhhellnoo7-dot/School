@@ -210,6 +210,8 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent', \App\Htt
             Route::post('/programs/{program:name}/banner', [\App\Http\Controllers\TuitionBannerController::class, 'update'])->name('programs.banner.update');
             Route::get('/archive', [\App\Http\Controllers\SchoolFinanceController::class, 'archive'])->name('archive');
             Route::get('/parents', [\App\Http\Controllers\SchoolFinanceController::class, 'parents'])->name('parents');
+            Route::get('/student-payment', [\App\Http\Controllers\StudentTuitionPaymentController::class, 'index'])->name('student-payment');
+            Route::post('/student-payment/{student}', [\App\Http\Controllers\StudentTuitionPaymentController::class, 'store'])->whereNumber('student')->name('student-payment.store');
             Route::get('/settings', [\App\Http\Controllers\SchoolFinanceController::class, 'settings'])->name('settings');
             Route::post('/settings', [\App\Http\Controllers\SchoolFinanceController::class, 'saveStructure'])->name('settings.save');
             Route::post('/settings/proposals', [\App\Http\Controllers\SchoolFinanceController::class, 'proposals'])->name('proposals');

@@ -1,8 +1,52 @@
 (() => {
-    document.querySelector('[data-invoice-filters]')?.addEventListener('change', event => {
-        if (event.target.matches('select')) event.currentTarget.requestSubmit();
+    const form = document.querySelector('[data-invoice-filters]');
+    form?.addEventListener('change', event => {
+        if (event.target.matches('select')) form.requestSubmit();
     });
+    const search = form?.querySelector('input[type="search"][name="search"]');
+    const status = document.querySelector('[data-invoice-search-status]');
+    if (!search || !status) return;
+    let pending;
+    let debounce;
 
+    form.addEventListener('submit', () => {
+        clearTimeout(debounce);
+        pending?.abort();
+    });
+    search.addEventListener('input', () => {
+        clearTimeout(debounce);
+        pending?.abort();
+        debounce = setTimeout(async () => {
+            if (!form.checkValidity()) return;
+            const request = new AbortController();
+            pending = request;
+            const url = new URL(form.action);
+            url.search = new URLSearchParams(new FormData(form)).toString();
+            status.textContent = 'Searching invoices…';
+            try {
+                const response = await fetch(url, { signal: request.signal });
+                if (!response.ok || response.redirected) throw new Error();
+                const page = new DOMParser().parseFromString(await response.text(), 'text/html');
+                if (request.signal.aborted) return;
+                const selectors = ['#invoice-list > .panel-header', '[data-invoice-rows]', '[data-invoice-summary]'];
+                const regions = selectors.map(selector => [document.querySelector(selector), page.querySelector(selector)]);
+                if (regions.some(([current, next]) => !current || !next)) throw new Error();
+                const summary = regions.at(-1)[0];
+                if (typeof Chart !== 'undefined') {
+                    summary.querySelectorAll('canvas').forEach(canvas => Chart.getChart(canvas)?.destroy());
+                }
+                regions.forEach(([current, next]) => current.replaceWith(next));
+                document.dispatchEvent(new Event('finance-invoice-summary-updated'));
+                history.replaceState(history.state, '', url);
+                status.textContent = '';
+            } catch {
+                if (!request.signal.aborted) status.textContent = 'Search couldn’t load. Press Enter to try again.';
+            }
+        }, 280);
+    });
+})();
+
+const renderFinanceOverview = () => {
     if (typeof Chart === 'undefined') return;
 
     const root = document.documentElement;
@@ -101,4 +145,6 @@
             },
         });
     }
-})();
+};
+renderFinanceOverview();
+document.addEventListener('finance-invoice-summary-updated', renderFinanceOverview);

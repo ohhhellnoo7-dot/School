@@ -1,15 +1,17 @@
 @extends('school.layout')
 @section('title', 'School map')
+@php($showAttendanceBoundary = $activeLocation && $location === $activeLocation->latitude.','.$activeLocation->longitude)
 @section('content')
 <link href="{{ asset('css/checkin-receipt.css') }}?v={{ filemtime(public_path('css/checkin-receipt.css')) }}" rel="stylesheet">
 <link href="{{ asset('css/school-map.css') }}?v={{ filemtime(public_path('css/school-map.css')) }}" rel="stylesheet">
 <div class="school-map-workspace">
 <header class="campus-map-heading">
-    <div><span class="campus-map-icon"><i class="bi bi-map" aria-hidden="true"></i></span><h1>School map</h1></div>
-    @if(auth()->user()->role !== 'teacher')<a class="btn btn-outline-secondary" href="{{ route('classrooms.index') }}">Classroom availability</a>@endif
+    <div><span class="campus-map-icon"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i></span><div><h1>School map</h1><p>View the school location, attendance zone, and check-in settings.</p></div></div>
+    @if(auth()->user()->role !== 'teacher')<a class="btn btn-outline-secondary" href="{{ route('classrooms.index') }}"><i class="bi bi-building me-2" aria-hidden="true"></i>Classroom availability</a>@endif
 </header>
 <div class="campus-map-grid">
 <section class="campus-map-canvas" aria-label="Google Maps">
+    <div class="campus-location-heading"><span class="campus-map-icon"><i class="bi bi-geo-alt" aria-hidden="true"></i></span><h2>School Location</h2></div>
     @if($location !== '')
         <div class="campus-map-toolbar">
             <span><i class="bi bi-geo-alt" aria-hidden="true"></i> {{ $location }}</span>
@@ -17,20 +19,24 @@
         </div>
         <div class="campus-map-frame" @if(auth()->user()->role === 'teacher') inert aria-label="Read-only school map" @endif>
             <iframe @if(auth()->user()->role === 'teacher') tabindex="-1" @endif title="Google Maps location: {{ $location }}" src="https://www.google.com/maps?{{ http_build_query(['q' => $location, 'output' => 'embed']) }}" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
+            @if($showAttendanceBoundary)
+                <div class="campus-boundary-map" data-campus-boundary data-latitude="{{ $activeLocation->latitude }}" data-longitude="{{ $activeLocation->longitude }}" data-radius="{{ $activeLocation->radius_meters }}" role="region" aria-label="Attendance zone map" aria-hidden="true" inert></div>
+                <div class="campus-map-zone-label" data-map-zone-label><strong>Attendance Zone</strong><span>Radius: {{ number_format($activeLocation->radius_meters) }} m</span></div>
+            @endif
         </div>
     @else
         <div class="campus-map-empty"><span class="campus-map-icon"><i class="bi bi-pin-map" aria-hidden="true"></i></span><h2>Where is your campus?</h2></div>
     @endif
 </section>
 <section id="attendance-check-in" class="campus-check-in" aria-labelledby="scan-location-heading">
-    <div class="campus-zone-heading"><span class="campus-map-icon"><i class="bi bi-crosshair" aria-hidden="true"></i></span><h2 id="scan-location-heading">Attendance zone</h2></div>
+    <div class="campus-zone-heading"><span class="campus-map-icon"><i class="bi bi-crosshair" aria-hidden="true"></i></span><div><h2 id="scan-location-heading">{{ auth()->user()->role === 'administrator' ? 'Attendance Zone Test' : 'Attendance zone' }}</h2><p>Check if your current location is within the school's allowed attendance area.</p></div></div>
     <div data-active-location-summary>
         @if($activeLocation)
-            <p class="campus-zone-name">{{ $activeLocation->name }}</p>
             <dl class="campus-zone-facts">
-                <div><dt>Radius</dt><dd>{{ $activeLocation->radius_meters }} m</dd></div>
-                <div><dt>Coordinates</dt><dd>{{ $activeLocation->latitude }}, {{ $activeLocation->longitude }}</dd></div>
+                <div><dt><i class="bi bi-broadcast-pin" aria-hidden="true"></i> Radius</dt><dd>{{ number_format($activeLocation->radius_meters) }} m</dd></div>
+                <div><dt><i class="bi bi-geo-alt" aria-hidden="true"></i> Coordinates</dt><dd>{{ $activeLocation->latitude }}, {{ $activeLocation->longitude }}</dd></div>
             </dl>
+            <span class="visually-hidden">{{ $activeLocation->name }}</span>
         @else
             <p>No active attendance location.</p>
         @endif
@@ -42,28 +48,32 @@
         @if(in_array(auth()->user()->role, ['administrator', 'teacher'], true))
         <button type="button" class="btn btn-primary campus-scan-button" data-scan-location data-active-id="{{ $activeLocation->id }}" data-check-target="{{ auth()->user()->role === 'administrator' ? 'true' : 'false' }}" data-endpoint="{{ route('school.map.scan') }}"><i class="bi bi-crosshair me-1" aria-hidden="true"></i>Start scan location</button>
         <div class="campus-scan-result" data-scan-result role="status" aria-live="polite">{{ auth()->user()->role === 'administrator' ? 'Test the zone without recording attendance.' : 'Stand inside the zone and allow precise location access.' }}</div>
+        <button type="button" class="btn btn-outline-primary campus-refresh-location" data-refresh-scan-location hidden><i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>Refresh location</button>
         @endif
     @endif
     @if(auth()->user()->role === 'administrator')
-        <a class="campus-settings-link" href="#attendance-zone-settings"><i class="bi bi-sliders" aria-hidden="true"></i> Zone settings</a>
+        <a class="campus-settings-link" href="#attendance-zone-settings"><i class="bi bi-gear" aria-hidden="true"></i> Zone settings <i class="bi bi-chevron-right ms-auto" aria-hidden="true"></i></a>
     @endif
 </section>
 </div>
 @if(auth()->user()->role !== 'teacher')
 <section id="attendance-zone-settings" class="campus-zone-settings" aria-labelledby="zone-settings-heading">
-    <h2 id="zone-settings-heading">{{ auth()->user()->role === 'administrator' ? 'Zone settings' : 'Find a location' }}</h2>
-    <form method="{{ auth()->user()->role === 'administrator' ? 'post' : 'get' }}" action="{{ auth()->user()->role === 'administrator' ? route('school.map.set-location') : route('school.map') }}" class="d-flex flex-wrap align-items-end gap-3">
+    <div class="campus-zone-heading"><span class="campus-settings-icon"><i class="bi bi-gear" aria-hidden="true"></i></span><div><h2 id="zone-settings-heading">{{ auth()->user()->role === 'administrator' ? 'Zone Settings' : 'Find a location' }}</h2>@if(auth()->user()->role === 'administrator')<p>Configure the school's attendance zone and location.</p>@endif</div></div>
+    <form method="{{ auth()->user()->role === 'administrator' ? 'post' : 'get' }}" action="{{ auth()->user()->role === 'administrator' ? route('school.map.set-location') : route('school.map') }}" class="{{ auth()->user()->role === 'administrator' ? 'campus-settings-form' : 'd-flex flex-wrap align-items-end gap-3' }}">
         @if(auth()->user()->role === 'administrator') @csrf @endif
-        <div class="flex-grow-1 position-relative" data-location-history data-history-key="school-map-history-{{ auth()->id() }}" data-saved-locations="{{ $locations->map(fn ($site) => ['label' => $site->name.($site->is_active ? ' - active attendance location' : ' - history only'), 'value' => $site->latitude.','.$site->longitude])->values()->toJson() }}">
+        <div class="flex-grow-1 position-relative" data-location-history data-history-key="school-map-history-{{ auth()->id() }}" data-saved-locations="{{ $locations->map(fn ($site) => ['label' => $site->name.($site->is_active ? ' - active attendance location' : ' - history only'), 'value' => $site->latitude.','.$site->longitude, 'radius' => $site->radius_meters])->values()->toJson() }}">
             <label class="form-label" for="map-location">{{ auth()->user()->role === 'administrator' ? 'Attendance location coordinates' : 'Address or coordinates' }}</label>
             <input id="map-location" name="location" class="form-control" value="{{ $location }}" placeholder="{{ auth()->user()->role === 'administrator' ? 'Latitude, longitude' : 'Address or coordinates' }}" maxlength="300" autocomplete="off" aria-expanded="false" aria-controls="map-location-history" required>
             <div id="map-location-history" class="position-absolute start-0 end-0 bg-body border rounded-3 shadow p-2" style="z-index:1050;max-height:300px;overflow-y:auto" aria-label="Location history" hidden></div>
         </div>
         @if($selectedLocation)<input type="hidden" name="site" value="{{ $selectedLocation->id }}">@endif
+        @if(auth()->user()->role === 'administrator')
+            <div><label class="form-label" for="map-radius"><i class="bi bi-broadcast-pin me-1" aria-hidden="true"></i> Allowed radius (m)</label><input class="form-control" type="number" id="map-radius" name="radius_meters" min="20" max="5000" step="1" value="{{ old('radius_meters', $selectedLocation?->radius_meters ?? 100) }}" required></div>
+            <p class="campus-radius-hint"><i class="bi bi-info-circle" aria-hidden="true"></i><span>Check-in requires a precise device location within the saved radius.</span></p>
+        @endif
         <button class="btn btn-primary" type="submit"><i class="bi bi-geo-alt me-1" aria-hidden="true"></i>{{ auth()->user()->role === 'administrator' ? 'Set attendance location' : 'Show on map' }}</button>
     </form>
     @if(auth()->user()->role === 'administrator')
-    <p class="small text-secondary mt-2">Saved locations keep their radius. New locations use 100 m.</p>
     <details class="campus-zone-option" data-click-only @if($errors->hasAny(['name', 'latitude', 'longitude', 'radius_meters'])) open @endif>
     <summary><i class="bi bi-plus-circle" aria-hidden="true"></i> Set a custom radius</summary>
     <form method="post" action="{{ route('school.map.locations.store') }}" class="row g-3" id="school-location-form">
@@ -90,6 +100,11 @@
 @endsection
 
 @push('scripts')
+@if($showAttendanceBoundary)
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous" defer></script>
+<script src="{{ asset('js/campus-attendance-boundary.js') }}?v={{ filemtime(public_path('js/campus-attendance-boundary.js')) }}" defer></script>
+@endif
 @if(!in_array(auth()->user()->role, ['administrator', 'teacher'], true))
 <script src="{{ asset('js/school-map.js') }}?v={{ filemtime(public_path('js/school-map.js')) }}" defer></script>
 @endif

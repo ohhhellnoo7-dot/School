@@ -141,14 +141,8 @@ class DashboardController extends Controller
         $academicYear = $today->year.'-'.($today->year + 1);
         $reportDate = Carbon::parse($validated['date'] ?? today()->toDateString())->startOfDay();
         $students = Student::visibleTo($user);
-        $dashboardChildren = $isParent ? (clone $students)->with(['schoolClass.classGroup', 'user', 'fees.adjustments'])->orderBy('name')->orderBy('id')->get() : collect();
-        $familyFeeTotals = $dashboardChildren->mapWithKeys(fn (Student $child) => [
-            $child->id => $child->fees->groupBy('currency')->map(fn ($invoices) => [
-                'billed' => $invoices->sum(fn (Fee $invoice) => $invoice->netCents()),
-                'paid' => $invoices->sum(fn (Fee $invoice) => \App\Support\Money::cents($invoice->paid)),
-                'remaining' => $invoices->sum(fn (Fee $invoice) => max(0, $invoice->balanceCents())),
-            ]),
-        ]);
+        $dashboardChildren = $isParent ? (clone $students)->with(['schoolClass.classGroup', 'studyClasses', 'user', 'fees.adjustments'])->orderBy('name')->orderBy('id')->get() : collect();
+        $familyFeeTotals = app(TuitionPaymentCoverage::class)->feeTotals($dashboardChildren);
         $familyNotices = $isParent ? app(FamilyAnnouncementNotices::class) : null;
         $noticeDate = \Carbon\CarbonImmutable::today('Asia/Phnom_Penh');
         $attendanceSession = AttendanceSession::selected($request);
@@ -251,7 +245,7 @@ class DashboardController extends Controller
             'familyHolidayNotices' => $familyNotices?->holidays($noticeDate) ?? [],
             'familyAttendanceNotices' => $familyNotices?->attendance($dashboardChildren, $noticeDate) ?? collect(),
             'paymentCoverage' => $dashboardChildren->isNotEmpty()
-                ? app(TuitionPaymentCoverage::class)->forChildren($dashboardChildren->pluck('id'), $today->toImmutable())
+                ? app(TuitionPaymentCoverage::class)->forChildren($dashboardChildren, $today->toImmutable())
                 : collect(),
             'announcements' => Announcement::whereIn('audience', ['all', $user->role])->whereDate('published_at', '<=', today())->latest('published_at')->limit(4)->get(),
             'teacherAttendanceCounts' => $teacherAttendanceCounts,

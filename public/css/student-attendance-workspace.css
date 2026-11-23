@@ -54,14 +54,12 @@
     place-items: center;
     width: 44px;
     height: 42px;
-    margin-bottom: 12px;
     border-radius: 16px;
     background: linear-gradient(145deg, color-mix(in srgb, var(--attendance-color) 58%, #fff), var(--attendance-color) 58%, color-mix(in srgb, var(--attendance-color) 75%, #171026));
     box-shadow: inset 0 1px 2px #ffffffa0, inset 0 -3px 4px #16102535, 0 5px 9px color-mix(in srgb, var(--attendance-color) 38%, transparent);
     color: #fff;
     font-size: 21px;
     text-shadow: 0 2px 3px #16102560;
-    transform: rotate(-7deg);
     transition: transform .2s ease;
 }
 
@@ -84,15 +82,77 @@
 .students-page .attendance-overview-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 14px; margin-bottom: 12px; }
 .students-page .attendance-overview-heading h2 { margin: 0; font-size: 1rem; font-weight: 750; }
 .students-page .directory-date { display: inline-flex; gap: 7px; align-items: center; font-size: .75rem; color: var(--text-secondary); }
-.students-page .attendance-distribution { display: flex; height: 12px; overflow: hidden; border-radius: 999px; background: var(--surface-tint); }
-.students-page .attendance-distribution > span { flex-basis: 0; min-width: 0; background: var(--attendance-color); transition: flex-grow .3s ease; }
-.students-page .attendance-tone-unrecorded[data-attendance-segment] {
-    background: repeating-linear-gradient(135deg, var(--attendance-color) 0 4px, color-mix(in srgb, var(--attendance-color) 48%, var(--surface)) 4px 8px);
+.students-page .attendance-overview .attendance-tone-unrecorded {
+    --attendance-color: #467da7;
 }
 .students-page .attendance-distribution-legend { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 0; margin: 12px 0 0; list-style: none; }
 .students-page .attendance-distribution-legend li { display: inline-flex; gap: 6px; align-items: baseline; font-size: .76rem; }
 .students-page .attendance-distribution-legend i { color: var(--attendance-color); }
 .students-page .attendance-distribution-legend small { color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+
+:root:root:root:root .students-page .student-hero {
+    min-height: 152px;
+    margin-bottom: 10px;
+    padding-block: 18px;
+    gap: clamp(14px, 2vw, 28px);
+}
+:root:root:root:root .students-page .student-hero h1 { margin-block: 4px 14px; }
+.student-hero-icon { font-size: clamp(2.7rem, 5vw, 5.5rem); line-height: 1; color: var(--primary); }
+.students-page .attendance-summary { margin-block: 10px 12px; }
+.students-page .attendance-summary-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto 1fr auto;
+    column-gap: 12px;
+    align-items: center;
+    padding: 13px 14px;
+}
+.students-page .attendance-summary-icon { grid-row: 1 / -1; border-radius: 50%; }
+.students-page .attendance-summary-note { grid-column: 2; margin: 1px 0 0; }
+.students-page .attendance-summary-card:not(.attendance-tone-total) .attendance-summary-note { justify-self: end; }
+.student-overview-grid { display: grid; grid-template-columns: 1.55fr 1.4fr 1fr; gap: 12px; }
+.students-page .attendance-overview { min-width: 0; margin-top: 12px; padding: 13px 17px; }
+.students-page .attendance-overview h2 { font-size: clamp(.95rem, 1.2vw, 1.2rem); }
+.students-page .attendance-overview h2 i, .students-page .directory-heading h2 i { color: var(--primary); margin-inline-end: 4px; }
+.students-page .student-quick-panel h2 i { color: #d68100; }
+.students-page .directory-date { border-radius: 999px; padding: 4px 9px; background: var(--surface-tint); }
+.student-overview-body { display: grid; grid-template-columns: minmax(95px, 1fr) minmax(120px, 1.2fr); align-items: center; gap: 12px; }
+.student-attendance-ring { position: relative; max-width: 176px; width: 100%; margin-inline: auto; }
+.student-attendance-ring svg { width: 100%; display: block; transform: rotate(-90deg); }
+.student-attendance-ring circle { fill: none; stroke-width: 12; stroke: var(--attendance-color); }
+.student-attendance-ring .student-ring-track { stroke: var(--surface-tint); }
+.student-attendance-ring .attendance-tone-unrecorded { --attendance-color: #7bafd6; }
+.student-attendance-ring > div { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; line-height: 1.2; text-align: center; }
+.student-attendance-ring i { color: var(--primary); font-size: clamp(1rem, 2vw, 1.65rem); }
+.student-attendance-ring strong { font-size: clamp(1.3rem, 2.2vw, 1.9rem); }
+.student-attendance-ring small { font-size: .68rem; }
+.students-page .attendance-distribution-legend { display: grid; margin: 0; padding: 9px; border-radius: 12px; background: color-mix(in srgb, var(--surface-tint) 45%, transparent); }
+.students-page .attendance-distribution-legend li { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 5px; }
+.students-page .attendance-distribution-legend li[hidden] { display: none; }
+.student-week-chart svg { width: 100%; height: 152px; overflow: visible; }
+.student-week-chart text { font-size: 12px; fill: var(--text-primary); font-weight: 650; }
+.student-week-guide { stroke: var(--border-color); opacity: .55; }
+.student-week-line { stroke: var(--primary); stroke-width: 2.5; }
+.student-week-area { fill: color-mix(in srgb, var(--primary) 23%, transparent); }
+.student-week-chart circle { fill: var(--surface); stroke: var(--primary); stroke-width: 3; }
+.student-week-days { display: grid; grid-template-columns: repeat(5, 1fr); text-align: center; margin-inline: 10.5% 1.4%; font-size: .75rem; font-weight: 700; }
+.student-quick-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.student-quick-links a { --quick-color: #07845c; display: grid; place-content: center; justify-items: center; min-height: 70px; gap: 3px; text-align: center; border: 1px solid var(--border-color); border-radius: 13px; background: linear-gradient(var(--surface), color-mix(in srgb, var(--quick-color) 16%, var(--surface))); color: var(--text-primary); font-size: .8rem; font-weight: 750; text-decoration: none; }
+.student-quick-links a:nth-child(2) { --quick-color: #6734c9; }
+.student-quick-links a:last-child { --quick-color: #008fab; }
+.student-quick-links i { color: var(--quick-color); font-size: 1.35rem; }
+.student-quick-links a:hover { border-color: var(--quick-color); }
+.student-directory { scroll-margin-top: 100px; }
+
+@media (max-width: 1200px) {
+    .student-overview-grid { grid-template-columns: 1fr 1fr; }
+    .student-quick-panel { grid-column: 1 / -1; }
+    .student-quick-links { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
+}
+@media (max-width: 740px) {
+    .student-overview-grid { grid-template-columns: 1fr; }
+    .student-hero-icon { display: none; }
+}
 
 :root:root:root:root .students-page .student-directory {
     border: 1px solid var(--border-color);
@@ -126,7 +186,10 @@
     border-radius: 18px;
     background: color-mix(in srgb, var(--surface-tint) 28%, var(--surface));
 }
-.students-page .directory-search-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(145px, 195px) auto; align-items: end; gap: 10px; }
+.students-page .directory-search-row { display: grid; grid-template-columns: minmax(170px, 1.65fr) minmax(80px, .7fr) minmax(100px, 1fr) minmax(100px, 1fr) minmax(140px, .9fr) auto; align-items: end; gap: 10px; }
+@media (max-width: 1200px) {
+    .students-page .directory-search-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 .students-page .directory-search-row > div { min-width: 0; }
 .students-page .directory-search-input { position: relative; }
 .students-page .directory-search-input > i { position: absolute; inset-inline-start: 12px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); pointer-events: none; z-index: 1; }
@@ -180,14 +243,17 @@
 .students-page .directory-refine-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
 
 :root:root:root:root .students-page .student-directory > .table-responsive { margin: 0; border-radius: 0; border-inline: 0; }
-:root:root:root:root .students-page .student-directory .directory-roster { width: 100%; min-width: 1000px; table-layout: fixed; }
-.students-page .directory-roster th:nth-child(1) { width: 20%; }
-.students-page .directory-roster th:nth-child(2) { width: 16%; }
-.students-page .directory-roster th:nth-child(3) { width: 18%; }
-.students-page .directory-roster th:nth-child(4) { width: 14%; }
-.students-page .directory-roster th:nth-child(5) { width: 9%; }
-.students-page .directory-roster th:nth-child(6) { width: 14%; }
-.students-page .directory-roster th:nth-child(7) { width: 9%; }
+:root:root:root:root .students-page .student-directory .directory-roster { width: 100%; min-width: 1120px; table-layout: fixed; }
+.students-page .directory-roster th:nth-child(1) { width: 4%; }
+.students-page .directory-roster th:nth-child(2) { width: 15%; }
+.students-page .directory-roster th:nth-child(3) { width: 8%; }
+.students-page .directory-roster th:nth-child(4) { width: 13%; }
+.students-page .directory-roster th:nth-child(5) { width: 7%; }
+.students-page .directory-roster th:nth-child(6) { width: 13%; }
+.students-page .directory-roster th:nth-child(7) { width: 10%; }
+.students-page .directory-roster th:nth-child(8) { width: 8%; }
+.students-page .directory-roster th:nth-child(9) { width: 13%; }
+.students-page .directory-roster th:nth-child(10) { width: 9%; }
 :root:root:root:root .students-page .student-directory .directory-roster thead th { padding: 13px; background: var(--surface-tint); color: var(--text-primary); font-size: .72rem; }
 :root:root:root:root .students-page .student-directory .directory-roster td { padding: 13px; border-bottom: 1px solid var(--border-color); background: var(--surface); vertical-align: middle; overflow-wrap: anywhere; }
 :root:root:root:root .students-page .student-directory .directory-roster tr[data-attendance-row] > td:first-child { border-inline-start: 3px solid var(--attendance-color); }

@@ -320,6 +320,42 @@ class SchoolFinanceService
         });
     }
 
+    public function periodReport($fees, array $summary, string $scope, string $month, int $year): array
+    {
+        $prefix = match ($scope) {
+            'month' => $month,
+            'year' => $year.'-',
+            default => '',
+        };
+        $matchesPeriod = fn ($key) => str_starts_with($key, $prefix);
+        $currencies = [];
+        foreach ($summary as $currency => $totals) {
+            $monthly = array_filter($totals['trend'], $matchesPeriod, ARRAY_FILTER_USE_KEY);
+            $currencies[$currency] = [
+                'billed' => 0,
+                'collected' => $scope === 'all' ? $totals['paid'] : array_sum($monthly),
+                'balance' => 0,
+                'overdue' => 0,
+                'remaining_now' => $totals['balance'],
+                'opening' => $totals['opening'],
+                'monthly' => $monthly,
+            ];
+        }
+        foreach ($fees as $fee) {
+            if (! $matchesPeriod($fee->due_date->format('Y-m'))) {
+                continue;
+            }
+            $currency = $fee->currency ?: 'USD';
+            $currencies[$currency]['billed'] += $fee->netCents();
+            $currencies[$currency]['balance'] += $fee->balanceCents();
+            if ($fee->due_date->lt(today())) {
+                $currencies[$currency]['overdue'] += max(0, $fee->balanceCents());
+            }
+        }
+
+        return compact('scope', 'month', 'year', 'currencies');
+    }
+
     public function summary($fees): array
     {
         $summary = [];

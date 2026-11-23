@@ -4,6 +4,7 @@
         'finance.archive' => ['Archived fees', 'archive', 'Look up archived invoices and payment history.'],
         'finance.parents' => ['Parent payment status', 'person-check', 'Review each family’s balances and next payment dates.'],
     ];
+    $tabs['finance.student-payment'] = ['Student payment', 'person-vcard', 'Find a student and record tuition for all their enrolled programs.'];
     $currentTab = match (true) {
         request()->routeIs('finance.bulk.*') => 'pay',
         request()->routeIs('finance.tuition.*') => 'finance.settings',
@@ -21,9 +22,9 @@
     $bulkState = $isFinanceAdmin ? app(\App\Services\BulkTuitionPaymentService::class)->availability() : null;
 @endphp
 
-<div class="finance-hero">
+<div class="finance-hero {{ ($compactStudentPayment ?? false) ? 'finance-hero--student-payment' : '' }}">
     <div class="finance-hero-copy">
-        @if($currentTab === 'finance.parents')
+        @if($currentTab === 'finance.parents' || ($compactStudentPayment ?? false))
             <span class="finance-hero-wallet"><i class="bi bi-wallet2" aria-hidden="true"></i></span>
         @endif
         <div class="eyebrow">SCHOOL FINANCE</div>

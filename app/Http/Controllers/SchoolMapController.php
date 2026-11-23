@@ -61,23 +61,26 @@ class SchoolMapController extends Controller
     {
         abort_unless($request->user()->role === 'administrator', 403);
         $data = $request->validate(['location' => ['required', 'string', 'max:300',
-            'regex:/^\s*[+-]?(?:\d+(?:\.\d*)?|\.\d+)\s*,\s*[+-]?(?:\d+(?:\.\d*)?|\.\d+)\s*$/']]);
+            'regex:/^\s*[+-]?(?:\d+(?:\.\d*)?|\.\d+)\s*,\s*[+-]?(?:\d+(?:\.\d*)?|\.\d+)\s*$/'],
+            'radius_meters' => 'nullable|integer|between:20,5000',
+        ]);
         [$latitude, $longitude] = array_map('trim', explode(',', $data['location']));
         validator(['latitude' => $latitude, 'longitude' => $longitude], [
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
         ])->validate();
-        $location = DB::transaction(function () use ($request, $latitude, $longitude) {
+        $radius = $data['radius_meters'] ?? null;
+        $location = DB::transaction(function () use ($request, $latitude, $longitude, $radius) {
             SchoolLocation::orderBy('id')->lockForUpdate()->get();
             $target = SchoolLocation::attendanceEligible()->where('latitude', $latitude)
                 ->where('longitude', $longitude)->orderByDesc('id')->first();
             SchoolLocation::where('is_active', true)->update(['is_active' => null]);
             if ($target) {
-                $target->update(['is_active' => true]);
+                $target->update(['is_active' => true, 'radius_meters' => $radius ?? $target->radius_meters]);
                 return $target;
             }
             return SchoolLocation::create(['name' => 'Attendance area '.$latitude.','.$longitude,
-                'latitude' => $latitude, 'longitude' => $longitude, 'radius_meters' => 100,
+                'latitude' => $latitude, 'longitude' => $longitude, 'radius_meters' => $radius ?? 100,
                 'created_by' => $request->user()->id, 'is_active' => true]);
         }, 3);
 

@@ -244,10 +244,15 @@ class SchoolFinanceController extends Controller
             'search' => 'nullable|string|max:100', 'program' => 'nullable|string|max:30', 'grade' => 'nullable|integer|between:1,12',
             'academic_year' => ['nullable', 'regex:/^\d{4}-\d{4}$/'], 'status' => 'nullable|in:unpaid,partially_paid,paid,overdue,waived,refunded',
             'duration' => ['nullable', Rule::in($showParent ? ['1', '6', '12', 'not_paid'] : ['1', '6', '12'])],
+            'report_month' => ['nullable', 'date_format:Y-m', 'before_or_equal:'.today()->format('Y-m')],
+            'report_year' => ['nullable', 'integer', 'between:1900,'.today()->year],
+            'report_scope' => 'nullable|in:month,year,all',
         ]);
         $query = $this->visible($request)
             ->when($filters['search'] ?? null, function ($query, $value) use ($showParent) {
-                $parentPattern = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower(trim($value))).'%';
+                $term = trim($value);
+                $parentPattern = (preg_match('/^[\p{L}\p{M}]+$/u', $term) ? '' : '%')
+                    .strtr(mb_strtolower($term), ['!' => '!!', '%' => '!%', '_' => '!_']).'%';
 
                 $query->whereHas('student', fn ($students) => $students->where(fn ($match) => $match
                     ->search($value)
@@ -268,6 +273,13 @@ class SchoolFinanceController extends Controller
             $all->loadMissing(['student.schoolClass', 'student.user']);
         }
         $summary = $service->summary($all);
+        $feeReport = null;
+        if ($showParent && ! $request->attributes->get('finance_archive')) {
+            $scope = $filters['report_scope'] ?? 'month';
+            $month = $filters['report_month'] ?? today()->format('Y-m');
+            $year = (int) ($scope === 'month' ? substr($month, 0, 4) : ($filters['report_year'] ?? today()->year));
+            $feeReport = $service->periodReport($all, $summary, $scope, $month, $year);
+        }
         $studentSummaries = $request->user()->role === 'administrator' ? collect() : $all->groupBy('student_id')->map(fn ($invoices) => [
             'student' => $invoices->first()->student,
             'currencies' => $service->summary($invoices),
@@ -303,7 +315,7 @@ class SchoolFinanceController extends Controller
             ->whereDate('effective_from', '<=', today())->where(fn ($q) => $q->whereNull('effective_until')->orWhereDate('effective_until', '>=', today()))
             ->orderBy('program')->orderBy('grade')->get()->groupBy(fn ($rate) => implode('|', [$rate->program, $rate->academic_year, $rate->currency, $rate->monthly_tuition, $rate->billable_months, $rate->quarterly_tuition, $rate->packageMonths(), json_encode($rate->session_prices)]));
 
-        return view('school.finance.index', compact('fees', 'summary', 'studentSummaries', 'programRates', 'latestReceipt') + ['records' => $fees]);
+        return view('school.finance.index', compact('fees', 'summary', 'studentSummaries', 'programRates', 'latestReceipt', 'feeReport') + ['records' => $fees]);
     }
 
     public function invoice(Request $request, int $fee)
@@ -336,9 +348,21 @@ class SchoolFinanceController extends Controller
         if ($request->user()->role === 'administrator') {
             $query->withTrashed();
         }
-        $fee = $query->findOrFail($payment->fee_id);
+        $fee = (clone $query)->findOrFail($payment->fee_id);
 
-        return view('school.finance.receipt', compact('fee', 'payment'));
+        $allocations = collect();
+        if ($payment->receipt_group) {
+            $group = FeePayment::where('receipt_group', $payment->receipt_group)->orderBy('id')->get();
+            $groupFees = $query->where('student_id', $fee->student_id)->whereKey($group->pluck('fee_id')->unique()->all())->get()->keyBy('id');
+            if ($group->count() > 1 && $groupFees->count() === $group->pluck('fee_id')->unique()->count()) {
+                if ($group->first()->id !== $payment->id) {
+                    return redirect()->route('finance.receipt', $group->first());
+                }
+                $allocations = $group->map(fn ($entry) => ['payment' => $entry, 'fee' => $groupFees->get($entry->fee_id)]);
+            }
+        }
+
+        return view('school.finance.receipt', compact('fee', 'payment', 'allocations'));
     }
 
     public function settings(Request $request)

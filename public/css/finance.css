@@ -1390,3 +1390,265 @@ html.pd-drawer-open {
     .parent-fees-child-balances { grid-template-columns: 1fr; }
     .parent-fees-child-balances > div:nth-child(even) { border: 0; padding: 0; }
 }
+.finance-report-toolbar {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    padding: 15px 20px;
+    margin-bottom: 14px;
+}
+.finance-report-toolbar h2 { margin: 0; font-size: 1.15rem; }
+.finance-report-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; }
+.finance-report-controls input[type="number"] { width: 100px; }
+#fee-period-report { scroll-margin-top: 105px; }
+.finance-report-months { margin-bottom: 16px; padding: 14px 18px; }
+.finance-report-months summary { margin-bottom: 8px; font-weight: 700; }
+
+.finance-hero--student-payment { gap: .65rem; margin-bottom: .8rem; padding-block: .9rem; background-position: center, right 43%, center; }
+.finance-hero--student-payment .finance-hero-copy { min-height: 64px; }
+.finance-hero--student-payment .finance-hero-copy .eyebrow { display: none; }
+.finance-hero--student-payment .finance-hero-copy h1 { margin-block: 0 .25rem; }
+.finance-hero--student-payment .finance-hero-wallet { width: 58px; height: 58px; }
+.finance-hero--student-payment .finance-hero-nav .btn { padding-block: .4rem; }
+.student-payment-search-panel, .student-payment-workspace { padding: clamp(14px, 2vw, 24px); margin-bottom: 1rem; }
+.student-payment-search-panel h2 { margin: 0 0 .55rem; font-size: 1.2rem; font-weight: 800; }
+.student-payment-search-panel h2 i, .student-payment-program-table td i, .student-payment-periods p i, .student-payment-record-form label i { color: var(--action); }
+.student-payment-search-form { display: flex; gap: .75rem; }
+.student-payment-search-form > div { flex: 1; position: relative; min-width: 0; }
+.student-payment-search-form > div > i { position: absolute; inset-block-start: 50%; inset-inline-start: .85rem; transform: translateY(-50%); color: var(--action); pointer-events: none; }
+:root:root:root:root .student-payment-search-form .form-control { padding-inline-start: 2.4rem; }
+.student-payment-search-form button { min-width: 108px; }
+[data-student-payment-status]:empty, [data-payment-preview-status]:empty { display: none; }
+.student-payment-search-panel [data-student-payment-results]:not(:empty) { margin-top: .75rem; }
+.student-payment-workspace { scroll-margin-top: 105px; }
+.student-payment-workspace-head { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: center; gap: 1rem; margin-bottom: 1rem; }
+.student-payment-profile { display: flex; align-items: center; gap: .9rem; min-width: 0; }
+.student-payment-profile .student-avatar { border-radius: 19px; background: var(--surface-tint); }
+.student-payment-profile h2 { margin: 0 0 .35rem; font-size: clamp(1.3rem, 2.2vw, 2rem); font-weight: 850; display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem; }
+.student-payment-profile h2 small, .student-payment-level { padding: .25rem .65rem; border-radius: 999px; background: var(--surface-tint); font-size: .78rem; color: var(--text-primary); letter-spacing: normal; }
+.student-payment-periods { border-inline-start: 1px solid var(--border-color); padding-inline-start: clamp(.8rem, 2.5vw, 2.2rem); }
+.student-payment-periods .btn { border-radius: 999px; }
+.student-payment-periods p { margin: .55rem 0 0; font-size: .82rem; }
+.student-payment-program-table { border: 1px solid var(--border-color); border-radius: 16px; }
+.student-payment-program-table table { min-width: 680px; }
+.student-payment-program-table :is(td, th) { vertical-align: middle; }
+.student-payment-program-table thead th { background: var(--surface-tint); }
+.student-payment-program-table .form-check-input { margin: 0; cursor: pointer; width: 1.12rem; height: 1.12rem; }
+.student-payment-session { display: inline-flex; align-items: center; gap: .3rem; padding: .2rem .55rem; border-radius: 999px; white-space: nowrap; background: var(--surface-tint); }
+.student-payment-session[data-session="morning"] { background: #fff0c9; color: #634200; }
+.student-payment-session[data-session="evening"] { background: #eae5fc; color: #493887; }
+.student-payment-row-amount { font-weight: 850; color: var(--action) !important; white-space: nowrap; }
+.student-payment-collection-total { position: relative; isolation: isolate; overflow: hidden; display: flex; align-items: center; gap: .9rem; margin: 1rem 0; padding: .8rem 1rem; border-radius: 17px; background: radial-gradient(ellipse at 72% 180%, #37baca38 0 50%, transparent 51%), linear-gradient(100deg, color-mix(in srgb, #64cbdf 28%, var(--surface)), color-mix(in srgb, #82dfbc 22%, var(--surface))); }
+.student-payment-collection-total > span { display: grid; place-items: center; flex: none; width: 50px; aspect-ratio: 1; color: #fff; background: linear-gradient(135deg, #008e8f, #005d73); font-size: 1.45rem; border-radius: 15px; }
+.student-payment-collection-total div { font-weight: 750; }
+.student-payment-collection-total strong { display: block; font-size: clamp(1.45rem, 2.7vw, 2.5rem); line-height: 1.16; }
+.student-payment-collection-total img { position: absolute; z-index: -1; right: 8px; bottom: 0; width: clamp(120px, 16vw, 220px); height: 88px; object-fit: contain; object-position: right bottom; }
+.student-payment-record-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(150px, .55fr); align-items: end; gap: .75rem 1rem; }
+.student-payment-record-form .form-label { font-weight: 700; }
+.student-payment-record-confirm, .student-payment-record-form [data-payment-record-error] { grid-column: 1 / -1; }
+@media (max-width: 930px) {
+    .student-payment-workspace-head { grid-template-columns: 1fr; }
+    .student-payment-periods { border: 0; padding: 0; }
+}
+@media (max-width: 600px) {
+    .student-payment-search-form button { min-width: 0; }
+    .student-payment-record-form { grid-template-columns: 1fr; }
+    .student-payment-record-confirm { grid-row: 3; }
+    .student-payment-collection-total img { display: none; }
+}
+
+.student-payment-loading {
+    width: min(460px, calc(100% - 32px));
+    padding: clamp(24px, 5vw, 44px);
+    border: 1px solid var(--border-color);
+    border-radius: 28px;
+    color: var(--text-primary);
+    background: radial-gradient(ellipse at 50% 0, color-mix(in srgb, var(--primary) 18%, var(--surface)), var(--surface) 72%);
+    box-shadow: 0 24px 80px #041d3c50;
+    text-align: center;
+}
+.student-payment-loading::backdrop { background: #06213994; backdrop-filter: blur(5px); }
+.student-payment-loading h2 { font-weight: 800; font-size: clamp(1.35rem, 4vw, 1.8rem); }
+.student-payment-loading p { color: var(--text-secondary); }
+.student-payment-loading-art { position: relative; width: 116px; margin: 0 auto 20px; }
+.student-payment-loading-art span {
+    display: grid; place-items: center; width: 92px; aspect-ratio: 1; margin-inline: auto;
+    border-radius: 26px; background: linear-gradient(145deg, #0cbda9, #056d84);
+    color: #fff; font-size: 2.8rem; box-shadow: 0 10px 24px #007e8b45;
+}
+.student-payment-loading-star { position: absolute; right: 0; top: -8px; color: #c9830d; font-size: 1.8rem; }
+.student-payment-loading-track { height: 8px; overflow: hidden; border-radius: 999px; background: var(--surface-tint); }
+.student-payment-loading-track span { display: block; width: 100%; height: 100%; background: linear-gradient(90deg, #0dbca3, #087fa2); transform-origin: left; }
+.student-payment-loading[open] .student-payment-loading-track span { animation: student-payment-progress 3s ease-out both; }
+.student-payment-loading[open] .student-payment-loading-art span { animation: student-payment-float 1.5s ease-in-out infinite alternate; }
+@keyframes student-payment-progress { from { transform: scaleX(.06); } to { transform: scaleX(1); } }
+@keyframes student-payment-float { to { transform: translateY(-7px) rotate(-4deg); } }
+@media (prefers-reduced-motion: reduce) {
+    .student-payment-loading[open] :is(.student-payment-loading-track span, .student-payment-loading-art span) { animation: none; }
+}
+
+.student-payment-invoice {
+    scroll-margin-top: 115px; margin-block: 0 1.6rem; padding: 0 clamp(.35rem, 1vw, .85rem) .85rem;
+    border-radius: 26px; background: linear-gradient(140deg, var(--surface), color-mix(in srgb, #8adced 24%, var(--surface)));
+}
+.student-payment-identity { position: relative; display: flex; align-items: center; gap: 16px; min-height: 106px; padding: 12px clamp(.5rem, 2vw, 1.5rem); overflow: hidden; isolation: isolate; }
+.student-payment-identity > img:not(.student-avatar) { position: absolute; z-index: -1; right: 1rem; bottom: -6px; width: clamp(135px, 19vw, 285px); height: 110px; object-fit: contain; object-position: right bottom; }
+.student-payment-identity-name { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.student-payment-identity-name h2 { margin: 0; font-size: clamp(1.4rem, 2.6vw, 2.4rem); font-weight: 850; }
+.student-payment-identity-name span, .student-payment-invoice-date { display: inline-flex; align-items: center; gap: .35rem; border-radius: 999px; padding: .25rem .7rem; font-weight: 700; }
+.student-payment-identity-name span { background: var(--surface-tint); }
+.student-payment-identity p { margin: .15rem 0 0; color: var(--text-secondary); font-weight: 620; }
+.student-payment-invoice-banner {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 14px clamp(14px, 2vw, 30px); padding: clamp(14px, 2vw, 28px);
+    color: #f5fffd; border-radius: 24px;
+    background: radial-gradient(ellipse at 66% 160%, #74e9ed25 0 46%, transparent 47%), linear-gradient(120deg, #007d82, #006b7c 72%, #05526c);
+    box-shadow: 0 8px 20px #007a902e;
+}
+.student-payment-invoice-seal { display: grid; place-items: center; flex: none; width: clamp(48px, 5vw, 74px); aspect-ratio: 1; border-radius: 50%; background: #aff2ef; color: #006d79; font-size: clamp(1.55rem, 3vw, 2.6rem); }
+:root:root:root:root .student-payment-invoice-banner h3 { color: #f5fffd; font-size: clamp(1.35rem, 2.5vw, 2.25rem); font-weight: 850; margin: 0; }
+.student-payment-invoice-banner p { margin: 3px 0 8px; font-size: clamp(.93rem, 1.4vw, 1.15rem); }
+.student-payment-invoice-date { background: #ffffff20; font-size: .88rem; }
+.student-payment-invoice-total { margin-inline-start: auto; display: grid; padding-inline-start: clamp(12px, 2vw, 28px); border-inline-start: 1px solid #ffffff80; }
+.student-payment-invoice-total strong { font-size: clamp(1.65rem, 3.2vw, 3.25rem); line-height: 1.2; white-space: nowrap; }
+.student-payment-invoice-total strong span { font-size: .72em; }
+.student-payment-invoice-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr)); gap: 14px; margin-top: 16px; }
+.student-payment-invoice-document { display: flex; flex-direction: column; padding: clamp(16px, 2vw, 28px); min-width: 0; border: 1px solid var(--border-color); border-radius: 22px; background: radial-gradient(ellipse at 100% 120%, #7bd9ea40, transparent 55%), var(--surface); box-shadow: 0 5px 14px var(--shadow-color); }
+.student-payment-invoice-document header { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.student-payment-document-icon { display: grid; place-items: center; flex: none; width: 54px; aspect-ratio: 1; border: 1px solid var(--border-color); border-radius: 14px; background: var(--surface-tint); color: var(--action); font-size: 1.65rem; }
+.student-payment-invoice-document h4 { margin: 0; font-size: clamp(1.1rem, 1.8vw, 1.75rem); font-weight: 800; }
+.student-payment-invoice-document small { overflow-wrap: anywhere; color: var(--text-secondary); }
+.student-payment-paid { margin-inline-start: auto; padding: .45rem .8rem; border-radius: 999px; color: #086638; background: #d6f7e6; font-weight: 800; }
+.student-payment-invoice-items { margin: 1rem 0 0; border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; }
+.student-payment-invoice-items > div { display: flex; justify-content: space-between; align-items: center; gap: .7rem; padding: .75rem 1rem; background: var(--surface-tint); }
+.student-payment-invoice-items > div + div { border-top: 1px solid var(--surface); }
+.student-payment-invoice-items :is(dt, dd) { margin: 0; font-weight: 750; }
+.student-payment-invoice-items dt i { color: var(--action); margin-inline-end: .4rem; }
+.student-payment-invoice-items dd { white-space: nowrap; }
+.student-payment-invoice-balance[data-settled] dd { color: var(--success); }
+.student-payment-invoice-document footer { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: 16px; }
+.student-payment-invoice-document footer .btn { min-width: min(100%, 142px); }
+@media (max-width: 580px) {
+    .student-payment-identity > img:not(.student-avatar) { display: none; }
+    .student-payment-invoice-total { flex-basis: 100%; margin: 0; padding: .65rem 0 0; border-inline-start: 0; border-top: 1px solid #ffffff80; }
+    .student-payment-paid { margin-inline-start: 0; }
+}
+.scholar-receipt-hero {
+    min-height: 126px; display: flex; align-items: center; gap: 16px; padding: 14px 18px;
+    border-radius: 20px 20px 0 0;
+    background: linear-gradient(90deg, var(--surface) 8%, color-mix(in srgb, var(--surface) 95%, transparent) 35%, transparent 76%),
+        var(--surface-tint) url('../images/school-hero.png') right 43% / max(66%, 600px) auto no-repeat;
+}
+.scholar-receipt-hero-icon, .scholar-receipt-identity-icon { display: grid; place-items: center; flex: none; width: 62px; aspect-ratio: 1; border-radius: 15px; background: linear-gradient(145deg, #159e95, #006774); color: white; font-size: 1.85rem; }
+.scholar-receipt-hero .eyebrow { color: var(--action); }
+.scholar-receipt-hero h1 { margin: .12rem 0; font-size: clamp(1.8rem, 3.3vw, 3rem); font-weight: 850; }
+.scholar-receipt-hero p { margin: 0; font-weight: 650; }
+.scholar-receipt-hero .scholar-receipt-contact { color: var(--text-secondary); font-size: .77rem; font-weight: 500; }
+.scholar-receipt-summary, .scholar-receipt-details { background: linear-gradient(125deg, var(--surface), color-mix(in srgb, var(--surface-tint) 45%, var(--surface))); border: 1px solid var(--border-color); border-radius: 23px; box-shadow: 0 6px 17px var(--shadow-color); }
+.scholar-receipt-summary { padding: 12px; }
+.scholar-receipt-toolbar, .scholar-receipt-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .55rem; }
+.scholar-receipt-toolbar { justify-content: space-between; margin-bottom: .6rem; padding-inline: .45rem; }
+.scholar-receipt-toolbar p { margin: 0; color: var(--text-secondary); overflow-wrap: anywhere; }
+.scholar-receipt-toolbar strong, .scholar-receipt-tag { color: var(--text-primary); background: var(--surface-tint); border-radius: 999px; padding: .22rem .6rem; overflow-wrap: anywhere; box-decoration-break: clone; }
+.scholar-receipt-actions .btn { border-radius: 999px; }
+.scholar-receipt-identity { display: grid; grid-template-columns: 1fr 1fr 1.35fr; gap: .55rem; align-items: center; border-radius: 16px; padding: .55rem; background: var(--surface); }
+.scholar-receipt-identity > div { display: flex; align-items: center; min-width: 0; gap: .8rem; padding: .2rem .7rem; }
+.scholar-receipt-identity > div + div { border-inline-start: 1px solid var(--border-color); }
+.scholar-receipt-identity > div > div { min-width: 0; }
+.scholar-receipt-identity .student-avatar { border-radius: 16px; }
+.scholar-receipt-identity h2 { margin: 0 0 .3rem; font-size: clamp(1.15rem, 2vw, 1.7rem); font-weight: 850; }
+.scholar-receipt-identity-icon { width: 44px; color: var(--action); background: var(--surface-tint); font-size: 1.35rem; }
+.scholar-receipt-tag { display: inline-block; font-size: .83rem; font-weight: 650; }
+.scholar-receipt-details { margin-top: .8rem; padding: clamp(12px, 1.5vw, 22px); }
+.scholar-receipt-details-grid { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: clamp(.65rem, 2vw, 1.6rem); }
+.scholar-receipt-fields { margin: 0; }
+.scholar-receipt-fields > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr); align-items: center; gap: .7rem; padding: .53rem .85rem; border-radius: 10px; }
+.scholar-receipt-fields > div:nth-child(even) { background: var(--surface-tint); }
+.scholar-receipt-fields dt { display: flex; gap: .7rem; align-items: center; font-weight: 800; }
+.scholar-receipt-fields dt i { color: var(--action); font-size: 1.15rem; }
+.scholar-receipt-fields dd { margin: 0; overflow-wrap: anywhere; }
+.scholar-receipt-fields [data-tone="amount"] dd { font-weight: 850; color: var(--action); }
+.scholar-receipt-fields [data-tone="method"] dd span { border-radius: 999px; padding: .2rem .55rem; background: color-mix(in srgb, #60d7b6 30%, var(--surface)); font-weight: 750; }
+.scholar-receipt-fields [data-tone="missing"] dd { color: var(--text-secondary); font-style: italic; }
+.scholar-receipt-fields [data-tone="balance"] { font-weight: 850; }
+.scholar-receipt-fields[data-settled="yes"] [data-tone="balance"] { background: color-mix(in srgb, var(--success) 12%, var(--surface)); }
+.scholar-receipt-status { display: grid; justify-items: center; align-content: center; gap: .55rem; padding: 1rem; border-radius: 16px; color: var(--warning); background: radial-gradient(ellipse at 72% 135%, #72d4df42, transparent 63%), var(--surface); border: 1px solid var(--border-color); }
+.scholar-receipt-status[data-settled="yes"] { color: var(--success); }
+.scholar-receipt-status-icon { display: grid; place-items: center; width: 78px; aspect-ratio: 1; border-radius: 50%; background: color-mix(in srgb, currentColor 15%, var(--surface)); font-size: 2.7rem; }
+.scholar-receipt-status strong { border-radius: 999px; padding: .35rem 1.15rem; background: color-mix(in srgb, currentColor 12%, var(--surface)); font-size: 1.12rem; }
+.scholar-receipt-status img { width: min(175px, 100%); height: 90px; object-fit: contain; }
+.scholar-receipt-note { display: flex; align-items: center; gap: .65rem; border-top: 1px solid var(--border-color); margin: .9rem 0 0; padding-top: .8rem; font-size: .82rem; }
+.scholar-receipt-note i { color: var(--action); font-size: 1.2rem; }
+@media screen and (max-width: 840px) {
+    .scholar-receipt-identity, .scholar-receipt-details-grid { grid-template-columns: 1fr; }
+    .scholar-receipt-identity > div + div { border-inline-start: 0; border-top: 1px solid var(--border-color); padding-top: .5rem; }
+}
+@media print {
+    .scholar-receipt-summary, .scholar-receipt-details { box-shadow: none; background: white; break-inside: avoid; }
+    .scholar-receipt-hero, .scholar-receipt-status { background: white; }
+    .scholar-receipt-status img { display: none; }
+}
+.finance-document-switch { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .6rem; }
+.finance-document-switch .btn { border-radius: 999px; }
+#invoice-document { scroll-margin-top: 110px; }
+.invoice-sheet.scholar-invoice { padding: 0; border: 0; overflow: visible; }
+.scholar-invoice-hero {
+    min-height: 153px; margin-bottom: 1rem; padding: .6rem 1rem .85rem; border-radius: 19px;
+    background: linear-gradient(90deg, var(--surface) 30%, color-mix(in srgb, var(--surface) 90%, transparent) 42%, transparent 66%),
+        var(--surface-tint) url('../images/school-hero.png') right 43% / max(70%, 620px) auto no-repeat;
+}
+.scholar-invoice-hero .finance-document-switch { margin-top: 0; }
+.scholar-invoice-hero .finance-document-switch .btn { border-radius: 14px; min-width: 116px; font-weight: 750; }
+.scholar-invoice-hero .finance-document-switch .btn-outline-primary { background: var(--surface); }
+.scholar-invoice .invoice-heading { padding: .65rem 0 0; }
+.scholar-invoice .invoice-heading .eyebrow { color: var(--action); letter-spacing: .07em; }
+.scholar-invoice .invoice-heading h1 { font-size: clamp(1.85rem, 3.3vw, 3.15rem); margin: .1rem 0 .28rem; font-weight: 850; }
+.scholar-invoice .invoice-heading .status-badge { display: inline-flex; align-items: center; border-radius: 999px; padding: .5rem .85rem; font-size: .9rem; }
+.scholar-invoice .invoice-heading .status-badge.paid { color: #fff; background: #087739; }
+.scholar-invoice .invoice-overview { margin-bottom: .8rem; gap: .9rem; }
+.scholar-invoice .invoice-balance, .scholar-invoice .invoice-next-payment { display: flex; align-items: center; gap: clamp(.65rem, 2vw, 1.4rem); padding: clamp(12px, 1.5vw, 22px); border-radius: 20px; min-height: 120px; }
+.scholar-invoice .invoice-balance { color: #fff; background: radial-gradient(ellipse at 78% 145%, #42d7dc42 0 45%, transparent 46%), linear-gradient(125deg, #008b91, #006474); }
+.scholar-invoice .invoice-balance img { flex: none; width: clamp(72px, 13vw, 175px); height: 90px; object-fit: contain; }
+.scholar-invoice .invoice-balance div > span, .scholar-invoice .invoice-next-payment div > span { display: block; font-size: .94rem; font-weight: 800; margin-bottom: .15rem; }
+.scholar-invoice .invoice-balance div > strong, .scholar-invoice .invoice-next-payment div > strong { display: block; font-size: clamp(1.5rem, 3vw, 2.65rem); line-height: 1.15; font-weight: 850; }
+.scholar-invoice .invoice-balance div > strong { color: #fff; }
+.scholar-invoice .invoice-balance p, .scholar-invoice .invoice-next-payment p { margin: .45rem 0 0; font-size: .85rem; }
+.scholar-invoice .invoice-next-payment { justify-content: space-between; background: radial-gradient(ellipse at 88% 130%, #70ccd64d, transparent 60%), color-mix(in srgb, #9ad8ef 27%, var(--surface)); }
+.scholar-invoice .invoice-next-payment div > span { color: var(--action); }
+.scholar-invoice .scholar-invoice-calendar { flex: none; width: clamp(54px, 6vw, 88px); border-radius: 13px; text-align: center; transform: rotate(8deg); background: var(--surface); box-shadow: 4px 6px 0 #69badd, 0 8px 12px #08628236; overflow: hidden; }
+.scholar-invoice .scholar-invoice-calendar > span { background: #007985; color: #fff; text-transform: uppercase; }
+.scholar-invoice .scholar-invoice-calendar > strong { padding: .25rem 0 .45rem; }
+.scholar-invoice .invoice-details, .scholar-invoice-details-panel { background: var(--surface); border: 1px solid var(--border-color); border-radius: 18px; margin: 0 0 .75rem; padding: .7rem 1rem; }
+.scholar-invoice .invoice-details > div { border-inline-start: 0; }
+.scholar-invoice .invoice-details > div + div { border-inline-start: 1px solid var(--border-color); }
+.scholar-invoice .invoice-details dt i, .scholar-invoice-details-panel h2 i, .scholar-invoice-payment h3 i, .scholar-invoice-items td i { color: var(--action); }
+.scholar-invoice .invoice-details dd small { display: block; margin-top: .15rem; font-weight: 500; }
+.scholar-invoice .invoice-section-heading { margin: 0 0 .55rem; }
+.scholar-invoice .invoice-section-heading h2 { margin: 0; font-size: 1.15rem; font-weight: 850; }
+.scholar-invoice-items { border: 1px solid var(--border-color); border-radius: 13px; }
+.scholar-invoice .invoice-items thead th { background: var(--surface-tint); }
+.scholar-invoice-payment { margin-top: .8rem; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, .75fr) auto; align-items: center; gap: .8rem 1rem; padding: .8rem; border: 1px solid var(--border-color); border-radius: 15px; background: color-mix(in srgb, var(--surface-tint) 40%, var(--surface)); }
+.scholar-invoice-payment h3 { margin: 0 0 .4rem; font-size: 1rem; font-weight: 800; }
+.scholar-invoice-payment p { margin: 0 0 .15rem; padding: .35rem .65rem; border-radius: 9px; background: var(--surface-tint); font-size: .82rem; }
+.scholar-invoice-payment p[data-settled="yes"] { background: #d7f7e3; color: #106338; }
+.scholar-invoice-amount { border-inline-start: 1px solid var(--border-color); padding-inline-start: 1rem; font-weight: 800; }
+.scholar-invoice-amount strong { display: block; font-size: clamp(1.15rem, 2.2vw, 1.85rem); }
+.scholar-invoice-print { display: flex; flex-wrap: wrap; gap: .5rem; }
+.scholar-invoice-ledger { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; margin: .7rem 0 0; }
+.scholar-invoice-ledger > div { display: flex; gap: .45rem; }
+.scholar-invoice-ledger dd { margin: 0; }
+@media screen and (max-width: 1000px) { .scholar-invoice-payment { grid-template-columns: 1fr auto; }.scholar-invoice-print { grid-column: 1 / -1; } }
+@media screen and (max-width: 768px) {
+    .scholar-invoice .invoice-details > div + div { border-inline-start: 0; border-top: 1px solid var(--border-color); padding-top: .5rem; }
+    .scholar-invoice .invoice-balance img { height: 65px; }
+    .scholar-invoice-hero { background-image: linear-gradient(90deg, var(--surface) 32%, color-mix(in srgb, var(--surface) 80%, transparent)), url('../images/school-hero.png'); }
+}
+@media print {
+    .scholar-invoice-hero, .scholar-invoice .invoice-balance, .scholar-invoice .invoice-next-payment { background: white !important; }
+    .scholar-invoice .invoice-balance img, .scholar-invoice .scholar-invoice-calendar { display: none; }
+    .scholar-invoice-payment { grid-template-columns: 1fr auto; }
+}
+.scholar-receipt-charges { min-width: 0; }
+.scholar-receipt-programs th, .scholar-receipt-programs td { min-width: 0; }
+.scholar-receipt-programs td a { overflow-wrap: anywhere; }

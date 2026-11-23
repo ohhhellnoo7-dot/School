@@ -20,6 +20,33 @@ class FamilyDashboardTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_teacher_my_children_shows_tuition_coverage_only_for_linked_children(): void
+    {
+        $teacher = User::factory()->create(['role' => 'teacher']);
+        $child = Student::factory()->create(['parent_id' => $teacher->id]);
+        foreach (['Khmer', 'English', 'Chinese'] as $program) {
+            $class = SchoolClass::create(['name' => 'Grade 8', 'section' => $program, 'program' => $program, 'session' => 'Evening']);
+            $child->studyClasses()->attach($class);
+        }
+        $other = Student::factory()->create(['name' => 'Unrelated Tuition Student']);
+        foreach ([$child, $other] as $student) {
+            $student->fees()->create([
+                'description' => 'Monthly tuition', 'amount' => '35.00', 'paid' => '35.00',
+                'due_date' => today(), 'paid_at' => today(), 'payment_plan' => 'monthly', 'program' => 'Khmer',
+            ]);
+        }
+
+        $this->actingAs($teacher)->get(route('students.index', ['my_children' => 1]))
+            ->assertOk()->assertSee(['Tuition Payment Coverage', 'Paid period active', 'Payment Timeline', '35.00', $child->name])
+            ->assertSee(route('students.family.show', [$child, 'tab' => 'fees']), false)
+            ->assertDontSee($other->name)
+            ->assertViewHas('paymentCoverage', fn ($coverage) => $coverage->keys()->all() === [$child->id]
+                && $coverage[$child->id]->count() === 3 && $coverage[$child->id]['Khmer']['months'] === 1
+                && $coverage[$child->id]['English'] === null && $coverage[$child->id]['Chinese'] === null);
+        $this->actingAs(User::factory()->create(['role' => 'teacher']))
+            ->get(route('students.index', ['my_children' => 1]))->assertOk()->assertDontSee('Tuition Payment Coverage');
+    }
+
     public function test_linked_guardian_can_edit_only_their_childs_profile_fields(): void
     {
         Storage::fake('public');
@@ -64,7 +91,8 @@ class FamilyDashboardTest extends TestCase
         $sibling = Student::factory()->create(['name' => 'Linked Sibling', 'parent_id' => $guardian->id]);
         $other = Student::factory()->create(['name' => 'Unrelated Child']);
         Attendance::create(['student_id' => $child->id, 'date' => '2026-11-02', 'status' => 'present']);
-        Attendance::create(['student_id' => $child->id, 'date' => '2026-11-03', 'status' => 'absent']);
+        Attendance::create(['student_id' => $child->id, 'date' => '2026-11-03', 'status' => 'absent', 'notes' => 'School office notified']);
+        Attendance::create(['student_id' => $other->id, 'date' => '2026-11-03', 'status' => 'late', 'notes' => 'Private attendance remark']);
         $subject = Subject::create(['name' => 'Literacy', 'code' => 'FAM-LIT', 'school_class_id' => $class->id, 'teacher_id' => $teacher->id]);
         Schedule::create(['subject_id' => $subject->id, 'day' => 'Monday', 'starts_at' => '13:00', 'ends_at' => '14:00', 'room' => 'Room B']);
         $exam = Examination::create(['name' => 'Reading assessment', 'subject_id' => $subject->id, 'date' => '2026-11-01', 'total_marks' => 100]);
@@ -81,7 +109,12 @@ class FamilyDashboardTest extends TestCase
         $this->get(route('students.index', ['search' => 'Unrelated Child']))->assertOk()->assertSee('No linked children match your search');
 
         $this->get(route('students.family.show', $child))->assertOk()->assertSee(['Switch child', $sibling->name, $teacher->name]);
-        $this->get(route('students.family.show', [$child, 'tab' => 'attendance', 'month' => '2026-11']))->assertOk()->assertSee('50%');
+        $this->get(route('students.family.show', [$child, 'tab' => 'attendance', 'month' => '2026-11']))->assertOk()
+            ->assertSee(['50%', 'Attendance Rate', 'Monthly Attendance', 'Attendance Records', 'School office notified'])
+            ->assertDontSee('Private attendance remark');
+        $this->get(route('modules.index', ['module' => 'attendance', 'child' => $child->id, 'month' => '2026-11']))
+            ->assertOk()->assertSee(['Linked Child', 'Switch child', 'School office notified'])->assertDontSee('Private attendance remark');
+        $this->get(route('modules.index', ['module' => 'attendance', 'child' => $other->id]))->assertNotFound();
         $this->get(route('students.family.show', [$child, 'tab' => 'timetable', 'day' => 'Monday']))->assertOk()->assertSee(['Literacy', 'Room B', '13:00']);
         $this->get(route('students.family.show', [$child, 'tab' => 'results', 'period' => '2026-2']))->assertOk()->assertSee('Good comprehension');
         $this->get(route('students.family.show', [$child, 'tab' => 'results', 'period' => '2026-1']))->assertOk()->assertDontSee('Good comprehension');

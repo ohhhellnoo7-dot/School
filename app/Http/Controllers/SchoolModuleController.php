@@ -27,6 +27,9 @@ class SchoolModuleController extends Controller
 {
     public function index(Request $request, string $module)
     {
+        if ($module === 'announcements' && $request->user()->role === 'parent') {
+            return app(ParentAnnouncementController::class)->index($request);
+        }
         if ($module === 'fees') return app(SchoolFinanceController::class)->index($request, app(\App\Services\SchoolFinanceService::class));
         if ($module === 'attendance' && $request->user()->role === 'parent') return app(FamilyDashboardController::class)->parentAttendance($request);
         if ($module === 'teachers' && $request->user()->role === 'administrator') return app(TeacherManagementController::class)->index($request, app(\App\Services\TeacherManagementService::class));
@@ -271,6 +274,9 @@ class SchoolModuleController extends Controller
         if ($module === 'fees') return app(SchoolFinanceController::class)->invoice($request, $id);
         $meta = SchoolModules::get($module);
         $record = SchoolModules::query($module, $request->user())->findOrFail($id);
+        if ($module === 'announcements' && $request->user()->role === 'parent') {
+            app(ParentAnnouncementController::class)->markRead($request, $record);
+        }
         if ($module === 'teachers' && $request->user()->role === 'administrator') return app(TeacherManagementController::class)->show($record, app(\App\Services\TeacherManagementService::class));
 
         if ($module === 'classes') {
@@ -479,6 +485,10 @@ class SchoolModuleController extends Controller
     private function validated(Request $request, string $module, $record): array
     {
         $rules = [];
+        if ($module === 'announcements') {
+            $rules['category'] = ['sometimes', 'required', Rule::in(array_keys(\App\Models\Announcement::CATEGORIES))];
+            $rules['priority'] = ['sometimes', 'required', Rule::in(['normal', 'important'])];
+        }
         $meta = SchoolModules::get($module);
         $optional = ['phone', 'notes', 'remarks', 'paid_at', 'teacher_id', 'profile_number', 'gender', 'address', 'qualification', 'hire_date', 'salary', 'status', 'program', 'session'];
         $options = SchoolModules::options($request->user(), $module);

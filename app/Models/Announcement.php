@@ -6,6 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Announcement extends Model
 {
+    public const CATEGORIES = [
+        'general' => 'General',
+        'academic' => 'Academic',
+        'activities' => 'Activities',
+        'events' => 'Events',
+    ];
+
     protected $guarded = [];
 
     public function creator()

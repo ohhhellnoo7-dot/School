@@ -20,6 +20,110 @@ class SchoolFinanceTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_invoice_search_matches_parent_or_student_name_prefixes(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $parent = User::factory()->create(['name' => 'Sara Guardian', 'role' => 'parent']);
+        foreach ([
+            ['Sara Wilson', null],
+            ['Child of Guardian', $parent->id],
+            ['Unrelated Alisara', null],
+        ] as [$name, $parentId]) {
+            $student = Student::factory()->create(['name' => $name, 'parent_id' => $parentId]);
+            $student->fees()->create(['description' => 'Tuition', 'amount' => '10.00', 'paid' => '0.00', 'due_date' => today()]);
+        }
+
+        $this->actingAs($admin)->get(route('finance.index', ['search' => 'sara']))
+            ->assertOk()->assertSee(['Sara Wilson', 'Child of Guardian'])->assertDontSee('Unrelated Alisara')
+            ->assertViewHas('fees', fn ($fees) => $fees->total() === 2);
+    }
+
+    public function test_student_tuition_search_and_checkout_extend_every_program_without_duplicate_months(): void
+    {
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-01-12'));
+        $khmer = $this->setupEnrollment();
+        $english = $this->setupEnrollment('English');
+        $student = $khmer['student'];
+        $student->update(['name' => 'Amara Student']);
+        $student->studyClasses()->attach($english['class']->id, ['class_group_id' => $english['group']->id]);
+        $english['student']->update(['name' => 'Som Amara']);
+
+        $url = route('finance.student-payment', ['student' => $student->id]);
+        $this->actingAs($khmer['parent'])->get($url)->assertForbidden();
+        $this->actingAs($khmer['actor'])->get(route('finance.student-payment', ['search' => 'A']), ['X-Requested-With' => 'XMLHttpRequest'])
+            ->assertOk()->assertSee(['Amara Student', 'Khmer', 'English', 'Morning'])->assertDontSee('Som Amara');
+        $this->get($url.'&months=12')->assertOk()
+            ->assertViewHas('quote', fn ($quote) => $quote['totals'] === ['USD' => 78000]);
+
+        $store = route('finance.student-payment.store', $student);
+        $oneMonth = $this->get($url)->assertOk()->viewData('quote');
+        $this->postJson($store, ['months' => 1, 'fingerprint' => $oneMonth['fingerprint'], 'method' => 'cash', 'confirmed' => 1])
+            ->assertOk()->assertJsonPath('next', $url.'#student-payment-invoice');
+        $this->get($url)->assertOk()->assertSee(['Payment Recorded', 'Paid in Full', 'Open invoice', 'View receipt', '65.00']);
+        $recorded = FeePayment::orderBy('id')->get();
+        $this->assertNotNull($recorded->first()->receipt_group);
+        $this->assertSame($recorded->first()->receipt_group, $recorded->last()->receipt_group);
+        $combinedReceipt = route('finance.receipt', $recorded->first());
+        $this->get(route('finance.receipt', $recorded->last()))->assertRedirect($combinedReceipt);
+        $this->get($combinedReceipt)->assertOk()->assertSee(['Combined Tuition Receipt', 'Khmer Grade 8 tuition', 'English Grade 8 tuition', '65.00 USD', 'Invoice due date', '10 Jan 2026']);
+        $this->get($url.'&months=12', ['X-Requested-With' => 'XMLHttpRequest'])
+            ->assertOk()->assertSee('<details class="alert alert-warning', false)
+            ->assertSee('January 2027')->assertSee('No active, approved rate available today')
+            ->assertSee('Edit tuition for Khmer level 8')->assertDontSee('data-payment-record', false);
+
+        $sixMonthsUrl = $url.'&months=6';
+        $sixMonths = $this->get($sixMonthsUrl)->assertOk()->viewData('quote');
+        $this->assertSame(['USD' => 39000], $sixMonths['totals']);
+        foreach ($sixMonths['rows'] as $row) {
+            $this->assertSame(['2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07'], $row['dates']);
+        }
+        $payload = ['months' => 6, 'fingerprint' => $sixMonths['fingerprint'], 'method' => 'cash', 'confirmed' => 1];
+        $this->post($store, $payload)->assertRedirect($url)->assertSessionHasNoErrors();
+        $this->from($sixMonthsUrl)->post($store, $payload)->assertSessionHasErrors('finance');
+        $this->assertDatabaseCount('invoice_periods', 14);
+        $this->assertDatabaseCount('fee_payments', 4);
+        $coverage = app(\App\Services\TuitionPaymentCoverage::class)->forChildren(collect([$student]), today()->toImmutable())[$student->id];
+        foreach (['Khmer', 'English'] as $program) {
+            $this->assertSame(7, $coverage[$program]['months']);
+            $this->assertSame('2026-08-10', $coverage[$program]['end']->toDateString());
+        }
+
+        $selection = [$khmer['service']->enrollmentKey($english['class'])];
+        $selectedUrl = route('finance.student-payment', ['student' => $student->id, 'enrollments' => $selection, 'select_programs' => 1]);
+        $selected = $this->get($selectedUrl)->assertOk()->viewData('quote');
+        $this->get($selectedUrl, ['X-Requested-With' => 'XMLHttpRequest'])
+            ->assertOk()->assertSee('data-payment-preview', false)->assertSee('40.00 USD')->assertDontSee('<!doctype html>', false);
+        $this->assertSame(['USD' => 4000], $selected['totals']);
+        $this->assertSame(['English'], array_map(fn ($row) => $row['class']->program, $selected['rows']));
+        $this->get($url.'&select_programs=1')->assertOk()->assertSee('Select at least one');
+        $this->post($store, ['months' => 1, 'fingerprint' => $selected['fingerprint'], 'enrollments' => $selection, 'method' => 'cash', 'confirmed' => 1])
+            ->assertRedirect($url)->assertSessionHasNoErrors();
+        $this->assertDatabaseCount('invoice_periods', 15);
+        $this->assertDatabaseCount('fee_payments', 5);
+    }
+
+    public function test_fee_report_separates_monthly_receipts_from_the_current_balance(): void
+    {
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-22'));
+        $e = $this->setupEnrollment();
+        $fee = Fee::create(['student_id' => $e['student']->id, 'description' => 'Tuition', 'amount' => '80.00', 'paid' => '0.00', 'due_date' => '2026-10-10']);
+        foreach (['2026-10-12' => '25.00', '2026-11-10' => '15.00'] as $date => $amount) {
+            $e['service']->payment($fee, ['amount' => $amount, 'paid_on' => $date, 'method' => 'cash', 'request_key' => (string) Str::uuid()], $e['actor']);
+        }
+
+        $this->actingAs($e['actor'])->get(route('finance.index', ['report_scope' => 'month', 'report_month' => '2026-10']))
+            ->assertOk()->assertSee('October 2026')
+            ->assertViewHas('feeReport', fn ($report) => $report['currencies']['USD']['collected'] === 2500
+                && $report['currencies']['USD']['billed'] === 8000 && $report['currencies']['USD']['remaining_now'] === 4000);
+        $this->get(route('finance.index', ['report_scope' => 'year', 'report_year' => 2025]))
+            ->assertOk()->assertViewHas('feeReport', fn ($report) => $report['currencies']['USD']['collected'] === 0);
+        $this->get(route('finance.index', ['report_scope' => 'all']))
+            ->assertOk()->assertSee('Net collections by month')
+            ->assertViewHas('feeReport', fn ($report) => $report['currencies']['USD']['collected'] === 4000
+                && $report['currencies']['USD']['monthly'] === ['2026-10' => 2500, '2026-11' => 1500]
+                && $report['currencies']['USD']['remaining_now'] === 4000);
+    }
+
     public function test_admin_can_save_and_restore_a_program_picture(): void
     {
         \Illuminate\Support\Facades\Storage::fake('local');
@@ -173,7 +277,8 @@ class SchoolFinanceTest extends TestCase
         $this->assertSame('15.00', $fee->fresh()->balance);
         $this->assertNotSame('paid', $fee->fresh()->payment_status);
         $payment = FeePayment::first();
-        $this->get(route('finance.receipt', $payment))->assertOk()->assertSee('10.00')->assertSee($payment->receipt_number);
+        $this->get(route('finance.receipt', $payment))->assertOk()
+            ->assertSee(['10.00', $payment->receipt_number, 'Payment Receipt', 'Save as PDF', 'Refunded from this payment', 'Invoice balance now']);
         $adjust = ['amount' => '3.00', 'request_key' => (string) Str::uuid(), 'kind' => 'refund', 'reason' => 'Duplicate bank transfer correction', 'fee_payment_id' => $payment->id];
         $this->post(route('finance.adjust', $fee), $adjust)->assertSessionHasNoErrors();
         $this->post(route('finance.adjust', $fee), $adjust)->assertSessionHasNoErrors();

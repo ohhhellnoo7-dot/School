@@ -2,7 +2,6 @@
 @section('title', 'Invoice '.$fee->display_number)
 @section('finance-title', 'Student invoice')
 @section('content')
-<div class="finance-screen-only">@include('school.finance._nav')</div>
 @if($fee->trashed())<div class="alert alert-info">Archived invoice &mdash; kept for historical reference and excluded from current fees.</div>@endif
 @include('school.finance._invoice-document')
 @if(auth()->user()->role === 'administrator' && !$fee->trashed() && !$fee->invoice_number && !$fee->legacy_reviewed)

@@ -31,6 +31,9 @@
 <link href="{{ asset('css/teacher-attendance.css') }}?v={{ filemtime(public_path('css/teacher-attendance.css')) }}" rel="stylesheet">
 @endif
 @if(request()->routeIs('students.index'))<link href="{{ asset('css/student-attendance-workspace.css') }}?v={{ filemtime(public_path('css/student-attendance-workspace.css')) }}" rel="stylesheet">@endif
+@if(isset($paymentCoverage) || (request()->routeIs('dashboard') && auth()->user()->role === 'parent'))
+    <link href="{{ asset('css/family-payment-coverage.css') }}?v={{ filemtime(public_path('css/family-payment-coverage.css')) }}" rel="stylesheet">
+@endif
 @if(request()->routeIs('dashboard'))
     <link href="{{ asset('css/dashboard-report.css') }}?v={{ filemtime(public_path('css/dashboard-report.css')) }}" rel="stylesheet">
     <link href="{{ asset('css/dashboard-campus.css') }}?v={{ filemtime(public_path('css/dashboard-campus.css')) }}" rel="stylesheet">
@@ -106,8 +109,10 @@ a.attendance-status-tile:hover, a.attendance-status-tile:focus-visible { outline
             @endif
         @endforeach
 <div class="nav-group-caption">{{ __('Workspace') }}</div>
-        <a class="{{ request()->routeIs('classrooms.*', 'classroom-bookings.*') ? 'active' : '' }}" href="{{ route('classrooms.index') }}"><i class="bi bi-door-open"></i><span class="nav-label">{{ __('Classroom availability') }}</span></a>
-        <a class="{{ request()->routeIs('school.map') ? 'active' : '' }}" href="{{ route('school.map') }}"><i class="bi bi-geo-alt" aria-hidden="true"></i><span class="nav-label">{{ __('School map') }}</span></a>
+        <a class="{{ request()->routeIs('classrooms.*', 'classroom-bookings.*') ? 'active' : '' }}" href="{{ route('classrooms.index') }}"><i class="bi bi-door-open"></i><span class="nav-label">{{ auth()->user()->role === 'parent' ? __('My Class') : __('Classroom availability') }}</span></a>
+        @unless(auth()->user()->role === 'parent')
+            <a class="{{ request()->routeIs('school.map') ? 'active' : '' }}" href="{{ route('school.map') }}"><i class="bi bi-geo-alt" aria-hidden="true"></i><span class="nav-label">{{ __('School map') }}</span></a>
+        @endunless
         @if(auth()->user()->role === 'administrator')<a class="{{ request()->routeIs('employee-salaries.*') ? 'active' : '' }}" href="{{ route('employee-salaries.index') }}"><i class="bi bi-cash-stack"></i><span class="nav-label"> {{ __('Employee salary') }}</span></a><a class="{{ request()->routeIs('reports') ? 'active' : '' }}" href="{{ route('reports') }}"><i class="bi bi-bar-chart-line"></i><span class="nav-label"> {{ __('Reports') }}</span></a>@endif
         @endif
     </nav>
