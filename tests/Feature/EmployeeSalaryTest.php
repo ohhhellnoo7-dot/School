@@ -83,6 +83,11 @@ class EmployeeSalaryTest extends TestCase
 
         $this->get(route('employee-salaries.index', ['search' => '027']))
             ->assertOk()->assertSee('Abigail Brown')->assertDontSee('Bernadette Marquardt');
+
+        $download = $this->get(route('employee-salaries.index', ['search' => '027', 'month' => '2026-11', 'export' => 'csv']))
+            ->assertOk()->assertDownload('teacher-payroll-2026-11.csv');
+        $this->assertStringContainsString('Abigail Brown', $download->streamedContent());
+        $this->assertStringNotContainsString('Bernadette Marquardt', $download->streamedContent());
     }
 
     public function test_payroll_attendance_search_and_saved_deductions_are_applied_to_payment_snapshot(): void

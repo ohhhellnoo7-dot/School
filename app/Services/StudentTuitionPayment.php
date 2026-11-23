@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Exceptions\StudentTuitionRateException;
 use App\Models\Fee;
+use App\Models\FeePayment;
 use App\Models\FeeStructure;
 use App\Models\SchoolClass;
 use App\Models\Student;
@@ -138,6 +139,16 @@ class StudentTuitionPayment
         abort_unless($actor->role === 'administrator', 403);
 
         return $this->finance->locked(function () use ($student, $data, $actor) {
+            $receiptGroup = $data['request_key'] ?? (string) Str::uuid();
+            if (isset($data['request_key'])) {
+                $previous = FeePayment::with('fee')->where('receipt_group', $receiptGroup)->orderBy('id')->get();
+                if ($previous->isNotEmpty()) {
+                    abort_unless($previous->every(fn ($payment) => (int) $payment->recorded_by === (int) $actor->id
+                        && (int) $payment->fee?->student_id === (int) $student->id), 409);
+
+                    return ['receipts' => $previous->modelKeys(), 'invoices' => $previous->pluck('fee_id')->unique()->values()->all()];
+                }
+            }
             $quote = $this->quote($student->refresh(), (int) $data['months'], $data['enrollments'] ?? null);
             if (! hash_equals($quote['fingerprint'], $data['fingerprint'])) {
                 $this->finance->fail('The payment preview has changed. Review the new amounts before recording the payment.');
@@ -150,7 +161,6 @@ class StudentTuitionPayment
                 $fees = $fees->concat($issued);
             }
             $payments = [];
-            $receiptGroup = (string) Str::uuid();
             $actual = array_map(fn () => 0, $quote['totals']);
             foreach ($fees->unique('id') as $fee) {
                 $balance = $fee->balanceCents();

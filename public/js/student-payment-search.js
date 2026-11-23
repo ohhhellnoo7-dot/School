@@ -131,63 +131,125 @@
 (() => {
     const dialog = document.querySelector('[data-payment-loading]');
     if (!dialog || typeof dialog.showModal !== 'function') return;
-    const loadingStatus = dialog.querySelector('[role="status"]');
-    const initialStatus = loadingStatus.textContent;
-    let recording = false;
 
-    dialog.addEventListener('cancel', event => event.preventDefault());
-    document.addEventListener('submit', async event => {
-        const form = event.target.closest('[data-payment-record]');
-        if (!form || event.defaultPrevented) return;
-        event.preventDefault();
-        if (recording) return;
+    const title = dialog.querySelector('h2');
+    const status = dialog.querySelector('[data-payment-status]');
+    const progress = dialog.querySelector('[role="progressbar"]');
+    const art = dialog.querySelector('.student-payment-loading-art');
+    const outcome = dialog.querySelector('.payment-dialog-outcome');
+    const actions = dialog.querySelector('.payment-dialog-actions');
+    const receipt = dialog.querySelector('[data-payment-receipt]');
+    const retry = dialog.querySelector('[data-payment-retry]');
+    const close = dialog.querySelector('[data-payment-close]');
+    const steps = [...dialog.querySelectorAll('.payment-dialog-steps li')];
+    const initialTitle = title.textContent;
+    const initialStatus = status.textContent;
+    let pending = false;
+    let submission;
+    let next;
 
-        const fields = new FormData(form);
-        const button = form.querySelector('button');
-        const errorMessage = form.querySelector('[data-payment-record-error]');
-        recording = true;
-        button.disabled = true;
-        errorMessage.hidden = true;
-        loadingStatus.textContent = initialStatus;
-        dialog.showModal();
+    function showState(state, heading, message, hasReceipt = false) {
+        dialog.dataset.state = state;
+        title.textContent = heading;
+        status.textContent = message;
+        const loading = state === 'loading';
+        progress.hidden = !loading;
+        art.hidden = !loading;
+        outcome.hidden = loading;
+        outcome.className = 'bi payment-dialog-outcome ' + (state === 'error' ? 'bi-exclamation-circle-fill' : 'bi-check-circle-fill');
+        actions.hidden = loading;
+        receipt.hidden = !hasReceipt;
+        retry.hidden = true;
+        steps.forEach((step, index) => {
+            const complete = hasReceipt || (state === 'coverage' && index === 0);
+            step.dataset.step = complete ? 'complete' : 'pending';
+            step.querySelector('.payment-step-check').hidden = !complete;
+            step.querySelector('[data-step-status]').textContent = complete ? ' (Completed)'
+                : state === 'coverage' ? ' (Not required)' : loading ? ' (Awaiting confirmation)' : ' (Unconfirmed)';
+        });
+    }
+
+    function dismiss() {
+        if (pending) return;
+        dialog.close();
+        if (next) {
+            const destination = new URL(next, window.location.href);
+            const current = new URL(window.location.href);
+            if (destination.pathname === current.pathname && destination.search === current.search) {
+                history.replaceState(null, '', destination);
+                window.location.reload();
+            } else {
+                window.location.assign(destination);
+            }
+        } else {
+            submission.button.disabled = false;
+            submission.button.focus();
+        }
+    }
+
+    async function record() {
+        pending = true;
+        submission.button.disabled = true;
+        showState('loading', initialTitle, initialStatus);
+        if (!dialog.open) dialog.showModal();
+        const showResultAfter = performance.now() + 5000;
         const request = new AbortController();
-        const timeout = setTimeout(() => request.abort(), 12000);
-        const minimumDisplay = new Promise(resolve => setTimeout(() => {
-            loadingStatus.textContent = 'Waiting for payment confirmation…';
-            resolve();
-        }, 3000));
+        const timeout = setTimeout(() => request.abort(), 15000);
         try {
-            const response = await fetch(form.action, {
+            const response = await fetch(submission.url, {
                 method: 'POST',
-                body: fields,
+                body: submission.fields,
                 headers: { Accept: 'application/json' },
                 signal: request.signal,
             });
             const data = await response.json();
             if (!response.ok || !data.next) {
-                throw new Error(data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'The payment could not be recorded.'));
+                const retryable = response.status >= 500 || response.ok;
+                const message = data.errors ? Object.values(data.errors).flat().join(' ') : data.message;
+                showState('error', retryable ? 'Payment not confirmed' : 'Payment could not be recorded',
+                    retryable ? 'Retry this same request to check or finish recording the payment.'
+                        : (message || 'Review the payment details and try again.'));
+                retry.hidden = !retryable;
+                (retryable ? retry : close).focus();
+                return;
             }
-            await minimumDisplay;
-            const next = new URL(data.next, window.location.href);
-            const here = new URL(window.location.href);
-            if (next.origin === here.origin && next.pathname === here.pathname && next.search === here.search) {
-                history.replaceState(null, '', next);
-                window.location.reload();
+
+            const amounts = data.amounts.map(({amount, currency}) => amount + ' ' + currency).join(' + ');
+            clearTimeout(timeout);
+            const remaining = showResultAfter - performance.now();
+            if (remaining > 0) await new Promise(resolve => setTimeout(resolve, remaining));
+            next = data.next;
+            if (data.receipt) {
+                receipt.href = data.receipt;
+                showState('success', 'Payment recorded successfully!', amounts, true);
+                receipt.focus();
             } else {
-                window.location.assign(next);
+                showState('coverage', 'Tuition coverage recorded', 'No payment was due for this invoice.');
+                close.focus();
             }
-        } catch (error) {
-            await minimumDisplay;
-            dialog.close();
-            recording = false;
-            button.disabled = false;
-            errorMessage.textContent = request.signal.aborted || error instanceof TypeError || error instanceof SyntaxError
-                ? 'The payment result could not be confirmed. Check Invoices & payments before trying again.'
-                : error.message;
-            errorMessage.hidden = false;
-            button.focus();
+        } catch {
+            showState('error', 'Payment not confirmed', 'Retry this same request to check or finish recording the payment.');
+            retry.hidden = false;
+            retry.focus();
         } finally {
             clearTimeout(timeout);
+            pending = false;
         }
+    }
+
+    dialog.addEventListener('cancel', event => {
+        event.preventDefault();
+        dismiss();
+    });
+    close.addEventListener('click', dismiss);
+    retry.addEventListener('click', record);
+    document.addEventListener('submit', event => {
+        const form = event.target.closest('[data-payment-record]');
+        if (!form || event.defaultPrevented) return;
+        event.preventDefault();
+        if (pending || next) return;
+
+        submission = {url: form.action, fields: new FormData(form), button: form.querySelector('button[type="submit"]')};
+        record();
     });
 })();

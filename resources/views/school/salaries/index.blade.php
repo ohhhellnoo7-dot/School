@@ -3,15 +3,25 @@
 @section('content')
 <div class="payroll-page">
 <header class="payroll-hero">
+    <svg class="payroll-hero-waves" viewBox="0 0 1400 170" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 0h378c111 3 121 77 230 48s166-13 231 35 109 58 231 22 207-80 330-105v170H0z"/>
+        <path d="M0 170c195-33 278-91 449-53 129 28 193 58 278 4s164-72 250-46 124 44 224 10 158-40 199-30v115z"/>
+        <path d="M0 170c218-39 313-18 446-11 117 6 200-9 310-29 122-22 188-32 340-13 126 15 205 30 304 53z"/>
+    </svg>
     <div class="payroll-hero-copy">
-        <h1>Employee Salary</h1>
-        <p>Manage teacher pay, working hours, and attendance.</p>
+        <div class="payroll-heading-group">
+            <i class="bi bi-wallet2 payroll-hero-icon" aria-hidden="true"></i>
+            <div>
+                <h1>Employee Salary</h1>
+                <p>Manage teacher salaries, work hours, and payroll efficiently</p>
+            </div>
+        </div>
         <div class="payroll-actions">
             <button class="payroll-action payroll-action-primary" type="button" data-open-salary-calculator aria-haspopup="dialog" aria-controls="salary-calculator"><i class="bi bi-calculator" aria-hidden="true"></i> Salary Calculator</button>
             <a class="payroll-action" id="salary-monthly-attendance" href="{{ route('teacher-attendance.monthly', ['month' => $month->format('Y-m')]) }}"><i class="bi bi-calendar-check" aria-hidden="true"></i> Monthly Attendance</a>
         </div>
     </div>
-    <img class="payroll-hero-art" src="{{ asset('images/payroll-hero-3d.png') }}" width="640" height="427" alt="" decoding="async">
+    <img class="payroll-hero-art" src="{{ asset('images/payroll-calendar.png') }}" width="860" height="358" alt="" decoding="async">
 </header>
 @include('school.salaries._calculator')
 <section class="payroll-surface payroll-rates" aria-labelledby="payroll-rates-heading">
@@ -23,12 +33,12 @@
         </div>
     </div>
     <dl class="payroll-rate-list">
-    @foreach([5 => '31.25', 10 => '62.50', 20 => '125.00', 40 => '250.00', 50 => '312.50'] as $hours => $amount)
+    @foreach($salaryRates as $hours => $amount)
         <div>
             <i class="bi bi-{{ ['stopwatch', 'alarm', 'briefcase-fill', 'award-fill', 'lightning-charge-fill'][$loop->index] }} payroll-icon" aria-hidden="true"></i>
             <div>
                 <dt>{{ $hours }} h each week</dt>
-                <dd>${{ $amount }} <span class="payroll-rate-period">per month</span></dd>
+                <dd>${{ \App\Support\Money::decimal($amount) }} <span class="payroll-rate-period">per month</span></dd>
             </div>
         </div>
     @endforeach
@@ -39,38 +49,44 @@
         ['people-fill', 'Total teachers', $teacherCount],
         ['check-lg', 'Paid this month', $recorded->paid_count],
         ['clock', 'Not recorded', $teacherCount - $recorded->paid_count],
-        ['cash-stack', 'Total recorded payroll', '$'.\App\Support\Money::decimal($recorded->paid_cents)],
+        ['wallet2', 'Total recorded payroll', '$'.\App\Support\Money::decimal($recorded->paid_cents)],
     ] as [$icon, $label, $value])
         <div>
             <i class="bi bi-{{ $icon }} payroll-icon" aria-hidden="true"></i>
             <div><dt>{{ $label }}</dt><dd>{{ $value }}</dd></div>
+            <i class="bi bi-{{ ['people-fill', 'coins', 'clipboard2-check', 'cash-coin'][$loop->index] }} payroll-metric-art" aria-hidden="true"></i>
         </div>
     @endforeach
 </dl>
+@include('school.salaries._overview')
 <section class="payroll-surface payroll-register" aria-labelledby="payroll-register-heading">
     <div class="payroll-register-heading">
         <div class="payroll-heading-group">
             <i class="bi bi-people-fill payroll-icon" aria-hidden="true"></i>
             <div class="payroll-section-heading">
-                <h2 id="payroll-register-heading">Teacher payroll</h2>
+                <h2 id="payroll-register-heading">Teacher Payroll</h2>
                 <p id="salary-payroll-month">{{ $month->format('F Y') }}</p>
             </div>
         </div>
-        <span class="payroll-count" id="salary-teacher-count">{{ $teachers->total() }} teachers</span>
-    </div>
-    <form class="payroll-filters" method="get" role="search" aria-label="Search teacher payroll" data-salary-search>
-        <div>
-            <label class="form-label" for="salary-month">Salary month</label>
-            <input class="form-control" id="salary-month" name="month" type="month" value="{{ $month->format('Y-m') }}">
-        </div>
-        <div>
-            <label class="form-label" for="salary-search">Search teachers</label>
-            <div class="payroll-search-input">
-                <i class="bi bi-search" aria-hidden="true"></i>
-                <input class="form-control" id="salary-search" type="search" name="search" autocomplete="off" maxlength="255" aria-controls="salary-search-results" placeholder="Search by name or employee ID..." value="{{ request('search') }}">
+        <form class="payroll-filters" method="get" role="search" aria-label="Search teacher payroll" data-salary-search>
+            <div>
+                <label class="form-label" for="salary-month">Salary month</label>
+                <input class="form-control" id="salary-month" name="month" type="month" value="{{ $month->format('Y-m') }}">
             </div>
+            <div>
+                <label class="form-label" for="salary-search">Search teachers</label>
+                <div class="payroll-search-input">
+                    <i class="bi bi-search" aria-hidden="true"></i>
+                    <input class="form-control" id="salary-search" type="search" name="search" autocomplete="off" maxlength="255" aria-controls="salary-search-results" placeholder="Search by name or employee ID..." value="{{ request('search') }}">
+                </div>
+            </div>
+            <noscript><button class="payroll-action" type="submit">Apply filters</button></noscript>
+        </form>
+        <div class="payroll-register-actions">
+            <span class="payroll-count" id="salary-teacher-count"><i class="bi bi-people-fill me-1" aria-hidden="true"></i> {{ $teachers->total() }} teachers</span>
+            <a class="payroll-action payroll-action-primary" id="salary-export" href="{{ route('employee-salaries.index', ['month' => $month->format('Y-m'), 'search' => request('search'), 'export' => 'csv']) }}"><i class="bi bi-download" aria-hidden="true"></i> Export <span class="visually-hidden">CSV</span></a>
         </div>
-    </form>
+    </div>
     <div id="salary-search-results" aria-live="polite"><div class="table-responsive" role="region" aria-labelledby="payroll-register-heading" tabindex="0"><table class="table salary-table"><thead><tr><th scope="col">#</th><th scope="col">Employee</th><th scope="col">Work sessions</th><th scope="col">Attendance days</th><th scope="col">Base salary</th><th scope="col">Salary increase</th><th scope="col">Deductions</th><th scope="col">Net monthly salary</th><th scope="col">Status</th><th scope="col">Action</th></tr></thead><tbody>
     @forelse($rows as $row)
         <tr><td><span class="payroll-row-number">{{ $teachers->firstItem() + $loop->index }}</span></td><td><div class="payroll-person">
@@ -81,14 +97,14 @@
             <small><i class="bi bi-clock me-1" aria-hidden="true"></i><strong>{{ round($row['weekly_hours'], 2) }}/{{ round($row['weekly_limit'], 2) }} h</strong> {{ $row['weekly_work_hours'] === null ? 'scheduled / teaching limit' : 'scheduled / work week' }}</small>
         </td>
         <td><span class="text-success">{{ $row['attendance']->get('present', 0) }} present</span><small>{{ $row['attendance']->get('late', 0) }} late · {{ $row['attendance']->get('absent', 0) }} absent · {{ $row['attendance']->get('excused', 0) }} excused</small></td>
-        <td>{{ $row['salary'] ? '$'.\App\Support\Money::decimal($row['salary']['base_cents']) : '—' }}</td><td>{{ $row['salary'] ? '+$'.\App\Support\Money::decimal($row['salary']['raise_cents']) : '—' }}</td><td>{{ $row['salary'] ? '-$'.\App\Support\Money::decimal($row['salary']['deduction_cents'] ?? 0) : '—' }}</td>
+        <td>{{ $row['salary'] ? '$'.\App\Support\Money::decimal($row['salary']['base_cents']) : '—' }}</td><td class="payroll-increase">{{ $row['salary'] ? '+$'.\App\Support\Money::decimal($row['salary']['raise_cents']) : '—' }}</td><td class="payroll-deduction">{{ $row['salary'] ? '-$'.\App\Support\Money::decimal($row['salary']['deduction_cents'] ?? 0) : '—' }}</td>
         <td class="text-nowrap">
             <strong class="payroll-net">{{ $row['salary'] ? '$'.\App\Support\Money::decimal($row['salary']['total_cents']) : '—' }}</strong>
             @if($row['salary'] && $row['full_salary_cents'] !== null)
                 <span class="text-secondary" title="Full monthly salary before raises and deductions">/ ${{ \App\Support\Money::decimal($row['full_salary_cents']) }}</span>
             @endif
         </td>
-        <td><span class="status-badge {{ $row['payment'] ? 'paid' : 'pending' }}">{{ $row['payment'] ? 'Paid' : ($row['profile'] ? 'Not recorded' : 'Setup needed') }}</span></td><td><a class="btn btn-sm btn-outline-primary" href="{{ route('employee-salaries.show', ['teacher' => $row['teacher'], 'month' => $month->format('Y-m')]) }}">{{ $row['profile'] ? 'View details' : 'Set up salary' }}</a></td></tr>
+        <td><span class="status-badge {{ $row['payment'] ? 'paid' : 'pending' }}">{{ $row['payment'] ? 'Paid' : ($row['profile'] ? 'Not recorded' : 'Setup needed') }}</span></td><td><a class="btn btn-sm btn-outline-primary" href="{{ route('employee-salaries.show', ['teacher' => $row['teacher'], 'month' => $month->format('Y-m')]) }}"><i class="bi bi-eye me-1" aria-hidden="true"></i>{{ $row['profile'] ? 'View details' : 'Set up salary' }}</a></td></tr>
     @empty<tr><td colspan="10" class="p-4 text-center">No teachers found.</td></tr>@endforelse
     </tbody></table></div><div class="p-3">{{ $teachers->links() }}</div></div>
 </section>

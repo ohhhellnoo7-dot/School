@@ -6,6 +6,7 @@ use App\Services\SchoolHolidayClosure;
 use App\Models\{EmployeeSalaryAttendance, EmployeeSalaryPayment, EmployeeSalaryProfile, TeacherAttendance, TeacherSessionAttendance, User};
 use App\Services\EmployeeSalaryCalculator;
 use App\Services\TeacherManagementService;
+use App\Support\Money;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -48,13 +49,15 @@ class EmployeeSalaryController extends Controller
     {
         $month = $this->month($request);
         $asOf = $this->assessmentDate($month);
-        $request->validate(['search' => 'nullable|string|max:255']);
+        $request->validate(['search' => 'nullable|string|max:255', 'export' => 'nullable|in:csv']);
         $teacherPopulation = User::where('role', 'teacher');
-        $teachers = (clone $teacherPopulation)
+        $teacherQuery = (clone $teacherPopulation)
             ->when($request->filled('search'), fn ($q) => $q->where(fn ($q) => $q
                 ->whereRaw('LOWER(name) LIKE ?', [mb_strtolower($request->search).'%'])
                 ->orWhere('profile_number', 'like', '%'.$request->search.'%')))
-            ->orderBy('name')->paginate(20)->withQueryString();
+            ->orderBy('name')->orderBy('id');
+        $exporting = $request->input('export') === 'csv';
+        $teachers = $exporting ? $teacherQuery->get() : $teacherQuery->paginate(20)->withQueryString();
         $profiles = EmployeeSalaryProfile::whereIn('teacher_id', $teachers->modelKeys())->get()->keyBy('teacher_id');
         $payments = EmployeeSalaryPayment::whereIn('teacher_id', $teachers->modelKeys())->whereDate('salary_month', $month)->get()->keyBy('teacher_id');
         $attendance = TeacherAttendance::whereIn('teacher_id', $teachers->modelKeys())
@@ -64,7 +67,7 @@ class EmployeeSalaryController extends Controller
         $overrides = EmployeeSalaryAttendance::whereIn('teacher_id', $teachers->modelKeys())->whereBetween('date', $range)->get()->groupBy('teacher_id');
         $teachingMinutes = $calculator->assignedMinutes($teachers->modelKeys());
         $weeklyLimits = DB::table('teacher_profiles')->whereIn('teacher_id', $teachers->modelKeys())->pluck('weekly_minutes', 'teacher_id');
-        $rows = $teachers->getCollection()->map(function ($teacher) use ($profiles, $payments, $attendance, $calculator, $asOf, $scans, $overrides, $teaching, $teachingMinutes, $weeklyLimits) {
+        $rows = ($exporting ? $teachers : $teachers->getCollection())->map(function ($teacher) use ($profiles, $payments, $attendance, $calculator, $asOf, $scans, $overrides, $teaching, $teachingMinutes, $weeklyLimits) {
             $profile = $profiles->get($teacher->id);
             $payment = $payments->get($teacher->id);
             $assignedMinutes = $teachingMinutes->get($teacher->id, 0);
@@ -85,6 +88,27 @@ class EmployeeSalaryController extends Controller
                 'attendance' => app(\App\Services\EmployeeSalaryDeductions::class)->counts($attendance->get($teacher->id, collect()), $scans->get($teacher->id, collect()), $overrides->get($teacher->id, collect()))];
         });
 
+        if ($exporting) {
+            return response()->streamDownload(function () use ($rows) {
+                $output = fopen('php://output', 'w');
+                fputcsv($output, ['Employee', 'Employee ID', 'Weekly hours', 'Present', 'Late', 'Absent', 'Excused', 'Base salary (USD)', 'Increase (USD)', 'Deductions (USD)', 'Net salary (USD)', 'Status'], escape: '');
+                $safeText = fn ($value) => preg_match('/^[\s]*[=+@-]|^[\t\r\n]/', $value) ? "'".$value : $value;
+                foreach ($rows as $row) {
+                    $salary = $row['salary'];
+                    fputcsv($output, [
+                        $safeText($row['teacher']->name), $safeText($row['teacher']->profile_number ?? ''),
+                        $row['weekly_hours'], ...collect(['present', 'late', 'absent', 'excused'])->map(fn ($status) => $row['attendance']->get($status, 0))->all(),
+                        $salary ? Money::decimal($salary['base_cents']) : '',
+                        $salary ? Money::decimal($salary['raise_cents']) : '',
+                        $salary ? Money::decimal($salary['deduction_cents']) : '',
+                        $salary ? Money::decimal($salary['total_cents']) : '',
+                        $row['payment'] ? 'Paid' : ($row['profile'] ? 'Not recorded' : 'Setup needed'),
+                    ], escape: '');
+                }
+                fclose($output);
+            }, 'teacher-payroll-'.$month->format('Y-m').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+        }
+
         $teacherCount = $request->filled('search') ? $teacherPopulation->count() : $teachers->total();
         $recorded = EmployeeSalaryPayment::whereIn('teacher_id', $teacherPopulation->select('id'))
             ->whereDate('salary_month', $month)
@@ -93,6 +117,7 @@ class EmployeeSalaryController extends Controller
 
         return view('school.salaries.index', compact('month', 'teachers', 'rows', 'asOf', 'teacherCount', 'recorded') + [
             'salaryHourlyCents' => $calculator->baseCents(60),
+            'salaryRates' => collect([5, 10, 20, 40, 50])->mapWithKeys(fn ($hours) => [$hours => $calculator->baseCents($hours * 60)]),
         ]);
     }
 

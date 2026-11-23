@@ -57,11 +57,19 @@ class SchoolFinanceTest extends TestCase
 
         $store = route('finance.student-payment.store', $student);
         $oneMonth = $this->get($url)->assertOk()->viewData('quote');
-        $this->postJson($store, ['months' => 1, 'fingerprint' => $oneMonth['fingerprint'], 'method' => 'cash', 'confirmed' => 1])
-            ->assertOk()->assertJsonPath('next', $url.'#student-payment-invoice');
+        $requestKey = (string) \Illuminate\Support\Str::uuid();
+        $submission = ['months' => 1, 'fingerprint' => $oneMonth['fingerprint'], 'method' => 'cash',
+            'confirmed' => 1, 'request_key' => $requestKey];
+        $confirmation = $this->postJson($store, $submission)->assertOk()
+            ->assertJsonPath('next', $url.'#student-payment-invoice')
+            ->assertJsonPath('amounts.0.amount', '65.00')->assertJsonPath('amounts.0.currency', 'USD')
+            ->assertJsonPath('receipt', fn ($receipt) => is_string($receipt) && $receipt !== '')
+            ->json();
+        $this->postJson($store, $submission)->assertOk()->assertExactJson($confirmation);
+        $this->assertDatabaseCount('fee_payments', 2);
         $this->get($url)->assertOk()->assertSee(['Payment Recorded', 'Paid in Full', 'Open invoice', 'View receipt', '65.00']);
         $recorded = FeePayment::orderBy('id')->get();
-        $this->assertNotNull($recorded->first()->receipt_group);
+        $this->assertSame($requestKey, $recorded->first()->receipt_group);
         $this->assertSame($recorded->first()->receipt_group, $recorded->last()->receipt_group);
         $combinedReceipt = route('finance.receipt', $recorded->first());
         $this->get(route('finance.receipt', $recorded->last()))->assertRedirect($combinedReceipt);

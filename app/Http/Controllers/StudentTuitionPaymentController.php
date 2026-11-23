@@ -7,6 +7,7 @@ use App\Models\Fee;
 use App\Models\FeePayment;
 use App\Models\Student;
 use App\Services\StudentTuitionPayment;
+use App\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
@@ -69,6 +70,7 @@ class StudentTuitionPaymentController extends Controller
         $data = $request->validate([
             'months' => 'required|integer|in:1,6,12',
             'fingerprint' => 'required|string|size:64',
+            'request_key' => 'nullable|uuid',
             'method' => 'required|in:cash,bank_transfer,qr,other',
             'reference' => 'nullable|string|max:120',
             'confirmed' => 'accepted',
@@ -81,8 +83,20 @@ class StudentTuitionPaymentController extends Controller
         $request->session()->flash('success', $payment['receipts'] ? 'Student tuition payment recorded.' : 'Tuition coverage recorded. No amount was due.');
         $next = route('finance.student-payment', ['student' => $student->id]);
 
-        return $request->expectsJson()
-            ? response()->json(['next' => $next.'#student-payment-invoice'])
-            : redirect()->to($next);
+        if (! $request->expectsJson()) {
+            return redirect()->to($next);
+        }
+
+        $receipts = FeePayment::whereKey($payment['receipts'])->orderBy('id')->get();
+        $amounts = $receipts->groupBy('currency')->map(fn ($entries, $currency) => [
+            'amount' => Money::display($entries->sum(fn ($entry) => Money::cents($entry->amount))),
+            'currency' => $currency,
+        ])->values();
+
+        return response()->json([
+            'next' => $next.'#student-payment-invoice',
+            'amounts' => $amounts,
+            'receipt' => $receipts->isNotEmpty() ? route('finance.receipt', $receipts->first()) : null,
+        ]);
     }
 }

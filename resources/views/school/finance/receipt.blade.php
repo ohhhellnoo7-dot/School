@@ -109,12 +109,31 @@
             </dl>
             </div>
             <aside class="scholar-receipt-status" data-settled="{{ $positive ? 'yes' : 'no' }}" aria-label="{{ __('Payment status') }}">
-                <div class="scholar-receipt-status-icon"><i class="bi bi-{{ $positive ? 'check-circle-fill' : ($fullyRefunded ? 'arrow-return-left' : 'clock') }}" aria-hidden="true"></i></div>
+                <div class="scholar-receipt-status-stage">
+                    <div class="scholar-receipt-status-icon">
+                        @if($positive)
+                            <svg class="scholar-receipt-check" viewBox="0 0 48 48" aria-hidden="true">
+                                <path d="m13 24 8 8 14-16" pathLength="1" fill="none" stroke="currentColor"
+                                    stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        @else
+                            <i class="bi bi-{{ $fullyRefunded ? 'arrow-return-left' : 'clock' }}" aria-hidden="true"></i>
+                        @endif
+                    </div>
+                </div>
                 <strong>{{ $status }}</strong>
-                <img src="{{ asset('images/student-fees-banner.png') }}" alt="">
+                <div class="scholar-receipt-status-art" aria-hidden="true">
+                    <img src="{{ asset('images/student-fees-banner.png') }}" alt="">
+                </div>
             </aside>
         </div>
         <p class="scholar-receipt-note"><i class="bi bi-info-circle" aria-hidden="true"></i><span>{{ __('Authorized payment record issued by :school. Original payment details are retained; later refunds and adjustments appear in the invoice history.', ['school' => config('finance.school_name')]) }}</span></p>
     </section>
 </article>
 @endsection
+
+@if($positive)
+    @push('scripts')
+        <script src="{{ asset('js/receipt-status.js') }}?v={{ filemtime(public_path('js/receipt-status.js')) }}" defer></script>
+    @endpush
+@endif

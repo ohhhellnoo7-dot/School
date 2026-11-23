@@ -98,6 +98,7 @@
         <form method="post" action="{{ route('finance.student-payment.store', $student) }}" class="student-payment-record-form" data-payment-record>
             @csrf
             <input type="hidden" name="months" value="{{ $months }}">
+            <input type="hidden" name="request_key" value="{{ old('request_key', (string) \Illuminate\Support\Str::uuid()) }}">
             <input type="hidden" name="fingerprint" value="{{ $quote['fingerprint'] }}">
             @foreach($selection as $key)
                 <input type="hidden" name="enrollments[]" value="{{ $key }}">
@@ -112,15 +113,7 @@
     </div>
     @endfragment
 </section>
-<dialog class="student-payment-loading" data-payment-loading aria-labelledby="student-payment-loading-title">
-    <div class="student-payment-loading-art" aria-hidden="true">
-        <span><i class="bi bi-receipt-cutoff"></i></span>
-        <i class="bi bi-stars student-payment-loading-star"></i>
-    </div>
-    <h2 id="student-payment-loading-title">{{ __('Recording your payment') }}</h2>
-    <p role="status">{{ __('Preparing the tuition invoice and receipt…') }}</p>
-    <div class="student-payment-loading-track" aria-hidden="true"><span></span></div>
-</dialog>
+@include('school.finance._student-payment-dialog')
 @endif
 @endsection
 

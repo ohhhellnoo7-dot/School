@@ -18,18 +18,11 @@ document.querySelectorAll('[data-salary-search]').forEach((form) => {
             if (!replacement) throw new Error('Search results unavailable');
             if (signal.aborted) return;
             results.innerHTML = replacement.innerHTML;
-            const count = document.getElementById('salary-teacher-count');
-            const newCount = documentResult.getElementById('salary-teacher-count');
-            if (count && newCount) count.textContent = newCount.textContent;
-            const payrollMonth = document.getElementById('salary-payroll-month');
-            const newPayrollMonth = documentResult.getElementById('salary-payroll-month');
-            if (payrollMonth && newPayrollMonth) payrollMonth.textContent = newPayrollMonth.textContent;
-            const metrics = document.getElementById('salary-payroll-metrics');
-            const newMetrics = documentResult.getElementById('salary-payroll-metrics');
-            if (metrics && newMetrics) metrics.innerHTML = newMetrics.innerHTML;
-            const attendanceLink = document.getElementById('salary-monthly-attendance');
-            const newAttendanceLink = documentResult.getElementById('salary-monthly-attendance');
-            if (attendanceLink && newAttendanceLink) attendanceLink.href = newAttendanceLink.getAttribute('href');
+            for (const id of ['salary-teacher-count', 'salary-payroll-month', 'salary-payroll-metrics', 'salary-payroll-overview', 'salary-monthly-attendance', 'salary-export']) {
+                const current = document.getElementById(id);
+                const updated = documentResult.getElementById(id);
+                if (current && updated) current.replaceWith(updated);
+            }
             window.history.replaceState({}, '', url);
         } catch (error) {
             if (error.name !== 'AbortError') window.location.assign(url);
