@@ -134,8 +134,8 @@
 
     const title = dialog.querySelector('h2');
     const status = dialog.querySelector('[data-payment-status]');
-    const progress = dialog.querySelector('[role="progressbar"]');
-    const art = dialog.querySelector('.student-payment-loading-art');
+    const progress = dialog.querySelector('.payment-dialog-progress');
+    const art = dialog.querySelector('.payment-dialog-illustration');
     const outcome = dialog.querySelector('.payment-dialog-outcome');
     const actions = dialog.querySelector('.payment-dialog-actions');
     const receipt = dialog.querySelector('[data-payment-receipt]');

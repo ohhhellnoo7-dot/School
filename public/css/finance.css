@@ -1466,79 +1466,133 @@ html.pd-drawer-open {
 .student-payment-loading {
     --payment-accent: var(--action, var(--primary));
     --payment-ink: var(--text-primary, var(--ink));
+    --payment-muted: var(--text-secondary, var(--muted));
     --payment-outline: var(--border-color, var(--border));
     --payment-art-light: color-mix(in srgb, var(--payment-accent) 50%, var(--surface));
     --payment-art-dark: color-mix(in srgb, var(--payment-accent) 52%, #101419);
     --payment-paper: color-mix(in srgb, var(--payment-accent) 14%, var(--surface));
     --payment-glow: color-mix(in srgb, var(--payment-accent) 28%, transparent);
+    --payment-rim: color-mix(in srgb, var(--payment-accent) 25%, var(--surface));
+    --payment-wave-one: var(--payment-accent);
+    --payment-wave-two: var(--accent, var(--payment-art-light));
+    --payment-bar-start: var(--payment-art-dark);
+    --payment-bar-end: var(--payment-accent);
+    --payment-step-size: clamp(43px, 7cqw, 70px);
     position: fixed;
     inset: 0;
     margin: auto;
     box-sizing: border-box;
-    width: min(680px, calc(100% - 24px));
+    width: min(980px, calc(100% - 30px), 148dvh);
     max-width: none;
     max-height: calc(100dvh - 24px);
     overflow: auto;
     padding: 0;
-    border: 1px solid var(--payment-outline);
-    border-radius: clamp(18px, 5vw, 40px);
+    container-type: inline-size;
+    border: 2px solid var(--payment-rim);
+    border-radius: clamp(22px, 6vw, 66px);
     color: var(--payment-ink);
-    background: radial-gradient(ellipse at 50% 0, var(--payment-paper), var(--surface) 68%);
+    background: radial-gradient(ellipse at 50% 0, var(--payment-paper), var(--surface) 73%);
     box-shadow: 0 24px 80px var(--shadow-color, #0004), 0 12px 32px var(--payment-glow);
     text-align: center;
 }
+.student-payment-loading[open] { isolation: isolate; }
 .student-payment-loading [hidden] { display: none; }
 .student-payment-loading::backdrop { background: color-mix(in srgb, #101419 70%, var(--payment-accent)); opacity: .72; }
-.payment-dialog-content { padding: clamp(20px, 4vw, 40px) clamp(16px, 5vw, 58px) 14px; }
-.student-payment-loading h2 { margin: 0 0 .5rem; font-weight: 850; font-size: clamp(1.5rem, 4.5vw, 2.55rem); line-height: 1.12; }
-.student-payment-loading p { color: var(--text-secondary, var(--muted)); overflow-wrap: anywhere; }
-.student-payment-loading-art { display: block; width: min(100%, 370px, 48vh); height: auto; margin: 0 auto .6rem; }
+.payment-dialog-content { padding: clamp(14px, 2.7cqw, 28px) clamp(16px, 11cqw, 110px) clamp(28px, 6cqw, 66px); }
+.student-payment-loading h2 { margin: 0 0 .48rem; color: var(--payment-ink); font-size: clamp(1.4rem, 5.05cqw, 3.15rem); font-weight: 850; letter-spacing: -.035em; line-height: 1.1; }
+.student-payment-loading p { margin: 0; color: var(--payment-muted); font-size: clamp(.9rem, 2.5cqw, 1.52rem); overflow-wrap: anywhere; }
+.payment-dialog-illustration { width: min(100%, 470px, 48cqw); margin: 0 auto .6rem; }
+.student-payment-loading-art, .payment-dialog-reference-art { display: block; width: 100%; height: auto; }
+.payment-dialog-reference-art { display: none; }
+.payment-dialog-progress { position: relative; padding-block-start: clamp(20px, 3.3cqw, 36px); margin: .75rem 0 1rem; }
+.payment-dialog-progress-badge {
+    position: absolute; inset-inline-end: 0; inset-block-start: 0; z-index: 1;
+    padding: .34em .8em; border: 1px solid var(--payment-rim); border-radius: 999px;
+    color: var(--payment-badge-text, var(--payment-ink)); background: var(--payment-badge-bg, var(--payment-paper));
+    box-shadow: 0 3px 10px var(--payment-glow); font-size: clamp(.72rem, 1.7cqw, 1rem); font-weight: 800;
+}
 .student-payment-loading-track {
-    height: 13px; overflow: hidden; border: 1px solid var(--payment-outline); border-radius: 999px;
-    background: var(--payment-paper); margin: 1.35rem 0 1rem;
+    height: clamp(15px, 4.4cqw, 42px); box-sizing: border-box; overflow: hidden;
+    border: clamp(2px, .55cqw, 6px) solid var(--payment-rim); border-radius: 999px;
+    padding: 2px; background: var(--payment-paper); box-shadow: 0 5px 14px var(--payment-glow), inset 0 0 0 1px var(--payment-outline);
 }
 .student-payment-loading-track span {
-    display: block; width: 42%; height: 100%; border-radius: inherit;
-    background: linear-gradient(100deg, var(--payment-accent), var(--payment-paper) 54%, var(--payment-accent));
+    display: block; width: 55%; height: 100%; border-radius: inherit;
+    background: repeating-linear-gradient(128deg, transparent 0 17px, rgb(255 255 255 / .15) 17px 34px),
+        linear-gradient(98deg, var(--payment-bar-start), var(--payment-bar-end));
+    box-shadow: inset 0 2px 4px rgb(255 255 255 / .55);
 }
 .payment-dialog-steps {
-    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem;
-    list-style: none; padding: 0; margin: 1rem 0 .75rem; font-size: clamp(.75rem, 2vw, .9rem); font-weight: 700;
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; max-width: 660px;
+    list-style: none; padding: 0; margin: clamp(12px, 2.3cqw, 24px) auto 0;
+    font-size: clamp(.72rem, 1.95cqw, 1.18rem); font-weight: 750; line-height: 1.16;
 }
 .payment-dialog-steps li { position: relative; min-width: 0; }
 .payment-dialog-steps li:not(:last-child)::after {
-    content: ''; position: absolute; height: 2px; border-radius: 4px; top: 23px;
-    inset-inline: calc(50% + 31px) calc(-50% + 21px); background: var(--payment-outline);
+    content: ''; position: absolute; height: clamp(2px, .43cqw, 5px); border-radius: 6px; top: calc(var(--payment-step-size) / 2);
+    inset-inline: calc(50% + var(--payment-step-size) / 2 + 8px) calc(-50% + var(--payment-step-size) / 2 - 4px);
+    background: linear-gradient(90deg, var(--payment-art-light), var(--payment-outline));
 }
 .payment-step-icon {
-    position: relative; display: grid; place-items: center; margin: 0 auto .45rem;
-    width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--payment-outline);
-    background: var(--payment-paper); color: var(--payment-ink); font-size: 1.25rem;
+    position: relative; display: grid; place-items: center; margin: 0 auto .5rem;
+    width: var(--payment-step-size); aspect-ratio: 1; border-radius: 50%; border: 1px solid var(--payment-outline);
+    background: var(--payment-paper); color: var(--payment-ink); font-size: clamp(1.18rem, 3.2cqw, 2.2rem);
+}
+.student-payment-loading[data-state="loading"] .payment-dialog-steps li:nth-child(2) .payment-step-icon {
+    color: var(--payment-active-ink, var(--payment-ink)); border: 2px solid var(--payment-rim);
+    background: var(--payment-active-bg, var(--payment-paper));
+    box-shadow: 0 0 0 4px var(--payment-glow);
 }
 .payment-step-check {
-    position: absolute; bottom: -3px; inset-inline-end: -3px; border-radius: 50%;
+    position: absolute; bottom: -2px; inset-inline-end: -2px; border-radius: 50%;
     border: 2px solid var(--surface); background: var(--surface); color: var(--success); line-height: 1;
 }
 .payment-dialog-steps li[data-step="complete"]::after { background: var(--success); }
-.payment-dialog-outcome { display: block; font-size: 3rem; margin: 0 auto .6rem; color: var(--success); }
+.payment-dialog-outcome { display: block; font-size: 3.4rem; margin: 0 auto .6rem; color: var(--success); }
 .student-payment-loading[data-state="error"] .payment-dialog-outcome { color: var(--danger); }
 .payment-dialog-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: .65rem; margin-top: 1.4rem; }
-.payment-dialog-waves { display: block; width: 100%; height: clamp(28px, 7vw, 62px); color: var(--payment-accent); }
-.student-payment-loading[open][data-state="loading"] .student-payment-loading-art { animation: student-payment-float 5s ease-in-out 1 both; }
+.payment-dialog-waves { position: absolute; inset: auto 0 0; z-index: -1; display: block; width: 100%; height: clamp(35px, 15cqw, 146px); pointer-events: none; }
+
+:root:is([data-theme="light"], [data-theme="windy-breeze"]) .student-payment-loading {
+    --payment-ink: #103355;
+    --payment-muted: #415a75;
+    --payment-outline: #b8e4f5;
+    --payment-rim: #f0fcff;
+    --payment-paper: #dbf4ff;
+    --payment-glow: #19a6e04d;
+    --payment-wave-one: #0ebee4;
+    --payment-wave-two: #71edd9;
+    --payment-bar-start: #346dec;
+    --payment-bar-end: #00dcb7;
+    --payment-badge-text: white;
+    --payment-badge-bg: linear-gradient(135deg, #007eac, #007c78);
+    --payment-active-ink: white;
+    --payment-active-bg: linear-gradient(155deg, #00c4ed, #086cf0);
+    background: radial-gradient(ellipse at 48% 48%, #fff 0%, #f0faff 41%, transparent 72%),
+        linear-gradient(140deg, #b6e4fc 4%, #8edbf7 44%, #edf8ff 96%);
+}
+:root:is([data-theme="light"], [data-theme="windy-breeze"]) .student-payment-loading::backdrop {
+    background: radial-gradient(ellipse at 62% 36%, #26b6e4, #144963 82%); opacity: .82;
+}
+:root:is([data-theme="light"], [data-theme="windy-breeze"]) .payment-dialog-reference-art { display: block; }
+:root:is([data-theme="light"], [data-theme="windy-breeze"]) .student-payment-loading-art { display: none; }
+
+.student-payment-loading[open][data-state="loading"] .payment-dialog-illustration { animation: student-payment-float 5s ease-in-out 1 both; }
 .student-payment-loading[open][data-state="loading"] .student-payment-loading-track span { animation: student-payment-progress 5s ease-in-out 1 both; }
-.student-payment-loading[open][data-state="loading"] .payment-step-icon { animation: student-payment-step 5s ease-in-out 1 both; }
+.student-payment-loading[open][data-state="loading"] .payment-dialog-steps li:nth-child(2) .payment-step-icon { animation: student-payment-step 5s ease-in-out 1 both; }
 .student-payment-loading[open]:is([data-state="success"], [data-state="coverage"]) .payment-dialog-outcome { animation: student-payment-reveal .22s ease-out; }
-@keyframes student-payment-progress { from { transform: translateX(-105%); } to { transform: translateX(138%); } }
+@keyframes student-payment-progress { from { transform: translateX(-102%); } to { transform: translateX(81%); } }
 @keyframes student-payment-float { 50% { transform: translateY(-5px); } }
-@keyframes student-payment-step { 50% { box-shadow: 0 0 0 4px var(--payment-glow); } }
+@keyframes student-payment-step { 50% { box-shadow: 0 0 0 7px var(--payment-glow); } }
 @keyframes student-payment-reveal { from { opacity: 0; transform: scale(.88); } }
-@media (max-width: 380px) {
+@media (max-width: 540px) {
+    .payment-dialog-content { padding-inline: 15px; }
+    .payment-dialog-illustration { width: min(78%, 280px); }
     .payment-dialog-steps { gap: .35rem; }
     .payment-dialog-steps li:not(:last-child)::after { display: none; }
-    .student-payment-loading-art { width: min(100%, 220px); }
 }
 @media (prefers-reduced-motion: reduce) {
-    .student-payment-loading[open] :is(.student-payment-loading-art, .student-payment-loading-track span, .payment-step-icon, .payment-dialog-outcome) { animation: none; }
+    .student-payment-loading[open] :is(.payment-dialog-illustration, .student-payment-loading-track span, .payment-step-icon, .payment-dialog-outcome) { animation: none; }
 }
 
 .student-payment-invoice {

@@ -16,6 +16,10 @@
 <article class="teacher-stat"><span class="teacher-stat-icon"><i class="bi bi-{{ $icon }}" aria-hidden="true"></i></span><div><h2>{{ __($label) }}</h2><strong>{{ $value }}</strong></div></article>
 @endforeach
 </div>
+<section id="teacher-attendance" class="mt-4 mb-4" aria-label="Teacher attendance overview">
+    @include('school.attendance._teacher-overview', $attendance)
+</section>
+
 <section id="teacher-attendance-records" class="panel directory-panel">
 <div class="panel-header"><h2>{{ __('Teacher List') }} <span class="badge teacher-count">{{ $rows->count() }}</span></h2><a class="teacher-directory-caption" href="#teacher-attendance"><i class="bi bi-calendar3 me-1" aria-hidden="true"></i>{{ \Carbon\Carbon::parse($attendance['date'])->format('d M Y') }}</a></div>
 <form method="get" class="teacher-simple-filters p-4 pt-2">
@@ -87,9 +91,6 @@
 @empty<tr><td colspan="6">No teachers match these filters.</td></tr>@endforelse
 </tbody></table></div><div class="p-3 small text-secondary">{{ $rows->count() }} teachers shown</div></section>
 
-<section id="teacher-attendance" class="mt-4 mb-4" aria-label="Teacher attendance overview">
-    @include('school.attendance._teacher-overview', $attendance)
-</section>
 
 <section class="panel mt-4 teacher-quick-actions"><div class="panel-header"><h2>Quick Actions</h2></div><div class="d-flex flex-wrap gap-2 p-4 pt-2">
 <a class="btn btn-primary" href="{{ route('teacher-management.create') }}">Add Teacher</a>
