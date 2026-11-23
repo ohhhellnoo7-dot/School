@@ -41,7 +41,7 @@
                 <input type="hidden" name="enabled" value="{{ $holidayClosuresEnabled ? 0 : 1 }}">
                 <button type="submit" class="btn {{ $holidayClosuresEnabled ? 'btn-primary' : 'btn-outline-primary' }} rounded-pill" aria-pressed="{{ $holidayClosuresEnabled ? 'true' : 'false' }}" aria-label="{{ __('Khmer holiday closures') }}">
                     <i class="bi bi-calendar-event me-1" aria-hidden="true"></i>
-                    {{ __('Khmer holidays') }} ? {{ $holidayClosuresEnabled ? __('On') : __('Off') }}
+                    {{ __('Khmer holidays') }}: {{ $holidayClosuresEnabled ? __('On') : __('Off') }}
                 </button>
             </form>
         @endif
@@ -153,7 +153,7 @@
                 @foreach($programDetails as $previewProgram => $previewDetails)
                     @if($previewProgram !== $activeOverviewProgram)
                     <div data-room-program-overview="{{ $previewProgram }}" @if($previewProgram !== $selectedProgram) hidden @endif>
-                        <span class="lesson-state">{{ $holiday ? __('School holiday ? No class') : __('Not active at the selected time') }}</span>
+                        <span class="lesson-state">{{ $holiday ? __('School holiday. No class') : __('Not active at the selected time') }}</span>
                         <div class="booking-context"><small>Program classes</small><strong>{{ collect($previewDetails['classes'])->join(', ') ?: $previewProgram }}</strong><span class="program-badge program-{{ strtolower($previewProgram) }}">{{ $previewProgram }}</span></div>
                         <dl class="room-facts"><div><dt>@include('school.classrooms._session-picker', ['pickerProgram' => $previewProgram, 'pickerDetails' => $previewDetails])</dt><dd>{{ collect($previewDetails['session_times'])->join(', ') ?: collect($previewDetails['sessions'])->join(', ') }}</dd></div></dl>
                         @php($previewLesson = $previewDetails['display_lesson'])

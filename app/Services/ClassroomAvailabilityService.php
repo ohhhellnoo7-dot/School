@@ -165,7 +165,7 @@ class ClassroomAvailabilityService
                 };
 
                 $activity = app(RoomLessonService::class)->activity($classroom, $lessons, $minute, $current);
-                if ($holiday) $activity['activity'] = __('No class ? School holiday');
+                if ($holiday) $activity['activity'] = __('School holiday. No class');
                 if ($activity['currentLesson'] && $status !== self::STATUS_OUT_OF_SERVICE) $status = self::STATUS_BUSY;
                 if ($activity['nextLesson'] && $status === self::STATUS_AVAILABLE) $status = self::STATUS_UPCOMING;
                 $roomLessons = app(RoomLessonService::class)->lessons($classroom, $lessons);
