@@ -30,16 +30,17 @@ class TeacherAttendanceController extends Controller
         $lessons = \App\Models\Schedule::with('schoolClass')->whereIn('teacher_id', $teachers->modelKeys())
             ->where(fn ($q) => $q->whereNull('entry_type')->orWhere('entry_type', \App\Models\Schedule::TYPE_ACADEMIC))->get()->groupBy('teacher_id');
         $rows = collect();
+        $sessionOrder = array_flip(AttendanceSession::OPTIONS);
         foreach ($teachers as $teacher) {
             $assigned = $teacher->classes->pluck('session')
                 ->merge($teacher->subjects->map(fn ($subject) => $subject->schoolClass?->session))
                 ->merge(($lessons[$teacher->id] ?? collect())->map(fn ($lesson) => $lesson->schoolClass?->session))
-                ->filter()->unique()->values();
-            $sessions = $assigned->merge($records->where('teacher_id', $teacher->id)->pluck('session'))->unique();
-            // A single session already represents the whole day; avoid a duplicate row.
-            if (empty($filters['session']) && $sessions->count() !== 1) {
+                ->filter()->unique()->sortBy(fn ($session) => $sessionOrder[$session] ?? count($sessionOrder))->values();
+            $sessions = $assigned->merge($records->where('teacher_id', $teacher->id)->pluck('session'))
+                ->unique()->sortBy(fn ($session) => $sessionOrder[$session] ?? count($sessionOrder));
+            // Keep a daily row for teachers without any session rows.
+            if (empty($filters['session']) && $sessions->isEmpty()) {
                 $rows->push(['teacher' => $teacher, 'session' => 'Daily summary', 'assigned' => $assigned,
-                    'daily_scans' => $records->where('teacher_id', $teacher->id)->groupBy(fn ($record) => $record->date->day),
                     'marks' => ($dailyRecords[$teacher->id] ?? collect())->keyBy(fn ($record) => $record->date->day)]);
             }
             foreach ($sessions as $session) {
@@ -62,10 +63,11 @@ class TeacherAttendanceController extends Controller
         $summaryDate = $selectedDate ?? today();
         $summaryMarks = collect();
         if ($summaryDate->format('Y-m') === $month->format('Y-m')) {
-            foreach ($rows->groupBy(fn ($row) => $row['teacher']->id) as $teacherRows) {
-                $dailyRow = $teacherRows->firstWhere('session', 'Daily summary');
-                $dailyMark = $dailyRow ? $dailyRow['marks']->get($summaryDate->day) : null;
-                if ($dailyMark) {
+            foreach ($rows->groupBy(fn ($row) => $row['teacher']->id) as $teacherId => $teacherRows) {
+                $dailyMark = $teacherRows->count() > 1
+                    ? $dailyRecords->get($teacherId, collect())->first(fn ($record) => $record->date->isSameDay($summaryDate))
+                    : data_get($teacherRows->firstWhere('session', 'Daily summary'), 'marks')?->get($summaryDate->day);
+                if ($dailyMark && (empty($filters['status']) || $dailyMark->status === $filters['status'])) {
                     $summaryMarks->push($dailyMark);
                     continue;
                 }
@@ -87,7 +89,23 @@ class TeacherAttendanceController extends Controller
                 ->sortKeys();
         }
 
-        return view('school.attendance.teacher-monthly', compact('groups', 'month', 'filters', 'summaryMarks', 'summaryDate', 'holidayDays'));
+        $printing = $request->boolean('print');
+        $rosterPages = $groups->map(function ($programRows, $program) use ($request, $printing) {
+            $slug = \Illuminate\Support\Str::slug($program);
+            $pageName = 'page_'.$slug;
+            $teachers = $programRows->groupBy(fn ($row) => $row['teacher']->id);
+            $perPage = $printing ? $teachers->count() : 8;
+            $page = min(max(1, $request->integer($pageName, 1)), (int) ceil($teachers->count() / $perPage));
+
+            return new \Illuminate\Pagination\LengthAwarePaginator(
+                $teachers->forPage($page, $perPage)->flatten(1),
+                $teachers->count(), $perPage, $page,
+                ['path' => $request->url(), 'query' => $request->query(), 'pageName' => $pageName, 'fragment' => 'roster-'.$slug],
+            );
+        });
+
+        return view('school.attendance.teacher-monthly', compact('rosterPages', 'month', 'filters', 'summaryMarks', 'summaryDate', 'holidayDays', 'printing'))
+            ->with('groups', $rosterPages->map(fn ($page) => $page->getCollection()));
     }
 
     public function bulk(Request $request, string $action) {

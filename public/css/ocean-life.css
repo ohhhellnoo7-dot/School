@@ -88,7 +88,6 @@
     & :is(.teacher-monthly-grid,.student-monthly-grid) thead th.is-weekend { background:linear-gradient(#1765A3,#16467F); color:#FFDEB4; }
     & .teacher-monthly-grid tbody tr { --teacher-row-bg:#F0FCFF; --teacher-divider:#7DD0E3; }
     & .teacher-monthly-grid tbody tr.teacher-attendance-band-1 { --teacher-row-bg:#E1F6FC; --teacher-divider:#7DD0E3; }
-    & .teacher-monthly-grid tbody tr:hover { --teacher-row-bg:#CFF4FB; }
     & :is(.page-heading:not(.school-hero),.page-footer,.dashboard-sync) { color:#D2F8FF; }
     & .page-footer { border-top:1px solid #76D9E580; }
     & .dashboard-stat-grid + p { color:#C7F4FF!important; }
@@ -162,7 +161,7 @@
     & :is(.table,.teacher-monthly-grid,.student-monthly-grid) { background:transparent; color:#F1FCFF; }
     & :is(.table,.teacher-monthly-grid,.student-monthly-grid) tbody tr > :is(th,td) { background-color:transparent; color:#F1FCFF; }
     & :is(.table,.teacher-monthly-grid,.student-monthly-grid) tbody tr:nth-child(even) > :is(th,td) { background-color:#AAEEFF0A; }
-    & :is(.table,.teacher-monthly-grid,.student-monthly-grid) tbody tr:hover > :is(th,td) { background-color:#B2F5FF18; }
+    & :is(.table,.student-monthly-grid) tbody tr:hover > :is(th,td) { background-color:#B2F5FF18; }
     & :is(.teacher-monthly-grid,.student-monthly-grid,.table) thead th { background:#03496EC9; color:#F2FFFF; border-color:#9FE3F54D; }
     & .teacher-monthly-grid tbody tr { --teacher-row-bg:transparent; --teacher-divider:#A5EDFF59; }
     & .teacher-monthly-grid tbody tr.teacher-attendance-band-1 { --teacher-row-bg:#A8F0FF0A; --teacher-divider:#A5EDFF59; }
@@ -170,8 +169,8 @@
     & :is(.teacher-monthly-grid,.student-monthly-grid) tbody tr > th:nth-child(2) { background:#034565; box-shadow:2px 0 0 #71BDD1; }
     & :is(.teacher-monthly-grid,.student-monthly-grid) tbody tr:nth-child(even) > th:nth-child(2) { background:#075174; }
     & :is(.teacher-monthly-grid,.student-monthly-grid) thead tr > th:nth-child(2) { background:#03496E; box-shadow:2px 0 0 #71BDD1; }
-    & .attendance-sticky-dates .teacher-monthly-grid thead th { background:#03496E; }
-    & .attendance-sticky-dates .teacher-monthly-grid thead th.is-weekend { background:#8B304D; }
+    & .teacher-monthly-grid thead th:not(.is-school-holiday) { background:#03496E; }
+    & .teacher-monthly-grid thead th.is-weekend:not(.is-school-holiday) { background:#8B304D; }
     & :is(.theme-options,.language-options,.hover-select-menu,.dropdown-menu,.attendance-action-menu,.program-options,.building-options,.popover,.modal-content) { background:#073F60F5; color:#F1FCFF; border-color:#95E8F66B; }
     & :is(.theme-option,.hover-select-option,.dropdown-item) { color:#E7F8FF; }
     & :is(.theme-option,.hover-select-option,.dropdown-item):hover { background:#9CEAFF26; }

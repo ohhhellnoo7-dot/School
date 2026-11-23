@@ -106,7 +106,6 @@
     & :is(.teacher-monthly-grid,.student-monthly-grid) thead th.is-weekend { background:linear-gradient(#B41425,#860D1A); }
     & .teacher-monthly-grid tbody tr { --teacher-row-bg:#FFFCF4; --teacher-divider:#BCCCAA; }
     & .teacher-monthly-grid tbody tr.teacher-attendance-band-1 { --teacher-row-bg:#F0F7EA; --teacher-divider:#BCCCAA; }
-    & .teacher-monthly-grid tbody tr:hover { --teacher-row-bg:#E6F1DD; }
     & .page-footer { border-top:1px solid #B5CAB2; color:#60785C; }
 }
 @media print { .christmas-road { display:none; } }

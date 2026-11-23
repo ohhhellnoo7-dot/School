@@ -43,6 +43,40 @@ class TeacherScanAttendanceTest extends TestCase
             });
     }
 
+    public function test_monthly_two_session_teacher_has_two_rows(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = User::factory()->create(['role' => 'teacher', 'program' => 'Khmer']);
+        foreach (['Morning', 'Afternoon'] as $session) {
+            SchoolClass::create(['name' => $session.' class', 'section' => 'A', 'session' => $session, 'teacher_id' => $teacher->id]);
+        }
+
+        $this->actingAs($admin)->get(route('teacher-attendance.monthly', ['month' => '2026-11']))
+            ->assertOk()->assertDontSee('Daily summary')
+            ->assertViewHas('groups', fn ($groups) => $groups['Khmer']->pluck('session')->all() === ['Morning', 'Afternoon']);
+    }
+
+    public function test_large_monthly_rosters_page_by_teacher_and_print_in_full(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        foreach (range(1, 9) as $number) {
+            $teacher = User::factory()->create(['role' => 'teacher', 'program' => 'Khmer', 'name' => 'Roster Teacher '.$number]);
+            foreach (['Morning', 'Afternoon'] as $session) {
+                SchoolClass::create(['name' => $session.' class', 'section' => 'A', 'session' => $session, 'teacher_id' => $teacher->id]);
+            }
+        }
+
+        $url = ['month' => '2026-11'];
+        $this->actingAs($admin)->get(route('teacher-attendance.monthly', $url))
+            ->assertOk()->assertSee('Teachers 1 to 8 of 9')->assertSee('Print full report')
+            ->assertViewHas('groups', fn ($groups) => $groups['Khmer']->count() === 16);
+        $this->get(route('teacher-attendance.monthly', $url + ['page_khmer' => 2]))
+            ->assertOk()->assertSee('Teachers 9 to 9 of 9')
+            ->assertViewHas('groups', fn ($groups) => $groups['Khmer']->pluck('session')->all() === ['Morning', 'Afternoon']);
+        $this->get(route('teacher-attendance.monthly', $url + ['print' => 1]))
+            ->assertOk()->assertViewHas('groups', fn ($groups) => $groups['Khmer']->count() === 18);
+    }
+
     public function test_monthly_grid_shows_program_and_three_separate_sessions(): void
     {
         $this->travelTo(now()->setDate(2026, 11, 11)->setTime(7, 10));

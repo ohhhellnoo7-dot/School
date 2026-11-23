@@ -55,7 +55,7 @@ class ClassroomManagementTest extends TestCase
 
         $monthly = route('teacher-attendance.monthly', ['month' => '2026-11']);
         $this->get($monthly)->assertOk()->assertSee(['Water Festival', '23, 24, 25 Nov 2026', 'No scans'])
-            ->assertSee('mark-school-holiday', false);
+            ->assertSee('mark-school-holiday', false)->assertDontSee('attendance-table-headers.js', false);
 
         $dashboard = route('dashboard.data', ['date' => '2026-11-23']);
         $this->getJson($dashboard)->assertOk()->assertJsonPath('summary.attendanceCount', 0)

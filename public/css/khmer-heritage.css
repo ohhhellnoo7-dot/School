@@ -46,7 +46,6 @@
     & .teacher-monthly-grid { border-color:#D3A449; }
     & .teacher-monthly-grid tbody tr { --teacher-row-bg:#FFFCF5; --teacher-divider:#D9B660; }
     & .teacher-monthly-grid tbody tr.teacher-attendance-band-1 { --teacher-row-bg:#FFF6E6; --teacher-divider:#D9B660; }
-    & .teacher-monthly-grid tbody tr:hover { --teacher-row-bg:#FFF0CC; }
     & .page-footer { border-top:1px solid #DCB86C; color:#84612C; }
 }
 .swatch-khmer-heritage { background:linear-gradient(135deg,#750C18 50%,#EDC465 50%); }

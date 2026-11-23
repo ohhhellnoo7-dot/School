@@ -35,20 +35,36 @@ $summaryCount = $summaryMarks->where('status', $summaryStatus)->count();
         </ul>
     </section>
 @endif
-@forelse($groups as $program => $rows)
-<section class="panel mb-4 teacher-attendance-panel"><div class="panel-header"><h2><i class="bi bi-people-fill" aria-hidden="true"></i> {{ $program }} <small class="text-secondary">&middot; {{ $rows->pluck('teacher.id')->unique()->count() }} teachers</small></h2><button type="button" class="btn btn-outline-primary" onclick="window.print()"><i class="bi bi-printer" aria-hidden="true"></i> Print</button></div>
-<div class="table-responsive"><table class="teacher-monthly-grid" data-attendance-grid><thead><tr><th>No.</th><th>Teacher's name</th><th>Sex</th><th>Assigned sessions</th><th>Session</th>@for($day = 1; $day <= $month->daysInMonth; $day++)<th scope="col" @class(['is-weekend' => $month->copy()->day($day)->isWeekend(), 'is-school-holiday' => $holidayDays->has($day)]) title="{{ $holidayDays->get($day) }}">{{ $day }}@if($holidayDays->has($day))<small class="d-block">{{ __('Holiday') }}<span class="visually-hidden"> {{ $holidayDays->get($day) }}</span></small>@endif</th>@endfor</tr></thead><tbody>
+@forelse($rosterPages as $program => $roster)
+<section class="panel mb-4 teacher-attendance-panel" id="{{ $roster->fragment() }}">
+    <div class="panel-header">
+        <h2><i class="bi bi-people-fill" aria-hidden="true"></i> {{ $program }} <small class="text-secondary">&middot; {{ $roster->total() }} teachers</small></h2>
+        @if($printing || !$rosterPages->contains(fn ($page) => $page->hasPages()))
+            <button type="button" class="btn btn-outline-primary" onclick="window.print()"><i class="bi bi-printer" aria-hidden="true"></i> Print</button>
+        @else
+            <a class="btn btn-outline-primary" href="{{ request()->fullUrlWithQuery(['print' => 1]) }}" target="_blank"><i class="bi bi-printer" aria-hidden="true"></i> Print full report</a>
+        @endif
+    </div>
+<div class="table-responsive" tabindex="0" role="region" aria-label="{{ __('Monthly attendance for :program', ['program' => $program]) }}"><table class="teacher-monthly-grid" style="--attendance-days: {{ $month->daysInMonth }}">
+<colgroup>
+    <col class="attendance-number"><col class="attendance-name"><col class="attendance-sex">
+    <col class="attendance-assigned"><col class="attendance-session">
+    <col class="attendance-date" span="{{ $month->daysInMonth }}">
+</colgroup>
+<thead><tr><th>No.</th><th>Teacher's name</th><th>Sex</th><th>Assigned sessions</th><th>Session</th>@for($day = 1; $day <= $month->daysInMonth; $day++)<th scope="col" @class(['is-weekend' => $month->copy()->day($day)->isWeekend(), 'is-school-holiday' => $holidayDays->has($day)]) title="{{ $holidayDays->get($day) }}">{{ $day }}@if($holidayDays->has($day))<small class="d-block">{{ __('Holiday') }}<span class="visually-hidden"> {{ $holidayDays->get($day) }}</span></small>@endif</th>@endfor</tr></thead><tbody>
 @php
-$teacherIds = $rows->pluck('teacher.id')->unique()->values();
+$teacherIds = $roster->pluck('teacher.id')->unique()->values();
 $previousTeacherId = null;
 @endphp
-@foreach($rows as $row)
+@foreach($roster as $row)
 @php
-$teacherBand = $teacherIds->search($row['teacher']->id) % 2;
+$teacherIndex = $teacherIds->search($row['teacher']->id);
+$teacherBand = $teacherIndex % 2;
+$teacherNumber = ($roster->currentPage() - 1) * $roster->perPage() + $teacherIndex + 1;
 $teacherGroupStart = $previousTeacherId !== $row['teacher']->id;
 $previousTeacherId = $row['teacher']->id;
 @endphp
-<tr class="teacher-attendance-band-{{ $teacherBand }}{{ $teacherGroupStart ? ' teacher-group-start' : '' }}"><td>{{ $loop->iteration }}</td><th scope="row"><div class="teacher-grid-person">@include('school.partials.avatar', ['person' => $row['teacher'], 'avatarClass' => 'teacher-grid-avatar', 'teacherIcon' => true, 'size' => 38])<span>{{ $row['teacher']->name }}</span></div></th><td><span class="teacher-gender teacher-gender-{{ strtolower($row['teacher']->gender ?? 'unspecified') }}" title="{{ ucfirst($row['teacher']->gender ?: 'Not specified') }}"><i class="bi bi-{{ match (strtolower($row['teacher']->gender ?? '')) { 'female' => 'gender-female', 'male' => 'gender-male', default => 'person' } }}" aria-hidden="true"></i><span class="visually-hidden">{{ ucfirst($row['teacher']->gender ?: 'Not specified') }}</span></span></td><td>{{ $row['assigned']->count() }}<small class="d-block">{{ $row['assigned']->implode(', ') ?: 'No sessions assigned' }}</small></td><td>{{ $row['session'] ?: 'Unassigned' }}</td>
+<tr class="teacher-attendance-band-{{ $teacherBand }}{{ $teacherGroupStart ? ' teacher-group-start' : '' }}"><td>{{ $teacherNumber }}</td><th scope="row"><div class="teacher-grid-person">@include('school.partials.avatar', ['person' => $row['teacher'], 'avatarClass' => 'teacher-grid-avatar', 'teacherIcon' => true, 'size' => 38])<span>{{ $row['teacher']->name }}</span></div></th><td><span class="teacher-gender teacher-gender-{{ strtolower($row['teacher']->gender ?? 'unspecified') }}" title="{{ ucfirst($row['teacher']->gender ?: 'Not specified') }}"><i class="bi bi-{{ match (strtolower($row['teacher']->gender ?? '')) { 'female' => 'gender-female', 'male' => 'gender-male', default => 'person' } }}" aria-hidden="true"></i><span class="visually-hidden">{{ ucfirst($row['teacher']->gender ?: 'Not specified') }}</span></span></td><td>{{ $row['assigned']->count() }}<small class="d-block">{{ $row['assigned']->implode(', ') ?: 'No sessions assigned' }}</small></td><td>{{ $row['session'] ?: 'Unassigned' }}</td>
 @for($day = 1; $day <= $month->daysInMonth; $day++)
 @if($holiday = $holidayDays->get($day))
     <td class="attendance-mark mark-school-holiday" title="{{ $holiday }}" aria-label="{{ $holiday }}. {{ __('No attendance required') }}">
@@ -59,17 +75,19 @@ $previousTeacherId = $row['teacher']->id;
 @php
 $record = $row['marks']->get($day);
 $status = $record?->status;
-$scan = ($row['scan_marks'] ?? collect())->get($day);
+$scan = ($row['scan_marks'] ?? null)?->get($day);
+$dateLabel = $month->copy()->day($day)->format('d M Y').' · '.($row['session'] ?: 'Unassigned');
+@endphp
+@if(!$status && !$scan?->scanned_at)
+    <td class="attendance-mark mark-empty" title="{{ $dateLabel }} {{ '·' }} {{ __('Not recorded') }}" aria-label="{{ $dateLabel }} {{ '·' }} {{ __('Not recorded') }}">&mdash;</td>
+    @continue
+@endif
+@php
 $arrival = $scan?->scanned_at;
-$departure = $scan?->checked_out_at;
-$dayScans = isset($row['daily_scans']) ? $row['daily_scans']->get($day, collect()) : collect([$scan])->filter();
-$arrivals = $dayScans->filter(fn ($item) => $item->scanned_at);
-$arrival = $arrivals->min('scanned_at');
-$missingCheckout = $arrivals->contains(fn ($item) => ! $item->checked_out_at && now()->gt($item->scheduled_end ?? $month->copy()->day($day)->endOfDay()));
-$allCheckedOut = $arrivals->isNotEmpty() && $arrivals->every(fn ($item) => (bool) $item->checked_out_at);
-$departure = $allCheckedOut ? $arrivals->max('checked_out_at') : null;
-$manualCompletion = $arrivals->isEmpty() && in_array($status, ['present', 'late'], true);
-$outComplete = $allCheckedOut || $manualCompletion;
+$departure = $arrival ? $scan->checked_out_at : null;
+$missingCheckout = $arrival && !$departure && now()->gt($scan->scheduled_end ?? $month->copy()->day($day)->endOfDay());
+$manualCompletion = !$arrival && in_array($status, ['present', 'late'], true);
+$outComplete = (bool) $departure || $manualCompletion;
 $outState = $missingCheckout ? 'missing' : ($outComplete ? 'complete' : 'pending');
 $outLabel = ['missing' => 'Missing scan-out', 'complete' => 'Scanned out', 'pending' => 'No scan-out yet'][$outState];
 if ($manualCompletion) $outLabel = 'Administrator-marked attendance: departure treated as complete; no scan time recorded';
@@ -79,7 +97,7 @@ $timingDescription = $arrival ? ' | In '.$arrival->format('H:i').($lateMinutes !
 $symbol = ['present' => '✓', 'late' => 'L', 'absent' => 'X', 'excused' => 'E'][$status] ?? '—';
 $checkoutDescription = $departure ? ' | Out '.$departure->format('H:i') : ($arrival ? ' | Out: Not scanned' : '');
 $adminMark = $record instanceof \App\Models\TeacherAttendance && $record->recorded_by !== $row['teacher']->id;
-$description = $month->copy()->day($day)->format('d M Y').' · '.($row['session'] ?: 'Unassigned').' · '.($status ?: 'Not recorded').($record?->scanned_at ? ' · Scanned '.$record->scanned_at->format('H:i') : '');
+$description = $dateLabel.' · '.($status ?: 'Not recorded').($record?->scanned_at ? ' · Scanned '.$record->scanned_at->format('H:i') : '');
 @endphp
 <td class="attendance-mark mark-{{ $status ?: 'empty' }}" title="{{ $description }}{{ $timingDescription }}{{ $checkoutDescription }}{{ $adminMark ? ' · Administrator daily mark' : '' }}" aria-label="{{ $description }}{{ $timingDescription }}{{ $checkoutDescription }}{{ $adminMark ? ' · Administrator daily mark' : '' }}">
 <div class="attendance-scan-half attendance-scan-in">
@@ -102,9 +120,15 @@ $description = $month->copy()->day($day)->format('d M Y').' · '.($row['session'
 </td>
 @endfor</tr>
 @endforeach
-</tbody></table></div></section>
+</tbody></table></div>
+@if($roster->hasPages())
+    <div class="p-3 d-flex flex-wrap align-items-center justify-content-between gap-2 d-print-none">
+        <span class="small text-secondary">{{ __('Teachers :first to :last of :total', ['first' => ($roster->currentPage() - 1) * $roster->perPage() + 1, 'last' => min($roster->currentPage() * $roster->perPage(), $roster->total()), 'total' => $roster->total()]) }}</span>
+        {{ $roster->links() }}
+    </div>
+@endif
+</section>
 @empty<section class="panel p-4">No teachers match these filters.</section>@endforelse
 </div>
-<script src="{{ asset('js/attendance-table-headers.js') }}?v={{ filemtime(public_path('js/attendance-table-headers.js')) }}" defer></script>
 <script src="{{ asset('js/teacher-monthly-filters.js') }}?v={{ filemtime(public_path('js/teacher-monthly-filters.js')) }}" defer></script>
 @endsection

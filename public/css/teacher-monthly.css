@@ -92,7 +92,6 @@
 .teacher-monthly-grid { overflow:visible; }
 .teacher-monthly-grid tbody tr { --teacher-row-bg:var(--surface); }
 .teacher-monthly-grid tbody tr.teacher-attendance-band-1 { --teacher-row-bg:color-mix(in srgb,var(--primary) 9%,var(--surface)); }
-.teacher-monthly-grid tbody tr:hover { --teacher-row-bg:color-mix(in srgb,var(--primary) 17%,var(--surface)); }
 .teacher-monthly-grid tbody tr > :is(th,td),
 .teacher-monthly-grid tbody tr:nth-child(even) > :is(th,td):not(.attendance-mark) { background:var(--teacher-row-bg); }
 .teacher-monthly-grid tbody tr > th:nth-child(2),.teacher-monthly-grid thead th:nth-child(2) { position:sticky; left:0; z-index:2; min-width:215px; width:215px; box-shadow:1px 0 0 var(--border-color); }
@@ -101,7 +100,7 @@
 
 /* Keep dates visible while browsing a long attendance roster. */
 .teacher-attendance-panel .table-responsive {
-    max-height:none;
+    max-height:70vh;
     overflow:auto;
     isolation:isolate;
 }
@@ -123,25 +122,12 @@
     .teacher-monthly-grid thead { transform:none!important; }
 }
 
-/* Native page-sticky dates: no JavaScript work during vertical scrolling. */
-/* Avoid invalidating an entire wide row as it moves under the pointer. */
-.teacher-monthly-grid.attendance-is-scrolling { pointer-events:none; }
-.teacher-attendance-panel { overflow:visible; }
-.teacher-monthly-grid.attendance-header-copied > thead { visibility:hidden; }
-.attendance-sticky-dates { position:sticky; z-index:6; overflow:hidden; pointer-events:none; }
-.attendance-sticky-dates .teacher-monthly-grid { table-layout:fixed; margin:0; border-radius:0; }
-.attendance-sticky-dates .teacher-monthly-grid thead { position:static; }
-.attendance-sticky-dates .teacher-monthly-grid th { box-sizing:border-box; }
-@media print {
-    .attendance-sticky-dates { display:none; }
-    .teacher-monthly-grid.attendance-header-copied > thead { visibility:visible; }
-}
-
-/* Wide day columns must scroll inside the roster, never widen the page. */
+/* Keep both scroll axes in one viewport so the sticky dates share the roster's columns. */
 .teacher-attendance-page,
 .teacher-attendance-page > .panel { min-width:0; max-width:100%; box-sizing:border-box; }
-.teacher-attendance-panel > .table-responsive,
-.attendance-sticky-dates { width:100%; max-width:100%; min-width:0; contain:inline-size; box-sizing:border-box; }
+.teacher-attendance-panel > .table-responsive {
+    width:100%; max-width:100%; min-width:0; box-sizing:border-box;
+}
 @media print { body:has(.teacher-attendance-page) { overflow:visible; } .teacher-attendance-panel > .table-responsive { contain:none; } }
 
 /* Isolate the wide roster's sticky-cell overflow from the document scroll area. */
@@ -159,16 +145,35 @@
 }
 .teacher-monthly-grid tbody tr > td.attendance-mark { background:var(--teacher-row-bg); }
 .teacher-monthly-grid tbody tr.teacher-group-start:not(:first-child) > :is(th,td) {
-    border-top:3px solid var(--teacher-divider);
+    background-image:linear-gradient(var(--teacher-divider),var(--teacher-divider));
+    background-size:100% 3px;
+    background-repeat:no-repeat;
 }
-.teacher-monthly-grid tbody tr:hover { --teacher-row-bg:color-mix(in srgb,var(--primary) 12%,var(--surface)); }
 .teacher-monthly-grid .attendance-scan-out { border-top-color:color-mix(in srgb,var(--primary) 14%,var(--border-color)); }
-.teacher-monthly-grid tbody tr > th:nth-child(2) { border-right-color:var(--teacher-divider); }
+.teacher-monthly-grid tbody tr > th:nth-child(2) { top:auto; bottom:auto; border-right-color:var(--teacher-divider); }
 
 .teacher-monthly-grid thead th.is-school-holiday,
 .teacher-monthly-grid tbody tr > td.mark-school-holiday {
-    background: color-mix(in srgb, var(--warning, #ba904d) 18%, var(--surface, #fff));
+    background-color: color-mix(in srgb, var(--warning, #ba904d) 18%, var(--surface, #fff));
     color: var(--text-primary, #202c36);
     font-weight: 700;
 }
 .teacher-monthly-grid thead th.is-school-holiday small { margin: 0; }
+
+@media screen {
+    .teacher-attendance-panel .table-responsive { scroll-behavior:auto; }
+    .teacher-monthly-grid {
+        table-layout:fixed;
+        width:max(100%, calc(593px + var(--attendance-days) * 76px));
+    }
+    .teacher-monthly-grid col.attendance-number,
+    .teacher-monthly-grid col.attendance-sex { width:58px; }
+    .teacher-monthly-grid col.attendance-name { width:215px; }
+    .teacher-monthly-grid col.attendance-assigned { width:150px; }
+    .teacher-monthly-grid col.attendance-session { width:110px; }
+    .teacher-monthly-grid col.attendance-date { width:76px; }
+}
+
+@media screen {
+    .teacher-attendance-panel { scroll-margin-top: 6rem; }
+}
