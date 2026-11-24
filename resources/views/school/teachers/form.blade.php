@@ -38,7 +38,15 @@
 <div class="row g-3">
 <script type="application/json" data-teacher-program-options>@json($programOptions)</script>
 @foreach(['name' => 'Teacher Name', 'phone' => 'Phone', 'email' => 'Email'] as $field => $label)<div class="col-md-6"><label for="{{ $field }}" class="form-label">{{ $label }}</label><input id="{{ $field }}" name="{{ $field }}" type="{{ $field === 'email' ? 'email' : 'text' }}" class="form-control" value="{{ old($field, $teacher->$field) }}" @required($field !== 'phone')></div>@endforeach
-<div class="col-md-6"><label for="gender" class="form-label">{{ __('Gender') }}</label><select id="gender" name="gender" class="form-select" required>@foreach(['male', 'female', 'other'] as $gender)<option @selected(old('gender', $teacher->gender) === $gender)>{{ $gender }}</option>@endforeach</select></div>
+<div class="col-md-6">
+    <label for="gender" class="form-label">{{ __('Gender') }}</label>
+    <select id="gender" name="gender" class="form-select" required>
+        <option value="">{{ __('Select gender') }}</option>
+        @foreach(['male', 'female', 'other'] as $gender)
+            <option value="{{ $gender }}" @selected(old('gender', $teacher->gender) === $gender)>{{ __(ucfirst($gender)) }}</option>
+        @endforeach
+    </select>
+</div>
 <div class="col-md-6"><label for="program" class="form-label">Academic Program</label><select id="program" name="program" class="form-select" required>@foreach(\App\Models\Program::names() as $program)<option @selected(old('program', $teacher->program) === $program)>{{ $program }}</option>@endforeach</select></div>
 <div class="col-md-6"><label class="form-label" for="weekly_hours">Maximum Weekly Teaching Hours</label><input id="weekly_hours" name="weekly_hours" type="number" step="0.25" min="1" max="40" class="form-control" value="{{ old('weekly_hours', $teacher->exists ? $service->limit($teacher) / 60 : $service->defaultLimit(old('program', $teacher->program ?: 'Khmer')) / 60) }}"><small class="text-secondary">Classroom teaching only. Preparation, marking, and other duties are additional. Clear to follow the program teaching limit.</small></div>
 <div class="col-md-6" data-teacher-subject-options><div class="row g-3">

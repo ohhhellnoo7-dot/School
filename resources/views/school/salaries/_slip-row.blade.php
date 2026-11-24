@@ -2,10 +2,11 @@
     $displaySalary = $payment ? $payment->only(['base_cents', 'raise_cents', 'deduction_cents', 'total_cents']) : $salary;
     $deductions = collect($payment ? $payment->deduction_details : ($salary['deduction_details'] ?? []));
     $money = fn ($cents) => $cents === null ? '—' : '$'.\App\Support\Money::decimal($cents).' USD';
-    $gender = match (strtolower($teacher->gender ?? '')) {
+    $gender = match (strtolower(trim($teacher->gender ?? ''))) {
         'male' => 'ប្រុស',
         'female' => 'ស្រី',
-        default => '—',
+        'other' => 'ផ្សេងទៀត',
+        default => 'មិនបានបញ្ជាក់',
     };
 @endphp
 <tr>

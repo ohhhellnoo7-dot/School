@@ -81,6 +81,17 @@ class ProfileTest extends TestCase
         }
     }
 
+    public function test_teacher_directory_uses_cartoon_portraits_for_teachers_without_photos(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        User::factory()->create(['role' => 'teacher', 'gender' => null]);
+        User::factory()->create(['role' => 'teacher', 'gender' => 'female']);
+
+        $this->actingAs($admin)->get('/school/teachers')->assertOk()
+            ->assertSee(asset('images/default-avatars/teacher-male.jpg'), false)
+            ->assertSee(asset('images/default-avatars/teacher-female.jpg'), false);
+    }
+
     public function test_enrollment_photo_is_served_without_public_storage_link_and_is_authorized(): void
     {
         Storage::fake('public');
