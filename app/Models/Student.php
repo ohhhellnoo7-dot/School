@@ -42,10 +42,15 @@ class Student extends Model
         return ['date_of_birth' => 'date', 'enrollment_date' => 'date'];
     }
 
-    public function getProfilePhotoUrlAttribute(): ?string
+    public function getProfilePhotoUrlAttribute(): string
     {
-        return $this->user?->profile_photo_url
-            ?? ($this->photo ? route('students.photo', $this) : null);
+        if ($this->user?->profile_photo_path) {
+            return $this->user->profile_photo_url;
+        }
+
+        return $this->photo
+            ? route('students.photo', $this)
+            : \App\Support\DefaultAvatar::url('student', $this->gender ?: $this->user?->gender);
     }
 
     public function getAgeAttribute(): int

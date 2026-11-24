@@ -17,7 +17,7 @@
             @endphp
             <section class="parent-fees-child" aria-label="{{ __('Fee balance for :name', ['name' => $child->name]) }}">
                 <div class="parent-fees-child-profile">
-                    @include('school.partials.avatar', ['person' => $child, 'photoUrl' => $child->photo ? route('students.photo', $child) : $child->profile_photo_url, 'size' => 88])
+                    @include('school.partials.avatar', ['person' => $child, 'size' => 88])
                     <div>
                         <h2>{{ $child->name }}</h2>
                         <div class="parent-fees-child-pills">

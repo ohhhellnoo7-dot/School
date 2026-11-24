@@ -62,6 +62,9 @@
                 <small id="photo-help">{{ __('JPG, PNG or WebP. Maximum 2 MB.') }}</small>
                 @error('photo')<div class="text-danger" id="photo-server-error">{{ $message }}</div>@enderror
                 <div id="photo-error" class="text-danger" role="alert"></div>
+                @if($user->profile_photo_path)
+                    <button type="submit" form="remove-profile-photo" class="btn btn-outline-secondary btn-sm mt-2">{{ __('Remove profile photo') }}</button>
+                @endif
             </div>
         </section>
 
@@ -92,6 +95,12 @@
         </section>
         @unless($studentSettings)</div>@endunless
     </form>
+    @if($user->profile_photo_path)
+        <form id="remove-profile-photo" action="{{ route('profile.photo.destroy') }}" method="post">
+            @csrf
+            @method('DELETE')
+        </form>
+    @endif
 </div>
 @endsection
 

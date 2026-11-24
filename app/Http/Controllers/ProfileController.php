@@ -49,6 +49,19 @@ class ProfileController extends Controller
         return redirect()->route('profile.edit')->with('success', 'Your profile has been updated.');
     }
 
+    public function removePhoto(Request $request)
+    {
+        $user = $request->user();
+        $path = $user->profile_photo_path;
+
+        if ($path && $user->newQuery()->whereKey($user->id)->where('profile_photo_path', $path)->update(['profile_photo_path' => null])) {
+            Storage::disk('local')->delete($path);
+            $user->refresh();
+        }
+
+        return redirect()->route('profile.edit')->with('success', __('Your profile photo has been removed.'));
+    }
+
     public function userPhoto(Request $request, \App\Models\User $user)
     {
         $viewer = $request->user();

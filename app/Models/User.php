@@ -57,24 +57,26 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
-    public function getProfilePhotoUrlAttribute(): ?string
+    public function getProfilePhotoUrlAttribute(): string
     {
-        return $this->profile_photo_path ? route('users.photo', $this) : null;
+        return $this->profile_photo_path
+            ? route('users.photo', $this)
+            : \App\Support\DefaultAvatar::url($this->role, $this->gender);
     }
 
-    public function getAccountPhotoUrlAttribute(): ?string
+    public function getAccountPhotoUrlAttribute(): string
     {
         if ($this->profile_photo_path) {
             return route('profile.photo');
         }
 
         if ($this->role !== 'student') {
-            return null;
+            return $this->profile_photo_url;
         }
 
-        $student = Student::where('user_id', $this->id)->whereNotNull('photo')->first();
+        $student = Student::where('user_id', $this->id)->first();
 
-        return $student?->photo ? route('students.photo', $student) : null;
+        return $student?->profile_photo_url ?? $this->profile_photo_url;
     }
 
     public function ensureParentProfileNumber(): void

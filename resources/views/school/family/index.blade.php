@@ -51,7 +51,7 @@
                 @endphp
                 <div class="family-child-group" id="family-child-{{ $child->id }}" data-family-child>
                 <article class="family-child">
-                    @include('school.partials.avatar', ['person' => $child, 'size' => 128, 'photoUrl' => $child->photo ? route('students.photo', $child) : $child->profile_photo_url])
+                    @include('school.partials.avatar', ['person' => $child, 'size' => 128])
                     <div class="family-child-identity">
                         <div class="family-child-name">
                             <h3>{{ $child->name }}</h3>

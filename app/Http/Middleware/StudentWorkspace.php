@@ -40,7 +40,7 @@ class StudentWorkspace
         }
 
         abort_unless(in_array($route, [
-            'dashboard', 'dashboard.data', 'profile.edit', 'profile.update', 'profile.photo', 'logout',
+            'dashboard', 'dashboard.data', 'profile.edit', 'profile.update', 'profile.photo', 'profile.photo.destroy', 'logout',
             'students.photo', 'users.photo', 'students.study-sessions.store',
             'timetables.index', 'timetables.data', 'classes.timetable',
             'fees.qr', 'fees.pay', 'fees.checkout', 'fees.status',

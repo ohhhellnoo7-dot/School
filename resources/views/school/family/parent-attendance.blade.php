@@ -37,7 +37,7 @@
 
         <div class="pa-overview">
             <section class="pa-child-card" aria-label="{{ __('Selected child') }}">
-                @include('school.partials.avatar', ['person' => $student, 'size' => 76, 'photoUrl' => $student->photo ? route('students.photo', $student) : $student->profile_photo_url])
+                @include('school.partials.avatar', ['person' => $student, 'size' => 76])
                 <div>
                     <h2>{{ $student->name }}</h2>
                     <span class="pa-student-number">{{ $student->student_number }}</span>

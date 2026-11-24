@@ -83,6 +83,7 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent', \App\Htt
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile/photo', [ProfileController::class, 'removePhoto'])->name('profile.photo.destroy');
     Route::get('/profile/photo', [ProfileController::class, 'photo'])->name('profile.photo');
     Route::get('/attendance/people/{kind}/{status}', [DashboardController::class, 'attendancePeople'])->where('kind', 'students|teachers')->where('status', 'present|absent|late|excused')->name('attendance.people');
     Route::get('/attendance/student-history', [DashboardController::class, 'attendanceHistory'])->middleware('role:teacher')->name('attendance.student-history');

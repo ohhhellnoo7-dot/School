@@ -17,15 +17,18 @@ class ProfileTest extends TestCase
         $this->get('/profile')->assertRedirect('/login');
         $this->put('/profile')->assertRedirect('/login');
         $this->get('/profile/photo')->assertRedirect('/login');
+        $this->delete('/profile/photo')->assertRedirect('/login');
     }
 
     public function test_user_can_update_own_details_and_replace_photo(): void
     {
         Storage::fake('local');
-        $user = User::factory()->create();
+        $user = User::factory()->create(['gender' => 'female']);
         $other = User::factory()->create();
         $this->actingAs($user)->get('/profile')->assertOk()
             ->assertSee(['Account Settings', 'Personal Information', 'Choose profile photo', 'Save changes'])
+            ->assertSee(asset('images/default-avatars/student-female.jpg'), false)
+            ->assertDontSee('Remove profile photo')
             ->assertSee('class="as-form"', false);
         $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=');
         $data = ['name' => 'Updated Name', 'email' => $user->email, 'phone' => '012345678', 'address' => 'New address', 'role' => 'administrator', 'id' => $other->id];
@@ -38,11 +41,18 @@ class ProfileTest extends TestCase
         $this->assertSame('Updated Name', $user->name);
         $this->assertNotSame('Updated Name', $other->fresh()->name);
         $this->get('/profile/photo')->assertOk()->assertHeader('content-type', 'image/png');
-        $this->get('/profile')->assertSee(route('profile.photo'), false);
+        $this->get('/profile')->assertSee(route('profile.photo'), false)->assertSee('Remove profile photo');
         $this->put('/profile', $data + ['photo' => UploadedFile::fake()->createWithContent('next.png', $png)])->assertSessionHasNoErrors();
         Storage::disk('local')->assertMissing($firstPhoto);
         $this->put('/profile', $data)->assertSessionHasNoErrors();
-        Storage::disk('local')->assertExists($user->fresh()->profile_photo_path);
+        $replacement = $user->fresh()->profile_photo_path;
+        Storage::disk('local')->assertExists($replacement);
+        $this->delete('/profile/photo')->assertRedirect('/profile');
+        $this->assertNull($user->fresh()->profile_photo_path);
+        Storage::disk('local')->assertMissing($replacement);
+        $this->get('/profile')->assertSee(asset('images/default-avatars/student-female.jpg'), false)
+            ->assertDontSee('Remove profile photo');
+        $this->get('/profile/photo')->assertNotFound();
         $this->actingAs($other)->get('/profile/photo')->assertNotFound();
     }
 

@@ -9,7 +9,7 @@
 <div class="family-page">
     <a class="family-back" href="{{ $home }}"><i class="bi bi-arrow-left" aria-hidden="true"></i> {{ __('My Children') }}</a>
     <header class="family-profile-header">
-        @include('school.partials.avatar', ['person' => $student, 'size' => 80, 'photoUrl' => $student->photo ? route('students.photo', $student) : $student->profile_photo_url])
+        @include('school.partials.avatar', ['person' => $student, 'size' => 80])
         <div><h1>{{ $student->name }}</h1><p>{{ $student->student_number }}</p><a class="family-pill family-action-link family-edit-link" href="{{ route('students.family.edit', $student) }}"><i class="bi bi-pencil" aria-hidden="true"></i> {{ __('Edit Profile') }}</a></div>
         @if($siblings->count() > 1)
             <details class="family-switch">
