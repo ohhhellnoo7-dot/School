@@ -35,6 +35,7 @@ class EmployeeSalaryDeductions
 
     public function apply(array $salary, EmployeeSalaryProfile $profile, Collection $daily, Collection $scans, Collection $overrides, Carbon $asOf): array
     {
+        $rates = app(EmployeeSalaryRates::class)->amounts();
         $days = collect($daily->all())->concat($scans)->concat($overrides)->map(fn ($r) => $r->date->toDateString())->unique()->sort();
         $details = [];
         $total = 0;
@@ -54,15 +55,15 @@ class EmployeeSalaryDeductions
             $absent = $profile->day_sessions === 2 ? count(array_filter([
                 $statuses['Morning'] ?? null, $statuses['Afternoon'] ?? null,
             ], fn ($status) => $status === 'absent')) : 0;
-            $absence = $absent === 2 ? 1500 : ($absent === 1 ? 1000 : 0);
-            $late = in_array('late', $statuses, true) ? 100 : 0;
+            $absence = $absent === 2 ? $rates['absence_two'] : ($absent === 1 ? $rates['absence_one'] : 0);
+            $late = in_array('late', $statuses, true) ? $rates['late'] : 0;
             $hasExcuse = in_array('excused', $statuses, true);
             $month = substr($date, 0, 7);
             $freeExcuse = $hasExcuse && !isset($freeExcuseUsed[$month]);
             if ($hasExcuse) {
                 $freeExcuseUsed[$month] = true;
             }
-            $excused = $hasExcuse && !$freeExcuse ? 500 : 0;
+            $excused = $hasExcuse && !$freeExcuse ? $rates['excused'] : 0;
             $amount = $absence + $late + $excused;
             if ($amount || $freeExcuse) {
                 $details[] = ['date' => $date, 'statuses' => $statuses, 'absence_cents' => $absence,

@@ -11,6 +11,9 @@
                     href="{{ route('employee-salaries.teacher-reports', array_replace(request()->except(['page', 'year', 'month']), ['report' => $type], $type === 'leave' ? ['year' => $month->year] : ['month' => $month->format('Y-m')])) }}" data-teacher-report-type="{{ $type }}"
                     @if($filters['report'] === $type) aria-current="true" @endif>{{ $label }}</a>
             @endforeach
+            <button type="button" class="btn btn-outline-primary" data-edit-salary-rates>
+                <i class="bi bi-pencil me-1" aria-hidden="true"></i>{{ __('Edit salary') }}
+            </button>
         </nav>
     </div>
     <div class="d-flex flex-wrap gap-2">
@@ -97,6 +100,7 @@
     <div class="d-print-none">{{ $teachers->links() }}</div>
 </div>
 @endfragment
+@include('school.salaries._edit-rates')
 <dialog id="leave-bonus-dialog" class="salary-calculator leave-bonus-dialog d-print-none" aria-labelledby="leave-bonus-title">
     <form method="post" action="{{ route('employee-salaries.leave-bonus-eligibility.update') }}" class="salary-calculator-form">
         @csrf

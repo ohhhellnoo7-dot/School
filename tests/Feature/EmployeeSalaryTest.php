@@ -12,6 +12,37 @@ class EmployeeSalaryTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_report_salary_editor_changes_unpaid_amounts_and_preserves_recorded_payments(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-16 12:00:00'));
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = $this->employee();
+        $this->profile($teacher, $admin)->update(['service_started_on' => '2026-11-01', 'evening_sessions' => 1]);
+        $this->assignHours($teacher, 40);
+        foreach (['2026-11-09' => 'late', '2026-11-10' => 'absent', '2026-11-11' => 'excused', '2026-11-12' => 'excused'] as $date => $status) {
+            TeacherAttendance::create(['teacher_id' => $teacher->id, 'date' => $date, 'status' => $status, 'recorded_by' => $admin->id]);
+        }
+        $reports = route('employee-salaries.teacher-reports', ['teacher' => $teacher->id, 'month' => '2026-11', 'report' => 'salary']);
+        $update = route('employee-salaries.salary-rates.update');
+        $rates = ['morning' => '135.00', 'afternoon' => '125', 'evening' => '55', 'late' => '2', 'excused' => '7', 'absence_one' => '12', 'absence_two' => '20'];
+
+        $this->actingAs($teacher)->put($update, ['rates' => $rates])->assertForbidden();
+        $this->actingAs($admin)->get($reports)->assertOk()->assertSee('Edit salary')->assertSee('125.00');
+        $this->from($reports)->put($update, ['rates' => array_replace($rates, ['late' => '-1'])])
+            ->assertRedirect($reports)->assertSessionHasErrorsIn('salaryRates', 'rates.late');
+        $this->from($reports)->put($update, ['rates' => $rates])->assertRedirect($reports)->assertSessionHasNoErrors();
+        $this->get($reports)->assertOk()->assertSee(['$315.00 USD', '$280.00 USD', '$251.00 USD']);
+
+        $this->post(route('employee-salaries.pay', $teacher), [
+            'month' => '2026-11', 'paid_on' => '2026-11-16', 'confirm' => 1, 'expected_total_cents' => 25100,
+        ])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('employee_salary_payments', [
+            'teacher_id' => $teacher->id, 'full_salary_cents' => 31500, 'deduction_cents' => 2900, 'total_cents' => 25100,
+        ]);
+        $this->put($update, ['rates' => array_replace($rates, ['morning' => '145', 'late' => '5'])])->assertSessionHasNoErrors();
+        $this->get($reports)->assertOk()->assertSee(['$315.00 USD', '$251.00 USD'])->assertDontSee('$325.00 USD');
+    }
+
     public function test_payroll_compares_scheduled_hours_with_the_work_week_when_configured(): void
     {
         $admin = User::factory()->create(['role' => 'administrator']);

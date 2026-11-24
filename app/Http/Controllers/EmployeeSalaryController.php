@@ -6,6 +6,7 @@ use App\Services\SchoolHolidayClosure;
 use App\Models\{EmployeeSalaryAttendance, EmployeeSalaryPayment, EmployeeSalaryProfile, TeacherAttendance, TeacherSessionAttendance, User};
 use App\Services\EmployeeAttendanceBonus;
 use App\Services\EmployeeSalaryCalculator;
+use App\Services\EmployeeSalaryRates;
 use App\Services\{TeacherLeaveReport, TeacherManagementService, TeacherSessionStops};
 use App\Support\AttendanceSession;
 use App\Support\Money;
@@ -84,7 +85,7 @@ class EmployeeSalaryController extends Controller
             return ['teacher' => $teacher, 'profile' => $profile, 'payment' => $payment,
                 'weekly_hours' => $assignedMinutes / 60,
                 'weekly_work_hours' => $weeklyHours,
-                'full_salary_cents' => $weeklyHours === null ? null : $calculator->baseCents($weeklyHours * 60),
+                'full_salary_cents' => $workSessions ? $calculator->fullSalaryCents($workSessions) : null,
                 'weekly_limit' => $weeklyHours ?? ($weeklyLimits->get($teacher->id) ?? $teaching->defaultLimit($teacher->program)) / 60,
                 'salary' => $payment ? $payment->only(['base_cents', 'raise_cents', 'total_cents', 'deduction_cents']) : ($profile ? app(\App\Services\EmployeeSalaryDeductions::class)->apply(
                     $calculator->calculate($profile, $asOf, $assignedMinutes), $profile, $attendance->get($teacher->id, collect()),
@@ -270,7 +271,7 @@ class EmployeeSalaryController extends Controller
             'sessions' => $settings ? $settings->day_sessions + $settings->evening_sessions : null,
             'scheduledHours' => round($assignedMinutes / 60, 2),
             'weeklyHours' => $weeklyHours,
-            'fullSalaryCents' => $weeklyHours === null ? null : $calculator->baseCents($weeklyHours * 60),
+            'fullSalaryCents' => $settings ? $calculator->fullSalaryCents($settings) : null,
             'serviceStartedOn' => $settings?->service_started_on,
             'requiredBonusMonths' => $requiredMonths,
             'belowBonusServiceMinimum' => $settings?->service_started_on?->copy()->addMonthsNoOverflow($requiredMonths)->gt($asOf->min(today())) ?? false,
@@ -297,6 +298,19 @@ class EmployeeSalaryController extends Controller
         DB::table('teacher_management_settings')->where('id', 1)->update($data);
 
         return back()->with('success', __('Leave bonus eligibility updated.'));
+    }
+
+    public function updateSalaryRates(Request $request, EmployeeSalaryRates $rates)
+    {
+        $rules = collect(EmployeeSalaryRates::DEFAULTS)->mapWithKeys(
+            fn ($amount, $key) => ["rates.$key" => ['required', 'numeric', 'decimal:0,2', 'min:0', 'max:100000']]
+        )->all();
+        $data = $request->validateWithBag('salaryRates', $rules + [
+            'rates' => 'required|array:'.implode(',', array_keys(EmployeeSalaryRates::DEFAULTS)),
+        ]);
+        $rates->save(array_map(Money::cents(...), $data['rates']));
+
+        return back()->with('success', __('Salary rates saved.'));
     }
 
     public function update(Request $request, User $teacher)
@@ -343,7 +357,8 @@ class EmployeeSalaryController extends Controller
             EmployeeSalaryPayment::create(['teacher_id' => $teacher->id, 'salary_month' => $month,
                 'day_sessions' => $profile->day_sessions, 'evening_sessions' => $profile->evening_sessions,
                 'service_started_on' => $profile->service_started_on,
-                'base_cents' => $salary['base_cents'], 'raise_cents' => $salary['raise_cents'], 'total_cents' => $salary['total_cents'],
+                'base_cents' => $salary['base_cents'], 'full_salary_cents' => $salary['full_salary_cents'],
+                'raise_cents' => $salary['raise_cents'], 'total_cents' => $salary['total_cents'],
                 'deduction_cents' => $salary['deduction_cents'], 'deduction_details' => $salary['deduction_details'],
                 'paid_on' => $data['paid_on'], 'reference' => $data['reference'] ?? null, 'recorded_by' => $request->user()->id]);
         });

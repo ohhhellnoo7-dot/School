@@ -5,6 +5,10 @@
     const status = document.querySelector('[data-teacher-report-status]');
     const printButton = document.querySelector('[data-print-teacher-reports]');
     printButton.addEventListener('click', () => window.print());
+    const ratesDialog = document.getElementById('salary-rates-dialog');
+    document.querySelector('[data-edit-salary-rates]').addEventListener('click', () => ratesDialog.showModal());
+    ratesDialog.querySelector('[data-cancel-salary-rates]').addEventListener('click', () => ratesDialog.close());
+    if (ratesDialog.hasAttribute('data-reopen')) ratesDialog.showModal();
     const bonusDialog = document.getElementById('leave-bonus-dialog');
     const bonusForm = bonusDialog.querySelector('form');
     function openBonusEditor(button) {

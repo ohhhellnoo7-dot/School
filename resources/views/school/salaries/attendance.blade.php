@@ -4,7 +4,11 @@
 <div class="page-heading"><div><div class="eyebrow">EMPLOYEE SALARY</div><h1>Teacher attendance</h1><p>Record a whole day or one session. Attendance updates the teacher’s salary deductions.</p></div><a class="btn btn-outline-primary" href="{{ route('employee-salaries.index', ['month' => substr($date, 0, 7)]) }}">Back to payroll</a></div>
 <section class="panel">
     <form class="salary-filters" method="get" data-salary-search><div><label class="form-label" for="salary-date">Attendance date</label><input id="salary-date" class="form-control" type="date" name="date" value="{{ $date }}" max="{{ today()->toDateString() }}" required></div><div><label class="form-label" for="salary-search">Search teacher by name</label><input id="salary-search" class="form-control" type="search" name="search" value="{{ request('search') }}" placeholder="Teacher name or employee ID" autocomplete="off"></div></form>
-    <div class="px-4 pb-3 small text-secondary">8-hour teachers: one daytime session absent $10; morning and afternoon absent $15. Late $1/day. Excused $5/day across all sessions. Evening-only absence deductions are not set.</div>
+    @php($rates = app(\App\Services\EmployeeSalaryRates::class)->amounts())
+    <div class="px-4 pb-3 small text-secondary">
+        For teachers working both daytime sessions, one absence costs ${{ \App\Support\Money::decimal($rates['absence_one']) }} and two cost ${{ \App\Support\Money::decimal($rates['absence_two']) }}.
+        Late costs ${{ \App\Support\Money::decimal($rates['late']) }} per day. Excused costs ${{ \App\Support\Money::decimal($rates['excused']) }} per day after the first free excuse each month.
+    </div>
     <div id="salary-search-results" aria-live="polite"><div class="table-responsive"><table class="table salary-table"><thead><tr><th>Teacher</th><th>Morning</th><th>Afternoon</th><th>Evening</th><th>Record attendance</th></tr></thead><tbody>
     @forelse($teachers as $teacher)
         @php($marks = $overrides->get($teacher->id, collect())->keyBy('session'))
