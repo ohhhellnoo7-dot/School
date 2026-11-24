@@ -5,8 +5,27 @@
     const status = document.querySelector('[data-teacher-report-status]');
     const printButton = document.querySelector('[data-print-teacher-reports]');
     printButton.addEventListener('click', () => window.print());
+    const bonusDialog = document.getElementById('leave-bonus-dialog');
+    const bonusForm = bonusDialog.querySelector('form');
+    function openBonusEditor(button) {
+        if (!button || bonusDialog.open) return;
+        bonusForm.elements.bonus_service_months.value = button.dataset.bonusMonths;
+        bonusDialog.showModal();
+    }
+    document.addEventListener('click', event => openBonusEditor(event.target.closest('[data-bonus-months]')));
+    document.addEventListener('dblclick', event => openBonusEditor(event.target.closest('td')?.querySelector('[data-bonus-months]')));
+    bonusDialog.querySelector('[data-cancel-bonus-edit]').addEventListener('click', () => bonusDialog.close());
     let pending;
     let timer;
+
+    function selectReport(type) {
+        const annual = type === 'leave';
+        form.elements.report.value = type;
+        form.elements.month.disabled = annual;
+        form.elements.year.disabled = !annual;
+        form.querySelector('[data-report-month-field]').hidden = annual;
+        form.querySelector('[data-report-year-field]').hidden = !annual;
+    }
 
     async function update() {
         clearTimeout(timer);
@@ -30,9 +49,13 @@
             if (request.signal.aborted) return;
 
             current.replaceWith(updated);
+            const referenceMonth = updated.dataset.referenceMonth;
+            form.elements.month.value = referenceMonth;
+            form.elements.year.value = referenceMonth.slice(0, 4);
             const back = document.querySelector('[data-report-attendance-link]');
             const returnUrl = new URL(back.href);
-            for (const key of ['month', 'program', 'session']) {
+            returnUrl.searchParams.set('month', referenceMonth);
+            for (const key of ['program', 'session']) {
                 const value = url.searchParams.get(key);
                 if (value) returnUrl.searchParams.set(key, value);
                 else returnUrl.searchParams.delete(key);
@@ -43,6 +66,10 @@
                 const type = link.dataset.teacherReportType;
                 const selected = type === form.elements.report.value;
                 target.searchParams.set('report', type);
+                target.searchParams.delete('month');
+                target.searchParams.delete('year');
+                if (type === 'leave') target.searchParams.set('year', form.elements.year.value);
+                else target.searchParams.set('month', referenceMonth);
                 link.href = target;
                 link.classList.toggle('btn-primary', selected);
                 link.classList.toggle('btn-outline-primary', !selected);
@@ -68,7 +95,7 @@
         link.addEventListener('click', event => {
             if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
             event.preventDefault();
-            form.elements.report.value = link.dataset.teacherReportType;
+            selectReport(link.dataset.teacherReportType);
             update();
         });
     }

@@ -17,6 +17,14 @@
         </div>
     </header>
 
-    @include('school.salaries._slip-table')
+    @if($slip === 'leave')
+        @foreach($leaveSegments as $leaveSegment)
+            @include('school.salaries._leave-segment-note', ['segment' => $leaveSegment])
+            @include('school.salaries._slip-table', ['reportRows' => [$leaveSegment], 'individualSlip' => true])
+        @endforeach
+        @include('school.salaries._leave-note')
+    @else
+        @include('school.salaries._slip-table')
+    @endif
 </article>
 @endsection

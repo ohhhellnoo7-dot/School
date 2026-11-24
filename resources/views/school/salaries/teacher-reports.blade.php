@@ -8,7 +8,7 @@
         <nav class="d-flex flex-wrap gap-2" aria-label="{{ __('Report type') }}">
             @foreach(['salary' => __('Salary slip'), 'leave' => __('Leave record'), 'all' => __('Show all')] as $type => $label)
                 <a @class(['btn', 'btn-primary' => $filters['report'] === $type, 'btn-outline-primary' => $filters['report'] !== $type])
-                    href="{{ request()->fullUrlWithQuery(['report' => $type, 'page' => null]) }}" data-teacher-report-type="{{ $type }}"
+                    href="{{ route('employee-salaries.teacher-reports', array_replace(request()->except(['page', 'year', 'month']), ['report' => $type], $type === 'leave' ? ['year' => $month->year] : ['month' => $month->format('Y-m')])) }}" data-teacher-report-type="{{ $type }}"
                     @if($filters['report'] === $type) aria-current="true" @endif>{{ $label }}</a>
             @endforeach
         </nav>
@@ -26,9 +26,13 @@
         <label class="form-label" for="report-search">{{ __('Search teachers') }}</label>
         <input class="form-control" id="report-search" name="search" type="search" maxlength="255" value="{{ $filters['search'] ?? '' }}" placeholder="{{ __('Search by teacher name...') }}" autocomplete="off">
     </div>
-    <div>
+    <div data-report-month-field @if($filters['report'] === 'leave') hidden @endif>
         <label class="form-label" for="report-month">{{ __('Salary month') }}</label>
-        <input class="form-control" id="report-month" type="month" name="month" value="{{ $month->format('Y-m') }}" required>
+        <input class="form-control" id="report-month" type="month" name="month" value="{{ $month->format('Y-m') }}" required @disabled($filters['report'] === 'leave')>
+    </div>
+    <div data-report-year-field @if($filters['report'] !== 'leave') hidden @endif>
+        <label class="form-label" for="report-year">{{ __('Leave record year') }}</label>
+        <input class="form-control" id="report-year" type="number" name="year" min="1900" max="9999" step="1" value="{{ $month->year }}" required @disabled($filters['report'] !== 'leave')>
     </div>
     <div>
         <label class="form-label" for="report-teacher">{{ __('Teacher') }}</label>
@@ -61,14 +65,14 @@
 </form>
 <p class="visually-hidden" role="status" data-teacher-report-status></p>
 @fragment('teacher-payroll-reports')
-<div id="teacher-payroll-report-results">
+<div id="teacher-payroll-report-results" data-reference-month="{{ $month->format('Y-m') }}">
     @if($reports->isEmpty())
-        <p class="panel p-4">{{ __('No teachers match these filters.') }}</p>
+        <p class="panel p-4">{{ $filters['report'] === 'leave' ? __('No leave records match these filters for :year.', ['year' => $month->year]) : __('No teachers match these filters.') }}</p>
     @else
         <div class="panel salary-report-book">
             <header class="salary-report-print-header d-none d-print-block mb-3">
                 <h1 class="h4">{{ config('finance.school_name') }} &middot; {{ __('Teacher reports') }}</h1>
-                <p class="mb-0">{{ $month->translatedFormat('F Y') }} &middot;
+                <p class="mb-0">{{ $filters['report'] === 'leave' ? $month->year : $month->translatedFormat('F Y') }} &middot;
                     {{ ['salary' => __('Salary slips'), 'leave' => __('Annual leave records'), 'all' => __('Salary slips and annual leave records')][$filters['report']] }}
                 </p>
             </header>
@@ -78,18 +82,37 @@
                         @include('school.salaries._slip-table', ['reportRows' => [$report], 'slip' => 'salary'])
                     @endif
                     @if($filters['report'] !== 'salary')
-                        @include('school.salaries._slip-table', ['reportRows' => [$report], 'slip' => 'leave'])
+                        @foreach($report['leaveSegments'] ?? [$report] as $leaveSegment)
+                            @include('school.salaries._leave-segment-note', ['segment' => $leaveSegment])
+                            @include('school.salaries._slip-table', ['reportRows' => [$leaveSegment], 'slip' => 'leave'])
+                        @endforeach
                     @endif
                 </section>
             @endforeach
             @if($filters['report'] !== 'salary')
-            <p class="mb-0 text-secondary">{{ __('Salary shown for :month. Monthly leave totals use excused attendance. Remaining leave and payout are unconfigured.', ['month' => $month->translatedFormat('F Y')]) }}</p>
+                @include('school.salaries._leave-note')
             @endif
         </div>
     @endif
     <div class="d-print-none">{{ $teachers->links() }}</div>
 </div>
 @endfragment
+<dialog id="leave-bonus-dialog" class="salary-calculator leave-bonus-dialog d-print-none" aria-labelledby="leave-bonus-title">
+    <form method="post" action="{{ route('employee-salaries.leave-bonus-eligibility.update') }}" class="salary-calculator-form">
+        @csrf
+        @method('put')
+        <h2 class="h5 mb-0" id="leave-bonus-title">{{ __('Leave bonus eligibility') }}</h2>
+        <p class="text-secondary mb-0">{{ __('Applies to all teachers.') }}</p>
+        <div>
+            <label class="form-label" for="bonus-service-months">{{ __('Minimum months of service') }}</label>
+            <input class="form-control" id="bonus-service-months" name="bonus_service_months" type="number" min="1" max="1200" step="1" required autofocus>
+        </div>
+        <div class="salary-calculator-actions">
+            <button class="btn btn-outline-secondary" type="button" data-cancel-bonus-edit>{{ __('Cancel') }}</button>
+            <button class="btn btn-primary" type="submit">{{ __('Save') }}</button>
+        </div>
+    </form>
+</dialog>
 @endsection
 
 @push('scripts')

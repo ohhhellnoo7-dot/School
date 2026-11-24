@@ -597,8 +597,15 @@ class ClassroomController extends Controller
                     ->orWhereHas('lessons.subject', fn ($q) => $q->where('teacher_id', $user->id))
                     ->orWhereHas('bookings', function ($bookings) use ($user) {
                         $bookings->where('teacher_id', $user->id)
-                            ->orWhereHas('classGroup', fn ($group) => $group->where('teacher_id', $user->id))
-                            ->orWhereHas('classGroup.schoolClasses.subjects', fn ($q) => $q->where('teacher_id', $user->id)->whereHas('schedules'));
+                            ->orWhere(function ($fallback) use ($user) {
+                                $fallback->whereHas('classSession', fn ($session) => $session->whereNotExists(
+                                    \App\Models\TeacherSessionStop::where('teacher_id', $user->id)->whereNotNull('applied_at')
+                                        ->whereColumn('teacher_session_stops.session', 'class_sessions.session')->selectRaw('1')->toBase()
+                                ))->where(function ($group) use ($user) {
+                                    $group->whereHas('classGroup', fn ($class) => $class->where('teacher_id', $user->id))
+                                        ->orWhereHas('classGroup.schoolClasses.subjects', fn ($q) => $q->where('teacher_id', $user->id)->whereHas('schedules'));
+                                });
+                            });
                     });
             }),
             'student' => $query->whereHas('bookings.classGroup.students', fn ($students) => $students->where('students.user_id', $user->id)),

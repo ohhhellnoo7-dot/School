@@ -149,6 +149,11 @@
     background-size:100% 3px;
     background-repeat:no-repeat;
 }
+.teacher-monthly-grid tbody tr:not(.teacher-group-start) > :is(th,td) {
+    background-image: linear-gradient(var(--teacher-divider), var(--teacher-divider));
+    background-size: 100% 1px;
+    background-repeat: no-repeat;
+}
 .teacher-monthly-grid .attendance-scan-out { border-top-color:color-mix(in srgb,var(--primary) 14%,var(--border-color)); }
 .teacher-monthly-grid tbody tr > th:nth-child(2) { top:auto; bottom:auto; border-right-color:var(--teacher-divider); }
 
@@ -191,6 +196,31 @@
 
 @media screen {
     .teacher-attendance-panel { scroll-margin-top: 6rem; }
+    .teacher-attendance-panel .table-responsive { container-type: inline-size; }
+
+    @container (min-width: 1050px) {
+        .teacher-monthly-grid {
+            --name-column-width: 128px;
+            width: 100%;
+        }
+        .teacher-monthly-grid col.attendance-number { width: 30px; }
+        .teacher-monthly-grid col.attendance-sex { width: 32px; }
+        .teacher-monthly-grid col.attendance-assigned { width: 82px; }
+        .teacher-monthly-grid col.attendance-session { width: 66px; }
+        .teacher-monthly-grid col.attendance-date { width: auto; }
+        .teacher-monthly-grid col.attendance-report { width: 69px; }
+        .teacher-monthly-grid thead th { height: 34px; padding-inline: 2px; font-size: .65rem; white-space: normal; }
+        .teacher-monthly-grid tbody :is(th, td) { height: 44px; }
+        .teacher-monthly-grid tbody td :is(small, .teacher-gender) { font-size: .67rem; }
+        .teacher-monthly-grid .teacher-gender { width: 22px; height: 22px; }
+        .teacher-monthly-grid .attendance-mark { padding-inline: 1px; }
+        .teacher-monthly-grid .attendance-report-cell .btn { padding: .22rem .3rem; font-size: .65rem; }
+        .teacher-monthly-grid .attendance-scan-half { min-height: 0; padding: 1px 0; }
+        .teacher-monthly-grid .attendance-scan-in .attendance-status,
+        .teacher-monthly-grid .attendance-out-symbol { min-height: 15px; font-size: 13px; border-radius: 4px; }
+        .teacher-monthly-grid .is-school-holiday > small { display: none !important; }
+        .teacher-monthly-grid :is(.attendance-scan-label, .attendance-detail, .attendance-holiday-label) { display: none; }
+    }
 }
 
 

@@ -84,7 +84,7 @@ class TeacherScanAttendanceTest extends TestCase
         app(TeacherScanAttendance::class)->scan($teacher);
         $admin = User::factory()->create(['role' => 'administrator']);
         $this->actingAs($admin)->get(route('teacher-attendance.monthly', ['month' => '2026-11']))
-            ->assertOk()->assertSee($teacher->name)->assertSee('Khmer')->assertSee('Morning, Afternoon, Evening')
+            ->assertOk()->assertSee($teacher->name)->assertSee('Khmer')->assertSee('<td>3</td><td>Morning</td>', false)->assertDontSee('Morning, Afternoon, Evening')
             ->assertSee('Scanned 07:10')->assertSee('Afternoon · Not recorded')->assertSee('Evening · Not recorded');
         $this->get(route('teacher-attendance.monthly', ['month' => 'bad']))->assertSessionHasErrors('month');
         $this->actingAs(User::factory()->create(['role' => 'teacher']))

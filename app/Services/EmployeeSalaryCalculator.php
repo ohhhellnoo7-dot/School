@@ -17,6 +17,11 @@ class EmployeeSalaryCalculator
             ->map(fn ($lessons) => $lessons->sum(fn ($lesson) => TeacherManagementService::duration($lesson->starts_at, $lesson->ends_at)));
     }
 
+    public function weeklyWorkHours(int $daySessions, int $eveningSessions): int
+    {
+        return 5 * (4 * $daySessions + $eveningSessions);
+    }
+
     public function baseCents(int $weeklyMinutes): int
     {
         return (int) round($weeklyMinutes * 25000 / (40 * 60));
@@ -31,7 +36,7 @@ class EmployeeSalaryCalculator
         }
         $quarters = intdiv($months, 3);
         $base = $this->baseCents($assignedMinutes);
-        $eligible = $started->lte($asOf);
+        $eligible = ($profile->day_sessions + $profile->evening_sessions) > 0 && $started->lte($asOf);
 
         return ['base_cents' => $eligible ? $base : 0, 'raise_cents' => $eligible ? $quarters * 500 : 0,
             'total_cents' => $eligible ? $base + $quarters * 500 : 0, 'completed_quarters' => $quarters,

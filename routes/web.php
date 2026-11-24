@@ -104,6 +104,7 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent', \App\Htt
         Route::post('/{teacher}/attendance', [\App\Http\Controllers\EmployeeSalaryController::class, 'saveAttendance'])->whereNumber('teacher')->name('attendance.store');
         Route::get('/{teacher}', [\App\Http\Controllers\EmployeeSalaryController::class, 'show'])->whereNumber('teacher')->name('show');
         Route::put('/{teacher}', [\App\Http\Controllers\EmployeeSalaryController::class, 'update'])->whereNumber('teacher')->name('update');
+        Route::put('/leave-bonus-eligibility', [\App\Http\Controllers\EmployeeSalaryController::class, 'updateLeaveBonusEligibility'])->name('leave-bonus-eligibility.update');
         Route::post('/{teacher}/payments', [\App\Http\Controllers\EmployeeSalaryController::class, 'pay'])->whereNumber('teacher')->name('pay');
     });
     Route::get('/reports/expenses', [\App\Http\Controllers\SchoolExpenseController::class, 'index'])->middleware('role:administrator')->name('reports.expenses.index');
@@ -188,6 +189,8 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent', \App\Htt
         Route::get('/create', [\App\Http\Controllers\TeacherManagementController::class, 'form'])->name('create');
         Route::post('/', [\App\Http\Controllers\TeacherManagementController::class, 'save'])->name('store');
         Route::get('/{teacher}', [\App\Http\Controllers\TeacherManagementController::class, 'show'])->name('show');
+        Route::post('/{teacher}/sessions/stop', [\App\Http\Controllers\TeacherManagementController::class, 'stopSession'])->name('sessions.stop');
+        Route::delete('/{teacher}/sessions/stop', [\App\Http\Controllers\TeacherManagementController::class, 'cancelSessionStop'])->name('sessions.cancel');
         Route::get('/{teacher}/edit', [\App\Http\Controllers\TeacherManagementController::class, 'form'])->name('edit');
         Route::put('/{teacher}', [\App\Http\Controllers\TeacherManagementController::class, 'save'])->name('update');
         Route::post('/{teacher}/assign', [\App\Http\Controllers\TeacherManagementController::class, 'assign'])->name('assign');

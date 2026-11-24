@@ -1,9 +1,39 @@
 @extends('school.layout')
 @section('title', $teacher->exists ? 'Edit Teacher' : 'Add Teacher')
 @section('content')
-@php($qualified = $teacher->exists ? $service->qualifications($teacher) : collect())
-@php($periods = $teacher->exists ? $service->periods($teacher) : collect())
+@php
+    $qualified = $teacher->exists ? $service->qualifications($teacher) : collect();
+    $periods = $teacher->exists ? $service->periods($teacher) : collect();
+@endphp
 <div class="page-heading"><div><div class="eyebrow">School workspace</div><h1>@if($teacher->exists)@include('school.partials.avatar', ['person' => $teacher, 'teacherIcon' => true])@endif{{ $teacher->exists ? 'Edit Teacher' : 'Add Teacher' }}</h1><p>Confirm the teacher’s subjects and working hours.</p></div><a href="{{ route('modules.index', 'teachers') }}" class="btn btn-outline-secondary">Back to Teachers</a></div>
+@if($teacher->exists)
+    @php
+        $sessionStops = app(\App\Services\TeacherSessionStops::class);
+        $pendingStops = $sessionStops->pending($teacher);
+        $assignedSessions = $sessionStops->sessions($teacher)->merge($pendingStops->keys())->unique();
+    @endphp
+    <section class="panel p-4 mb-3" aria-labelledby="assigned-sessions-heading">
+        <h2 id="assigned-sessions-heading" class="h5">{{ __('Assigned sessions') }}</h2>
+        <p class="text-secondary">{{ __('A scheduled stop takes effect on the first day of next month.') }}</p>
+        @forelse($assignedSessions as $session)
+            @php($pendingStop = $pendingStops->get($session))
+            <form class="d-flex align-items-center flex-wrap gap-3 border-top py-2" method="post" action="{{ route($pendingStop ? 'teacher-management.sessions.cancel' : 'teacher-management.sessions.stop', $teacher) }}">
+                @csrf
+                @if($pendingStop) @method('delete') @endif
+                <input type="hidden" name="session" value="{{ $session }}">
+                <strong>{{ __($session) }}</strong>
+                @if($pendingStop)
+                    <span class="text-secondary">{{ __('Stops on :date', ['date' => $pendingStop->effective_on->translatedFormat('d M Y')]) }}</span>
+                    <button class="btn btn-sm btn-outline-secondary ms-auto" type="submit">{{ __('Cancel stop') }}</button>
+                @else
+                    <button class="btn btn-sm btn-outline-danger ms-auto" type="submit">{{ __('Stop next month') }}</button>
+                @endif
+            </form>
+        @empty
+            <p class="mb-0 text-secondary">{{ __('No assigned sessions.') }}</p>
+        @endforelse
+    </section>
+@endif
 <form method="post" action="{{ $teacher->exists ? route('teacher-management.update', $teacher) : route('teacher-management.store') }}" class="panel p-4">@csrf @if($teacher->exists)@method('put')@endif
 <div class="row g-3">
 <script type="application/json" data-teacher-program-options>@json($programOptions)</script>

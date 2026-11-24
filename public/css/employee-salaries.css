@@ -13,6 +13,17 @@
 }
 
 .salary-calculator[open] { animation: salary-calculator-enter .22s ease-out; }
+.leave-bonus-dialog { width: min(360px, calc(100% - 24px)); }
+.payroll-bonus-edit {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-decoration: underline dotted;
+    text-underline-offset: .18em;
+    cursor: pointer;
+}
 .salary-calculator::backdrop {
     background: color-mix(in srgb, var(--sidebar-bg) 62%, transparent);
     backdrop-filter: blur(5px);
@@ -517,14 +528,65 @@
 }
 .payroll-slip-table :is(th, td) {
     border: 1px solid #777;
-    padding: .5rem .48rem;
+    padding: .42rem .32rem;
     vertical-align: middle;
-    white-space: nowrap;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 .payroll-slip-table thead th { background: #f4f3f0; font-weight: 700; }
-.payroll-slip-table tbody th { text-align: start; font-weight: 500; }
+.payroll-slip-table tbody th { text-align: center; font-weight: 500; }
 .payroll-slip-table .payroll-strip-amount { background: #fbebd8; }
 .payroll-slip-table .payroll-strip-total { background: #ffdf35; font-weight: 800; }
+.payroll-slip-table .payroll-strip-short-service { background: #ffd2d2; color: #721919; }
+.payroll-slip-table-leave { table-layout: fixed; font-size: .7rem; }
+.payroll-leave-col-name { width: 11%; }
+.payroll-leave-col-gender { width: 3%; }
+.payroll-leave-col-role { width: 4.5%; }
+.payroll-leave-col-sessions { width: 5.5%; }
+.payroll-leave-col-salary { width: 6.5%; }
+.payroll-leave-col-month { width: 2.5%; }
+.payroll-leave-col-balance { width: 4%; }
+.payroll-leave-col-bonus { width: 9.25%; }
+.payroll-slip-table-leave thead tr:first-child { font-size: 1.15em; }
+.payroll-slip-table-leave .payroll-leave-not-started { background: #ffd2d2; color: #721919; }
+.payroll-slip-table-leave .payroll-leave-in-progress { background: #fff0b8; color: #654400; }
+.payroll-slip-table-leave .payroll-leave-complete { background: #d7f2df; color: #155d34; }
+.payroll-slip-table-leave :is(th, td) { padding-inline: .15rem; }
+.payroll-slip-table-leave :is(.payroll-leave-month, .payroll-strip-amount, .payroll-strip-total) {
+    white-space: nowrap;
+    overflow-wrap: normal;
+}
+@media screen {
+    .payroll-slip-table-leave { min-width: 1120px; }
+}
+.payroll-slip-table-salary { table-layout: fixed; }
+.payroll-strip-col-name { width: 12%; }
+.payroll-strip-col-gender { width: 3.4%; }
+.payroll-strip-col-sessions { width: 6.5%; }
+.payroll-strip-col-hours { width: 10%; }
+.payroll-strip-col-days { width: 3.7%; }
+.payroll-strip-col-salary { width: 7%; }
+.payroll-strip-col-deduction { width: 6.2%; }
+.payroll-strip-col-net { width: 7.5%; }
+@media screen {
+    .table-responsive:has(> .payroll-slip-table-salary) { container-type: inline-size; }
+    .payroll-slip-table-salary {
+        min-width: 930px;
+        font-size: clamp(.62rem, .96cqw, .76rem);
+    }
+    .payroll-slip-table-salary :is(thead th, tbody td) {
+        padding-inline: .18rem;
+        white-space: nowrap;
+        overflow-wrap: normal;
+    }
+}
+@media screen and (min-width: 1280px) {
+    .payroll-slip-table-salary tbody th {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+}
 @page payroll-slip { size: A4 landscape; margin: 10mm; }
 @media print {
     body:has(:is(.payroll-slip, #teacher-payroll-report-results)) { page: payroll-slip; }

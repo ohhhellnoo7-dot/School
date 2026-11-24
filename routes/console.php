@@ -51,6 +51,12 @@ Artisan::command('school:generate-teacher-schedules', function () {
     $this->info("Created {$count} weekly lessons. Previous timetable: storage/{$backup}");
 })->purpose('Back up and rebuild teacher schedules with class rotations and evening-only Chinese lessons');
 
+Artisan::command('school:apply-teacher-session-stops', function () {
+    app(\App\Services\TeacherSessionStops::class)->applyDue();
+})->purpose('Apply teacher session stops that have reached their effective date');
+
+\Illuminate\Support\Facades\Schedule::command('school:apply-teacher-session-stops')->daily()->timezone(config('app.timezone'));
+
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');

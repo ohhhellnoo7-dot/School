@@ -92,6 +92,26 @@ class TeacherManagementController extends Controller
         return view('school.teachers.form', ['teacher' => $teacher ?? new User, 'catalog' => Subject::distinct()->orderBy('name')->pluck('name'), 'service' => app(TeacherManagementService::class), 'programOptions' => app(TeacherManagementService::class)->programFormOptions()]);
     }
 
+    public function stopSession(Request $request, User $teacher, \App\Services\TeacherSessionStops $stops)
+    {
+        abort_unless($teacher->role === 'teacher', 404);
+        $session = $request->validate(['session' => 'required|in:Morning,Afternoon,Evening'])['session'];
+        $stops->schedule($teacher, $session);
+
+        return back()->with('success', __('Session stop scheduled.'));
+    }
+
+    public function cancelSessionStop(Request $request, User $teacher, \App\Services\TeacherSessionStops $stops)
+    {
+        abort_unless($teacher->role === 'teacher', 404);
+        $session = $request->validate(['session' => 'required|in:Morning,Afternoon,Evening'])['session'];
+        if (!$stops->cancel($teacher, $session)) {
+            return back()->withErrors(['session' => __('This session has no pending stop to cancel.')]);
+        }
+
+        return back()->with('success', __('Session stop cancelled.'));
+    }
+
     public function save(Request $request, TeacherManagementService $service, ?User $teacher = null)
     {
         if ($teacher) abort_unless($teacher->role === 'teacher', 404);

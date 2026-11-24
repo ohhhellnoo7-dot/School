@@ -33,22 +33,29 @@ class EmployeeSalaryTest extends TestCase
             'service_started_on' => '2026-11-01', 'updated_by' => $admin->id,
         ]);
         $this->get(route('employee-salaries.index'))->assertOk()->assertSee('1.5/50 h');
+        $this->get(route('employee-salaries.teacher-reports', ['teacher' => $teacher->id, 'report' => 'salary']))
+            ->assertOk()->assertSee(['ចំនួនវេនការងារ', 'ម៉ោងការងារប្រចាំសប្ដាហ៍', '1.5/50 ម៉ោង'])->assertSee('<td>4</td>', false);
+        EmployeeSalaryProfile::where('teacher_id', $teacher->id)->update(['evening_sessions' => 0]);
+        $this->get(route('employee-salaries.show', ['teacher' => $teacher, 'slip' => 'salary']))
+            ->assertOk()->assertSee('1.5/40 ម៉ោង')->assertSee('<td>2</td>', false);
     }
 
-    public function test_attendance_deductions_charge_daytime_absence_lateness_and_excuses_once_per_day(): void
+    public function test_attendance_deductions_allow_one_free_excused_day_per_month(): void
     {
         $profile = new EmployeeSalaryProfile(['day_sessions' => 2, 'evening_sessions' => 2, 'service_started_on' => '2026-11-01']);
         $marks = collect();
         foreach ([['2026-11-02', 'Morning', 'absent'], ['2026-11-02', 'Afternoon', 'present'],
             ['2026-11-03', 'Morning', 'absent'], ['2026-11-03', 'Afternoon', 'absent'],
-            ['2026-11-04', 'All', 'late'], ['2026-11-05', 'All', 'excused']] as [$date, $session, $status]) {
+            ['2026-11-04', 'All', 'late'], ['2026-11-05', 'All', 'excused'],
+            ['2026-11-06', 'Morning', 'excused'], ['2026-11-06', 'Afternoon', 'excused'],
+            ['2026-12-01', 'All', 'excused']] as [$date, $session, $status]) {
             $marks->push(new \App\Models\EmployeeSalaryAttendance(compact('date', 'session', 'status')));
         }
         $salary = app(\App\Services\EmployeeSalaryDeductions::class)->apply(
-            ['total_cents' => 31250], $profile, collect(), collect(), $marks, Carbon::parse('2026-11-16'));
+            ['total_cents' => 31250], $profile, collect(), collect(), $marks, Carbon::parse('2026-12-16'));
         $this->assertSame(3100, $salary['deduction_cents']);
         $this->assertSame(28150, $salary['total_cents']);
-        $this->assertSame([1000, 1500, 100, 500], array_column($salary['deduction_details'], 'total_cents'));
+        $this->assertSame([1000, 1500, 100, 0, 500, 0], array_column($salary['deduction_details'], 'total_cents'));
     }
 
     public function test_deduction_sources_do_not_double_count_records_and_skip_future_missing_and_evening_absence(): void
@@ -65,7 +72,7 @@ class EmployeeSalaryTest extends TestCase
         $marks = collect([new \App\Models\EmployeeSalaryAttendance(['date' => '2026-11-02', 'session' => 'All', 'status' => 'present'])]);
         $service = app(\App\Services\EmployeeSalaryDeductions::class);
         $salary = $service->apply(['total_cents' => 25000], $profile, $daily, $scans, $marks, Carbon::parse('2026-11-16'));
-        $this->assertSame(600, $salary['deduction_cents']);
+        $this->assertSame(100, $salary['deduction_cents']);
         $profile->day_sessions = 0;
         $salary = $service->apply(['total_cents' => 6250], $profile, collect([new TeacherAttendance(['date' => '2026-11-02', 'status' => 'absent'])]), collect(), collect(), Carbon::parse('2026-11-16'));
         $this->assertSame(0, $salary['deduction_cents']);
@@ -264,13 +271,13 @@ class EmployeeSalaryTest extends TestCase
             ->assertOk()->assertSee(['Salary slip', '312.50 USD', '327.50 USD', 'Bank transfer 123']);
     }
 
-    public function test_annual_leave_report_uses_excused_days_and_hides_closed_holidays(): void
+    public function test_annual_leave_report_counts_at_most_one_day_per_month_and_skips_closed_holidays(): void
     {
         $admin = User::factory()->create(['role' => 'administrator']);
         $teacher = $this->employee();
-        foreach (['2026-10-21', '2026-11-16', '2026-11-23'] as $date) {
+        foreach (['2026-01-12' => 'absent', '2026-04-14' => 'absent', '2026-10-21' => 'excused', '2026-10-22' => 'absent', '2026-11-16' => 'excused'] as $date => $status) {
             \App\Models\TeacherAttendance::create([
-                'teacher_id' => $teacher->id, 'date' => $date, 'status' => 'excused',
+                'teacher_id' => $teacher->id, 'date' => $date, 'status' => $status,
                 'program' => $teacher->program, 'recorded_by' => $admin->id,
             ]);
         }
@@ -281,10 +288,180 @@ class EmployeeSalaryTest extends TestCase
         $this->actingAs($admin)->get($grid)->assertOk()->assertSee('Teacher reports')
             ->assertSee($reportList)->assertDontSee('attendance-report-heading', false);
         $this->get($reportList)->assertOk()->assertSee([$teacher->name, 'Salary slip', 'Annual leave record']);
-        $this->get($url)->assertOk()->assertSee('Annual leave record')
-            ->assertViewHas('leaveMonths', fn ($months) => $months[10] === 1 && $months[11] === 1 && $months->sum() === 2);
+        $this->get($url)->assertOk()->assertSee('Annual leave record')->assertSee('<td>3</td><td>9</td>', false)
+            ->assertViewHas('leaveMonths', fn ($months) => $months[1] === 1 && $months[4] === 0 && $months[10] === 1 && $months[11] === 1 && $months->sum() === 3);
         $this->actingAs($teacher)->get($grid)->assertOk()->assertDontSee('Salary slip');
         $this->get($url)->assertForbidden();
+    }
+
+    public function test_attendance_bonus_is_report_only_and_requires_every_scheduled_session(): void
+    {
+        $this->travelTo(Carbon::parse('2026-05-01 12:00:00'));
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = $this->employee();
+        EmployeeSalaryProfile::create([
+            'teacher_id' => $teacher->id, 'day_sessions' => 2, 'evening_sessions' => 2,
+            'service_started_on' => '2026-04-01', 'updated_by' => $admin->id,
+        ]);
+        foreach (['Morning', 'Afternoon', 'Evening'] as $index => $session) {
+            $class = \App\Models\SchoolClass::create([
+                'name' => $session, 'section' => 'A', 'program' => 'Khmer', 'session' => $session,
+            ]);
+            \App\Models\Schedule::create([
+                'teacher_id' => $teacher->id, 'school_class_id' => $class->id,
+                'day' => 'Wednesday', 'academic_year' => '2026-2027', 'entry_type' => 'academic',
+                'starts_at' => ['07:00', '13:00', '17:00'][$index],
+                'ends_at' => ['11:00', '17:00', '19:00'][$index], 'room' => 'A1',
+            ]);
+        }
+        foreach (['2026-04-01', '2026-04-08', '2026-04-22', '2026-04-29'] as $date) {
+            $mark = TeacherAttendance::create(['teacher_id' => $teacher->id, 'date' => $date,
+                'status' => 'present', 'program' => 'Khmer', 'recorded_by' => $admin->id]);
+        }
+        app(\App\Services\SchoolHolidayClosure::class)->setEnabled(true);
+        $url = route('employee-salaries.show', ['teacher' => $teacher, 'month' => '2026-04', 'slip' => 'leave']);
+        $this->actingAs($admin)->get($url)->assertOk()->assertSee('$300.00 USD')->assertSee('payroll-strip-short-service', false)
+            ->assertViewHas('attendanceBonus', ['month' => 2500, 'year' => 2500, 'qualifyingMonths' => [4], 'pending' => null, 'annualMaximum' => 30000]);
+        $list = route('employee-salaries.teacher-reports', ['teacher' => $teacher->id, 'month' => '2026-04', 'report' => 'leave']);
+        $this->get($list)->assertOk()->assertSee('$300.00 USD');
+        $this->assertDatabaseCount('employee_salary_payments', 0);
+        $this->travelTo(Carbon::parse('2026-04-29 18:00:00'));
+        $this->get($url)->assertOk()
+            ->assertSee(['payroll-leave-not-started', 'payroll-leave-in-progress', 'payroll-leave-future'], false)
+            ->assertViewHas('attendanceBonus', ['month' => null, 'year' => 0, 'qualifyingMonths' => [], 'pending' => 2500, 'annualMaximum' => 30000]);
+        $mark->update(['status' => 'excused']);
+        $this->get($url)->assertOk()->assertViewHas('attendanceBonus', ['month' => 0, 'year' => 0, 'qualifyingMonths' => [], 'pending' => null, 'annualMaximum' => 30000]);
+        $this->travelTo(Carbon::parse('2026-05-01 12:00:00'));
+        $mark->update(['status' => 'late']);
+        $this->get($url)->assertOk()->assertSee('payroll-leave-complete', false)
+            ->assertViewHas('attendanceBonus', ['month' => 2500, 'year' => 2500, 'qualifyingMonths' => [4], 'pending' => null, 'annualMaximum' => 30000]);
+        $mark->update(['status' => 'excused']);
+        $this->get($url)->assertOk()->assertViewHas('attendanceBonus', ['month' => 0, 'year' => 0, 'qualifyingMonths' => [], 'pending' => null, 'annualMaximum' => 30000]);
+        $mark->delete();
+        $this->get($url)->assertOk()->assertViewHas('attendanceBonus', ['month' => 0, 'year' => 0, 'qualifyingMonths' => [], 'pending' => null, 'annualMaximum' => 30000]);
+        EmployeeSalaryProfile::where('teacher_id', $teacher->id)->update(['evening_sessions' => 0]);
+        TeacherAttendance::create(['teacher_id' => $teacher->id, 'date' => '2026-04-29',
+            'status' => 'excused', 'program' => 'Khmer', 'recorded_by' => $admin->id]);
+        $this->get($url)->assertOk()->assertSeeInOrder(['ប្រាក់រង្វាន់ពេញមួយឆ្នាំ', '$240.00 USD', '$0.00 USD']);
+        TeacherAttendance::where('teacher_id', $teacher->id)->whereDate('date', '2026-04-29')->update(['status' => 'present']);
+        foreach (['2026-05-06', '2026-05-13', '2026-05-20', '2026-05-27'] as $date) {
+            TeacherAttendance::create(['teacher_id' => $teacher->id, 'date' => $date,
+                'status' => 'present', 'program' => 'Khmer', 'recorded_by' => $admin->id]);
+        }
+        $this->travelTo(Carbon::parse('2026-06-01 12:00:00'));
+        $this->get($url)->assertOk()->assertSee('$40.00 USD')
+            ->assertViewHas('attendanceBonus', fn ($bonus) => $bonus['year'] === 4000 && $bonus['qualifyingMonths'] === [4, 5]);
+    }
+
+    public function test_teacher_reports_use_the_selected_leave_year_and_hide_empty_history(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-15 12:00:00'));
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = $this->employee();
+        $url = route('employee-salaries.teacher-reports');
+
+        $this->actingAs($admin)->get($url.'?report=leave&year=2025&month=2026-11')
+            ->assertOk()->assertSee('Leave record year')
+            ->assertSee('No leave records match these filters for 2025.')
+            ->assertViewHas('month', fn ($month) => $month->format('Y-m') === '2025-12');
+        TeacherAttendance::create(['teacher_id' => $teacher->id, 'date' => '2025-05-01',
+            'status' => 'excused', 'program' => 'Khmer', 'recorded_by' => $admin->id]);
+        $this->get($url.'?report=leave&year=2025')->assertOk()
+            ->assertViewHas('reports', fn ($reports) => $reports->pluck('teacher.id')->all() === [$teacher->id]);
+        $this->get($url.'?report=leave&month=2026-06')
+            ->assertOk()->assertViewHas('month', fn ($month) => $month->year === 2026);
+        $this->get($url.'?report=salary&year=2025&month=2026-06')
+            ->assertOk()->assertViewHas('month', fn ($month) => $month->format('Y-m') === '2026-06');
+    }
+
+    public function test_leave_bonus_service_requirement_applies_to_all_teachers(): void
+    {
+        $this->travelTo(Carbon::parse('2026-06-15 12:00:00'));
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = $this->employee();
+        $settings = [
+            'teacher_id' => $teacher->id, 'day_sessions' => 2, 'evening_sessions' => 0,
+            'service_started_on' => '2026-04-01', 'updated_by' => $admin->id,
+        ];
+        EmployeeSalaryProfile::create($settings);
+        EmployeeSalaryProfile::create(array_replace($settings, ['teacher_id' => $this->employee()->id]));
+        $report = route('employee-salaries.teacher-reports', ['month' => '2026-06', 'report' => 'leave']);
+        $update = route('employee-salaries.leave-bonus-eligibility.update');
+
+        $this->actingAs($admin)->get($report)->assertOk()
+            ->assertSee('data-bonus-months="6"', false)->assertSee('payroll-strip-short-service', false);
+        $this->from($report)->put($update, ['bonus_service_months' => 0])->assertSessionHasErrors('bonus_service_months');
+        $this->put($update, ['bonus_service_months' => 2])->assertRedirect($report);
+        $this->assertDatabaseHas('teacher_management_settings', ['id' => 1, 'bonus_service_months' => 2]);
+        $response = $this->get($report)->assertOk()
+            ->assertSee('data-bonus-months="2"', false)->assertDontSee('payroll-strip-short-service', false);
+        $this->assertSame(2, substr_count($response->getContent(), 'data-bonus-months="2"'));
+        $this->actingAs($teacher)->put($update, ['bonus_service_months' => 1])->assertForbidden();
+    }
+
+    public function test_session_stop_is_cancellable_until_next_month_and_locks_the_earlier_leave_period(): void
+    {
+        $this->travelTo(Carbon::parse('2026-06-13 12:00:00'));
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = $this->employee();
+        $profile = EmployeeSalaryProfile::create([
+            'teacher_id' => $teacher->id, 'day_sessions' => 2, 'evening_sessions' => 0,
+            'service_started_on' => '2026-01-01', 'updated_by' => $admin->id,
+        ]);
+        $group = \App\Models\ClassGroup::create(['name' => 'Grade 7A', 'grade' => 7, 'program' => 'Khmer', 'teacher_id' => $teacher->id]);
+        $room = \App\Models\Classroom::create(['name' => 'Room A1', 'room_number' => 'A1']);
+        foreach (['Morning' => ['07:00', '11:00'], 'Afternoon' => ['13:00', '17:00']] as $session => [$start, $end]) {
+            $class = \App\Models\SchoolClass::create([
+                'name' => $session, 'section' => 'A', 'program' => 'Khmer', 'session' => $session, 'teacher_id' => $teacher->id,
+                'class_group_id' => $group->id,
+            ]);
+            $classSession = $group->sessions()->create(['session' => $session, 'starts_at' => $start, 'ends_at' => $end]);
+            $bookings[$session] = \App\Models\ClassroomBooking::create([
+                'class_group_id' => $group->id, 'class_session_id' => $classSession->id, 'classroom_id' => $room->id,
+                'teacher_id' => $teacher->id, 'day_of_week' => 'Wednesday', 'starts_at' => $start, 'ends_at' => $end,
+            ]);
+            $lessons[$session] = \App\Models\Schedule::create([
+                'teacher_id' => $teacher->id, 'school_class_id' => $class->id, 'day' => 'Wednesday',
+                'academic_year' => '2026-2027', 'entry_type' => 'academic', 'starts_at' => $start, 'ends_at' => $end, 'room' => 'A1',
+            ]);
+        }
+        foreach (Carbon::parse('2026-01-07')->weeksUntil('2026-07-31') as $day) {
+            TeacherAttendance::create(['teacher_id' => $teacher->id, 'date' => $day->toDateString(), 'status' => 'present',
+                'program' => 'Khmer', 'recorded_by' => $admin->id]);
+        }
+
+        $stop = route('teacher-management.sessions.stop', $teacher);
+        $edit = route('teacher-management.edit', $teacher);
+        $reports = route('employee-salaries.teacher-reports', ['teacher' => $teacher->id, 'month' => '2026-07', 'report' => 'leave']);
+        $this->actingAs($admin)->from($edit)->post($stop, ['session' => 'Morning'])->assertRedirect($edit);
+        $this->get($edit)->assertOk()->assertSee('01 Jul 2026')->assertSee('Cancel stop');
+        $this->delete($stop, ['session' => 'Morning'])->assertRedirect();
+        $this->assertDatabaseCount('teacher_session_stops', 0);
+        $this->post($stop, ['session' => 'Morning'])->assertRedirect();
+        $this->assertSame(2, $profile->fresh()->day_sessions);
+        $this->assertNotNull($lessons['Morning']->fresh());
+
+        $this->travelTo(Carbon::parse('2026-07-01 00:01:00'));
+        $this->get($reports)->assertOk()->assertSeeInOrder(['Locked leave record', '$120.00 USD', 'New leave period', '$60.00 USD', '$0.00 USD']);
+        $this->get($edit)->assertOk()->assertDontSee('Cancel stop');
+        $this->delete($stop, ['session' => 'Morning'])->assertSessionHasErrors('session');
+        $this->assertNull(\App\Models\Schedule::find($lessons['Morning']->id));
+        $this->assertNotNull(\App\Models\Schedule::find($lessons['Afternoon']->id));
+        $this->assertSame(1, $profile->fresh()->day_sessions);
+        $this->assertDatabaseHas('school_classes', ['id' => $lessons['Morning']->school_class_id, 'teacher_id' => null]);
+        $this->assertNull($bookings['Morning']->fresh()->teacher_id);
+        $this->assertEquals($teacher->id, $bookings['Afternoon']->fresh()->teacher_id);
+        $this->assertEquals($teacher->id, $group->fresh()->teacher_id);
+
+        TeacherAttendance::where('teacher_id', $teacher->id)->whereDate('date', '2026-06-24')->update(['status' => 'absent']);
+        $this->travelTo(Carbon::parse('2026-08-01 12:00:00'));
+        $this->get($reports)->assertOk()->assertSeeInOrder(['$120.00 USD', '$60.00 USD', '$10.00 USD']);
+        $this->get(route('employee-salaries.show', ['teacher' => $teacher, 'month' => '2026-07', 'slip' => 'leave']))
+            ->assertOk()->assertSeeInOrder(['Locked leave record', '$120.00 USD', 'New leave period', '$60.00 USD', '$10.00 USD']);
+        $this->get(route('employee-salaries.show', ['teacher' => $teacher, 'month' => '2026-06']))
+            ->assertOk()->assertViewHas('salary', fn ($salary) => $salary['base_cents'] === 5000);
+        $this->get(route('employee-salaries.show', ['teacher' => $teacher, 'month' => '2026-07']))
+            ->assertOk()->assertViewHas('salary', fn ($salary) => $salary['base_cents'] === 2500);
     }
 
     public function test_teacher_reports_filter_both_slips_by_name_program_and_session(): void
@@ -311,7 +488,7 @@ class EmployeeSalaryTest extends TestCase
             ->assertDontSee(['Chan Dara', 'Sam Dara', 'Kim Sopheak']);
         $all = $this->get(route('employee-salaries.teacher-reports', ['month' => '2026-11']), ['X-Requested-With' => 'XMLHttpRequest'])
             ->assertOk()->getContent();
-        $this->assertSame(8, substr_count($all, 'class="payroll-slip-table"'));
+        $this->assertSame(8, substr_count($all, '<table class="payroll-slip-table'));
         $this->assertSame(4, substr_count($all, 'class="salary-report-teacher"'));
         $this->assertStringContainsString('class="salary-report-teacher" aria-label="Sok Dara"', $all);
         $this->assertSame(2, substr_count($all, '>Sok Dara</a>'));
@@ -320,7 +497,7 @@ class EmployeeSalaryTest extends TestCase
         $salaryOnly = $this->get(route('employee-salaries.teacher-reports', $teacherQuery + ['report' => 'salary']), ['X-Requested-With' => 'XMLHttpRequest'])
             ->assertOk()->assertSee('aria-label="Salary slip"', false)
             ->assertDontSee(['aria-label="Annual leave record"', 'Chan Dara'], false);
-        $this->assertSame(1, substr_count($salaryOnly->getContent(), 'class="payroll-slip-table"'));
+        $this->assertSame(1, substr_count($salaryOnly->getContent(), '<table class="payroll-slip-table'));
         $this->get(route('employee-salaries.teacher-reports', $teacherQuery + ['report' => 'leave']), ['X-Requested-With' => 'XMLHttpRequest'])
             ->assertOk()->assertSee('aria-label="Annual leave record"', false)->assertDontSee('aria-label="Salary slip"', false);
         $this->get(route('teacher-attendance.monthly', ['month' => '2026-11']))

@@ -133,11 +133,11 @@ $teacherNumber = ($roster->currentPage() - 1) * $roster->perPage() + $teacherInd
 $teacherGroupStart = $previousTeacherId !== $row['teacher']->id;
 $previousTeacherId = $row['teacher']->id;
 @endphp
-<tr class="teacher-attendance-band-{{ $teacherBand }}{{ $teacherGroupStart ? ' teacher-group-start' : '' }}"><td>{{ $teacherNumber }}</td><th scope="row"><div class="teacher-grid-person">@include('school.partials.avatar', ['person' => $row['teacher'], 'avatarClass' => 'teacher-grid-avatar', 'teacherIcon' => true, 'size' => 38])<span>{{ $row['teacher']->name }}</span></div></th><td><span class="teacher-gender teacher-gender-{{ strtolower($row['teacher']->gender ?? 'unspecified') }}" title="{{ ucfirst($row['teacher']->gender ?: 'Not specified') }}"><i class="bi bi-{{ match (strtolower($row['teacher']->gender ?? '')) { 'female' => 'gender-female', 'male' => 'gender-male', default => 'person' } }}" aria-hidden="true"></i><span class="visually-hidden">{{ ucfirst($row['teacher']->gender ?: 'Not specified') }}</span></span></td><td>{{ $row['assigned']->count() }}<small class="d-block">{{ $row['assigned']->implode(', ') ?: 'No sessions assigned' }}</small></td><td>{{ $row['session'] ?: 'Unassigned' }}</td>
+<tr class="teacher-attendance-band-{{ $teacherBand }}{{ $teacherGroupStart ? ' teacher-group-start' : '' }}"><td>{{ $teacherNumber }}</td><th scope="row"><div class="teacher-grid-person">@include('school.partials.avatar', ['person' => $row['teacher'], 'avatarClass' => 'teacher-grid-avatar', 'teacherIcon' => true, 'size' => 38])<span>{{ $row['teacher']->name }}</span></div></th><td><span class="teacher-gender teacher-gender-{{ strtolower($row['teacher']->gender ?? 'unspecified') }}" title="{{ ucfirst($row['teacher']->gender ?: 'Not specified') }}"><i class="bi bi-{{ match (strtolower($row['teacher']->gender ?? '')) { 'female' => 'gender-female', 'male' => 'gender-male', default => 'person' } }}" aria-hidden="true"></i><span class="visually-hidden">{{ ucfirst($row['teacher']->gender ?: 'Not specified') }}</span></span></td><td>{{ $row['assigned']->count() }}</td><td>{{ $row['session'] ?: 'Unassigned' }}</td>
 @for($day = 1; $day <= $month->daysInMonth; $day++)
 @if($holiday = $holidayDays->get($day))
     <td class="attendance-mark mark-school-holiday" title="{{ $holiday }}" aria-label="{{ $holiday }}. {{ __('No attendance required') }}">
-        <i class="bi bi-calendar-event d-block" aria-hidden="true"></i>{{ __('No scans') }}
+        <i class="bi bi-calendar-event d-block" aria-hidden="true"></i><span class="attendance-holiday-label">{{ __('No scans') }}</span>
     </td>
     @continue
 @endif
