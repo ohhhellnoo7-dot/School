@@ -103,11 +103,14 @@
         </svg>
     </section>
 @endif
-@forelse($rosterPages as $program => $roster)
-<section class="panel mb-4 teacher-attendance-panel" id="{{ $roster->fragment() }}">
+@forelse($groups as $program => $roster)
+@php
+    $teacherIds = $roster->pluck('teacher.id')->unique()->values();
+@endphp
+<section class="panel mb-4 teacher-attendance-panel" id="roster-{{ \Illuminate\Support\Str::slug($program) }}">
     <div class="panel-header">
-        <h2><i class="bi bi-people-fill" aria-hidden="true"></i> {{ $program }} <small class="text-secondary">&middot; {{ $roster->total() }} teachers</small></h2>
-        @if($printing || !$rosterPages->contains(fn ($page) => $page->hasPages()))
+        <h2><i class="bi bi-people-fill" aria-hidden="true"></i> {{ $program }} <small class="text-secondary">&middot; {{ $teacherIds->count() }} teachers</small></h2>
+        @if($printing)
             <button type="button" class="btn btn-outline-primary" onclick="window.print()"><i class="bi bi-printer" aria-hidden="true"></i> Print</button>
         @else
             <a class="btn btn-outline-primary" href="{{ request()->fullUrlWithQuery(['print' => 1]) }}" target="_blank"><i class="bi bi-printer" aria-hidden="true"></i> Print full report</a>
@@ -122,14 +125,13 @@
 </colgroup>
 <thead><tr><th>No.</th><th>Teacher's name</th><th>Sex</th><th>Assigned sessions</th><th>Session</th>@for($day = 1; $day <= $month->daysInMonth; $day++)<th scope="col" @class(['is-weekend' => $month->copy()->day($day)->isWeekend(), 'is-school-holiday' => $holidayDays->has($day)]) title="{{ $holidayDays->get($day) }}">{{ $day }}@if($holidayDays->has($day))<small class="d-block">{{ __('Holiday') }}<span class="visually-hidden"> {{ $holidayDays->get($day) }}</span></small>@endif</th>@endfor @if($canViewPayrollReports)<th scope="col" class="attendance-report-cell">{{ __('Reports') }}</th>@endif</tr></thead><tbody>
 @php
-$teacherIds = $roster->pluck('teacher.id')->unique()->values();
 $previousTeacherId = null;
 @endphp
 @foreach($roster as $row)
 @php
 $teacherIndex = $teacherIds->search($row['teacher']->id);
 $teacherBand = $teacherIndex % 2;
-$teacherNumber = ($roster->currentPage() - 1) * $roster->perPage() + $teacherIndex + 1;
+$teacherNumber = $teacherIndex + 1;
 $teacherGroupStart = $previousTeacherId !== $row['teacher']->id;
 $previousTeacherId = $row['teacher']->id;
 @endphp
@@ -200,12 +202,6 @@ $description = $dateLabel.' · '.($status ?: 'Not recorded').($record?->scanned_
 </tr>
 @endforeach
 </tbody></table></div>
-@if($roster->hasPages())
-    <div class="p-3 d-flex flex-wrap align-items-center justify-content-between gap-2 d-print-none">
-        <span class="small text-secondary">{{ __('Teachers :first to :last of :total', ['first' => ($roster->currentPage() - 1) * $roster->perPage() + 1, 'last' => min($roster->currentPage() * $roster->perPage(), $roster->total()), 'total' => $roster->total()]) }}</span>
-        {{ $roster->links() }}
-    </div>
-@endif
 </section>
 @empty<section class="panel p-4">No teachers match these filters.</section>@endforelse
 </div>

@@ -93,22 +93,8 @@ class TeacherAttendanceController extends Controller
         $activeHolidayDays = $activeHoliday ? $holidayDays->filter(fn ($name) => $name === $activeHoliday)->keys() : collect();
 
         $printing = $request->boolean('print');
-        $rosterPages = $groups->map(function ($programRows, $program) use ($request, $printing) {
-            $slug = \Illuminate\Support\Str::slug($program);
-            $pageName = 'page_'.$slug;
-            $teachers = $programRows->groupBy(fn ($row) => $row['teacher']->id);
-            $perPage = $printing ? $teachers->count() : 8;
-            $page = min(max(1, $request->integer($pageName, 1)), (int) ceil($teachers->count() / $perPage));
 
-            return new \Illuminate\Pagination\LengthAwarePaginator(
-                $teachers->forPage($page, $perPage)->flatten(1),
-                $teachers->count(), $perPage, $page,
-                ['path' => $request->url(), 'query' => $request->query(), 'pageName' => $pageName, 'fragment' => 'roster-'.$slug],
-            );
-        });
-
-        return view('school.attendance.teacher-monthly', compact('rosterPages', 'month', 'filters', 'summaryMarks', 'summaryDate', 'holidayDays', 'activeHoliday', 'activeHolidayDays', 'printing'))
-            ->with('groups', $rosterPages->map(fn ($page) => $page->getCollection()));
+        return view('school.attendance.teacher-monthly', compact('groups', 'month', 'filters', 'summaryMarks', 'summaryDate', 'holidayDays', 'activeHoliday', 'activeHolidayDays', 'printing'));
     }
 
     public function bulk(Request $request, string $action) {
