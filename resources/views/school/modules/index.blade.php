@@ -63,9 +63,10 @@
 <article class="teacher-stat subject-stat-{{ $key }}"><span class="teacher-stat-icon"><i class="bi bi-{{ $icon }}" aria-hidden="true"></i></span><div><h2>{{ __($label) }}</h2><strong>{{ number_format($subjectSummary[$key]) }}</strong></div><small>{{ __($note) }}</small><svg class="teacher-stat-spark" viewBox="0 0 120 45" fill="none" aria-hidden="true"><path d="M2 38 Q16 14 28 26 T52 19 T76 16 T96 22 T118 25" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></article>
 @endforeach
 </div>
+@elseif($module === 'parents')
+    @include('school.modules._parent-overview')
 @else
-<div class="page-heading {{ $module === 'parents' ? 'school-hero parent-hero' : '' }}"><div><div class="eyebrow">SCHOOL WORKSPACE</div><h1>@if($module === 'parents')Parents &amp; <span>guardians</span>@else{{ $meta['title'] }}@endif</h1><p>{{ match ($module) {
- 'parents' => 'Manage family connections and guardian information for your school community.',
+<div class="page-heading"><div><div class="eyebrow">SCHOOL WORKSPACE</div><h1>{{ $meta['title'] }}</h1><p>{{ match ($module) {
  'teachers' => 'Meet the educators shaping tomorrow.',
  'classes' => 'Organize classrooms and learning communities.',
  'subjects' => 'Explore and manage academic subjects.',
@@ -79,16 +80,9 @@
  'users' => 'Manage school community accounts.',
  default => 'Browse and manage your school records.'
 } }}</p></div>
-@if($canWrite && $module !== 'parents')<a href="{{ route('modules.create', $module) }}" class="btn btn-primary"><i class="bi bi-plus-lg me-2" aria-hidden="true"></i>Add record</a>@endif</div>
+@if($canWrite)<a href="{{ route('modules.create', $module) }}" class="btn btn-primary"><i class="bi bi-plus-lg me-2" aria-hidden="true"></i>Add record</a>@endif</div>
 @endif
-@if($module === 'parents')
-<div class="parent-summary" aria-label="Parent overview">
-@foreach(['total' => ['Total parents', 'people-fill', 'School community'], 'male' => ['Male parents', 'gender-male', 'Family connections'], 'female' => ['Female parents', 'gender-female', 'Family connections'], 'unspecified' => ['Other / not provided', 'person-badge', 'Gender information']] as $key => [$label, $icon, $note])
-<article class="parent-stat parent-stat-{{ $key }}"><span class="parent-stat-icon"><i class="bi bi-{{ $icon }}" aria-hidden="true"></i></span><div><h2>{{ __($label) }}</h2><strong>{{ number_format($parentSummary[$key]) }}</strong></div><small>{{ __($note) }}</small><i class="bi bi-{{ $icon }} parent-stat-watermark" aria-hidden="true"></i></article>
-@endforeach
-</div>
-@endif
-<section class="panel directory-panel {{ isset($attendanceSummary) ? 'student-attendance-panel' : '' }}">
+<section class="directory-panel {{ $module === 'parents' ? '' : 'panel' }} {{ isset($attendanceSummary) ? 'student-attendance-panel' : '' }}" @if($module === 'parents') id="parent-directory" @endif>
 @if(isset($attendanceSummary))
 <div class="panel-header windy-original"><h2>{{ $meta['title'] }} <span class="badge text-bg-light">{{ $records->total() }}</span></h2></div>
 <div class="panel-header student-attendance-toolbar windy-only">
@@ -99,25 +93,25 @@
     </div>
 </div>
 @else
-<div class="panel-header"><h2>@if($module === 'parents')<i class="bi bi-people" aria-hidden="true"></i>@endif{{ $meta['title'] }} <span class="badge text-bg-light">{{ $module === 'classes' ? $uniqueClassCount : $records->total() }}</span></h2>@if($module === 'classes')<span class="small text-secondary">{{ $records->total() }} program / session entries · Classes counted by grade and section</span>@endif</div>
+<div class="panel-header"><h2>@if($module === 'parents')<i class="bi bi-people-fill" aria-hidden="true"></i> {{ __('Parents & guardians') }}@else{{ $meta['title'] }}@endif <span class="badge text-bg-light">{{ $module === 'classes' ? $uniqueClassCount : number_format($records->total()) }}</span></h2>@if($module === 'classes')<span class="small text-secondary">{{ $records->total() }} program / session entries · Classes counted by grade and section</span>@endif</div>
 @endif
 <form class="{{ $module === 'parents' ? 'parent-filter-toolbar' : 'filter-grid d-flex flex-wrap gap-2 px-4 pb-3' }}" method="get" @if($module === 'parents') id="parent-filters" aria-label="{{ __('Filter parents and guardians') }}" @elseif(isset($attendanceClasses)) id="attendance-filters" @endif>
     @if($module === 'parents')
         <div class="parent-filter-search">
-            <label for="search" class="form-label">{{ __('Search') }}</label>
+            <label for="search" class="form-label"><i class="bi bi-people" aria-hidden="true"></i>{{ __('Search') }}</label>
             <div class="input-group">
-                <input id="search" class="form-control" type="search" name="search" value="{{ request('search') }}" placeholder="{{ __('Name, profile number, or email') }}">
                 <button class="btn btn-outline-secondary" type="submit" aria-label="{{ __('Search') }}"><i class="bi bi-search" aria-hidden="true"></i></button>
+                <input id="search" class="form-control" type="search" name="search" value="{{ request('search') }}" placeholder="{{ __('Name, profile number, or email') }}">
             </div>
         </div>
         <div class="parent-filter-date">
-            <label for="parent-attendance-date" class="form-label">{{ __('Attendance date') }}</label>
+            <label for="parent-attendance-date" class="form-label"><i class="bi bi-calendar3" aria-hidden="true"></i>{{ __('Attendance date') }}</label>
             <input id="parent-attendance-date" class="form-control" type="date" name="date" value="{{ $parentAttendanceDate->toDateString() }}">
         </div>
         <a class="parent-filter-reset" href="{{ route('modules.index', $module) }}"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> {{ __('Reset') }}</a>
-        <div><label for="parent-program" class="form-label">{{ __('Program') }}</label><select id="parent-program" name="program" class="form-select"><option value="">{{ __('All programs') }}</option>@foreach(['Khmer', 'English', 'Chinese'] as $program)<option value="{{ $program }}" @selected(request('program') === $program)>{{ $program }}</option>@endforeach</select></div>
-        <div><label for="parent-session" class="form-label">{{ __('Session') }}</label><select id="parent-session" name="session" class="form-select"><option value="">{{ __('All sessions') }}</option>@foreach(['Morning', 'Afternoon', 'Evening'] as $session)<option value="{{ $session }}" @selected(request('session') === $session)>{{ $session }}</option>@endforeach</select></div>
-        <div><label for="parent-grade" class="form-label">Grade / class</label><select id="parent-grade" name="grade" class="form-select"><option value="">All grades / classes</option>@foreach($parentGrades as $grade)<option value="{{ $grade->name.'::'.$grade->section }}" data-program="{{ $grade->program }}" data-session="{{ $grade->session }}" @selected(request('grade') === $grade->name.'::'.$grade->section)>{{ $grade->name }}{{ $grade->section }}</option>@endforeach</select></div>
+        <div><label for="parent-program" class="form-label"><i class="bi bi-mortarboard" aria-hidden="true"></i>{{ __('Program') }}</label><select id="parent-program" name="program" class="form-select"><option value="">{{ __('All programs') }}</option>@foreach($parentSummary['programs']->keys() as $program)<option value="{{ $program }}" @selected(request('program') === $program)>{{ __($program === 'Japan' ? 'Japanese' : $program) }}</option>@endforeach</select></div>
+        <div><label for="parent-session" class="form-label"><i class="bi bi-clock" aria-hidden="true"></i>{{ __('Session') }}</label><select id="parent-session" name="session" class="form-select"><option value="">{{ __('All sessions') }}</option>@foreach(['Morning', 'Afternoon', 'Evening'] as $session)<option value="{{ $session }}" @selected(request('session') === $session)>{{ $session }}</option>@endforeach</select></div>
+        <div><label for="parent-grade" class="form-label"><i class="bi bi-layers" aria-hidden="true"></i>Grade / class</label><select id="parent-grade" name="grade" class="form-select"><option value="">All grades / classes</option>@foreach($parentGrades as $grade)<option value="{{ $grade->name.'::'.$grade->section }}" data-program="{{ $grade->program }}" data-session="{{ $grade->session }}" @selected(request('grade') === $grade->name.'::'.$grade->section)>{{ $grade->name }}{{ $grade->section }}</option>@endforeach</select></div>
     @endif
     @if($module === 'teachers')<div><label for="program" class="form-label">{{ __('Program') }}</label><select class="form-select" id="program" name="program"><option value="">{{ __('All programs') }}</option>@foreach(['Khmer', 'English', 'Chinese'] as $program)<option value="{{ $program }}" @selected(request('program') === $program)>{{ $program }}</option>@endforeach</select></div>@endif
     @if($module === 'teachers')
@@ -127,16 +121,16 @@
     @unless($module === 'parents')
         <div class="directory-search-field"><label for="search" class="form-label">Search</label><input class="form-control" id="search" type="search" name="search" value="{{ request('search') }}" placeholder="{{ $module === 'subjects' ? 'Search subjects, code, or teacher...' : (in_array($module, ['teachers', 'users']) ? 'Search name prefix or email' : 'Search records') }}"></div>
     @endunless
-    @if($module === 'parents')<div><label for="parent-gender" class="form-label">{{ __('Gender') }}</label><select id="parent-gender" name="gender" class="form-select"><option value="">All genders</option>@foreach(['male' => 'Male', 'female' => 'Female', 'unspecified' => 'Other / not provided'] as $key => $label)<option value="{{ $key }}" @selected(request('gender') === $key)>{{ $label }}</option>@endforeach</select></div>@endif
+    @if($module === 'parents')<div><label for="parent-gender" class="form-label"><i class="bi bi-people-fill" aria-hidden="true"></i>{{ __('Gender') }}</label><select id="parent-gender" name="gender" class="form-select"><option value="">All genders</option>@foreach(['male' => 'Male', 'female' => 'Female', 'unspecified' => 'Other / not provided'] as $key => $label)<option value="{{ $key }}" @selected(request('gender') === $key)>{{ $label }}</option>@endforeach</select></div>@endif
     @if($module === 'classes')<div><label for="class-session" class="form-label">{{ __('Session') }}</label><select id="class-session" name="session" class="form-select"><option value="">{{ __('All sessions') }}</option>@foreach(['Morning', 'Afternoon', 'Evening'] as $session)<option value="{{ $session }}" @selected(request('session') === $session)>{{ $session }}</option>@endforeach</select></div>@endif
-    @if($filters && !isset($attendanceClasses))<div><label for="filter" class="form-label">{{ $module === 'classes' ? __('Program') : __('Filter') }}</label><select class="form-select" id="filter" name="filter"><option value="">{{ $module === 'classes' ? 'All programs' : 'All' }}</option>@foreach($filters as $filter)<option value="{{ $filter }}" @selected(request('filter') === $filter)>{{ \Illuminate\Support\Str::headline($filter) }}</option>@endforeach</select></div>@endif
+    @if($filters && !isset($attendanceClasses))<div><label for="filter" class="form-label">@if($module === 'parents')<i class="bi bi-funnel" aria-hidden="true"></i>@endif{{ $module === 'classes' ? __('Program') : __('Filter') }}</label><select class="form-select" id="filter" name="filter"><option value="">{{ $module === 'classes' ? 'All programs' : 'All' }}</option>@foreach($filters as $filter)<option value="{{ $filter }}" @selected(request('filter') === $filter)>{{ \Illuminate\Support\Str::headline($filter) }}</option>@endforeach</select></div>@endif
     @if($module === 'subjects')<div><label for="subject-class" class="form-label">{{ __('School class') }}</label><select id="subject-class" class="form-select" name="class"><option value="">{{ __('All grades / classes') }}</option>@foreach($options['class'] as $id => $label)<option value="{{ $id }}" @selected(request('class') == $id)>{{ $label }}</option>@endforeach</select></div>@endif
     @if(in_array($module, ['classes', 'subjects']))<div><label for="teacher" class="form-label">{{ __('Teacher') }}</label><select class="form-select" id="teacher" name="teacher"><option value="">All teachers</option>@foreach($options['teacher'] as $id => $name)<option value="{{ $id }}" @selected(request('teacher') == $id)>{{ $name }}</option>@endforeach</select></div>@endif
     @if($module === 'attendance' && !isset($attendanceClasses))<div><label class="form-label" for="date">Date</label><input class="form-control" type="date" name="date" id="date" value="{{ request('date') }}"></div>@endif
     @if(isset($attendanceClasses))
     <div class="{{ $attendanceThemeClass }}"><label for="attendance-class" class="form-label">{{ __('Class') }}</label><select class="form-select" id="attendance-class" name="class"><option value="">{{ __('All classes') }}</option>@foreach($attendanceClasses->when(request('session'), fn ($classes, $session) => $classes->where('session', $session)) as $class)<option value="{{ $class->id }}" data-session="{{ $class->session }}" @selected(request('class') == $class->id)>{{ $class->label }}</option>@endforeach</select></div>
     <div class="{{ $attendanceThemeClass }}"><label for="attendance-session" class="form-label">{{ __('Session') }}</label><select class="form-select" id="attendance-session" name="session"><option value="">{{ __('All sessions') }}</option>@foreach($attendanceClasses->pluck('session')->filter()->unique() as $session)<option value="{{ $session }}" @selected(request('session') === $session)>{{ __($session) }}</option>@endforeach</select></div>
-    <div><label for="filter" class="form-label">{{ __('Status') }}</label><select class="form-select" id="filter" name="filter"><option value="">{{ __('All statuses') }}</option>@foreach($filters as $filter)<option value="{{ $filter }}" @selected(request('filter') === $filter)>{{ __(ucfirst($filter)) }}</option>@endforeach</select></div>
+    <div><label for="filter" class="form-label">@if($module === 'parents')<i class="bi bi-funnel" aria-hidden="true"></i>@endif{{ __('Status') }}</label><select class="form-select" id="filter" name="filter"><option value="">{{ __('All statuses') }}</option>@foreach($filters as $filter)<option value="{{ $filter }}" @selected(request('filter') === $filter)>{{ __(ucfirst($filter)) }}</option>@endforeach</select></div>
     @endif
     @if(isset($attendanceClasses))
     <details class="student-attendance-extra student-attendance-extra--windy" open>
@@ -144,8 +138,8 @@
         <div class="student-attendance-extra-fields">
             <div><label class="form-label" for="date">{{ __('Date') }}</label><input class="form-control" type="date" name="date" id="date" value="{{ request('date') }}"></div>
     @endif
-    <div><label for="sort" class="form-label">{{ __('Sort by') }}</label><select class="form-select" name="sort" id="sort">@foreach(['id' => 'number'] + $columns as $field => $type)<option value="{{ $field }}" @selected(request('sort', 'id') === $field)>{{ \Illuminate\Support\Str::headline(str_replace('_id', '', $field)) }}</option>@endforeach</select></div>
-    <div><label for="direction" class="form-label">{{ __('Order') }}</label><select class="form-select" id="direction" name="direction"><option value="desc" @selected(request('direction', 'desc') === 'desc')>{{ __('Descending') }}</option><option value="asc" @selected(request('direction') === 'asc')>{{ __('Ascending') }}</option></select></div>
+    <div><label for="sort" class="form-label">@if($module === 'parents')<i class="bi bi-arrow-down-up" aria-hidden="true"></i>@endif{{ __('Sort by') }}</label><select class="form-select" name="sort" id="sort">@foreach(['id' => 'number'] + $columns as $field => $type)<option value="{{ $field }}" @selected(request('sort', 'id') === $field)>{{ \Illuminate\Support\Str::headline(str_replace('_id', '', $field)) }}</option>@endforeach</select></div>
+    <div><label for="direction" class="form-label">@if($module === 'parents')<i class="bi bi-list-ul" aria-hidden="true"></i>@endif{{ __('Order') }}</label><select class="form-select" id="direction" name="direction"><option value="desc" @selected(request('direction', 'desc') === 'desc')>{{ __('Descending') }}</option><option value="asc" @selected(request('direction') === 'asc')>{{ __('Ascending') }}</option></select></div>
     @if(isset($attendanceClasses))
         </div>
     </details>

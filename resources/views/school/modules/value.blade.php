@@ -1,5 +1,7 @@
 @if($field === 'phone' && $record instanceof \App\Models\User && $record->role === 'parent')
     {{ $record->phone ?: ($record->children->first(fn ($child) => filled($child->guardian_phone))?->guardian_phone ?: 'Not provided') }}
+@elseif($module === 'parents' && $field === 'gender' && in_array($record->gender, ['male', 'female'], true))
+    <span class="parent-directory-gender parent-directory-gender-{{ $record->gender }}"><i class="bi bi-gender-{{ $record->gender }}" aria-hidden="true"></i> {{ __(ucfirst($record->gender)) }}</span>
 @elseif($module === 'subjects' && $field === 'name')
     <span class="subject-name"><span class="subject-symbol" aria-hidden="true">@include('school.partials.subject-icon', ['name' => $record->name])</span><span>{{ $record->name }}</span></span>
 @elseif($module === 'subjects' && $field === 'class_id')

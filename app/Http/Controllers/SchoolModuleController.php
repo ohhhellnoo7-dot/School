@@ -96,6 +96,9 @@ class SchoolModuleController extends Controller
                 'male' => (clone $query)->where('gender', 'male')->count(),
                 'female' => (clone $query)->where('gender', 'female')->count(),
                 'unspecified' => (clone $query)->where(fn ($q) => $q->whereNull('gender')->orWhere('gender', '')->orWhereNotIn('gender', ['male', 'female']))->count(),
+                'programs' => collect(\App\Models\Program::names())->mapWithKeys(fn ($program) => [
+                    $program => (clone $query)->whereHas('children.studyClasses', fn ($classes) => $classes->where('program', $program))->count(),
+                ]),
             ];
             $parentFilters = $request->validate([
                 'gender' => 'nullable|in:male,female,other,unspecified',

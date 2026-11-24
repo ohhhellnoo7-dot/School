@@ -47,7 +47,13 @@ class ParentAttendanceTest extends TestCase
         }
         // This parent has both programs, but no Chinese child in Grade 8.
         Student::factory()->create(['parent_id' => $parents[0]->id, 'school_class_id' => $class->id]);
+        Student::factory()->create(['parent_id' => $parents[0]->id, 'school_class_id' => $class->id]);
         $this->actingAs($admin);
+        $this->get('/school/parents')->assertOk()->assertSee('Parents by Program')
+            ->assertViewHas('parentSummary', fn ($summary) => $summary['total'] === 3
+                && $summary['programs']['Khmer'] === 2
+                && $summary['programs']['Chinese'] === 1
+                && $summary['programs']['English'] === 1);
         foreach ([['program=Chinese&session=Morning&grade=Grade+7', 0], ['program=English&session=Morning&grade=Grade+7', 1]] as [$query, $index]) {
             $this->get('/school/parents?'.$query)->assertOk()
                 ->assertViewHas('records', fn ($records) => $records->total() === 1 && $records->first()->id === $parents[$index]->id);
