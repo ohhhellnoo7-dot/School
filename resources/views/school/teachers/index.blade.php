@@ -3,11 +3,11 @@
 @section('content')
 <div class="teacher-reference-dashboard">
 <div class="teacher-summary" aria-label="Teacher overview">
-@foreach([[number_format($total), 'Total Teachers', 'people-fill', 'teacher-workspace.png'], [number_format($subjectTotal), 'Total Subjects', 'book', 'subject-workspace.png'], [number_format($classTotal), 'Total Classes', 'mortarboard', 'class-workspace.png'], [rtrim(rtrim(number_format($weeklyTotal, 2), '0'), '.').' h', 'Total Weekly Hours', 'clock', 'student-timetable-calendar.png']] as [$value, $label, $icon, $art])
+@foreach([[number_format($total), 'Total Teachers', 'people-fill'], [number_format($subjectTotal), 'Total Subjects', 'book'], [number_format($classTotal), 'Total Classes', 'mortarboard'], [rtrim(rtrim(number_format($weeklyTotal, 2), '0'), '.').' h', 'Total Weekly Hours', 'clock']] as [$value, $label, $icon])
 <article class="teacher-stat">
     <span class="teacher-stat-icon"><i class="bi bi-{{ $icon }}" aria-hidden="true"></i></span>
     <div><h2>{{ __($label) }}</h2><strong>{{ $value }}</strong></div>
-    <img class="teacher-stat-art" src="{{ asset('images/'.$art) }}" alt="">
+    <span class="teacher-stat-art teacher-overview-art" aria-hidden="true"></span>
 </article>
 @endforeach
 </div>

@@ -24,7 +24,7 @@
     <div class="attendance-insight-grid">
         @if($holiday && ($dashboardOverview ?? false))
             <div class="attendance-holiday-display">
-                <i class="bi bi-calendar2-heart-fill" aria-hidden="true"></i>
+                <span class="attendance-holiday-art teacher-overview-art" aria-hidden="true"></span>
                 <strong>{{ __('Holiday') }}</strong>
                 <span>{{ __('No attendance required') }}</span>
             </div>
@@ -53,5 +53,5 @@
         </aside>
         @endunless
     </div>
-    <footer class="attendance-insight-footer d-flex align-items-center gap-2"><i class="bi bi-info-circle" aria-hidden="true"></i> {{ $holiday ? __('View attendance for the whole month.') : ($recorded ? 'Status percentages exclude unmarked teachers.' : 'No attendance recorded yet. Unmarked teachers are not counted as absent.') }} @unless($holiday){{ $attendanceScope ?? 'Results reflect the selected date, program and teacher filters.' }}@endunless<a href="{{ route('teacher-attendance.monthly', array_filter(['month' => substr($date, 0, 7), 'program' => $filters['program'] ?? null, 'session' => $filters['session'] ?? null])) }}" class="btn btn-sm btn-outline-primary ms-auto" aria-label="View monthly teacher attendance" title="View monthly teacher attendance"><i class="bi bi-eye" aria-hidden="true"></i></a></footer>
+    <footer class="attendance-insight-footer d-flex align-items-center gap-2"><i class="bi bi-{{ $holiday ? 'bar-chart' : 'info-circle' }}" aria-hidden="true"></i> {{ $holiday ? __('View attendance for the whole month.') : ($recorded ? 'Status percentages exclude unmarked teachers.' : 'No attendance recorded yet. Unmarked teachers are not counted as absent.') }} @unless($holiday){{ $attendanceScope ?? 'Results reflect the selected date, program and teacher filters.' }}@endunless<a href="{{ route('teacher-attendance.monthly', array_filter(['month' => substr($date, 0, 7), 'program' => $filters['program'] ?? null, 'session' => $filters['session'] ?? null])) }}" class="btn btn-sm btn-outline-primary ms-auto" aria-label="View monthly teacher attendance" title="View monthly teacher attendance"><i class="bi bi-arrow-right" aria-hidden="true"></i></a></footer>
 </section>

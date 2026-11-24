@@ -145,4 +145,167 @@
 @media(max-width:991px){.teacher-attendance-filter>form{grid-template-columns:repeat(2,minmax(0,1fr))}.teacher-attendance-filter>form>div:nth-child(3){grid-column:1/-1}}
 @media(max-width:575px){.teacher-attendance-filter>form{grid-template-columns:1fr}.teacher-attendance-filter>form>div:nth-child(3){grid-column:auto}.scholar-workspace.teachers-page .teacher-hero{padding:22px}.scholar-workspace.teachers-page .teacher-hero h1{font-size:28px}}
 
+.teacher-trend-track.is-holiday { display: grid; place-items: center; color: var(--attendance-accent); font-size: 1.35rem; }
+.attendance-holiday-notice { margin: 0; padding: 1rem 1.5rem; }
+
+.teacher-reference-dashboard {
+    --overview-accent: var(--action, var(--primary));
+    --overview-highlight: var(--accent, var(--primary));
+    --overview-tint: color-mix(in srgb, var(--overview-highlight) 13%, var(--surface));
+    --overview-shadow: 0 3px 12px var(--shadow-color);
+    container-type: inline-size;
+}
+:root[data-theme="windy-breeze"] .teacher-reference-dashboard {
+    --overview-accent: #007f79;
+    --overview-highlight: #1ebcaa;
+    --overview-trend-highlight: #48d77a;
+    --overview-stat-1: #39da8b;
+    --overview-stat-2: #60b7ff;
+    --overview-stat-3: #ffc757;
+    --overview-stat-4: #29ccd6;
+}
+:root .teachers-page .main-content:has(.teacher-reference-dashboard) { padding: 10px clamp(12px, 1.65vw, 26px) 24px; }
+:root[data-theme="windy-breeze"] .teachers-page:has(.teacher-reference-dashboard) .main-content {
+    background: radial-gradient(ellipse at 75% 18%, #bdeefa 0%, transparent 61%), linear-gradient(150deg, #f7fcfd, #dcf4fa 24%, transparent 48%);
+}
+@media (min-width: 1050px) {
+    :root[data-sidebar="collapsed"] .teachers-page .topbar { height: 55px; min-height: 55px; padding-block: 6px; }
+    :root[data-sidebar="collapsed"] .teachers-page .topbar .portal-search { width: clamp(140px, 19vw, 240px); border-radius: 999px; }
+    :root[data-sidebar="collapsed"] .teachers-page .topbar .teacher-scan-shortcut { min-height: 36px; border-radius: 999px; }
+    :root[data-sidebar="collapsed"] .teachers-page .topbar .teacher-scan-shortcut > span { display: inline !important; }
+}
+.teacher-reference-dashboard .teacher-summary { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.teacher-reference-dashboard .teacher-stat {
+    --stat-color: var(--overview-stat-1, var(--theme-tile-1, var(--primary)));
+    --stat-bright: color-mix(in srgb, var(--stat-color) 78%, var(--surface));
+    --stat-deep: color-mix(in srgb, var(--stat-color) 70%, #101823);
+    isolation: isolate;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    min-height: 94px;
+    padding: 14px;
+    gap: 12px;
+    border: 1px solid color-mix(in srgb, var(--stat-bright) 19%, var(--surface));
+    color: var(--text-primary);
+    background: radial-gradient(ellipse at 25% 0, var(--surface) 20%, transparent 72%), linear-gradient(145deg, var(--surface), color-mix(in srgb, var(--stat-bright) 32%, var(--surface)));
+    box-shadow: var(--overview-shadow);
+}
+.teacher-reference-dashboard .teacher-stat:nth-child(2) { --stat-color: var(--overview-stat-2, var(--theme-tile-2, var(--info))); --art-position: right top; }
+.teacher-reference-dashboard .teacher-stat:nth-child(3) { --stat-color: var(--overview-stat-3, var(--theme-tile-3, var(--warning))); --art-position: left bottom; }
+.teacher-reference-dashboard .teacher-stat:nth-child(4) { --stat-color: var(--overview-stat-4, var(--theme-tile-4, var(--violet))); --art-position: right bottom; }
+.teacher-reference-dashboard :is(.teacher-stat, .teacher-attendance-filter)::before {
+    content: '';
+    position: absolute;
+    inset: auto -8% -23px;
+    height: 39px;
+    z-index: -1;
+    border-radius: 52% 38% 0 0;
+    transform: rotate(-3deg);
+    background: color-mix(in srgb, var(--stat-bright, var(--overview-highlight)) 42%, transparent);
+    box-shadow: 45px -10px 0 color-mix(in srgb, var(--stat-bright, var(--overview-highlight)) 19%, transparent);
+}
+.teacher-reference-dashboard .teacher-stat-icon {
+    width: 45px;
+    height: 45px;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 24px;
+    background: linear-gradient(155deg, var(--stat-bright), var(--stat-deep));
+    box-shadow: 0 3px 8px color-mix(in srgb, var(--stat-deep) 30%, transparent);
+}
+.teacher-reference-dashboard .teacher-stat h2 { color: inherit; font-weight: 700; }
+.teacher-reference-dashboard .teacher-stat strong { font-size: clamp(1.25rem, 3cqw, 1.85rem); font-weight: 800; }
+.teacher-overview-art {
+    aspect-ratio: 1;
+    background: url('../images/teacher-overview-illustrations.png') var(--art-position, left top) / 200% 200% no-repeat;
+}
+.teacher-stat-art {
+    position: absolute;
+    z-index: -1;
+    right: 5px;
+    bottom: 1px;
+    width: min(34%, 93px);
+}
+.teacher-reference-dashboard .teacher-attendance-filter {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    padding: 12px 15px !important;
+    margin-bottom: 12px !important;
+    border-radius: var(--card-radius, 20px);
+    box-shadow: var(--overview-shadow);
+}
+.teacher-reference-dashboard .teacher-attendance-filter::before { left: 60%; bottom: -25px; height: 47px; transform: rotate(-2deg); }
+.teacher-reference-dashboard .teacher-attendance-filter>form {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+    gap: 7px 20px !important;
+}
+.teacher-reference-dashboard .teacher-attendance-filter>form>div:nth-child(3) { grid-column: auto; }
+.teacher-reference-dashboard .teacher-attendance-filter .form-label { margin-bottom: 4px; font-weight: 700; }
+.teacher-reference-dashboard .teacher-attendance-filter .form-label i { color: var(--overview-accent); }
+.teacher-reference-dashboard .teacher-attendance-filter :is(.form-control, .form-select, .btn) { height: 33px; min-height: 33px; border-radius: 999px; }
+.teacher-reference-dashboard .teacher-attendance-filter .btn-primary { background: var(--overview-accent); border-color: var(--overview-accent); color: var(--on-action, #fff); box-shadow: var(--overview-shadow); }
+.teacher-reference-dashboard .teacher-attendance-filter .btn-primary:hover { filter: brightness(.92); }
+.teacher-reference-dashboard .teacher-attendance-reset { grid-column: 1; color: var(--overview-accent); font-weight: 700; }
+.teacher-reference-dashboard .teacher-attendance-reset:hover { color: var(--text-primary); background: var(--overview-tint); }
+.teacher-reference-dashboard .teacher-attendance-dashboard { --attendance-accent: var(--overview-accent); }
+.teacher-reference-dashboard .teacher-attendance-main-grid { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 12px; }
+.teacher-reference-dashboard .teacher-attendance-dashboard .panel { border-radius: var(--card-radius, 19px); box-shadow: var(--overview-shadow); }
+.teacher-reference-dashboard :is(.attendance-insight, .teacher-trend-card) { background: linear-gradient(160deg, var(--surface) 46%, var(--overview-tint)); }
+.teacher-reference-dashboard .attendance-insight-header { padding: 14px; background: none; }
+.attendance-insight-title-group { display: flex; align-items: center; gap: 13px; }
+.attendance-overview-icon { font-size: 36px; color: var(--attendance-accent); line-height: 1; }
+.teacher-reference-dashboard .attendance-insight-header h2 { margin-bottom: 3px; }
+.teacher-reference-dashboard .attendance-date-badge { border: 0; border-radius: 999px; background: var(--overview-tint); }
+.teacher-reference-dashboard .attendance-holiday-notice { margin: 0 14px; padding: 8px 12px; border-radius: 12px; background: var(--overview-tint); font-size: .78rem; }
+.attendance-holiday-notice i { margin-inline-end: .4rem; color: var(--attendance-accent); }
+.teacher-reference-dashboard .attendance-insight-grid { grid-template-columns: minmax(0, .9fr) minmax(0, 1.47fr); gap: 12px; padding: 10px 14px 10px; }
+.attendance-holiday-display {
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    min-height: 144px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, var(--surface), var(--overview-tint) 64%, transparent 72%);
+}
+.attendance-holiday-art { --art-position: right bottom; width: min(100%, 104px); margin: -3px 0 -6px; }
+.attendance-holiday-display strong { font-size: 1.5rem; line-height: 1.1; margin-bottom: 4px; }
+.attendance-holiday-display span:not(.teacher-overview-art) { padding: 4px 10px; border-radius: 999px; background: var(--overview-accent); color: var(--on-action, #fff); font-size: .69rem; text-align: center; }
+.teacher-reference-dashboard .attendance-status-grid { gap: 8px; }
+.teacher-reference-dashboard .attendance-status-tile { min-height: 63px; padding: 8px 11px; gap: 10px; text-decoration: none; color: var(--text-primary); background: linear-gradient(140deg, color-mix(in srgb, var(--attendance-color) 12%, var(--surface)), color-mix(in srgb, var(--attendance-color) 20%, var(--surface))); }
+.teacher-reference-dashboard .attendance-status-tile>small { align-self: end; }
+.teacher-reference-dashboard .attendance-status-tile strong { line-height: 1.1; }
+.teacher-reference-dashboard .attendance-status-icon { font-size: 26px; }
+.teacher-reference-dashboard .attendance-status-absent strong { color: var(--danger); }
+.teacher-reference-dashboard .attendance-insight-footer { margin-inline: 14px; padding: 6px 2px; }
+.teacher-reference-dashboard .attendance-insight-footer .btn { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border-radius: 50%; }
+.teacher-reference-dashboard .attendance-insight-footer > i { margin: 0; color: var(--overview-accent); }
+.teacher-reference-dashboard .attendance-insight-footer .btn i { margin: 0; }
+.teacher-reference-dashboard .teacher-trend-card { padding: 14px 18px; }
+.teacher-reference-dashboard .teacher-trend-card header { margin-bottom: 5px; }
+.teacher-reference-dashboard .teacher-period-pill { border-radius: 999px; background: var(--surface); }
+.teacher-reference-dashboard .teacher-trend-plot { height: auto; padding: 0; background: none; border: 0; }
+.teacher-reference-dashboard .teacher-trend-track { height: 126px; max-width: 44px; border-radius: 8px; overflow: hidden; background: color-mix(in srgb, var(--overview-accent) 8%, var(--surface)); }
+.teacher-reference-dashboard .teacher-trend-track>span {
+    --trend-highlight: var(--overview-trend-highlight, var(--overview-highlight));
+    background: radial-gradient(ellipse at -15% -10%, color-mix(in srgb, var(--trend-highlight) 48%, transparent) 0 39%, transparent 40%), radial-gradient(ellipse at 100% 0, color-mix(in srgb, var(--trend-highlight) 31%, transparent) 0 29%, transparent 30%), linear-gradient(180deg, var(--trend-highlight), var(--overview-accent) 72%);
+    border-radius: 8px;
+}
+
+@container (max-width: 860px) {
+    .teacher-reference-dashboard .teacher-attendance-main-grid { grid-template-columns: minmax(0, 1fr); }
+    .teacher-reference-dashboard .teacher-attendance-filter>form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .teacher-reference-dashboard .teacher-attendance-reset { grid-column: auto; }
+    .teacher-stat-art { width: 27%; }
+}
+@container (max-width: 540px) {
+    .teacher-reference-dashboard .teacher-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .teacher-reference-dashboard .teacher-stat { gap: 8px; padding: 9px; }
+    .teacher-stat-art { display: none; }
+    .teacher-reference-dashboard .attendance-insight-grid { grid-template-columns: minmax(0, 1fr); }
+    .teacher-reference-dashboard .teacher-attendance-filter>form { grid-template-columns: minmax(0, 1fr); }
+    .teacher-reference-dashboard .teacher-trend-plot { gap: 4px; }
+    .teacher-reference-dashboard .teacher-trend-value { font-size: .6rem; }
+}
+
 .teacher-attendance-dashboard .attendance-status-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.teacher-attendance-dashboard .attendance-status-tile{width:auto;min-width:0}
