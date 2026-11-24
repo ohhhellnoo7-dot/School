@@ -20,6 +20,7 @@
     @if($slip === 'salary')
         <td>{{ $work['sessions'] ?? '—' }}</td>
         <td>{{ $work['scheduledHours'] }}/{{ $work['weeklyHours'] ?? '—' }} ម៉ោង</td>
+        <td>{{ $workingDays }}</td>
         @foreach(['present', 'late', 'absent', 'excused'] as $status)
             <td>{{ $counts->get($status, 0) }}</td>
         @endforeach

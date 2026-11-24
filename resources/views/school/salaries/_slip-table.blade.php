@@ -6,6 +6,10 @@
     $khmerMonths = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
 @endphp
 @if($slip === 'salary')
+    @php
+        $monthStart = $month->copy()->startOfMonth();
+        $workingDays = $monthStart->diffInWeekdays($monthStart->copy()->addMonth());
+    @endphp
     <div class="table-responsive mb-3">
         <table class="payroll-slip-table payroll-slip-table-salary" lang="km" aria-label="{{ __('Salary slip') }}">
             <colgroup>
@@ -14,7 +18,10 @@
                 <col class="payroll-strip-col-sessions">
                 <col class="payroll-strip-col-hours">
             </colgroup>
-            <colgroup><col class="payroll-strip-col-days" span="4"></colgroup>
+            <colgroup>
+                <col class="payroll-strip-col-working-days">
+                <col class="payroll-strip-col-days" span="4">
+            </colgroup>
             <colgroup><col class="payroll-strip-col-salary" span="3"></colgroup>
             <colgroup><col class="payroll-strip-col-deduction" span="4"></colgroup>
             <colgroup><col class="payroll-strip-col-net"></colgroup>
@@ -23,12 +30,13 @@
                     <th scope="col" rowspan="2">ឈ្មោះ</th><th scope="col" rowspan="2">ភេទ</th>
                     <th scope="col" rowspan="2">ចំនួនវេនការងារ</th>
                     <th scope="col" rowspan="2" title="ម៉ោងបង្រៀនតាមកាលវិភាគ / ម៉ោងការងារកំណត់ក្នុងមួយសប្ដាហ៍">ម៉ោងការងារប្រចាំសប្ដាហ៍</th>
-                    <th scope="colgroup" colspan="4">ចំនួនថ្ងៃ</th>
+                    <th scope="colgroup" colspan="5">ចំនួនថ្ងៃ</th>
                     <th scope="colgroup" colspan="3">ប្រាក់ខែ</th>
                     <th scope="colgroup" colspan="4">ប្រាក់កាត់</th>
                     <th scope="col" rowspan="2">ប្រាក់សរុប</th>
                 </tr>
                 <tr>
+                    <th scope="col" title="Total working days (Monday–Friday)">ថ្ងៃធ្វើការ</th>
                     <th scope="col" title="Present">វត្តមាន</th>
                     <th scope="col" title="Late">មកយឺត</th>
                     <th scope="col" title="Absent">អវត្តមាន</th>
