@@ -1,0 +1,5 @@
+<div class="d-flex gap-2"><a class="btn btn-sm btn-light" href="{{ route('modules.show', [$module, $record->id]) }}" aria-label="View record {{ $record->id }}"><i class="bi bi-eye"></i></a>
+@if($module === 'teachers')<a class="btn btn-sm btn-outline-secondary" href="{{ route('teachers.schedule', $record) }}">Schedule</a>@endif
+@if($module === 'fees')<a class="btn btn-sm btn-outline-success" href="{{ route('fees.pay', $record->id) }}">{{ (float) $record->balance > 0 ? 'Pay by QR' : 'Payment details' }}</a>@endif
+@if($canWrite)<a class="btn btn-sm btn-light" href="{{ route('modules.edit', [$module, $record->id]) }}" aria-label="Edit record {{ $record->id }}"><i class="bi bi-pencil"></i></a><form method="post" action="{{ route('modules.destroy', [$module, $record->id]) }}" data-confirm="Delete this record? Records with dependent school data are protected.">@csrf @method('DELETE')<button class="btn btn-sm btn-light text-danger" aria-label="Delete record {{ $record->id }}"><i class="bi bi-trash"></i></button></form>@endif
+</div>

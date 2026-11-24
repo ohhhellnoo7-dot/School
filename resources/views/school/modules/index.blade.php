@@ -148,7 +148,10 @@
         <div class="d-flex align-items-end gap-2">@unless($teacherAttendance)<button class="btn btn-outline-secondary {{ isset($attendanceClasses) ? 'windy-original' : '' }}">{{ $module === 'teachers' ? 'Filter' : 'Apply' }}</button>@endunless<a class="btn btn-light" href="{{ route('modules.index', $module) }}">@if(isset($attendanceClasses))<i class="bi bi-arrow-clockwise me-1 {{ $attendanceThemeClass }}" aria-hidden="true"></i>@endif{{ __('Reset') }}</a></div>
     @endunless
 </form>
-<div class="table-responsive"><table class="table table-hover"><thead><tr>@if($recordIsPerson = in_array($module, ['teachers', 'parents', 'users']))<th>{{ __('Profile') }}</th>@endif<th>ID</th>
+@if($module === 'parents')
+    @include('school.modules._parent-cards')
+@else
+<div class="table-responsive"><table class="table table-hover"><thead><tr>@if($recordIsPerson = in_array($module, ['teachers', 'users']))<th>{{ __('Profile') }}</th>@endif<th>ID</th>
 @foreach($columns as $field => $type)
 <th>{{ \Illuminate\Support\Str::headline(str_replace('_id', '', $field)) }}</th>
 @if($module === 'attendance' && $field === 'student_id')<th>{{ __('Gender') }}</th>@endif
@@ -157,7 +160,6 @@
 @if($module === 'subjects')<th>{{ __('Assignment') }}</th>@endif
 @if($module === 'classes')<th>{{ __('Students') }}</th>@endif
 @if($module === 'teachers')<th>{{ __('Subjects') }}</th>@endif
-@if($module === 'parents')<th>{{ __('Children') }}</th><th>{{ $parentAttendanceDate->isToday() ? __('Today\'s attendance') : __('Attendance') }}<small class="d-block fw-normal mt-1">{{ $parentAttendanceDate->format('M d, Y') }}</small></th>@endif
 @if($module === 'fees')<th>Balance &middot; USD</th><th>Payment status</th>@endif
 @if($module === 'grades')<th>Percentage</th><th>{{ __('Grade') }}</th>@endif
 <th>{{ __('Actions') }}</th></tr></thead><tbody>
@@ -182,30 +184,6 @@
 @if($module === 'subjects')<td><span class="status-badge {{ $record->teacher ? 'active' : 'pending' }}"><i class="bi bi-{{ $record->teacher ? 'check-circle-fill' : 'clock' }} me-1" aria-hidden="true"></i>{{ $record->teacher ? __('Assigned') : __('Unassigned') }}</span></td>@endif
 @if($module === 'classes')<td>{{ $record->students_count }} / {{ $record->capacity }} @if($record->capacity > 0)<meter class="class-capacity" min="0" max="{{ $record->capacity }}" value="{{ $record->students_count }}" aria-label="{{ $record->students_count }} students; capacity {{ $record->capacity }}"></meter>@endif</td>@endif
 @if($module === 'teachers')<td>{{ $record->subjects->pluck('name')->unique()->join(', ') ?: 'Not assigned' }}</td>@endif
-@if($module === 'parents')
-<td>
-    @forelse($record->children as $child)
-        <div class="py-1 text-nowrap" style="min-height:30px">@include('school.partials.avatar', ['person' => $child]){{ $child->name }}</div>
-    @empty
-        <span class="text-secondary text-nowrap">{{ __('No children linked') }}</span>
-    @endforelse
-</td>
-@endif
-@if($module === 'parents')
-<td>
-    @forelse($record->children as $child)
-        @php
-            $attendanceStatus = $child->attendances->first()?->status;
-            $attendanceIcon = match ($attendanceStatus) { 'present' => 'check-circle-fill', 'late' => 'clock-fill', 'absent' => 'x-circle-fill', default => 'dash-circle' };
-        @endphp
-        <div class="d-flex align-items-center py-1" style="min-height:30px">
-            <span class="status-badge {{ $attendanceStatus ?: 'unrecorded' }}"><i class="bi bi-{{ $attendanceIcon }} me-1" aria-hidden="true"></i>{{ __($attendanceStatus ? ucfirst($attendanceStatus) : 'Not recorded') }}</span>
-        </div>
-    @empty
-        <span class="text-secondary">{{ __('No children linked') }}</span>
-    @endforelse
-</td>
-@endif
 @if($module === 'fees')<td>${{ number_format($record->balance, 2) }}</td><td>@include('school.partials.status', ['status' => $record->payment_status])</td>@endif
 @if(isset($attendanceClasses))
 <td class="{{ $attendanceThemeClass }}">
@@ -215,13 +193,11 @@
 </td>
 @endif
 @if($module === 'grades')<td>{{ round($record->percentage, 1) }}%</td><td>@include('school.partials.status', ['status' => $record->letter_grade, 'prefix' => 'grade-'])</td>@endif
-<td><div class="d-flex gap-2"><a class="btn btn-sm btn-light" href="{{ route('modules.show', [$module, $record->id]) }}" aria-label="View record {{ $record->id }}"><i class="bi bi-eye"></i></a>
-@if($module === 'teachers')<a class="btn btn-sm btn-outline-secondary" href="{{ route('teachers.schedule', $record) }}">Schedule</a>@endif
-@if($module === 'fees')<a class="btn btn-sm btn-outline-success" href="{{ route('fees.pay', $record->id) }}">{{ (float) $record->balance > 0 ? 'Pay by QR' : 'Payment details' }}</a>@endif
-@if($canWrite)<a class="btn btn-sm btn-light" href="{{ route('modules.edit', [$module, $record->id]) }}" aria-label="Edit record {{ $record->id }}"><i class="bi bi-pencil"></i></a><form method="post" action="{{ route('modules.destroy', [$module, $record->id]) }}" data-confirm="Delete this record? Records with dependent school data are protected.">@csrf @method('DELETE')<button class="btn btn-sm btn-light text-danger" aria-label="Delete record {{ $record->id }}"><i class="bi bi-trash"></i></button></form>@endif
-</div></td></tr>
+<td>@include('school.modules._record-actions')</td></tr>
 @empty<tr><td colspan="{{ ($recordIsPerson ? 1 : 0) + count($columns) + 5 }}"><div class="empty-state">No records found. Try another filter.</div></td></tr>@endforelse
-</tbody></table></div><div class="p-3">{{ $records->links() }}</div></section>
+</tbody></table></div>
+@endif
+<div class="p-3">{{ $records->links() }}</div></section>
 @endsection
 
 @if(isset($attendanceClasses))

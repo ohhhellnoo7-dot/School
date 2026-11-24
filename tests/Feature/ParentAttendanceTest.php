@@ -81,8 +81,8 @@ class ParentAttendanceTest extends TestCase
             }
         }
         $this->actingAs($admin)->get('/school/parents')->assertOk()
-            ->assertSee("Today's attendance")->assertSeeInOrder(['Children', "Today's attendance", 'Actions'])
-            ->assertSeeInOrder(['Child 0', 'Child 1', 'Child 2', 'Child 3', 'Present', 'Late', 'Absent', 'Not recorded'])
+            ->assertSeeTextInOrder(["Today's attendance", 'Children'])
+            ->assertSeeTextInOrder(['Child 0', 'Present', 'Child 1', 'Late', 'Child 2', 'Absent', 'Child 3', 'Not recorded'])
             ->assertDontSee('Excused')
             ->assertViewHas('records', fn ($records) => $records->first()->children->every(fn ($child) =>
                 $child->relationLoaded('attendances') && $child->attendances->every(fn ($attendance) => $attendance->date->isToday())));
