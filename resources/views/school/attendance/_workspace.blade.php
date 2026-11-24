@@ -1,7 +1,7 @@
 <div class="teacher-attendance-dashboard">
     <div class="teacher-attendance-main-grid">
         <div class="teacher-attendance-compact">
-            @include('school.attendance._teacher-chart', ['holiday' => $insights['holiday']])
+            @include('school.attendance._teacher-chart', ['holiday' => $insights['holiday'], 'dashboardOverview' => $embedded ?? false])
         </div>
         <section class="panel teacher-insight-card teacher-trend-card" aria-labelledby="teacher-trend-title">
             <header><h2 id="teacher-trend-title"><i class="bi bi-bar-chart" aria-hidden="true"></i>Attendance trend</h2><span class="teacher-period-pill">Last 7 days</span></header>
@@ -10,7 +10,10 @@
                 @foreach($insights['trend'] as $day)
                 <div class="teacher-trend-day" role="listitem" aria-label="{{ $day['date'] }}: {{ $day['holiday'] ?? ($day['rate'] === null ? 'No records' : $day['rate'].'% present') }}">
                     <span class="teacher-trend-value">{{ $day['holiday'] ? __('Holiday') : ($day['rate'] === null ? 'N/A' : $day['rate'].'%') }}</span>
-                    <div class="teacher-trend-track"><span class="{{ $loop->last ? 'is-selected' : '' }}" style="height:{{ $day['rate'] ?? 0 }}%"></span></div>
+                    <div @class(['teacher-trend-track', 'is-holiday' => $day['holiday']])>
+                        @if($day['holiday'])<i class="bi bi-umbrella-fill" aria-hidden="true"></i>
+                        @else<span class="{{ $loop->last ? 'is-selected' : '' }}" style="height:{{ $day['rate'] ?? 0 }}%"></span>@endif
+                    </div>
                     <span class="teacher-trend-label">{{ $day['label'] }}</span>
                 </div>
                 @endforeach

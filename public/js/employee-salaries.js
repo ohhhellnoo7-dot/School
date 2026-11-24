@@ -53,13 +53,15 @@ document.querySelectorAll('#salary-calculator').forEach((dialog) => {
         const hours = Object.fromEntries(sliders.map((slider) => {
             const selected = slider.valueAsNumber;
             slider.closest('.salary-slider').style.setProperty('--slider-progress', `${100 * selected / Number(slider.max)}%`);
-            dialog.querySelector(`[data-hours="${slider.name}"]`).textContent = `${selected} h`;
+            dialog.querySelector(`[data-hours="${slider.name}"]`).textContent = `${selected} h/week`;
             return [slider.name, selected];
         }));
         const totalHours = hours.daytime + hours.evening;
+        const weeklyHours = `${totalHours} h/week`;
         estimates.daytime.textContent = formatSalary(hours.daytime);
         estimates.evening.textContent = formatSalary(hours.evening);
-        estimates.hours.textContent = `${totalHours} h`;
+        estimates.hours.textContent = weeklyHours;
+        estimates['formula-hours'].textContent = weeklyHours;
         estimates.total.value = formatSalary(totalHours);
     };
 

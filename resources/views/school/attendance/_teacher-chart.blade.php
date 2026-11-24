@@ -8,17 +8,27 @@
 @endphp
 <section class="panel attendance-insight mb-4" aria-labelledby="attendance-insight-title">
     <header class="attendance-insight-header">
-        <div><span class="attendance-eyebrow"><i class="bi bi-activity" aria-hidden="true"></i> Daily overview</span><h2 id="attendance-insight-title">{{ $attendanceTitle ?? 'Overall teacher attendance' }}</h2><p>{{ \Carbon\Carbon::parse($date)->format('l, d F Y') }} &middot; {{ ($filters['program'] ?? null) ?: 'All programs' }} &middot; {{ ($filters['session'] ?? null) ?: 'All sessions' }}</p></div>
+        <div class="attendance-insight-title-group">
+            @if($dashboardOverview ?? false)<i class="bi bi-calendar2-check-fill attendance-overview-icon" aria-hidden="true"></i>@endif
+            <div><span class="attendance-eyebrow"><i class="bi bi-activity" aria-hidden="true"></i> Daily overview</span><h2 id="attendance-insight-title">{{ $attendanceTitle ?? 'Overall teacher attendance' }}</h2><p>{{ \Carbon\Carbon::parse($date)->format('l, d F Y') }} &middot; {{ ($filters['program'] ?? null) ?: 'All programs' }} &middot; {{ ($filters['session'] ?? null) ?: 'All sessions' }}</p></div>
+        </div>
         @if($holiday)
-            <span class="attendance-date-badge">{{ __('School holiday') }}</span>
+            <span class="attendance-date-badge"><i class="bi bi-umbrella-fill" aria-hidden="true"></i> {{ __('School holiday') }}</span>
         @else
         <span class="attendance-date-badge"><i class="bi bi-calendar-check" aria-hidden="true"></i> {{ $recorded }} / {{ $total }} recorded</span>
         @endif
     </header>
     @if($holiday)
-        <p class="p-4 mb-0">{{ app(\App\Services\SchoolHolidayClosure::class)->message($holiday) }}</p>
+        <p class="attendance-holiday-notice"><i class="bi bi-info-circle" aria-hidden="true"></i> {{ app(\App\Services\SchoolHolidayClosure::class)->message($holiday) }}</p>
     @endif
     <div class="attendance-insight-grid">
+        @if($holiday && ($dashboardOverview ?? false))
+            <div class="attendance-holiday-display">
+                <i class="bi bi-calendar2-heart-fill" aria-hidden="true"></i>
+                <strong>{{ __('Holiday') }}</strong>
+                <span>{{ __('No attendance required') }}</span>
+            </div>
+        @else
         <div class="attendance-ring-area">
             <div class="attendance-ring">
                 <canvas id="{{ $attendanceChartId ?? 'teacherOverallChart' }}" data-teacher-values='@json($chartValues)' role="img" aria-label="{{ $holiday ? __('School holiday. Attendance is not required.') : "$presentRate percent present among $recorded recorded teachers" }}"></canvas>
@@ -26,6 +36,7 @@
             </div>
             @unless($holiday)<small>Based on recorded attendance</small>@endunless
         </div>
+        @endif
         <div class="attendance-status-grid">
             @foreach(['present' => ['Present', 'check-circle'], 'absent' => ['Absent', 'x-circle'], 'late' => ['Late', 'clock'], 'excused' => ['Excused', 'shield-check']] as $status => [$label, $icon])
             <a href="{{ route('attendance.people', array_filter(['kind' => 'teachers', 'status' => $status, 'date' => $date, 'session' => $filters['session'] ?? null, 'program' => $filters['program'] ?? null, 'search' => $filters['search'] ?? null])) }}" aria-label="View {{ strtolower($label) }} teachers" class="attendance-status-tile attendance-status-{{ $status }}"><span class="attendance-status-icon"><i class="bi bi-{{ $icon }}" aria-hidden="true"></i></span><div><span>{{ $label }}</span><strong>{{ $counts[$status] ?? 0 }}</strong></div><small>{{ $holiday ? __('N/A') : ($recorded ? round(($counts[$status] ?? 0) / $recorded * 100) : 0).'%' }}</small></a>

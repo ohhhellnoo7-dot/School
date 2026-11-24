@@ -1,6 +1,21 @@
 @extends('school.layout')
 @section('title', 'Teachers')
 @section('content')
+<div class="teacher-reference-dashboard">
+<div class="teacher-summary" aria-label="Teacher overview">
+@foreach([[number_format($total), 'Total Teachers', 'people-fill', 'teacher-workspace.png'], [number_format($subjectTotal), 'Total Subjects', 'book', 'subject-workspace.png'], [number_format($classTotal), 'Total Classes', 'mortarboard', 'class-workspace.png'], [rtrim(rtrim(number_format($weeklyTotal, 2), '0'), '.').' h', 'Total Weekly Hours', 'clock', 'student-timetable-calendar.png']] as [$value, $label, $icon, $art])
+<article class="teacher-stat">
+    <span class="teacher-stat-icon"><i class="bi bi-{{ $icon }}" aria-hidden="true"></i></span>
+    <div><h2>{{ __($label) }}</h2><strong>{{ $value }}</strong></div>
+    <img class="teacher-stat-art" src="{{ asset('images/'.$art) }}" alt="">
+</article>
+@endforeach
+</div>
+<section id="teacher-attendance" aria-label="Teacher attendance overview">
+    @include('school.attendance._teacher-overview', $attendance)
+</section>
+</div>
+
 <header class="teacher-hero-heading" aria-labelledby="teacher-heading">
     <div class="teacher-heading-title">
         <span class="teacher-heading-icon"><i class="bi bi-people-fill" aria-hidden="true"></i></span>
@@ -11,14 +26,6 @@
         <a href="{{ route('teacher-management.export', request()->only('search', 'qualified_subject', 'program', 'workload', 'class', 'session', 'filter')) }}" class="btn btn-light"><i class="bi bi-download me-2" aria-hidden="true"></i>{{ __('Export') }}</a>
     </div>
 </header>
-<div class="teacher-summary" aria-label="Teacher overview">
-@foreach([[number_format($total), 'Total Teachers', 'person-fill'], [number_format($subjectTotal), 'Total Subjects', 'book'], [number_format($classTotal), 'Total Classes', 'mortarboard'], [rtrim(rtrim(number_format($weeklyTotal, 2), '0'), '.').' h', 'Total Weekly Hours', 'clock']] as [$value, $label, $icon])
-<article class="teacher-stat"><span class="teacher-stat-icon"><i class="bi bi-{{ $icon }}" aria-hidden="true"></i></span><div><h2>{{ __($label) }}</h2><strong>{{ $value }}</strong></div></article>
-@endforeach
-</div>
-<section id="teacher-attendance" class="mt-4 mb-4" aria-label="Teacher attendance overview">
-    @include('school.attendance._teacher-overview', $attendance)
-</section>
 
 <section id="teacher-attendance-records" class="panel directory-panel">
 <div class="panel-header"><h2>{{ __('Teacher List') }} <span class="badge teacher-count">{{ $rows->count() }}</span></h2><a class="teacher-directory-caption" href="#teacher-attendance"><i class="bi bi-calendar3 me-1" aria-hidden="true"></i>{{ \Carbon\Carbon::parse($attendance['date'])->format('d M Y') }}</a></div>

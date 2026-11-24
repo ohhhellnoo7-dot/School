@@ -3,7 +3,7 @@
         <i class="bi bi-calculator salary-calculator-icon" aria-hidden="true"></i>
         <div>
             <h2 id="salary-calculator-title">Salary Calculator</h2>
-            <p id="salary-calculator-description">Estimate monthly base salary at ${{ \App\Support\Money::decimal($salaryHourlyCents) }} per assigned weekly hour.</p>
+            <p id="salary-calculator-description">Each hour in your weekly schedule adds ${{ \App\Support\Money::decimal($salaryHourlyCents) }} to your monthly base salary.</p>
         </div>
     </header>
 
@@ -12,7 +12,7 @@
             <div class="salary-slider salary-slider-{{ $key }}" style="--slider-progress: {{ $initial ? 100 : 0 }}%">
                 <div class="salary-slider-heading">
                     <label for="salary-{{ $key }}-hours"><i class="bi bi-{{ $icon }}" aria-hidden="true"></i> Weekly {{ strtolower($label) }} hours</label>
-                    <span class="salary-hour-chip" data-hours="{{ $key }}">{{ $initial }} h</span>
+                    <span class="salary-hour-chip" data-hours="{{ $key }}">{{ $initial }} h/week</span>
                 </div>
                 <input id="salary-{{ $key }}-hours" name="{{ $key }}" type="range" min="0" max="{{ $max }}" step="1" value="{{ $initial }}" @if($loop->first) autofocus @endif>
                 <div class="salary-slider-scale" aria-hidden="true"><span>0 h</span><span>{{ $max }} h</span></div>
@@ -20,13 +20,14 @@
         @endforeach
 
         <dl class="salary-calculator-breakdown">
-            <div><dt>Daytime salary</dt><dd data-estimate="daytime">${{ \App\Support\Money::decimal($salaryHourlyCents * 40) }}</dd></div>
-            <div><dt>Evening salary</dt><dd data-estimate="evening">$0.00</dd></div>
-            <div><dt>Total weekly hours</dt><dd data-estimate="hours">40 h</dd></div>
+            <div><dt>Monthly daytime pay</dt><dd data-estimate="daytime">${{ \App\Support\Money::decimal($salaryHourlyCents * 40) }}</dd></div>
+            <div><dt>Monthly evening pay</dt><dd data-estimate="evening">$0.00</dd></div>
+            <div><dt>Total weekly hours</dt><dd data-estimate="hours">40 h/week</dd></div>
         </dl>
         <div class="salary-calculator-total">
-            <label for="salary-monthly-estimate">Estimated monthly salary</label>
+            <label for="salary-monthly-estimate">Estimated monthly base salary</label>
             <output id="salary-monthly-estimate" for="salary-daytime-hours salary-evening-hours" data-estimate="total">${{ \App\Support\Money::decimal($salaryHourlyCents * 40) }}</output>
+            <p class="salary-calculator-formula"><span data-estimate="formula-hours">40 h/week</span> × ${{ \App\Support\Money::decimal($salaryHourlyCents) }} per weekly hour</p>
         </div>
 
         <footer class="salary-calculator-actions">

@@ -93,10 +93,25 @@
             @include('school.partials.avatar', ['person' => $row['teacher'], 'avatarClass' => 'payroll-avatar', 'teacherIcon' => true])
             <div><strong>{{ $row['teacher']->name }}</strong><small>{{ $row['teacher']->profile_number ?: $row['teacher']->email }}</small></div>
         </div></td><td>
-            @if($row['profile']){{ $row['payment']?->day_sessions ?? $row['profile']->day_sessions }} daytime / {{ $row['payment']?->evening_sessions ?? $row['profile']->evening_sessions }} evening @else<span class="text-secondary">Not configured</span>@endif
-            <small><i class="bi bi-clock me-1" aria-hidden="true"></i><strong>{{ round($row['weekly_hours'], 2) }}/{{ round($row['weekly_limit'], 2) }} h</strong> {{ $row['weekly_work_hours'] === null ? 'scheduled / teaching limit' : 'scheduled / work week' }}</small>
+            @if($row['profile'])
+                <div class="payroll-count-grid">
+                    <span>{{ $row['payment']?->day_sessions ?? $row['profile']->day_sessions }} daytime</span>
+                    <span>{{ $row['payment']?->evening_sessions ?? $row['profile']->evening_sessions }} evening</span>
+                </div>
+            @else
+                <span class="text-secondary text-nowrap">Not configured</span>
+            @endif
+            <small class="payroll-weekly-hours" title="{{ $row['weekly_work_hours'] === null ? 'Scheduled hours / weekly teaching limit' : 'Scheduled hours / configured weekly work hours' }}">
+                <i class="bi bi-clock me-1" aria-hidden="true"></i><strong>{{ round($row['weekly_hours'], 2) }}/{{ round($row['weekly_limit'], 2) }} h/week</strong>
+            </small>
         </td>
-        <td><span class="text-success">{{ $row['attendance']->get('present', 0) }} present</span><small>{{ $row['attendance']->get('late', 0) }} late · {{ $row['attendance']->get('absent', 0) }} absent · {{ $row['attendance']->get('excused', 0) }} excused</small></td>
+        <td>
+            <div class="payroll-count-grid text-secondary">
+                @foreach(['present', 'late', 'absent', 'excused'] as $status)
+                    <span @class(['text-success fw-semibold' => $status === 'present'])>{{ $row['attendance']->get($status, 0) }} {{ $status }}</span>
+                @endforeach
+            </div>
+        </td>
         <td>{{ $row['salary'] ? '$'.\App\Support\Money::decimal($row['salary']['base_cents']) : '—' }}</td><td class="payroll-increase">{{ $row['salary'] ? '+$'.\App\Support\Money::decimal($row['salary']['raise_cents']) : '—' }}</td><td class="payroll-deduction">{{ $row['salary'] ? '-$'.\App\Support\Money::decimal($row['salary']['deduction_cents'] ?? 0) : '—' }}</td>
         <td class="text-nowrap">
             <strong class="payroll-net">{{ $row['salary'] ? '$'.\App\Support\Money::decimal($row['salary']['total_cents']) : '—' }}</strong>

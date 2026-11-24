@@ -136,6 +136,7 @@
     line-height: 1.2;
     font-variant-numeric: tabular-nums;
 }
+.salary-calculator-formula { margin: 4px 0 0; color: var(--text-secondary); font-size: .82rem; }
 .salary-calculator-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
 
 @media (prefers-reduced-motion: reduce) {
@@ -301,6 +302,14 @@
 .payroll-register .salary-table td:nth-child(2) { min-width: 11rem; }
 .payroll-register .salary-table td > .payroll-net { color: var(--payroll-accent); font-size: inherit; }
 .payroll-register .salary-table td small { color: var(--payroll-muted); font-size: .8125rem; }
+.payroll-count-grid {
+    display: grid;
+    grid-template-columns: repeat(2, max-content);
+    gap: .2rem .65rem;
+    font-size: .8125rem;
+    white-space: nowrap;
+}
+.payroll-weekly-hours { white-space: nowrap; }
 .payroll-register .salary-table .text-success { color: var(--success) !important; }
 .payroll-register .salary-table .text-secondary { color: var(--payroll-muted) !important; }
 .payroll-register .salary-table .status-badge.paid { background: var(--success-soft); color: var(--success); }
