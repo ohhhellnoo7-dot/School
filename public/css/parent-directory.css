@@ -180,32 +180,31 @@
 .parent-results-date time { color: var(--text-secondary); font-weight: 500; }
 .parent-card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
-    gap: .9rem;
-}
-.parent-card {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
     border: 1px solid var(--parent-line, var(--border));
     border-radius: 1rem;
     background: var(--surface);
-    box-shadow: 0 3px 8px color-mix(in srgb, var(--parent-accent) 8%, transparent);
+}
+.parent-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
+    border-inline-start: 3px solid transparent;
     color: var(--text-primary);
     font-size: .875rem;
     overflow-wrap: anywhere;
 }
+.parent-card + .parent-card { border-block-start: 1px solid var(--border); }
+.parent-card:hover, .parent-card:focus-within { border-inline-start-color: var(--parent-accent); background: var(--parent-tint); }
 .parent-card-header {
     display: flex;
     align-items: center;
     gap: .7rem;
     padding: .9rem 1rem;
-    border-radius: 1rem 1rem 0 0;
-    background: var(--parent-tint);
 }
 .parent-card-identity { flex: 1; min-width: 0; }
 .parent-card-identity h3 { margin: 0 0 .15rem; font-size: 1rem; font-weight: 750; }
 .parent-card-identity small { color: var(--text-secondary); }
+.parent-card-status { margin-block-start: .3rem; }
 .parent-card-details {
     display: grid;
     gap: .35rem;
@@ -232,6 +231,14 @@
     margin-block-start: auto;
     padding: .55rem 1rem;
     border-top: 1px solid var(--border);
+}
+@container (min-width: 48rem) {
+    .parent-card {
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.25fr) minmax(0, 1fr) auto;
+        align-items: start;
+    }
+    .parent-card-family { margin-inline: .75rem; padding-block: .9rem; border-top: 0; }
+    .parent-card-actions { margin-block-start: 0; padding: .9rem .75rem; border-top: 0; }
 }
 .parent-directory-gender { --gender-color: var(--parent-gender-male, var(--info)); display: inline-flex; gap: .35rem; align-items: center; padding: 4px 10px; border-radius: 999px; background: color-mix(in srgb, var(--gender-color) 13%, var(--surface)); color: var(--gender-color); font-weight: 650; }
 .parent-directory-gender-female { --gender-color: var(--parent-gender-female, var(--violet)); }

@@ -12,8 +12,10 @@
                     <div class="parent-card-identity">
                         <h3>{{ $record->name }}</h3>
                         <small>@include('school.modules.value', ['field' => 'profile_number', 'type' => $columns['profile_number']]) &middot; ID {{ $record->id }}</small>
+                        <div class="parent-card-status">
+                            @include('school.modules.value', ['field' => 'status', 'type' => $columns['status']])
+                        </div>
                     </div>
-                    @include('school.modules.value', ['field' => 'status', 'type' => $columns['status']])
                 </header>
                 <dl class="parent-card-details">
                     @foreach(['email' => 'Email', 'phone' => 'Phone', 'address' => 'Address', 'gender' => 'Gender'] as $field => $label)
