@@ -122,6 +122,8 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent', \App\Htt
     Route::get('/users/{user}/photo', [ProfileController::class, 'userPhoto'])->name('users.photo');
     Route::get('/students/{student}/photo', [ProfileController::class, 'studentPhoto'])->name('students.photo');
     Route::post('/students/{student}/attendance', [StudentController::class, 'saveAttendance'])->middleware('role:administrator')->name('students.attendance.store');
+    Route::post('/students/family/excuses', [\App\Http\Controllers\StudentExcuseController::class, 'store'])->name('students.excuses.store');
+    Route::get('/students/excuses/report', [\App\Http\Controllers\StudentExcuseController::class, 'index'])->middleware('role:administrator')->name('students.excuses.index');
     Route::resource('/students', StudentController::class);
     Route::get('/students/family/{child}', [\App\Http\Controllers\FamilyDashboardController::class, 'show'])->whereNumber('child')->name('students.family.show');
     Route::get('/students/family/{child}/edit', [\App\Http\Controllers\FamilyDashboardController::class, 'edit'])->whereNumber('child')->name('students.family.edit');
