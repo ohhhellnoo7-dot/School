@@ -76,7 +76,9 @@ class FamilyDashboardController extends Controller
             ];
         }
 
-        return view('school.family.index', compact('guardian', 'children', 'childCount', 'search', 'classes', 'subjects', 'upcoming', 'announcements', 'showAllUpdates') + $paymentData + ['myChildren' => true]);
+        $excuseChildren = $search ? $guardian->children()->with('studyClasses')->orderBy('name')->get() : $children;
+
+        return view('school.family.index', compact('guardian', 'children', 'childCount', 'search', 'classes', 'subjects', 'upcoming', 'announcements', 'showAllUpdates', 'excuseChildren') + $paymentData + ['myChildren' => true]);
     }
 
     public function parentAttendance(Request $request)

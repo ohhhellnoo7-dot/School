@@ -221,7 +221,15 @@ class ClassroomController extends Controller
             }
         }
         \Illuminate\Support\Facades\DB::transaction(function () use ($data, $class, $teacherId) {
+            $studentIds = array_keys($data['statuses']);
+            \App\Models\Student::whereKey($studentIds)->orderBy('id')->lockForUpdate()->get(['id']);
+            $excused = CarbonImmutable::parse($data['attendance_date'])->isWeekend() ? collect()
+                : \App\Models\StudentExcuse::whereIn('student_id', $studentIds)->where('session', $class->session)
+                    ->overlapping($data['attendance_date'], $data['attendance_date'])->pluck('student_id')->flip();
             foreach ($data['statuses'] as $studentId => $status) {
+                if ($excused->has($studentId)) {
+                    continue;
+                }
                 $key = ['school_class_id' => $class->id, 'student_id' => $studentId, 'date' => $data['attendance_date']];
                 if ($status === null || $status === '') {
                     \App\Models\ClassAttendance::where($key)->delete();

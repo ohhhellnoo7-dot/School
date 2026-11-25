@@ -71,7 +71,10 @@
                         <i class="bi bi-calendar2-check family-symbol" aria-hidden="true"></i>
                         <div><strong>{{ __("Today's Attendance") }}</strong><br><span class="family-pill" data-tone="{{ $attendance?->status ?? 'neutral' }}">{{ $attendance ? __(ucfirst($attendance->status)) : __('Not recorded') }}</span></div>
                     </div>
-                    <a class="btn btn-primary family-button family-view-profile" href="{{ route('students.family.show', $child) }}">{{ __('View Profile') }} <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                    <div class="family-view-profile d-grid gap-2">
+                        <a class="btn btn-primary family-button" href="{{ route('students.family.show', $child) }}">{{ __('View Profile') }} <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                        <button class="btn btn-light family-button" type="button" data-open-excuse><i class="bi bi-calendar-check" aria-hidden="true"></i> {{ __('Excuse') }}</button>
+                    </div>
                 </article>
                 <nav class="family-shortcuts" aria-label="{{ __('Learning shortcuts for :name', ['name' => $child->name]) }}">
                     @foreach($shortcuts as $key => [$label, $description, $icon, $tone])
@@ -143,8 +146,12 @@
         </div>
     @endif
 </div>
+@if($excuseChildren->isNotEmpty())
+    @include('school.family.excuse-dialog')
+@endif
 @endsection
 
 @push('scripts')
 <script src="{{ asset('js/family-dashboard.js') }}?v={{ filemtime(public_path('js/family-dashboard.js')) }}" defer></script>
+<script src="{{ asset('js/student-excuses.js') }}?v={{ filemtime(public_path('js/student-excuses.js')) }}" defer></script>
 @endpush
