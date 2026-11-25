@@ -24,6 +24,9 @@
     <link href="{{ asset('css/workspace-refresh.css') }}?v={{ filemtime(public_path('css/workspace-refresh.css')) }}" rel="stylesheet">
     @if(request()->routeIs('modules.index') && request()->route('module') === 'subjects')<link href="{{ asset('css/subject-refresh.css') }}?v={{ filemtime(public_path('css/subject-refresh.css')) }}" rel="stylesheet">@endif
     <link href="{{ asset('css/scholar-hero.css') }}?v={{ filemtime(public_path('css/scholar-hero.css')) }}" rel="stylesheet">
+    @if(auth()->user()->role === 'administrator' || request()->routeIs('students.index'))
+        <link rel="stylesheet" href="{{ asset('css/student-excuses.css') }}?v={{ filemtime(public_path('css/student-excuses.css')) }}">
+    @endif
     @stack('styles')
     @if(request()->routeIs('classrooms.show'))<link href="{{ asset('css/room-detail-refresh.css') }}?v={{ filemtime(public_path('css/room-detail-refresh.css')) }}" rel="stylesheet">@endif
     @if(request()->routeIs('classrooms.index'))<link href="{{ asset('css/classroom-refresh.css') }}?v={{ filemtime(public_path('css/classroom-refresh.css')) }}" rel="stylesheet">@endif
@@ -98,7 +101,7 @@ a.attendance-status-tile:hover, a.attendance-status-tile:focus-visible { outline
             </a>
         @else
         <a class="{{ request()->routeIs('timetables.*') ? 'active' : '' }}" href="{{ route('timetables.index') }}"><i class="bi bi-calendar-week"></i><span class="nav-label"> {{ auth()->user()->role === 'teacher' ? __('Teacher schedule') : __('School Timetables') }}</span></a>
-        <a class="{{ !$parentChildAttendance && request()->routeIs('students.*') && (!($myChildren ?? false) || auth()->user()->role === 'parent') ? 'active' : '' }}" href="{{ route('students.index') }}"><i class="bi bi-people"></i><span class="nav-label"> {{ auth()->user()->role === 'parent' ? __('My children') : (auth()->user()->role === 'student' ? __('My profile') : __('Students')) }}</span></a>
+        <a class="{{ !$parentChildAttendance && request()->routeIs('students.*') && (!($myChildren ?? false) || auth()->user()->role === 'parent') ? 'active' : '' }}" href="{{ route('students.index') }}"><i class="bi bi-people"></i><span class="nav-label"> {{ auth()->user()->role === 'parent' ? __('My children') : (auth()->user()->role === 'student' ? __('My profile') : __('Students')) }} @if(auth()->user()->role === 'administrator')<span class="student-excuse-badge" data-excuse-count data-count-url="{{ route('students.excuses.count') }}" title="{{ __('Excuse requests submitted today') }}" hidden></span>@endif</span></a>
         @if(in_array(auth()->user()->role, \App\Models\User::STAFF_ROLES, true) && auth()->user()->children()->exists())
             <a class="{{ ($myChildren ?? false) ? 'active' : '' }}" href="{{ route('students.index', ['my_children' => 1]) }}"><i class="bi bi-person-heart" aria-hidden="true"></i><span class="nav-label">{{ __('My children') }}</span></a>
         @endif
@@ -196,6 +199,9 @@ a.attendance-status-tile:hover, a.attendance-status-tile:focus-visible { outline
 @endif
 <script src="{{ asset('vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
 
+@if(auth()->user()->role === 'administrator' || request()->routeIs('students.index'))
+    <script src="{{ asset('js/student-excuses.js') }}?v={{ filemtime(public_path('js/student-excuses.js')) }}" defer></script>
+@endif
 @stack('scripts')
 @if(session()->has('student_draft_clear'))
 <script>try { sessionStorage.removeItem(@json('student-draft-'.auth()->id().'-'.session('student_draft_clear'))); } catch (_) {}</script>

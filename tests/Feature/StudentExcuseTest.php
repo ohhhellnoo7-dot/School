@@ -66,10 +66,17 @@ class StudentExcuseTest extends TestCase
         $this->assertNull($marks->get($afternoon->id.':'.$child->id.':2026-11-26'));
 
         $report = fn ($date) => route('students.excuses.index', ['date' => $date]);
+        $count = route('students.excuses.count');
+        $this->getJson($count)->assertForbidden();
         $this->get($report('2026-11-26'))->assertForbidden();
         $this->actingAs($admin)->get(route('students.index'))->assertOk()
             ->assertViewHas('attendanceCounts', fn ($counts) => $counts['excused'] === 1)
-            ->assertSee('View student excuse requests');
+            ->assertSee('View requests');
+        $this->getJson($count)->assertOk()->assertExactJson(['count' => 1]);
+        $this->actingAs($guardian)->post(route('students.excuses.store'), [
+            'starts_on' => '2026-12-02', 'days' => 1,
+        ] + $payload)->assertSessionHasNoErrors();
+        $this->actingAs($admin)->getJson($count)->assertOk()->assertExactJson(['count' => 2]);
         $this->get($report('2026-11-30'))->assertOk()->assertSee($child->name)->assertSee('Morning')->assertSee('Medical appointment');
         $this->get($report('2026-11-28'))->assertOk()->assertSee('No excuse requests for this date.');
         $this->get($report('2026-12-01'))->assertOk()->assertSee('No excuse requests for this date.');

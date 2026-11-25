@@ -151,10 +151,6 @@
 @endif
 @endsection
 
-@push('styles')
-<link rel="stylesheet" href="{{ asset('css/student-excuses.css') }}?v={{ filemtime(public_path('css/student-excuses.css')) }}">
-@endpush
 @push('scripts')
 <script src="{{ asset('js/family-dashboard.js') }}?v={{ filemtime(public_path('js/family-dashboard.js')) }}" defer></script>
-<script src="{{ asset('js/student-excuses.js') }}?v={{ filemtime(public_path('js/student-excuses.js')) }}" defer></script>
 @endpush

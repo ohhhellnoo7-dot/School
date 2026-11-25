@@ -40,7 +40,7 @@
                     <small class="attendance-summary-note"><b data-attendance-percent="{{ $key }}">{{ $formatPercent($key) }}%</b></small>
                 @endif
                 @if($key === 'excused' && auth()->user()->role === 'administrator')
-                    <button type="button" class="btn btn-link stretched-link p-0" data-open-excuse-report="{{ $attendanceDate }}" aria-haspopup="dialog" aria-controls="student-excuse-report" aria-label="{{ __('View student excuse requests') }}"><i class="bi bi-list-ul me-1" aria-hidden="true"></i>{{ __('View requests') }}</button>
+                    <button type="button" class="btn btn-link stretched-link p-0" data-open-excuse-report="{{ $attendanceDate }}" aria-haspopup="dialog" aria-controls="student-excuse-report"><i class="bi bi-list-ul me-1" aria-hidden="true"></i>{{ __('View requests') }} <span class="student-excuse-badge" data-excuse-count title="{{ __('Excuse requests submitted today') }}" hidden></span></button>
                 @endif
             </article>
         @endforeach
@@ -154,12 +154,8 @@
     @include('school.students.excuse-report-dialog')
 @endif
 @endsection
-@push('styles')
-<link rel="stylesheet" href="{{ asset('css/student-excuses.css') }}?v={{ filemtime(public_path('css/student-excuses.css')) }}">
-@endpush
 @push('scripts')
 <script src="{{ asset('js/directory-search.js') }}?v={{ filemtime(public_path('js/directory-search.js')) }}"></script>
 <script src="{{ asset('js/student-filters.js') }}"></script>
 <script src="{{ asset('js/student-attendance.js') }}?v={{ filemtime(public_path('js/student-attendance.js')) }}" defer></script>
-<script src="{{ asset('js/student-excuses.js') }}?v={{ filemtime(public_path('js/student-excuses.js')) }}" defer></script>
 @endpush

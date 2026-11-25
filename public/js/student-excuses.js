@@ -36,6 +36,35 @@
         }
     }
 
+    const countUrl = document.querySelector('[data-count-url]')?.dataset.countUrl;
+    if (countUrl) {
+        const formatter = new Intl.NumberFormat(document.documentElement.lang || undefined);
+        let count = 0;
+        const renderCount = () => {
+            document.querySelectorAll('[data-excuse-count]').forEach(badge => {
+                badge.textContent = count > 0 ? formatter.format(count) : '';
+                badge.hidden = count === 0;
+            });
+        };
+        const refreshCount = async () => {
+            try {
+                if (!document.hidden) {
+                    const response = await fetch(countUrl, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+                    if (response.ok) {
+                        ({ count } = await response.json());
+                        renderCount();
+                    }
+                }
+            } catch {
+                // Keep the last count visible until the next refresh succeeds.
+            } finally {
+                setTimeout(refreshCount, 5000);
+            }
+        };
+        document.addEventListener('student-attendance-summary-replaced', renderCount);
+        refreshCount();
+    }
+
     const report = document.querySelector('#student-excuse-report');
     if (!report) return;
     const date = report.querySelector('input[type="date"]');

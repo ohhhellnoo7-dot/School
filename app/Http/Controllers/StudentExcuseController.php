@@ -70,6 +70,15 @@ class StudentExcuseController extends Controller
             ->with('success', __('Excuse submitted. Attendance has been marked excused for the selected session.'));
     }
 
+    public function count()
+    {
+        $day = today();
+        $count = StudentExcuse::where('created_at', '>=', $day)
+            ->where('created_at', '<', $day->copy()->addDay())->count();
+
+        return response()->json(['count' => $count])->header('Cache-Control', 'private, no-store');
+    }
+
     public function index(Request $request, SchoolHolidayClosure $holidays)
     {
         $date = $request->validate(['date' => 'required|date_format:Y-m-d'])['date'];
