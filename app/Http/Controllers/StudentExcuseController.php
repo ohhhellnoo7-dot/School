@@ -72,7 +72,7 @@ class StudentExcuseController extends Controller
 
     public function count(Request $request)
     {
-        $count = StudentExcuse::submittedToday()->where('id', '>', $request->user()->last_seen_student_excuse_id)->count();
+        $count = StudentExcuse::submittedToday()->where('id', '>', $request->user()->last_seen_student_excuse_id ?? 0)->count();
 
         return response()->json(['count' => $count])->header('Cache-Control', 'private, no-store');
     }
@@ -91,7 +91,7 @@ class StudentExcuseController extends Controller
     public function index(Request $request, SchoolHolidayClosure $holidays)
     {
         $date = $request->validate(['date' => 'required|date_format:Y-m-d'])['date'];
-        $through = StudentExcuse::submittedToday()->where('id', '>', $request->user()->last_seen_student_excuse_id)->max('id');
+        $through = StudentExcuse::submittedToday()->where('id', '>', $request->user()->last_seen_student_excuse_id ?? 0)->max('id');
         $excuses = CarbonImmutable::parse($date)->isWeekend() || $holidays->holiday($date)
             ? collect()
             : StudentExcuse::overlapping($date, $date)->with('student:id,name,student_number')

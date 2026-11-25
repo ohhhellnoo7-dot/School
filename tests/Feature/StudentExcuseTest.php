@@ -82,12 +82,14 @@ class StudentExcuseTest extends TestCase
         $this->postJson($seen, ['through' => $through])->assertForbidden();
         $this->actingAs($admin)->getJson($count)->assertOk()->assertExactJson(['count' => 2]);
         $this->postJson($seen, ['through' => $through])->assertNoContent();
+        $admin->refresh();
         $this->getJson($count)->assertOk()->assertExactJson(['count' => 1]);
         $this->get($report('2026-11-30'))->assertOk()->assertSee($child->name)->assertSee('Morning')->assertSee('Medical appointment');
         $this->get($report('2026-11-28'))->assertOk()->assertSee('No excuse requests for this date.');
         $this->get($report('2026-12-01'))->assertOk()->assertSee('No excuse requests for this date.');
         $next = $this->get($report('2026-12-02'))->assertOk()->headers->get('X-Excuse-Notifications-Through');
         $this->postJson($seen, ['through' => $next])->assertNoContent();
+        $admin->refresh();
         $this->getJson($count)->assertOk()->assertExactJson(['count' => 0]);
         $this->actingAs(User::factory()->create(['role' => 'administrator']))
             ->getJson($count)->assertOk()->assertExactJson(['count' => 2]);
