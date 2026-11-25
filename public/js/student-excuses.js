@@ -4,6 +4,10 @@
         const form = family.querySelector('[data-excuse-form]');
         const chosenChild = form.elements.child_id;
         const session = form.elements.session;
+        const placeholder = session.options[0];
+        const sessionsByChild = new Map(
+            Array.from(family.querySelectorAll('[data-excuse-sessions]'), template => [template.dataset.excuseSessions, template.content]),
+        );
         const choose = (id, previousSession = '') => {
             chosenChild.value = id;
             form.hidden = false;
@@ -11,11 +15,11 @@
                 button.setAttribute('aria-pressed', String(button.dataset.excuseChild === id));
                 button.classList.toggle('active', button.dataset.excuseChild === id);
             });
-            session.selectedIndex = 0;
-            Array.from(session.options).slice(1).forEach(option => {
-                option.hidden = option.disabled = option.dataset.forChild !== id;
-                if (!option.disabled && option.value === previousSession) option.selected = true;
-            });
+            session.replaceChildren(placeholder);
+            const options = sessionsByChild.get(id);
+            if (options) session.append(options.cloneNode(true));
+            session.value = session.options.length === 2 ? session.options[1].value : previousSession;
+            if (session.selectedIndex === -1) session.selectedIndex = 0;
         };
         document.querySelectorAll('[data-open-excuse]').forEach(button => {
             button.addEventListener('click', () => family.showModal());

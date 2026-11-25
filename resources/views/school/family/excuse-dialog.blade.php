@@ -5,9 +5,15 @@
     </div>
     <div class="d-grid gap-2 mb-3">
         @foreach($excuseChildren as $child)
+            @php($sessions = $child->studyClasses->pluck('session')->intersect(\App\Support\AttendanceSession::OPTIONS)->unique())
             <div class="d-flex align-items-center justify-content-between gap-3">
                 <strong>{{ $child->name }}</strong>
-                <button type="button" class="btn btn-light" data-excuse-child="{{ $child->id }}" aria-pressed="false" @disabled($child->studyClasses->whereIn('session', \App\Support\AttendanceSession::OPTIONS)->isEmpty())>{{ __('Ask for excuse') }}</button>
+                <button type="button" class="btn btn-light" data-excuse-child="{{ $child->id }}" aria-pressed="false" @disabled($sessions->isEmpty())>{{ __('Ask for excuse') }}</button>
+                <template data-excuse-sessions="{{ $child->id }}">
+                    @foreach($sessions as $session)
+                        <option value="{{ $session }}">{{ __($session) }}</option>
+                    @endforeach
+                </template>
             </div>
         @endforeach
     </div>
@@ -23,11 +29,6 @@
             <label class="form-label" for="excuse-session">{{ __('Session') }}</label>
             <select class="form-select" name="session" id="excuse-session" data-selected="{{ old('session') }}" required>
                 <option value="">{{ __('Choose a session') }}</option>
-                @foreach($excuseChildren as $child)
-                    @foreach($child->studyClasses->pluck('session')->intersect(\App\Support\AttendanceSession::OPTIONS)->unique() as $session)
-                        <option value="{{ $session }}" data-for-child="{{ $child->id }}" hidden disabled>{{ __($session) }}</option>
-                    @endforeach
-                @endforeach
             </select>
         </div>
         <div class="row g-3 mb-3">
