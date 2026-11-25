@@ -40,7 +40,7 @@
                     <small class="attendance-summary-note"><b data-attendance-percent="{{ $key }}">{{ $formatPercent($key) }}%</b></small>
                 @endif
                 @if($key === 'excused' && auth()->user()->role === 'administrator')
-                    <button type="button" class="btn btn-link stretched-link p-0" data-open-excuse-report="{{ $attendanceDate }}" aria-haspopup="dialog" aria-controls="student-excuse-report"><i class="bi bi-list-ul me-1" aria-hidden="true"></i>{{ __('View requests') }} <span class="student-excuse-badge" data-excuse-count title="{{ __('Excuse requests submitted today') }}" hidden></span></button>
+                    <button type="button" class="btn btn-link stretched-link p-0" data-open-excuse-report="{{ $attendanceDate }}" aria-haspopup="dialog" aria-controls="student-excuse-report"><i class="bi bi-list-ul me-1" aria-hidden="true"></i>{{ __('View requests') }} <span class="student-excuse-badge" data-excuse-count title="{{ __('Unread excuse requests submitted today') }}" hidden></span></button>
                 @endif
             </article>
         @endforeach

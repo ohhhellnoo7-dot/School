@@ -70,23 +70,34 @@ class StudentExcuseController extends Controller
             ->with('success', __('Excuse submitted. Attendance has been marked excused for the selected session.'));
     }
 
-    public function count()
+    public function count(Request $request)
     {
-        $day = today();
-        $count = StudentExcuse::where('created_at', '>=', $day)
-            ->where('created_at', '<', $day->copy()->addDay())->count();
+        $count = StudentExcuse::submittedToday()->where('id', '>', $request->user()->last_seen_student_excuse_id)->count();
 
         return response()->json(['count' => $count])->header('Cache-Control', 'private, no-store');
+    }
+
+    public function markSeen(Request $request)
+    {
+        $through = $request->validate(['through' => 'required|integer|min:1'])['through'];
+        if (StudentExcuse::submittedToday()->whereKey($through)->exists()) {
+            User::whereKey($request->user()->id)->where('last_seen_student_excuse_id', '<', $through)
+                ->update(['last_seen_student_excuse_id' => $through]);
+        }
+
+        return response()->noContent();
     }
 
     public function index(Request $request, SchoolHolidayClosure $holidays)
     {
         $date = $request->validate(['date' => 'required|date_format:Y-m-d'])['date'];
+        $through = StudentExcuse::submittedToday()->where('id', '>', $request->user()->last_seen_student_excuse_id)->max('id');
         $excuses = CarbonImmutable::parse($date)->isWeekend() || $holidays->holiday($date)
             ? collect()
             : StudentExcuse::overlapping($date, $date)->with('student:id,name,student_number')
                 ->latest('id')->get();
 
-        return response()->view('school.students.excuse-results', compact('excuses'))->header('Cache-Control', 'private, no-store');
+        return response()->view('school.students.excuse-results', compact('excuses'))
+            ->header('Cache-Control', 'private, no-store')->header('X-Excuse-Notifications-Through', (string) ($through ?? 0));
     }
 }

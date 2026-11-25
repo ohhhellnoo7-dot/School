@@ -66,6 +66,7 @@
             }
         };
         document.addEventListener('student-attendance-summary-replaced', renderCount);
+        document.addEventListener('student-excuse-notifications-seen', refreshCount);
         document.addEventListener('visibilitychange', refreshCount);
         setInterval(refreshCount, 1000);
         refreshCount();
@@ -78,6 +79,7 @@
     let pending;
     let timer;
     let displayed;
+    let acknowledge = false;
 
     const refresh = async (showLoading = false) => {
         clearTimeout(timer);
@@ -107,6 +109,25 @@
                 displayed = html;
                 results.innerHTML = html;
             }
+            if (!request.signal.aborted && acknowledge) {
+                acknowledge = false;
+                const through = response.headers.get('X-Excuse-Notifications-Through');
+                if (through && through !== '0') {
+                    const seen = await fetch(report.dataset.seenUrl, {
+                        method: 'POST',
+                        keepalive: true,
+                        headers: {
+                            Accept: 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        },
+                        body: JSON.stringify({ through }),
+                    }).catch(() => null);
+                    if (seen?.ok) {
+                        document.dispatchEvent(new Event('student-excuse-notifications-seen'));
+                    }
+                }
+            }
         } catch (error) {
             if (!request.signal.aborted) {
                 displayed = undefined;
@@ -121,6 +142,7 @@
         const button = event.target.closest('[data-open-excuse-report]');
         if (!button) return;
         date.value = button.dataset.openExcuseReport;
+        acknowledge = true;
         report.showModal();
         refresh(true);
     });

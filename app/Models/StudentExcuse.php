@@ -34,4 +34,11 @@ class StudentExcuse extends Model
     {
         return $query->where('starts_on', '<=', $end)->where('ends_on', '>=', $start);
     }
+
+    public function scopeSubmittedToday(Builder $query): Builder
+    {
+        $day = today();
+
+        return $query->where('created_at', '>=', $day)->where('created_at', '<', $day->copy()->addDay());
+    }
 }
