@@ -30,7 +30,7 @@
 <div class="attendance-summary">
     <div class="attendance-cards">
         @foreach(['total' => ['Total Students', 'people-fill'], ...array_slice($statuses, 0, 4)] as $key => [$label, $icon])
-            <article class="attendance-summary-card attendance-tone-{{ $key }}">
+            <article class="attendance-summary-card attendance-tone-{{ $key }} @if($key === 'excused' && auth()->user()->role === 'administrator') position-relative @endif">
                 <span class="attendance-summary-icon" aria-hidden="true"><i class="bi bi-{{ $icon }}"></i></span>
                 <h2>{{ $isToday ? __(['present' => 'Present Today', 'absent' => 'Absent Today', 'late' => 'Late Today', 'excused' => 'Excused Today'][$key] ?? $label) : __($label) }}</h2>
                 <strong data-attendance-count="{{ $key }}" data-count="{{ $attendanceCounts[$key] }}">{{ number_format($attendanceCounts[$key]) }}</strong>
@@ -38,6 +38,9 @@
                     <small class="attendance-summary-note">{{ __('Matching students') }}</small>
                 @else
                     <small class="attendance-summary-note"><b data-attendance-percent="{{ $key }}">{{ $formatPercent($key) }}%</b></small>
+                @endif
+                @if($key === 'excused' && auth()->user()->role === 'administrator')
+                    <button type="button" class="btn btn-link stretched-link p-0" data-open-excuse-report="{{ $attendanceDate }}" aria-haspopup="dialog" aria-controls="student-excuse-report"><span class="visually-hidden">{{ __('View student excuse requests') }}</span></button>
                 @endif
             </article>
         @endforeach
