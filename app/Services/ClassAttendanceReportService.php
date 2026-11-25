@@ -42,8 +42,15 @@ class ClassAttendanceReportService
             ->whereIn('student_id', $students->modelKeys())
             ->whereDate('date', '>=', $month->startOfMonth()->toDateString())
             ->whereDate('date', '<=', $month->endOfMonth()->toDateString())->get();
+        $sessions = $classes->pluck('session', 'id');
         foreach ($overrides as $record) {
-            $records->put($record->school_class_id.':'.$record->student_id.':'.$record->date->toDateString(), $record);
+            $date = $record->date->toDateString();
+            if ($record->status === 'excused' && ! $record->date->isWeekend()
+                && $excuses->get($record->student_id, collect())->contains(fn ($excuse) => $excuse->session === $sessions->get($record->school_class_id)
+                    && $excuse->starts_on->toDateString() <= $date && $excuse->ends_on->toDateString() >= $date)) {
+                $record->source = 'guardian_excuse';
+            }
+            $records->put($record->school_class_id.':'.$record->student_id.':'.$date, $record);
         }
 
         return $records;

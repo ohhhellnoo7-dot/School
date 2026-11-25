@@ -84,16 +84,20 @@ $records = collect(range(1, $attendanceMonth->daysInMonth))->map(fn ($day) => $c
                 <p>Recording attendance for <strong>{{ $attendanceDate }}</strong></p>
                 <p class="small text-secondary">Choose “Use daily attendance” to remove a class mark and use the saved dashboard status.</p>
                 @foreach($classStudents as $student)
+                    @php($currentMark = $classAttendance->get($attendanceClass->id.':'.$student->id.':'.$attendanceDate))
+                    @if($currentMark?->source === 'guardian_excuse')
+                        <div class="d-flex align-items-center justify-content-between gap-3 mb-2">
+                            <span>{{ $student->name }}</span><strong>{{ __('Excused by guardian request') }}</strong>
+                        </div>
+                    @else
                     <label class="d-flex align-items-center justify-content-between gap-3 mb-2">{{ $student->name }}
                         <select class="form-select w-auto" name="statuses[{{ $student->id }}]">
-                            @php
-$currentMark = $classAttendance->get($attendanceClass->id.':'.$student->id.':'.$attendanceDate);
-@endphp
                             @foreach(['' => 'Use daily attendance'.($currentMark?->source === 'daily' ? ' ('.ucfirst($currentMark->status).')' : ''), 'present' => 'Present', 'absent' => 'Absent', 'late' => 'Late', 'excused' => 'Excused'] as $value => $label)
                                 <option value="{{ $value }}" @selected(old('statuses.'.$student->id, $currentMark?->source === 'daily' ? '' : ($currentMark?->status ?? '')) === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
                     </label>
+                    @endif
                 @endforeach
                 <button class="btn btn-primary mt-2">Save attendance</button>
             </form>
