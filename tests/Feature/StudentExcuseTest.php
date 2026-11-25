@@ -15,6 +15,25 @@ class StudentExcuseTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_students_and_guardians_without_linked_children_cannot_request_excuses(): void
+    {
+        $studentUser = User::factory()->create(['role' => 'student']);
+        $student = Student::factory()->create(['user_id' => $studentUser->id]);
+        $payload = [
+            'child_id' => $student->id, 'session' => 'Morning',
+            'starts_on' => today()->toDateString(), 'days' => 1, 'reason' => 'Appointment',
+        ];
+
+        $this->actingAs($studentUser)->post(route('students.excuses.store'), $payload)->assertForbidden();
+        foreach (User::GUARDIAN_ROLES as $role) {
+            $this->actingAs(User::factory()->create(['role' => $role]))
+                ->get(route('students.index', ['my_children' => 1]))
+                ->assertOk()->assertDontSee('data-open-excuse', false);
+            $this->post(route('students.excuses.store'), $payload)->assertForbidden();
+        }
+        $this->assertDatabaseCount('student_excuses', 0);
+    }
+
     public function test_guardian_submission_marks_the_selected_session_and_appears_in_a_date_filtered_report(): void
     {
         $this->travelTo(CarbonImmutable::parse('2026-11-26 10:00'));

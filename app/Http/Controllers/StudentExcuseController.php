@@ -19,7 +19,7 @@ class StudentExcuseController extends Controller
     public function store(Request $request, SchoolHolidayClosure $holidays)
     {
         $guardian = $request->user();
-        abort_unless(in_array($guardian->role, User::GUARDIAN_ROLES, true), 403);
+        abort_unless(in_array($guardian->role, User::GUARDIAN_ROLES, true) && $guardian->children()->exists(), 403);
         $data = $request->validateWithBag('excuse', [
             'child_id' => 'required|integer|min:1',
             'session' => ['required', Rule::in(AttendanceSession::OPTIONS)],
