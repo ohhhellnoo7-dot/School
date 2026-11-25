@@ -150,9 +150,16 @@
     <span class="attendance-status-pill" data-tone="{{ $attendanceStatus ?: 'unrecorded' }}"><i class="bi bi-circle-fill" aria-hidden="true"></i>{{ $attendanceStatus ? __(ucfirst($attendanceStatus)) : __('Not Marked') }}</span>
     @endcan
 </td><td><div class="d-flex align-items-center gap-2"><a class="btn btn-sm btn-light" href="{{ route('students.show', $student) }}" title="{{ __('View student') }}" aria-label="View {{ $student->name }}"><i class="bi bi-eye"></i></a>@can('update', $student)<a class="btn btn-sm btn-light" href="{{ route('students.edit', $student) }}" title="{{ __('Edit student') }}" aria-label="Edit {{ $student->name }}"><i class="bi bi-pencil"></i></a><form method="post" action="{{ route('students.destroy', $student) }}" data-confirm="Delete this student? Students with attendance, grades or fees are protected.">@csrf @method('DELETE')<button class="btn btn-sm btn-light text-danger" title="{{ __('Delete student') }}" aria-label="Delete {{ $student->name }}"><i class="bi bi-trash"></i></button></form>@endcan</div></td></tr>@empty<tr><td colspan="10"><div class="empty-state"><i class="bi bi-people"></i><strong>{{ __('No students found') }}</strong><p class="mt-2 mb-0">{{ __('Try a different filter, or contact your school office to link your records.') }}</p></div></td></tr>@endforelse</tbody></table></div><div class="p-3">{{ $students->links() }}</div></section>
+@if(auth()->user()->role === 'administrator')
+    @include('school.students.excuse-report-dialog')
+@endif
 @endsection
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/student-excuses.css') }}?v={{ filemtime(public_path('css/student-excuses.css')) }}">
+@endpush
 @push('scripts')
 <script src="{{ asset('js/directory-search.js') }}?v={{ filemtime(public_path('js/directory-search.js')) }}"></script>
 <script src="{{ asset('js/student-filters.js') }}"></script>
 <script src="{{ asset('js/student-attendance.js') }}?v={{ filemtime(public_path('js/student-attendance.js')) }}" defer></script>
+<script src="{{ asset('js/student-excuses.js') }}?v={{ filemtime(public_path('js/student-excuses.js')) }}" defer></script>
 @endpush

@@ -1,0 +1,22 @@
+.student-excuse-dialog {
+    width: min(32rem, calc(100% - 2rem));
+    max-height: calc(100dvh - 2rem);
+    margin: auto;
+    padding: clamp(1rem, 4vw, 1.75rem);
+    overflow: auto;
+    color: var(--bs-body-color);
+}
+
+.student-excuse-report {
+    width: min(54rem, calc(100% - 2rem));
+}
+
+.student-excuse-dialog::backdrop {
+    background: rgb(10 25 45 / 55%);
+}
+
+[data-open-excuse-report]:focus-visible::after {
+    outline: 3px solid currentColor;
+    outline-offset: -4px;
+    border-radius: 1.5rem;
+}

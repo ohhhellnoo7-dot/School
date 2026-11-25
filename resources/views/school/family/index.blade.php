@@ -73,7 +73,7 @@
                     </div>
                     <div class="family-view-profile d-grid gap-2">
                         <a class="btn btn-primary family-button" href="{{ route('students.family.show', $child) }}">{{ __('View Profile') }} <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                        <button class="btn btn-light family-button" type="button" data-open-excuse><i class="bi bi-calendar-check" aria-hidden="true"></i> {{ __('Excuse') }}</button>
+                        <button class="btn btn-light family-button" type="button" data-open-excuse aria-haspopup="dialog" aria-controls="family-excuse-dialog"><i class="bi bi-calendar-check" aria-hidden="true"></i> {{ __('Excuse') }}</button>
                     </div>
                 </article>
                 <nav class="family-shortcuts" aria-label="{{ __('Learning shortcuts for :name', ['name' => $child->name]) }}">
@@ -151,6 +151,9 @@
 @endif
 @endsection
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/student-excuses.css') }}?v={{ filemtime(public_path('css/student-excuses.css')) }}">
+@endpush
 @push('scripts')
 <script src="{{ asset('js/family-dashboard.js') }}?v={{ filemtime(public_path('js/family-dashboard.js')) }}" defer></script>
 <script src="{{ asset('js/student-excuses.js') }}?v={{ filemtime(public_path('js/student-excuses.js')) }}" defer></script>
