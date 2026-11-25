@@ -575,6 +575,7 @@
 .payroll-strip-col-hours { width: 9%; }
 .payroll-strip-col-working-days { width: 4.5%; }
 .payroll-strip-col-days { width: 3.7%; }
+.payroll-strip-col-absence { width: 5.8%; }
 .payroll-strip-col-salary { width: 7%; }
 .payroll-strip-col-deduction { width: 5.8%; }
 .payroll-strip-col-net { width: 7.5%; }
@@ -589,6 +590,10 @@
         white-space: nowrap;
         overflow-wrap: normal;
     }
+    .payroll-slip-table-salary thead th.payroll-strip-wrap-heading {
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
 }
 @media screen and (min-width: 1280px) {
     .payroll-slip-table-salary tbody th {
@@ -597,6 +602,11 @@
         text-overflow: ellipsis;
     }
 }
+.payroll-slip-table td:is(.payroll-strip-amount, .payroll-strip-deduction, .payroll-strip-total) {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.payroll-slip-table .payroll-bonus-edit { white-space: normal; }
 @page payroll-slip { size: A4 landscape; margin: 10mm; }
 @media print {
     body:has(:is(.payroll-slip, #teacher-payroll-report-results)) { page: payroll-slip; }

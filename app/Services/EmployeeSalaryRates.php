@@ -14,6 +14,7 @@ class EmployeeSalaryRates
         'excused' => 500,
         'absence_one' => 1000,
         'absence_two' => 1500,
+        'absence_single_session' => 0,
     ];
 
     private ?array $rates = null;

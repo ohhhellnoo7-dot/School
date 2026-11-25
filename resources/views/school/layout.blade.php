@@ -113,7 +113,18 @@ a.attendance-status-tile:hover, a.attendance-status-tile:focus-visible { outline
         @unless(auth()->user()->role === 'parent')
             <a class="{{ request()->routeIs('school.map') ? 'active' : '' }}" href="{{ route('school.map') }}"><i class="bi bi-geo-alt" aria-hidden="true"></i><span class="nav-label">{{ __('School map') }}</span></a>
         @endunless
-        @if(auth()->user()->role === 'administrator')<a class="{{ request()->routeIs('employee-salaries.*') ? 'active' : '' }}" href="{{ route('employee-salaries.index') }}"><i class="bi bi-cash-stack"></i><span class="nav-label"> {{ __('Employee salary') }}</span></a><a class="{{ request()->routeIs('reports') ? 'active' : '' }}" href="{{ route('reports') }}"><i class="bi bi-bar-chart-line"></i><span class="nav-label"> {{ __('Reports') }}</span></a>@endif
+        @if(auth()->user()->role === 'administrator')
+            @php($pendingAdvanceCount = $pendingAdvanceCount ?? \App\Models\TeacherAdvanceRequest::pending()->count())
+            <a class="{{ request()->routeIs('employee-salaries.*') ? 'active' : '' }}" href="{{ route('employee-salaries.index') }}">
+                <i class="bi bi-cash-stack" aria-hidden="true"></i>
+                <span class="nav-label">{{ __('Employee salary') }}</span>
+            </a>
+            <a class="{{ request()->routeIs('reports') ? 'active' : '' }}" href="{{ route('reports') }}">
+                <i class="bi bi-bar-chart-line" aria-hidden="true"></i>
+                <span class="nav-label">{{ __('Reports') }}</span>
+                <span class="badge rounded-pill text-bg-danger ms-auto flex-shrink-0" data-expense-live-count="sidebar" @if($pendingAdvanceCount > 0) data-pending-advance-count @else hidden @endif><span class="visually-hidden">{{ __('Pending salary advance requests') }} </span>{{ $pendingAdvanceCount }}</span>
+            </a>
+        @endif
         @endif
     </nav>
     @include('school.partials.windy-landscape', ['placement' => 'sidebar'])

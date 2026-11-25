@@ -1,26 +1,173 @@
 @extends('school.layout')
-@section('title', 'Money taken out')
+@section('title', __('Money Taken Out'))
+
+@push('styles')
+<link href="{{ asset('css/expense-history.css') }}?v={{ filemtime(public_path('css/expense-history.css')) }}" rel="stylesheet">
+@endpush
+
 @section('content')
-<div class="page-heading"><div><a href="{{ route('reports') }}" class="text-decoration-none"><i class="bi bi-arrow-left" aria-hidden="true"></i> Reports</a><h1>Money taken out</h1><p>Expense details for {{ $month->format('F Y') }} &middot; {{ $currency }} &middot; All academic years</p></div><a class="btn btn-primary" href="{{ route('reports.expenses.create', ['currency' => $currency]) }}"><i class="bi bi-plus-lg" aria-hidden="true"></i> Add expense &amp; reason</a></div>
-<section class="panel p-4 mb-4">
-    <form method="get" class="row g-3 align-items-end">
-        <div class="col-sm-5"><label for="expense-month" class="form-label">Month</label><input id="expense-month" type="month" name="month" class="form-control" value="{{ $month->format('Y-m') }}" required></div>
-        <div class="col-sm-4"><label for="expense-currency" class="form-label">Currency</label><select id="expense-currency" name="currency" class="form-select">@foreach(['USD','KHR'] as $code)<option @selected($currency === $code)>{{ $code }}</option>@endforeach</select></div>
-        <div class="col-sm-3"><button class="btn btn-primary">View expenses</button></div>
+<div class="expense-overview">
+    <header class="expense-overview-hero">
+        <div class="expense-overview-heading">
+            <a class="expense-overview-back" href="{{ route('reports') }}"><i class="bi bi-arrow-left" aria-hidden="true"></i> {{ __('Reports') }}</a>
+            <div class="expense-overview-title">
+                <i class="bi bi-database-fill" aria-hidden="true"></i>
+                <div>
+                    <h1>{{ __('Money Taken Out') }}</h1>
+                    <p>{{ __('Expense details for :month', ['month' => $month->translatedFormat('F Y')]) }} &middot; {{ $currency }} &middot; {{ __('All academic years') }}</p>
+                </div>
+            </div>
+        </div>
+        <img class="expense-overview-art" src="{{ asset('images/request-money-wallet.png') }}" alt="" width="400" height="400">
+        <div class="expense-overview-actions">
+            <a class="btn expense-overview-secondary" href="{{ route('reports.expenses.advances.create') }}" data-bs-toggle="modal" data-bs-target="#employee-advance-modal" aria-haspopup="dialog">
+                <i class="bi bi-person" aria-hidden="true"></i> {{ __('Employee advance') }}
+                <span class="badge rounded-pill text-bg-primary" data-expense-live-count="button" aria-label="{{ trans_choice(':count pending request|:count pending requests', $pendingAdvanceCount) }}" @if(!$pendingAdvanceCount) hidden @endif>{{ $pendingAdvanceCount }}</span>
+            </a>
+            <a class="btn btn-primary expense-overview-primary" href="{{ route('reports.expenses.create', ['currency' => $currency]) }}"><i class="bi bi-plus-lg" aria-hidden="true"></i> {{ __('Add expense & reason') }}</a>
+        </div>
+    </header>
+
+    <form method="get" class="expense-overview-filters panel">
+        <div class="expense-overview-filter">
+            <i class="bi bi-calendar3" aria-hidden="true"></i>
+            <div>
+                <label for="expense-month" class="form-label">{{ __('Month') }}</label>
+                <input id="expense-month" type="month" name="month" class="form-control" value="{{ $month->format('Y-m') }}" required>
+            </div>
+        </div>
+        <div class="expense-overview-filter">
+            <i class="bi bi-database" aria-hidden="true"></i>
+            <div>
+                <label for="expense-currency" class="form-label">{{ __('Currency') }}</label>
+                <select id="expense-currency" name="currency" class="form-select">
+                    @foreach(['USD', 'KHR'] as $code)
+                        <option value="{{ $code }}" @selected($currency === $code)>{{ $code }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <button class="btn btn-primary expense-overview-primary" type="submit"><i class="bi bi-search" aria-hidden="true"></i> {{ __('View expenses') }}</button>
     </form>
-    <div class="row g-3 mt-2">
-        @foreach(['receipts' => 'Net receipts', 'expenses' => 'Money taken out', 'remaining' => 'Money remaining'] as $key => $label)
-        <div class="col-md-4"><div class="border rounded-3 p-3"><span class="text-secondary">{{ $label }}</span><div class="h4 mt-2 mb-0">{{ \App\Support\Money::display($key === 'receipts' ? $total['receipts'] - $total['refunds'] : $total[$key]) }} {{ $currency }}</div></div></div>
+
+    @fragment('expense-live-metrics')
+    <dl class="expense-overview-metrics" data-expense-live="metrics">
+        @foreach([
+            ['receipts', __('Net receipts'), 'file-earmark-text', 'bar-chart-fill', $total['receipts'] - $total['refunds']],
+            ['expenses', __('Money taken out'), 'cash-coin', 'graph-up', $total['expenses']],
+            ['remaining', __('Money remaining'), 'wallet2', 'activity', $total['remaining']],
+        ] as [$key, $label, $icon, $accent, $cents])
+            <div class="expense-overview-metric expense-overview-metric--{{ $key }}">
+                <i class="bi bi-{{ $icon }} expense-overview-metric-icon" aria-hidden="true"></i>
+                <div>
+                    <dt>{{ $label }}</dt>
+                    <dd>{{ \App\Support\Money::display($cents) }} {{ $currency }}</dd>
+                </div>
+                <i class="bi bi-{{ $accent }} expense-overview-metric-accent" aria-hidden="true"></i>
+            </div>
         @endforeach
+    </dl>
+    @endfragment
+
+    @fragment('expense-live-history')
+    <section class="expense-overview-history panel" aria-labelledby="expense-history-title" data-expense-live="history">
+        <header>
+            <h2 id="expense-history-title"><i class="bi bi-clipboard-check" aria-hidden="true"></i> {{ __('Expense History') }}</h2>
+            <span class="expense-overview-chip"><i class="bi bi-layers" aria-hidden="true"></i> {{ trans_choice(':count record|:count records', $expenses->total()) }}</span>
+        </header>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col">{{ __('Date spent') }}</th>
+                        <th scope="col">{{ __('Amount') }}</th>
+                        <th scope="col">{{ __('Reason / note') }}</th>
+                        <th scope="col">{{ __('Recorded by') }}</th>
+                        <th scope="col">{{ __('Recorded at') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($expenses as $expense)
+                        <tr>
+                            <td class="text-nowrap"><i class="bi bi-calendar3 expense-overview-row-icon" aria-hidden="true"></i>{{ $expense->spent_on->translatedFormat('d M Y') }}</td>
+                            <td><span class="expense-overview-chip expense-overview-amount">{{ \App\Support\Money::display(\App\Support\Money::cents($expense->amount)) }} {{ $expense->currency }}</span></td>
+                            <td class="expense-overview-note">
+                                @if($expense->employee_id)
+                                    <div><strong>{{ __('Employee advance') }}</strong> &middot; {{ $expense->employee?->name }}</div>
+                                    <small class="text-secondary">{{ __('Outstanding :amount', ['amount' => '$'.\App\Support\Money::display(\App\Support\Money::cents($expense->amount) - $expense->advance_recovered_cents)]) }}</small>
+                                    @include('school.expenses._repayment-plan', ['amountCents' => \App\Support\Money::cents($expense->amount), 'months' => (int) $expense->repayment_months])
+                                @endif
+                                @if($expense->note || !$expense->employee_id)
+                                    <div class="expense-overview-note-text">{{ $expense->note ?: __('No reason provided') }}</div>
+                                @endif
+                            </td>
+                            <td><span class="expense-overview-chip"><i class="bi bi-person" aria-hidden="true"></i>{{ $expense->recorder?->name ?? __('Unavailable') }}</span></td>
+                            <td class="text-nowrap"><i class="bi bi-clock expense-overview-row-icon" aria-hidden="true"></i>{{ $expense->created_at->translatedFormat('d M Y, H:i') }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="5" class="text-center p-4 text-secondary">{{ __('No expenses recorded for this month and currency.') }}</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        @if($expenses->hasPages())
+            <div class="mt-3">{{ $expenses->links() }}</div>
+        @endif
+    </section>
+    @endfragment
+</div>
+<div class="modal fade" id="employee-advance-modal" tabindex="-1" aria-labelledby="employee-advance-title" aria-hidden="true" @if($errors->any() && old('request_key')) data-reopen-advance @endif>
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="employee-advance-title">
+                    Employee advance
+                    <span class="badge rounded-pill text-bg-primary ms-2" data-expense-live-count="modal" @if(!$pendingAdvanceCount) hidden @endif>{{ trans_choice(':count pending request|:count pending requests', $pendingAdvanceCount) }}</span>
+                </h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Close') }}"></button>
+            </div>
+            <div class="modal-body p-4">
+                @fragment('expense-live-queue')
+                <div data-expense-live="queue">
+                @if($advanceRequests->isNotEmpty())
+                    <section class="border rounded p-3 mb-4" aria-labelledby="teacher-advance-requests-title">
+                        <h3 class="h6" id="teacher-advance-requests-title">{{ __('Teacher money requests') }}</h3>
+                        <ul class="list-group list-group-flush">
+                            @foreach($advanceRequests as $advanceRequest)
+                                <li class="list-group-item px-0 d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                    <div>
+                                        <span>{{ __(':teacher requested :amount', [
+                                            'teacher' => $advanceRequest->teacher?->name ?? __('Unavailable teacher'),
+                                            'amount' => '$'.\App\Support\Money::display($advanceRequest->amount_cents),
+                                        ]) }}</span>
+                                        @include('school.expenses._repayment-plan', ['amountCents' => $advanceRequest->amount_cents, 'months' => $advanceRequest->repayment_months])
+                                    </div>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <form method="post" action="{{ route('reports.expenses.advance-requests.reject', $advanceRequest) }}">
+                                            @csrf
+                                            <button class="btn btn-sm btn-outline-danger" type="submit">{{ __('Reject') }}</button>
+                                        </form>
+                                        <form method="post" action="{{ route('reports.expenses.advance-requests.confirm', $advanceRequest) }}">
+                                            @csrf
+                                            <button class="btn btn-sm btn-primary" type="submit" @disabled(!$advanceRequest->teacher)>{{ __('Confirm payout') }}</button>
+                                        </form>
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ul>
+                        <p class="small text-secondary mb-0 mt-2">{{ __('Confirm after handing the money to the teacher.') }}</p>
+                    </section>
+                @endif
+                </div>
+                @endfragment
+                <p class="text-secondary">Record money paid to a teacher before payroll. The amount will be deducted from their salary.</p>
+                @include('school.expenses._advance-form')
+            </div>
+        </div>
     </div>
-</section>
-<section class="panel">
-    <div class="panel-header"><h2>Expense history</h2><span>{{ $expenses->total() }} records</span></div>
-    <div class="table-responsive"><table class="table"><thead><tr><th>Date spent</th><th>Amount</th><th>Reason / note</th><th>Recorded by</th><th>Recorded at</th></tr></thead><tbody>
-        @forelse($expenses as $expense)
-        <tr><td class="text-nowrap">{{ $expense->spent_on->format('d M Y') }}</td><td class="text-nowrap">{{ \App\Support\Money::display(\App\Support\Money::cents($expense->amount)) }} {{ $expense->currency }}</td><td style="min-width:200px;white-space:pre-wrap;overflow-wrap:anywhere">{{ $expense->note ?: 'No reason provided' }}</td><td>{{ $expense->recorder?->name ?? 'Unavailable' }}</td><td class="text-nowrap">{{ $expense->created_at->format('d M Y, H:i') }}</td></tr>
-        @empty<tr><td colspan="5" class="text-center p-4 text-secondary">No expenses recorded for this month and currency.</td></tr>@endforelse
-    </tbody></table></div>
-    <div class="p-3">{{ $expenses->links() }}</div>
-</section>
+</div>
 @endsection
+
+@push('scripts')
+<script src="{{ asset('js/expense-live.js') }}?v={{ filemtime(public_path('js/expense-live.js')) }}" defer></script>
+@endpush

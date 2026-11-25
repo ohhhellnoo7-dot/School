@@ -5,4 +5,5 @@ class SchoolExpense extends Model {
  protected $guarded = [];
  protected function casts(): array { return ['amount'=>'decimal:2', 'spent_on'=>'date']; }
  public function recorder() { return $this->belongsTo(User::class, 'recorded_by'); }
+ public function employee() { return $this->belongsTo(User::class, 'employee_id')->withoutGlobalScope('archived'); }
 }

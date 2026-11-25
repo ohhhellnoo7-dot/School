@@ -29,6 +29,40 @@
 
     let selected = today();
 
+    function renderHolidayPreview(key, label, date) {
+        const row = calendar.closest('.dashboard-feature-row');
+        const slot = row?.querySelector('[data-calendar-holiday-slot]');
+        if (!slot) return;
+
+        const defaultCard = slot.querySelector('[data-calendar-holiday-default]');
+        const dateKey = date.toISOString().slice(0, 10);
+        const showPreview = Boolean(label) && dateKey !== defaultCard.dataset.date;
+        defaultCard.hidden = showPreview;
+        slot.querySelector('[data-calendar-holiday-preview]')?.remove();
+        if (!showPreview) return;
+
+        const template = slot.querySelector('[data-calendar-holiday-template]');
+        const preview = template.content.firstElementChild.cloneNode(true);
+        preview.dataset.calendarHolidayPreview = '';
+        preview.classList.toggle('teaching-holiday--water-festival', key === 'water_festival');
+        preview.querySelector('h2').textContent = label;
+        const time = preview.querySelector('time');
+        time.dateTime = dateKey;
+        time.textContent = fullDateLabel.format(date);
+
+        const artwork = key === 'labour_and_visak' ? ['labour', 'visak'] : [key];
+        const art = preview.querySelector('.teaching-holiday-art');
+        art.classList.toggle('teaching-holiday-art-pair', artwork.length > 1);
+        for (const name of artwork) {
+            const image = new Image(800, 800);
+            image.alt = '';
+            image.decoding = 'async';
+            image.src = `${template.dataset.artworkBase}/${encodeURIComponent(name)}.jpg`;
+            art.append(image);
+        }
+        slot.append(preview);
+    }
+
     function selectDay(date) {
         selected = date;
         const year = date.getUTCFullYear();
@@ -37,9 +71,11 @@
         const lunar = momentkh.fromGregorian(year, month, day, 12);
         solarDate.textContent = fullDateLabel.format(date);
         lunarDate.textContent = momentkh.format(lunar);
-        const holiday = holidayLabels[holidaySchedules[year]?.[`${month}-${day}`]];
+        const key = holidaySchedules[year]?.[`${month}-${day}`];
+        const holiday = holidayLabels[key];
         selectedHoliday.querySelector('p').textContent = holiday || '';
         selectedHoliday.hidden = !holiday;
+        renderHolidayPreview(key, holiday, date);
         for (const button of body.querySelectorAll('button')) {
             button.setAttribute('aria-pressed', Number(button.dataset.calendarDay) === day);
         }
@@ -112,6 +148,7 @@
         renderMonth();
     });
 
+    calendar.addEventListener('dashboard:refreshed', () => selectDay(selected));
     renderMonth();
     calendar.querySelector('[data-calendar-layout]').hidden = false;
     calendar.querySelector('[data-calendar-controls]').hidden = false;

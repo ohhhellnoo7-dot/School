@@ -11,6 +11,9 @@
                     href="{{ route('employee-salaries.teacher-reports', array_replace(request()->except(['page', 'year', 'month']), ['report' => $type], $type === 'leave' ? ['year' => $month->year] : ['month' => $month->format('Y-m')])) }}" data-teacher-report-type="{{ $type }}"
                     @if($filters['report'] === $type) aria-current="true" @endif>{{ $label }}</a>
             @endforeach
+            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#outstanding-advances-modal" aria-haspopup="dialog">
+                <i class="bi bi-wallet2 me-1" aria-hidden="true"></i>{{ __('Outstanding advances') }}
+            </button>
             <button type="button" class="btn btn-outline-primary" data-edit-salary-rates>
                 <i class="bi bi-pencil me-1" aria-hidden="true"></i>{{ __('Edit salary') }}
             </button>
@@ -66,7 +69,10 @@
     </div>
     <button type="submit" class="btn btn-primary">{{ __('Search') }}</button>
 </form>
-<p class="visually-hidden" role="status" data-teacher-report-status></p>
+<div class="d-flex flex-wrap align-items-center justify-content-end gap-2 mb-3 d-print-none">
+    <span class="small text-secondary" role="status" data-teacher-report-status>{{ __('Refreshes about every 30 seconds while open.') }}</span>
+    <button class="btn btn-sm btn-outline-primary" type="button" data-refresh-teacher-reports><i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>{{ __('Refresh') }}</button>
+</div>
 @fragment('teacher-payroll-reports')
 <div id="teacher-payroll-report-results" data-reference-month="{{ $month->format('Y-m') }}">
     @if($reports->isEmpty())
@@ -100,6 +106,9 @@
     <div class="d-print-none">{{ $teachers->links() }}</div>
 </div>
 @endfragment
+@isset($outstandingAdvances)
+    @include('school.salaries._outstanding-advances')
+@endisset
 @include('school.salaries._edit-rates')
 <dialog id="leave-bonus-dialog" class="salary-calculator leave-bonus-dialog d-print-none" aria-labelledby="leave-bonus-title">
     <form method="post" action="{{ route('employee-salaries.leave-bonus-eligibility.update') }}" class="salary-calculator-form">

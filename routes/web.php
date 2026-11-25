@@ -91,6 +91,9 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent', \App\Htt
     Route::get('/classrooms/{classroom}/matching-class', [ClassroomController::class, 'matchingClass'])->middleware('role:administrator,teacher')->name('classrooms.matching-class');
     Route::get('/dashboard/data', [DashboardController::class, 'data'])->name('dashboard.data');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::post('/dashboard/salary-advance-requests', [\App\Http\Controllers\SchoolExpenseController::class, 'requestAdvance'])->middleware('role:teacher')->name('dashboard.advance-requests.store');
+    Route::get('/dashboard/salary-advance-requests', [\App\Http\Controllers\SchoolExpenseController::class, 'advanceRequestHistory'])->middleware('role:teacher')->name('dashboard.advance-requests.history');
+    Route::post('/dashboard/salary-advance-requests/{advanceRequest}/cancel', [\App\Http\Controllers\SchoolExpenseController::class, 'cancelAdvanceRequest'])->middleware('role:teacher')->name('dashboard.advance-requests.cancel');
     Route::post('/dashboard/attendance/all-present', [DashboardController::class, 'markAllPresent'])->middleware('role:administrator')->name('dashboard.attendance.all-present');
     Route::post('/dashboard/attendance/random', [DashboardController::class, 'randomAttendance'])->middleware('role:administrator')->name('dashboard.attendance.random');
     Route::post('/dashboard/teacher-attendance/{action}', [\App\Http\Controllers\TeacherAttendanceController::class, 'bulk'])->where('action', 'all-present|random|scan-in|scan-out')->middleware('role:administrator')->name('dashboard.teacher-attendance.bulk');
@@ -112,6 +115,10 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent', \App\Htt
     Route::get('/reports/expenses', [\App\Http\Controllers\SchoolExpenseController::class, 'index'])->middleware('role:administrator')->name('reports.expenses.index');
     Route::get('/reports/expenses/create', [\App\Http\Controllers\SchoolExpenseController::class, 'create'])->middleware('role:administrator')->name('reports.expenses.create');
     Route::post('/reports/expenses', [\App\Http\Controllers\SchoolExpenseController::class, 'store'])->middleware('role:administrator')->name('reports.expenses.store');
+    Route::get('/reports/expenses/advances/create', [\App\Http\Controllers\SchoolExpenseController::class, 'createAdvance'])->middleware('role:administrator')->name('reports.expenses.advances.create');
+    Route::post('/reports/expenses/advances', [\App\Http\Controllers\SchoolExpenseController::class, 'storeAdvance'])->middleware('role:administrator')->name('reports.expenses.advances.store');
+    Route::post('/reports/expenses/advance-requests/{advanceRequest}/confirm', [\App\Http\Controllers\SchoolExpenseController::class, 'confirmAdvanceRequest'])->middleware('role:administrator')->name('reports.expenses.advance-requests.confirm');
+    Route::post('/reports/expenses/advance-requests/{advanceRequest}/reject', [\App\Http\Controllers\SchoolExpenseController::class, 'rejectAdvanceRequest'])->middleware('role:administrator')->name('reports.expenses.advance-requests.reject');
     Route::get('/users/{user}/photo', [ProfileController::class, 'userPhoto'])->name('users.photo');
     Route::get('/students/{student}/photo', [ProfileController::class, 'studentPhoto'])->name('students.photo');
     Route::post('/students/{student}/attendance', [StudentController::class, 'saveAttendance'])->middleware('role:administrator')->name('students.attendance.store');

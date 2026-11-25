@@ -34,10 +34,23 @@ class SchoolHolidayClosure
 
     public function holiday(CarbonInterface|string $date): ?string
     {
-        $day = is_string($date) ? CarbonImmutable::parse($date, config('app.timezone')) : $date;
-        $holiday = config('khmer-holidays.'.$day->year.'.'.$day->format('n-j'));
+        $holiday = $this->calendarHoliday($date);
 
-        return $holiday && $this->enabled() ? __('khmer-calendar.holidays.'.$holiday) : null;
+        return $holiday && $this->enabled() ? $holiday : null;
+    }
+
+    public function calendarHoliday(CarbonInterface|string $date): ?string
+    {
+        $holiday = $this->calendarHolidayKey($date);
+
+        return $holiday ? __('khmer-calendar.holidays.'.$holiday) : null;
+    }
+
+    public function calendarHolidayKey(CarbonInterface|string $date): ?string
+    {
+        $day = is_string($date) ? CarbonImmutable::parse($date, config('app.timezone')) : $date;
+
+        return config('khmer-holidays.'.$day->year.'.'.$day->format('n-j'));
     }
 
     public function ensureOpen(CarbonInterface|string $date): void

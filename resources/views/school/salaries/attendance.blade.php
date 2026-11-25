@@ -7,6 +7,7 @@
     @php($rates = app(\App\Services\EmployeeSalaryRates::class)->amounts())
     <div class="px-4 pb-3 small text-secondary">
         For teachers working both daytime sessions, one absence costs ${{ \App\Support\Money::decimal($rates['absence_one']) }} and two cost ${{ \App\Support\Money::decimal($rates['absence_two']) }}.
+        Missing the only assigned session costs ${{ \App\Support\Money::decimal($rates['absence_single_session']) }}.
         Late costs ${{ \App\Support\Money::decimal($rates['late']) }} per day. Excused costs ${{ \App\Support\Money::decimal($rates['excused']) }} per day after the first free excuse each month.
     </div>
     <div id="salary-search-results" aria-live="polite"><div class="table-responsive"><table class="table salary-table"><thead><tr><th>Teacher</th><th>Morning</th><th>Afternoon</th><th>Evening</th><th>Record attendance</th></tr></thead><tbody>

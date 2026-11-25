@@ -56,10 +56,19 @@ class EmployeeSalaryCalculator
             return $rates['morning'];
         }
 
+        return $rates[strtolower($this->singleDaySession($teacherId))];
+    }
+
+    public function singleDaySession(?int $teacherId): string
+    {
+        if ($teacherId === null) {
+            return 'Morning';
+        }
+
         $afternoonOnly = $this->afternoonOnly[$teacherId] ??= AttendanceSession::teachers(User::whereKey($teacherId), 'Afternoon')->exists()
             && ! AttendanceSession::teachers(User::whereKey($teacherId), 'Morning')->exists();
 
-        return $afternoonOnly ? $rates['afternoon'] : $rates['morning'];
+        return $afternoonOnly ? 'Afternoon' : 'Morning';
     }
 
     public function calculate(EmployeeSalaryProfile $profile, Carbon $asOf, int $assignedMinutes): array

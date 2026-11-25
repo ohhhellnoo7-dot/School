@@ -95,6 +95,7 @@ class DashboardAjaxTest extends TestCase
         ];
 
         foreach ($pages as $html) {
+            $this->assertStringNotContainsString('Monthly Attendance Trend', $html);
             $this->assertMatchesRegularExpression('~🌅</span>Morning.*08:00–08:50.*☀️</span>Afternoon.*13:00–14:00.*🌙</span>Evening.*17:00–18:00~s', $html);
             foreach (['Students in my classes', 'My classes', 'My subjects', 'View assignments', 'Daily attendance', 'Student attendance report', 'Student attendance updates', 'Attendance history', 'Today’s teaching schedule', 'Period 1', 'A-TEST', 'Building A', 'dashboard-khmer-calendar'] as $label) {
                 $this->assertStringContainsString($label, $html);
@@ -104,6 +105,35 @@ class DashboardAjaxTest extends TestCase
                 $this->assertStringNotContainsString($label, $html);
             }
         }
+    }
+
+    public function test_teacher_dashboard_replaces_scheduled_periods_with_the_calendar_holiday(): void
+    {
+        $this->seed(SchoolSeeder::class);
+        $teacher = User::where('email', 'teacher@school.test')->firstOrFail();
+        Schedule::where('teacher_id', $teacher->id)->update(['day' => 'Tuesday']);
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-24 09:00'));
+
+        $this->actingAs($teacher)->get('/dashboard')->assertOk()
+            ->assertViewHas('todayTeachingPeriods', fn ($periods) => $periods->isEmpty())
+            ->assertSee('Water Festival')->assertDontSee('today-teaching-periods-title');
+        $html = $this->getJson('/dashboard/data')->assertOk()->json('html');
+        $this->assertStringContainsString('teaching-holiday-title', $html);
+        $this->assertStringContainsString('holidays/chibi/water_festival.jpg', $html);
+        $this->assertStringNotContainsString('today-teaching-periods-title', $html);
+
+        foreach (array_unique(config('khmer-holidays.2026')) as $date => $holiday) {
+            $this->travelTo(\Illuminate\Support\Carbon::parse('2026-'.$date.' 09:00'));
+            $response = $this->get('/dashboard')->assertOk()->assertDontSee('today-teaching-periods-title');
+            $artwork = $holiday === 'labour_and_visak' ? ['labour', 'visak'] : [$holiday];
+            foreach ($artwork as $image) {
+                $response->assertSee('holidays/chibi/'.$image.'.jpg', false);
+            }
+        }
+
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-12-01 09:00'));
+        $this->get('/dashboard')->assertOk()->assertSee('today-teaching-periods-title')
+            ->assertSee('Period 1')->assertDontSee('teaching-holiday-title');
     }
 
     public function test_parent_labels_refer_to_their_own_children_on_initial_and_live_dashboard(): void

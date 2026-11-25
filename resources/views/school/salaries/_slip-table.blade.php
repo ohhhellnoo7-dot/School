@@ -20,26 +20,29 @@
             </colgroup>
             <colgroup>
                 <col class="payroll-strip-col-working-days">
-                <col class="payroll-strip-col-days" span="4">
+                <col class="payroll-strip-col-days" span="2">
+                <col class="payroll-strip-col-absence" span="2">
+                <col class="payroll-strip-col-days">
             </colgroup>
             <colgroup><col class="payroll-strip-col-salary" span="3"></colgroup>
-            <colgroup><col class="payroll-strip-col-deduction" span="4"></colgroup>
+            <colgroup><col class="payroll-strip-col-deduction" span="5"></colgroup>
             <colgroup><col class="payroll-strip-col-net"></colgroup>
             <thead>
                 <tr>
                     <th scope="col" rowspan="2">ឈ្មោះ</th><th scope="col" rowspan="2">ភេទ</th>
                     <th scope="col" rowspan="2">ចំនួនវេនការងារ</th>
-                    <th scope="col" rowspan="2" title="ម៉ោងបង្រៀនតាមកាលវិភាគ / ម៉ោងការងារកំណត់ក្នុងមួយសប្ដាហ៍">ម៉ោងការងារប្រចាំសប្ដាហ៍</th>
-                    <th scope="colgroup" colspan="5">ចំនួនថ្ងៃ</th>
+                    <th scope="col" rowspan="2" class="payroll-strip-wrap-heading" title="ម៉ោងបង្រៀនតាមកាលវិភាគ / ម៉ោងការងារកំណត់ក្នុងមួយសប្ដាហ៍">ម៉ោងការងារ<br>ប្រចាំសប្ដាហ៍</th>
+                    <th scope="colgroup" colspan="6">ចំនួនថ្ងៃ</th>
                     <th scope="colgroup" colspan="3">ប្រាក់ខែ</th>
-                    <th scope="colgroup" colspan="4">ប្រាក់កាត់</th>
+                    <th scope="colgroup" colspan="5">ប្រាក់កាត់</th>
                     <th scope="col" rowspan="2">ប្រាក់សរុប</th>
                 </tr>
                 <tr>
                     <th scope="col" title="Total working days (Monday–Friday)">ថ្ងៃធ្វើការ</th>
                     <th scope="col" title="Present">វត្តមាន</th>
                     <th scope="col" title="Late">មកយឺត</th>
-                    <th scope="col" title="Absent">អវត្តមាន</th>
+                    <th scope="col" class="payroll-strip-wrap-heading" title="{{ __('Full-day absence') }}">អវត្តមាន<br>ពេញថ្ងៃ</th>
+                    <th scope="col" class="payroll-strip-wrap-heading" title="{{ __('Partial absence') }}">អវត្តមាន<br>តាមវេន</th>
                     <th scope="col" title="Excused">មានច្បាប់</th>
                     <th scope="col" title="Monthly salary at configured weekly hours">ប្រាក់ខែពេញ</th>
                     <th scope="col" title="Base salary based on scheduled teaching hours">ប្រាក់ខែតាមម៉ោង</th>
@@ -47,6 +50,7 @@
                     <th scope="col" title="Absence deduction">អវត្តមាន</th>
                     <th scope="col" title="Late deduction">មកយឺត</th>
                     <th scope="col" title="Excused deduction">មានច្បាប់</th>
+                    <th scope="col" class="payroll-strip-wrap-heading" title="{{ __('Employee advance') }}">ប្រាក់ខ្ចី</th>
                     <th scope="col" title="Total deductions">សរុប</th>
                 </tr>
             </thead>

@@ -10,7 +10,7 @@
         <p class="text-secondary mb-0">{{ __('These USD rates apply to all teachers with unpaid salary calculations. Session pay is prorated by scheduled teaching hours.') }}</p>
         @foreach([
             __('Monthly session pay') => ['morning' => 'Morning', 'afternoon' => 'Afternoon', 'evening' => 'Evening (when assigned)'],
-            __('Attendance deductions') => ['late' => 'Late per day', 'excused' => 'Excused per day after the first free excuse', 'absence_one' => 'One daytime session absent', 'absence_two' => 'Both daytime sessions absent'],
+            __('Attendance deductions') => ['late' => 'Late per day', 'excused' => 'Excused per day after the first free excuse', 'absence_one' => 'One daytime session missed (two assigned)', 'absence_two' => 'Both daytime sessions missed', 'absence_single_session' => 'Only assigned session missed'],
         ] as $heading => $fields)
             <fieldset>
                 <legend class="h6 mb-2">{{ $heading }}</legend>
@@ -34,7 +34,7 @@
                 </div>
             </fieldset>
         @endforeach
-        <p class="small text-secondary mb-0">{{ __('Absence charges apply to teachers assigned both daytime sessions.') }}</p>
+        <p class="small text-secondary mb-0">{{ __('The single-session charge applies to teachers who work only Morning, Afternoon, or Evening.') }}</p>
         <div class="salary-calculator-actions">
             <button class="btn btn-outline-secondary" type="button" data-cancel-salary-rates>{{ __('Cancel') }}</button>
             <button class="btn btn-primary" type="submit">{{ __('Save rates') }}</button>

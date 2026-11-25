@@ -3,6 +3,8 @@
     if (!form) return;
 
     const status = document.querySelector('[data-teacher-report-status]');
+    const refreshButton = document.querySelector('[data-refresh-teacher-reports]');
+    const advancesModal = document.getElementById('outstanding-advances-modal');
     const printButton = document.querySelector('[data-print-teacher-reports]');
     printButton.addEventListener('click', () => window.print());
     const ratesDialog = document.getElementById('salary-rates-dialog');
@@ -21,6 +23,8 @@
     bonusDialog.querySelector('[data-cancel-bonus-edit]').addEventListener('click', () => bonusDialog.close());
     let pending;
     let timer;
+    let lastRefresh = Date.now();
+    const refreshInterval = 30000 + Math.random() * 5000;
 
     function selectReport(type) {
         const annual = type === 'leave';
@@ -31,26 +35,55 @@
         form.querySelector('[data-report-year-field]').hidden = !annual;
     }
 
-    async function update() {
-        clearTimeout(timer);
-        if (!form.reportValidity()) return;
+    async function update(background = false, manual = false) {
+        if (background && (pending || timer || ratesDialog.open || bonusDialog.open)) return;
+        if (!background) {
+            clearTimeout(timer);
+            timer = null;
+            if (!form.reportValidity()) return;
+        }
         pending?.abort();
         const request = new AbortController();
         pending = request;
-        const url = new URL(form.action);
-        url.search = new URLSearchParams(new FormData(form));
+        const url = background ? new URL(window.location.href) : new URL(form.action);
+        if (!background) url.search = new URLSearchParams(new FormData(form));
         const current = document.getElementById('teacher-payroll-report-results');
-        current.setAttribute('aria-busy', 'true');
-        printButton.disabled = true;
-        status.classList.add('visually-hidden');
-        status.textContent = 'Updating teacher reports.';
+        if (!background || manual) {
+            current.setAttribute('aria-busy', 'true');
+            printButton.disabled = true;
+            status.textContent = 'Updating teacher reports.';
+        }
+        const timeout = setTimeout(() => request.abort('timeout'), 20000);
         try {
-            const response = await fetch(url, { signal: request.signal, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            const response = await fetch(url, {
+                signal: request.signal,
+                cache: 'no-store',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-Include-Outstanding-Advances': '1' },
+            });
             if (!response.ok || response.redirected) throw new Error('Reports unavailable');
             const html = new DOMParser().parseFromString(await response.text(), 'text/html');
             const updated = html.getElementById(current.id);
             if (!updated) throw new Error('Reports unavailable');
             if (request.signal.aborted) return;
+
+            const advanceBody = advancesModal?.querySelector('[data-outstanding-advance-body]');
+            const updatedAdvances = html.querySelector('[data-outstanding-advance-body]');
+            if (updatedAdvances && advanceBody && advanceBody.innerHTML !== updatedAdvances.innerHTML) {
+                const scrollTop = advanceBody.scrollTop;
+                advanceBody.replaceWith(updatedAdvances);
+                updatedAdvances.scrollTop = scrollTop;
+            }
+            lastRefresh = Date.now();
+            if (background) {
+                const changed = current.innerHTML !== updated.innerHTML;
+                const canReplace = !current.contains(document.activeElement) && !ratesDialog.open && !bonusDialog.open;
+                if (changed && canReplace) {
+                    current.replaceWith(updated);
+                }
+                if (canReplace && (manual || changed || status.dataset.refreshFailed)) status.textContent = 'Teacher reports are up to date.';
+                delete status.dataset.refreshFailed;
+                return;
+            }
 
             current.replaceWith(updated);
             const referenceMonth = updated.dataset.referenceMonth;
@@ -82,13 +115,16 @@
             }
             window.history.replaceState(null, '', url);
             status.textContent = 'Teacher reports updated.';
+            delete status.dataset.refreshFailed;
         } catch {
-            if (!request.signal.aborted) {
-                status.textContent = 'Could not update reports. Use Search to try again.';
-                status.classList.remove('visually-hidden');
+            if (!request.signal.aborted || request.signal.reason === 'timeout') {
+                status.textContent = 'Could not update reports. Use Refresh to try again.';
+                status.dataset.refreshFailed = 'true';
             }
         } finally {
-            if (!request.signal.aborted) {
+            clearTimeout(timeout);
+            if (pending === request) {
+                pending = null;
                 current.removeAttribute('aria-busy');
                 printButton.disabled = false;
             }
@@ -111,6 +147,15 @@
     form.elements.search.addEventListener('input', () => {
         clearTimeout(timer);
         pending?.abort();
-        timer = setTimeout(update, 250);
+        timer = setTimeout(() => update(), 250);
+    });
+
+    refreshButton.addEventListener('click', () => update(true, true));
+    advancesModal?.addEventListener('shown.bs.modal', () => update(true));
+    setInterval(() => {
+        if (!document.hidden) update(true);
+    }, refreshInterval);
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && Date.now() - lastRefresh >= refreshInterval) update(true);
     });
 })();

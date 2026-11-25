@@ -239,6 +239,7 @@
             if (rates && ratesWereOpen) rates.open = true;
             if (calendar) {
                 content.querySelector('#dashboard-khmer-calendar')?.replaceWith(calendar);
+                calendar.dispatchEvent(new Event('dashboard:refreshed'));
                 calendarFocus?.focus({preventScroll: true});
             }
             renderCharts(payload);

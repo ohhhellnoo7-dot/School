@@ -29,6 +29,7 @@
         <h1>Good {{ now('Asia/Phnom_Penh')->hour < 12 ? 'morning' : (now('Asia/Phnom_Penh')->hour < 18 ? 'afternoon' : 'evening') }}, {{ auth()->user()->name }} <span aria-hidden="true">&#128075;</span></h1>
         <a class="btn btn-outline-secondary mt-2" href="{{ route('modules.index', 'assignments') }}">{{ __('View assignments') }}</a>
         <a class="btn btn-outline-secondary mt-2" href="{{ route('students.index', ['my_children' => 1]) }}"><i class="bi bi-person-heart me-2" aria-hidden="true"></i>{{ __('My children') }}</a>
+        @include('school.partials.request-money-button', ['buttonClass' => 'btn-outline-secondary mt-2'])
     </div>
 </x-scholar-hero>
 <section class="student-attendance-hero teacher-dashboard-hero windy-only" aria-labelledby="teacher-dashboard-heading">
@@ -47,6 +48,7 @@
         <a class="btn btn-light" href="{{ route('modules.index', 'assignments') }}"><i class="bi bi-journal-bookmark me-2" aria-hidden="true"></i>{{ __('View assignments') }}</a>
         <a class="btn btn-light" href="{{ route('teachers.schedule', auth()->id()) }}"><i class="bi bi-calendar-week me-2" aria-hidden="true"></i>{{ __('My teaching schedule') }}</a>
         <a class="btn btn-light" href="{{ route('students.index', ['my_children' => 1]) }}"><i class="bi bi-person-heart me-2" aria-hidden="true"></i>{{ __('My children') }}</a>
+        @include('school.partials.request-money-button', ['buttonClass' => 'btn-light'])
     </div>
 </section>
 @else
@@ -171,12 +173,47 @@
 @endif
 @if($isTeacher)
     <div class="row g-3 dashboard-feature-row">
-        <div class="col-xl-6">
-            @include('school.partials.today-teaching-periods')
+        <div class="col-xl-6 teaching-holiday-slot" data-calendar-holiday-slot>
+            <div class="h-100" data-calendar-holiday-default data-date="{{ today()->toDateString() }}">
+                @if($teachingHoliday)
+                    <section @class(['panel teaching-holiday h-100', 'teaching-holiday--water-festival' => $teachingHoliday === 'water_festival']) aria-labelledby="teaching-holiday-title">
+                        <div class="teaching-holiday-copy">
+                            <span class="teaching-holiday-label"><i @class(['bi', 'bi-water' => $teachingHoliday === 'water_festival', 'bi-flag-fill' => $teachingHoliday !== 'water_festival']) aria-hidden="true"></i> {{ __('Public holiday') }}</span>
+                            <h2 id="teaching-holiday-title">{{ __('khmer-calendar.holidays.'.$teachingHoliday) }}</h2>
+                            <time datetime="{{ today()->toDateString() }}">@if($teachingHoliday === 'water_festival')<i class="bi bi-calendar-event" aria-hidden="true"></i>@endif{{ today()->translatedFormat('l, F j, Y') }}</time>
+                            <p>{{ __('Today’s teaching schedule is paused for the holiday.') }}</p>
+                            <a class="btn btn-light" href="{{ route('teachers.schedule', auth()->id()) }}"><i class="bi bi-calendar-week me-2" aria-hidden="true"></i>{{ __('Full schedule') }}</a>
+                        </div>
+                        <div @class(['teaching-holiday-art', 'teaching-holiday-art-pair' => count($teachingHolidayArtwork) > 1])>
+                            @foreach($teachingHolidayArtwork as $artwork)
+                                <img src="{{ asset('images/holidays/chibi/'.$artwork.'.jpg') }}" alt="" width="800" height="800" decoding="async">
+                            @endforeach
+                        </div>
+                        @if($teachingHoliday === 'water_festival')
+                            <div class="teaching-holiday-ornaments" aria-hidden="true">
+                                <i class="bi bi-stars"></i>
+                                <i class="bi bi-water"></i>
+                            </div>
+                        @endif
+                    </section>
+                @else
+                    @include('school.partials.today-teaching-periods')
+                @endif
+            </div>
+            <template data-calendar-holiday-template data-artwork-base="{{ asset('images/holidays/chibi') }}">
+                <section class="panel teaching-holiday h-100" aria-labelledby="calendar-holiday-preview-title">
+                    <div class="teaching-holiday-copy">
+                        <span class="teaching-holiday-label"><i class="bi bi-flag-fill" aria-hidden="true"></i> {{ __('Public holiday') }}</span>
+                        <h2 id="calendar-holiday-preview-title"></h2>
+                        <time></time>
+                    </div>
+                    <div class="teaching-holiday-art"></div>
+                </section>
+            </template>
         </div>
         <div class="col-xl-6">
             <div class="panel h-100">
-                @include('school.partials.khmer-calendar')
+                @include('school.partials.khmer-calendar', ['calendarLocale' => 'km'])
             </div>
         </div>
     </div>
@@ -336,8 +373,5 @@
 </div>
 
 @endunless
-@if($isTeacher)
-    <div class="mt-3">@include('school.partials.monthly-attendance-trend')</div>
-@endif
 
 @endif

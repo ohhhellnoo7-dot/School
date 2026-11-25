@@ -12,6 +12,234 @@ class EmployeeSalaryTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_outstanding_advance_totals_are_separate_for_each_employee(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $sarah = User::factory()->create(['role' => 'teacher', 'name' => 'Sarah Williams']);
+        $james = User::factory()->create(['role' => 'teacher', 'name' => 'James Anderson']);
+
+        foreach ([[$sarah, '5.00', 0], [$james, '100.00', 0], [$sarah, '100.00', 2000]] as [$employee, $amount, $repaid]) {
+            \App\Models\SchoolExpense::create([
+                'employee_id' => $employee->id, 'amount' => $amount, 'currency' => 'USD',
+                'advance_recovered_cents' => $repaid, 'spent_on' => today(), 'recorded_by' => $admin->id,
+                'request_key' => (string) \Illuminate\Support\Str::uuid(),
+            ]);
+        }
+
+        $this->actingAs($admin)->get(route('employee-salaries.teacher-reports'))->assertOk()
+            ->assertSeeInOrder(['Total for Sarah Williams', '$105.00', '$20.00', '$85.00', 'Total for James Anderson', '$100.00', '$0.00', '$100.00'])
+            ->assertDontSee('$205.00');
+    }
+
+    public function test_teacher_advance_repayment_plan_is_applied_once_per_salary_month(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-16 12:00:00'));
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = User::factory()->create(['role' => 'teacher', 'name' => 'Sarah Williams', 'gender' => 'female']);
+        $this->profile($teacher, $admin)->update(['service_started_on' => '2026-11-01', 'evening_sessions' => 0]);
+        $this->assignHours($teacher, 10);
+        $fee = \App\Models\Fee::create([
+            'student_id' => \App\Models\Student::factory()->create()->id,
+            'description' => 'Tuition', 'amount' => '200.00', 'paid' => '200.00', 'currency' => 'USD', 'due_date' => today(),
+        ]);
+        \App\Models\FeePayment::create([
+            'fee_id' => $fee->id, 'receipt_number' => 'INSTALLMENT-ADVANCE', 'request_key' => (string) \Illuminate\Support\Str::uuid(),
+            'amount' => '200.00', 'currency' => 'USD', 'paid_on' => today(), 'method' => 'cash', 'recorded_by' => $admin->id,
+        ]);
+
+        $store = route('dashboard.advance-requests.store');
+        $request = ['requested_amount' => '100', 'submission_key' => (string) \Illuminate\Support\Str::uuid()];
+        $this->actingAs($teacher)->from(route('dashboard'))->post($store, $request)->assertSessionHasErrors('repayment_months');
+        $this->post($store, $request + ['repayment_months' => 5])->assertRedirect(route('dashboard'));
+        $this->get(route('dashboard.advance-requests.history'))->assertOk()->assertSee('$20.00 per month for 5 months');
+
+        $advance = \App\Models\TeacherAdvanceRequest::sole();
+        $history = route('reports.expenses.index', ['currency' => 'USD', 'month' => '2026-11']);
+        $this->actingAs($admin)->get($history)->assertOk()->assertSee('$20.00 per month for 5 months');
+        $this->post(route('reports.expenses.advance-requests.confirm', $advance))->assertRedirect($history);
+        $this->assertDatabaseHas('school_expenses', ['employee_id' => $teacher->id, 'repayment_months' => 5, 'amount' => '100.00']);
+        $this->get($history)->assertOk()->assertSee(['Outstanding $100.00', '$20.00 per month for 5 months']);
+        $liveReports = route('employee-salaries.teacher-reports', ['report' => 'leave', 'year' => 2026, 'search' => 'Unrelated']);
+        $liveHeaders = ['X-Requested-With' => 'XMLHttpRequest', 'X-Include-Outstanding-Advances' => '1'];
+        $this->get($liveReports, $liveHeaders)->assertOk()
+            ->assertSeeInOrder(['Total for Sarah Williams', '$100.00', '$0.00', '$100.00']);
+
+        foreach (range(0, 4) as $offset) {
+            $date = Carbon::parse('2026-11-16 12:00:00')->addMonths($offset);
+            $this->travelTo($date);
+            $month = $date->format('Y-m');
+            $report = route('employee-salaries.teacher-reports', ['teacher' => $teacher->id, 'month' => $month, 'report' => 'salary']);
+            $salary = $this->get($report)->assertOk()->assertSee('$20.00 USD')->viewData('reports')->first()['salary'];
+            $this->assertSame(2000, $salary['advance_cents']);
+            $this->post(route('employee-salaries.pay', $teacher), [
+                'month' => $month, 'paid_on' => $date->toDateString(), 'confirm' => 1,
+                'expected_total_cents' => $salary['total_cents'], 'expected_advance_cents' => 2000,
+            ])->assertSessionHasNoErrors();
+            $this->get($report)->assertOk()->assertViewHas('reports', fn ($reports) => $reports->first()['payment']->advance_cents === 2000);
+            if ($offset === 0) {
+                $this->get(route('employee-salaries.teacher-reports', ['report' => 'leave', 'year' => 2026, 'search' => 'Unrelated']))
+                    ->assertOk()->assertSee(['Outstanding advances', 'Sarah Williams', 'Female', 'Nov 16, 2026', '5 months'])
+                    ->assertSeeInOrder(['Total for Sarah Williams', '$100.00', '$20.00', '$80.00']);
+                $this->get($liveReports, $liveHeaders)->assertOk()->assertHeader('Cache-Control', 'no-store, private')
+                    ->assertSee(['teacher-payroll-report-results', 'data-outstanding-advance-body'], false)
+                    ->assertSeeInOrder(['Total for Sarah Williams', '$100.00', '$20.00', '$80.00']);
+            }
+        }
+
+        $this->assertDatabaseHas('school_expenses', ['employee_id' => $teacher->id, 'advance_recovered_cents' => 10000]);
+        $this->travelTo(Carbon::parse('2027-04-16 12:00:00'));
+        $this->get(route('employee-salaries.teacher-reports', ['teacher' => $teacher->id, 'month' => '2027-04', 'report' => 'salary']))
+            ->assertOk()->assertViewHas('reports', fn ($reports) => $reports->first()['salary']['advance_cents'] === 0)
+            ->assertSee('No employees have outstanding salary advances.');
+    }
+
+    public function test_teacher_request_is_recorded_in_expenses_and_payroll_only_after_confirmation(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-16 12:00:00'));
+        $teacher = User::factory()->create(['role' => 'teacher', 'name' => 'Amara Teacher']);
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $this->profile($teacher, $admin)->update(['service_started_on' => '2026-11-01', 'evening_sessions' => 0]);
+        $this->assignHours($teacher, 2);
+        $fee = \App\Models\Fee::create([
+            'student_id' => \App\Models\Student::factory()->create()->id,
+            'description' => 'Tuition', 'amount' => '100.00', 'paid' => '100.00', 'currency' => 'USD', 'due_date' => today(),
+        ]);
+        \App\Models\FeePayment::create([
+            'fee_id' => $fee->id, 'receipt_number' => 'TEACHER-ADVANCE-REQUEST', 'request_key' => (string) \Illuminate\Support\Str::uuid(),
+            'amount' => '100.00', 'currency' => 'USD', 'paid_on' => today(), 'method' => 'cash', 'recorded_by' => $admin->id,
+        ]);
+        $store = route('dashboard.advance-requests.store');
+        $data = ['requested_amount' => '10', 'submission_key' => (string) \Illuminate\Support\Str::uuid()];
+        $this->actingAs($admin)->post($store, $data)->assertForbidden();
+        $this->actingAs($teacher)->get(route('dashboard'))->assertOk()->assertSee('Request money');
+        $this->from(route('dashboard'))->post($store, array_replace($data, ['requested_amount' => '$10']))
+            ->assertSessionHasErrors('requested_amount');
+        $this->post($store, $data)->assertRedirect(route('dashboard'));
+        $this->post($store, $data)->assertRedirect(route('dashboard'));
+        $this->assertDatabaseCount('teacher_advance_requests', 1);
+        $this->assertDatabaseCount('school_expenses', 0);
+
+        $advance = \App\Models\TeacherAdvanceRequest::sole();
+        $confirm = route('reports.expenses.advance-requests.confirm', $advance);
+        $history = route('reports.expenses.index', ['currency' => 'USD', 'month' => '2026-11']);
+        $report = route('employee-salaries.teacher-reports', ['teacher' => $teacher->id, 'month' => '2026-11', 'report' => 'salary']);
+        $liveExpenseHeaders = ['Accept' => 'application/json', 'X-Expense-Live' => '1'];
+        $this->get($history, $liveExpenseHeaders)->assertForbidden();
+        $this->post($confirm)->assertForbidden();
+        $this->actingAs($admin)->get($history)->assertOk()->assertSee(['1 pending request', 'Amara Teacher requested $10.00']);
+        $liveExpenses = $this->get($history, $liveExpenseHeaders)->assertOk()
+            ->assertHeader('Cache-Control', 'no-store, private')->assertJsonPath('pendingCount', 1)->json('html');
+        $this->assertStringContainsString('Amara Teacher requested $10.00', $liveExpenses);
+        $this->assertStringNotContainsString('id="advance-search"', $liveExpenses);
+        $sidebarPage = $this->get(route('employee-salaries.index'))->assertOk();
+        $this->assertMatchesRegularExpression('~<span class="nav-label">Reports</span>\s*<span[^>]+data-pending-advance-count\s*>.*?</span>1</span>~s', $sidebarPage->getContent());
+        $this->get($report)->assertOk()->assertViewHas('reports', fn ($reports) => $reports->first()['salary']['advance_cents'] === 0);
+        $this->post($confirm)->assertRedirect($history);
+        $this->post($confirm)->assertRedirect($history);
+        $this->assertDatabaseCount('school_expenses', 1);
+        $this->assertDatabaseHas('school_expenses', ['employee_id' => $teacher->id, 'amount' => '10.00', 'recorded_by' => $admin->id]);
+        $this->get($history)->assertOk()->assertSee('Outstanding $10.00')->assertDontSee('Amara Teacher requested $10.00');
+        $liveExpenses = $this->get($history, $liveExpenseHeaders)->assertOk()->assertJsonPath('pendingCount', 0)->json('html');
+        $this->assertStringContainsString('Outstanding $10.00', $liveExpenses);
+        $this->assertStringContainsString('90.00 USD', $liveExpenses);
+        $this->assertStringNotContainsString('Amara Teacher requested $10.00', $liveExpenses);
+        $this->get(route('employee-salaries.index'))->assertOk()->assertDontSee('data-pending-advance-count', false);
+        $this->get($report)->assertOk()->assertViewHas('reports', fn ($reports) => $reports->first()['salary']['advance_cents'] === 1000);
+        $this->post(route('employee-salaries.pay', $teacher), [
+            'month' => '2026-11', 'paid_on' => '2026-11-16', 'confirm' => 1,
+            'expected_total_cents' => 250, 'expected_advance_cents' => 1000,
+        ])->assertSessionHasNoErrors();
+        $this->get($report)->assertOk()->assertViewHas('reports', fn ($reports) => $reports->first()['payment']->advance_cents === 1000);
+
+        $otherTeacher = User::factory()->create(['role' => 'teacher']);
+        $this->actingAs($otherTeacher)->post($store, [
+            'requested_amount' => '99', 'submission_key' => (string) \Illuminate\Support\Str::uuid(),
+        ])->assertRedirect(route('dashboard'));
+        $requestHistory = route('dashboard.advance-requests.history');
+        $this->actingAs($admin)->get($requestHistory)->assertForbidden();
+        $this->actingAs($teacher)->get(route('dashboard'))->assertSee('Request History');
+        foreach ([['date' => '2026-11-16'], ['month' => '2026-11'], ['year' => '2026']] as $filter) {
+            $this->get(route('dashboard.advance-requests.history', $filter))->assertOk()
+                ->assertSee(['$10.00', 'Paid', 'Nov 16, 2026'])->assertDontSee('$99.00');
+        }
+        $this->get(route('dashboard.advance-requests.history', ['year' => '2025']))->assertOk()
+            ->assertSee('No salary advance requests match these filters.')->assertDontSee('$10.00');
+
+        $cancelPaid = route('dashboard.advance-requests.cancel', $advance);
+        $pending = \App\Models\TeacherAdvanceRequest::where('teacher_id', $otherTeacher->id)->sole();
+        $cancelPending = route('dashboard.advance-requests.cancel', $pending);
+        $this->from($requestHistory)->post($cancelPaid)->assertSessionHasErrors('advance_request');
+        $this->post($cancelPending)->assertNotFound();
+        $this->actingAs($otherTeacher)->get($requestHistory)->assertOk()->assertSee($cancelPending);
+        $this->from($requestHistory)->post($cancelPending)->assertRedirect($requestHistory);
+        $this->get($requestHistory)->assertOk()->assertSee(['$99.00', 'Cancelled'])->assertDontSee($cancelPending);
+        $this->actingAs($admin)->get($history)->assertOk()->assertDontSee('data-pending-advance-count', false);
+        $this->from($history)->post(route('reports.expenses.advance-requests.confirm', $pending))
+            ->assertSessionHasErrors('advance_request');
+
+        $this->actingAs($otherTeacher)->post($store, [
+            'requested_amount' => '3', 'submission_key' => (string) \Illuminate\Support\Str::uuid(),
+        ])->assertRedirect(route('dashboard'));
+        $toReject = \App\Models\TeacherAdvanceRequest::pending()->sole();
+        $reject = route('reports.expenses.advance-requests.reject', $toReject);
+        $this->post($reject)->assertForbidden();
+        $this->actingAs($admin)->get($history)->assertOk()->assertSee($reject);
+        $this->from($history)->post($reject)->assertRedirect($history);
+        $this->post($reject)->assertRedirect($history);
+        $this->get($history)->assertOk()->assertDontSee('data-pending-advance-count', false);
+        $this->post(route('reports.expenses.advance-requests.confirm', $toReject))->assertSessionHasErrors('advance_request');
+        $this->actingAs($otherTeacher)->get($requestHistory)->assertOk()->assertSee(['$3.00', 'Rejected'])
+            ->assertDontSee(route('dashboard.advance-requests.cancel', $toReject));
+        $this->assertDatabaseCount('school_expenses', 1);
+    }
+
+    public function test_employee_advance_is_recorded_once_and_recovered_across_payroll_months(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-16 12:00:00'));
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = User::factory()->create(['role' => 'teacher', 'name' => 'Amara Teacher']);
+        $this->profile($teacher, $admin)->update(['service_started_on' => '2026-11-01', 'evening_sessions' => 0]);
+        $this->assignHours($teacher, 2);
+        $fee = \App\Models\Fee::create([
+            'student_id' => \App\Models\Student::factory()->create()->id,
+            'description' => 'Tuition', 'amount' => '100.00', 'paid' => '100.00', 'currency' => 'USD', 'due_date' => today(),
+        ]);
+        \App\Models\FeePayment::create([
+            'fee_id' => $fee->id, 'receipt_number' => 'ADVANCE-TEST', 'request_key' => (string) \Illuminate\Support\Str::uuid(),
+            'amount' => '100.00', 'currency' => 'USD', 'paid_on' => today(), 'method' => 'cash', 'recorded_by' => $admin->id,
+        ]);
+        $store = route('reports.expenses.advances.store');
+        $advance = ['employee_id' => $teacher->id, 'amount' => '20.00', 'spent_on' => '2026-11-16', 'request_key' => (string) \Illuminate\Support\Str::uuid()];
+        $history = route('reports.expenses.index', ['currency' => 'USD', 'month' => '2026-11']);
+
+        $this->actingAs($teacher)->post($store, $advance)->assertForbidden();
+        $this->actingAs($admin)->get($history)->assertOk()
+            ->assertSee('data-bs-target="#employee-advance-modal"', false)->assertSee('Amara Teacher');
+        $this->get(route('reports.expenses.advances.create'))->assertOk()->assertSee('Amara Teacher');
+        $this->from($history)->post($store, array_replace($advance, ['amount' => '0.00']))
+            ->assertRedirect($history)->assertSessionHasErrors('amount');
+        $this->get($history)->assertOk()->assertSee('data-reopen-advance', false);
+        $this->post($store, $advance)->assertRedirect($history);
+        $this->post($store, $advance)->assertRedirect($history);
+        $this->assertDatabaseCount('school_expenses', 1);
+        $this->get($history)->assertOk()->assertSee(['Amara Teacher', '80.00 USD', 'Outstanding $20.00']);
+
+        $report = route('employee-salaries.teacher-reports', ['teacher' => $teacher->id, 'month' => '2026-11', 'report' => 'salary']);
+        $this->get($report)->assertOk()->assertSee('ប្រាក់ខ្ចី')
+            ->assertViewHas('reports', fn ($reports) => $reports->first()['salary']['advance_cents'] === 1250);
+        $pay = route('employee-salaries.pay', $teacher);
+        $this->post($pay, ['month' => '2026-11', 'paid_on' => '2026-11-16', 'confirm' => 1, 'expected_total_cents' => 0, 'expected_advance_cents' => 1250])
+            ->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('employee_salary_payments', ['teacher_id' => $teacher->id, 'advance_cents' => 1250, 'total_cents' => 0]);
+        $this->get($history)->assertOk()->assertSee('Outstanding $7.50');
+
+        $this->travelTo(Carbon::parse('2026-12-16 12:00:00'));
+        $this->post($pay, ['month' => '2026-12', 'paid_on' => '2026-12-16', 'confirm' => 1, 'expected_total_cents' => 500, 'expected_advance_cents' => 750])
+            ->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('school_expenses', ['employee_id' => $teacher->id, 'advance_recovered_cents' => 2000]);
+        $this->get($report)->assertOk()->assertViewHas('reports', fn ($reports) => $reports->first()['payment']->advance_cents === 1250);
+    }
+
     public function test_report_salary_editor_changes_unpaid_amounts_and_preserves_recorded_payments(): void
     {
         $this->travelTo(Carbon::parse('2026-11-16 12:00:00'));
@@ -24,7 +252,7 @@ class EmployeeSalaryTest extends TestCase
         }
         $reports = route('employee-salaries.teacher-reports', ['teacher' => $teacher->id, 'month' => '2026-11', 'report' => 'salary']);
         $update = route('employee-salaries.salary-rates.update');
-        $rates = ['morning' => '135.00', 'afternoon' => '125', 'evening' => '55', 'late' => '2', 'excused' => '7', 'absence_one' => '12', 'absence_two' => '20'];
+        $rates = ['morning' => '135.00', 'afternoon' => '125', 'evening' => '55', 'late' => '2', 'excused' => '7', 'absence_one' => '12', 'absence_two' => '20', 'absence_single_session' => '8'];
 
         $this->actingAs($teacher)->put($update, ['rates' => $rates])->assertForbidden();
         $this->actingAs($admin)->get($reports)->assertOk()->assertSee('Edit salary')->assertSee('125.00');
@@ -41,6 +269,13 @@ class EmployeeSalaryTest extends TestCase
         ]);
         $this->put($update, ['rates' => array_replace($rates, ['morning' => '145', 'late' => '5'])])->assertSessionHasNoErrors();
         $this->get($reports)->assertOk()->assertSee(['$315.00 USD', '$251.00 USD'])->assertDontSee('$325.00 USD');
+
+        $eveningProfile = new EmployeeSalaryProfile(['day_sessions' => 0, 'evening_sessions' => 1, 'service_started_on' => '2026-11-01']);
+        $absence = collect([new TeacherAttendance(['date' => '2026-11-10', 'status' => 'absent'])]);
+        $salary = app(\App\Services\EmployeeSalaryDeductions::class)->apply(
+            ['total_cents' => 5500], $eveningProfile, $absence, collect(), collect(), Carbon::parse('2026-11-16'),
+        );
+        $this->assertSame(800, $salary['deduction_cents']);
     }
 
     public function test_payroll_compares_scheduled_hours_with_the_work_week_when_configured(): void
@@ -65,7 +300,8 @@ class EmployeeSalaryTest extends TestCase
         ]);
         $this->get(route('employee-salaries.index'))->assertOk()->assertSee('1.5/50 h');
         $this->get(route('employee-salaries.teacher-reports', ['teacher' => $teacher->id, 'report' => 'salary']))
-            ->assertOk()->assertSee(['ចំនួនវេនការងារ', 'ម៉ោងការងារប្រចាំសប្ដាហ៍', '1.5/50 ម៉ោង'])->assertSee('<td>4</td>', false);
+            ->assertOk()->assertSee(['ចំនួនវេនការងារ', '1.5/50 ម៉ោង'])
+            ->assertSee('ម៉ោងការងារ<br>ប្រចាំសប្ដាហ៍', false)->assertSee('<td>4</td>', false);
         EmployeeSalaryProfile::where('teacher_id', $teacher->id)->update(['evening_sessions' => 0]);
         $this->get(route('employee-salaries.show', ['teacher' => $teacher, 'slip' => 'salary']))
             ->assertOk()->assertSee('1.5/40 ម៉ោង')->assertSee('<td>2</td>', false);
@@ -87,6 +323,11 @@ class EmployeeSalaryTest extends TestCase
         $this->assertSame(3100, $salary['deduction_cents']);
         $this->assertSame(28150, $salary['total_cents']);
         $this->assertSame([1000, 1500, 100, 0, 500, 0], array_column($salary['deduction_details'], 'total_cents'));
+
+        $profile->evening_sessions = 0;
+        $counts = app(\App\Services\EmployeeSalaryDeductions::class)->slipCounts(collect(), collect(), $marks, $profile);
+        $this->assertSame(1, $counts->get('absent_full'));
+        $this->assertSame(1, $counts->get('absent_partial'));
     }
 
     public function test_deduction_sources_do_not_double_count_records_and_skip_future_missing_and_evening_absence(): void

@@ -4,6 +4,23 @@ use App\Models\{FeePayment, FinancialAdjustment, SchoolExpense};
 use App\Support\Money;
 use Carbon\Carbon;
 class SchoolCashReport {
+ public function currencyTotals(Carbon $month, string $currency): array
+ {
+  $start = $month->copy()->startOfMonth();
+  $end = $start->copy()->endOfMonth();
+  $dates = [$start->toDateString(), $end->toDateString()];
+  $receipts = (int) FeePayment::where('currency', $currency)->whereBetween('paid_on', $dates)
+   ->selectRaw('SUM(ROUND(amount * 100)) AS cents')->value('cents');
+  $refunds = (int) FinancialAdjustment::join('fees', 'fees.id', '=', 'financial_adjustments.fee_id')
+   ->where('fees.currency', $currency)->where('kind', 'refund')->whereBetween('financial_adjustments.created_at', [$start, $end])
+   ->selectRaw('SUM(ROUND(financial_adjustments.amount * 100)) AS cents')->value('cents');
+  $expenses = (int) SchoolExpense::where('currency', $currency)->whereBetween('spent_on', $dates)
+   ->selectRaw('SUM(ROUND(amount * 100)) AS cents')->value('cents');
+  $remaining = $receipts - $refunds - $expenses;
+
+  return compact('receipts', 'refunds', 'expenses', 'remaining');
+ }
+
  public function month(string $date): array {
   $start=Carbon::parse($date)->startOfMonth(); $end=$start->copy()->endOfMonth(); $days=[]; $totals=[];
   foreach (range(1, $start->daysInMonth) as $day) $days[$start->copy()->day($day)->toDateString()]=[];

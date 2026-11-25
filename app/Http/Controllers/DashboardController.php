@@ -140,6 +140,7 @@ class DashboardController extends Controller
         $validated = $request->validate(['date' => 'nullable|date_format:Y-m-d', 'attendance_scope' => 'nullable|in:students,children']);
         $attendanceScope = $validated['attendance_scope'] ?? 'students';
         $today = today();
+        $teachingHoliday = $user->role === 'teacher' ? app(SchoolHolidayClosure::class)->calendarHolidayKey($today) : null;
         $attendanceWeekStart = $today->copy()->startOfWeek(Carbon::MONDAY);
         $academicYear = $today->year.'-'.($today->year + 1);
         $reportDate = Carbon::parse($validated['date'] ?? today()->toDateString())->startOfDay();
@@ -213,7 +214,13 @@ class DashboardController extends Controller
             'reportDate' => $reportDate,
             'programBreakdowns' => $programBreakdowns,
             'todayClasses' => $user->role === 'student' && ! app(SchoolHolidayClosure::class)->holiday(today()) ? SchoolModules::query('schedules', $user)->with('subject')->where('day', today()->format('l'))->orderBy('starts_at')->get() : collect(),
-            'todayTeachingPeriods' => $user->role === 'teacher'
+            'teachingHoliday' => $teachingHoliday,
+            'teachingHolidayArtwork' => match ($teachingHoliday) {
+                null => [],
+                'labour_and_visak' => ['labour', 'visak'],
+                default => [$teachingHoliday],
+            },
+            'todayTeachingPeriods' => $user->role === 'teacher' && !$teachingHoliday
                 ? Schedule::with(['subject.schoolClass', 'schoolClass', 'classroom.buildingRecord'])
                     ->where('teacher_id', $user->id)
                     ->whereNotNull('subject_id')
