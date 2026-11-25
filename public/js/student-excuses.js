@@ -40,6 +40,7 @@
     if (countUrl) {
         const formatter = new Intl.NumberFormat(document.documentElement.lang || undefined);
         let count = 0;
+        let updating = false;
         const renderCount = () => {
             document.querySelectorAll('[data-excuse-count]').forEach(badge => {
                 badge.textContent = count > 0 ? formatter.format(count) : '';
@@ -47,21 +48,26 @@
             });
         };
         const refreshCount = async () => {
+            if (document.hidden || updating) return;
+            updating = true;
             try {
-                if (!document.hidden) {
-                    const response = await fetch(countUrl, { headers: { Accept: 'application/json' }, cache: 'no-store' });
-                    if (response.ok) {
-                        ({ count } = await response.json());
-                        renderCount();
-                    }
+                const response = await fetch(countUrl, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+                if (!response.ok) return;
+                const next = await response.json();
+                if (next.count !== count) {
+                    count = next.count;
+                    renderCount();
+                    document.dispatchEvent(new Event('student-excuse-count-changed'));
                 }
             } catch {
                 // Keep the last count visible until the next refresh succeeds.
             } finally {
-                setTimeout(refreshCount, 5000);
+                updating = false;
             }
         };
         document.addEventListener('student-attendance-summary-replaced', renderCount);
+        document.addEventListener('visibilitychange', refreshCount);
+        setInterval(refreshCount, 1000);
         refreshCount();
     }
 
@@ -119,6 +125,9 @@
         refresh(true);
     });
     date.addEventListener('change', () => refresh(true));
+    document.addEventListener('student-excuse-count-changed', () => {
+        if (report.open) refresh();
+    });
     report.addEventListener('close', () => {
         clearTimeout(timer);
         pending?.abort();
