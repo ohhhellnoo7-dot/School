@@ -9,6 +9,30 @@
     @if($todayTeachingPeriods->isEmpty())
         <p class="empty-state p-3 mb-0">{{ __('You have no teaching periods scheduled today.') }}</p>
     @else
+        @php
+            $schoolTime = now()->format('H:i:s');
+            $withSeconds = fn ($time) => strlen($time) === 5 ? $time.':00' : $time;
+            $currentPeriods = $todayTeachingPeriods->filter(fn ($period) => $withSeconds($period->starts_at) <= $schoolTime && $schoolTime < $withSeconds($period->ends_at));
+            $nextPeriod = $todayTeachingPeriods->first(fn ($period) => $withSeconds($period->starts_at) > $schoolTime);
+            $featuredPeriods = $currentPeriods->isNotEmpty() ? $currentPeriods : collect([$nextPeriod])->filter();
+        @endphp
+        <div class="teaching-schedule-note" aria-live="polite">
+            @forelse($featuredPeriods as $featured)
+                @php
+                    $featuredClass = $featured->schoolClass ?? $featured->subject?->schoolClass;
+                    $featuredRoom = $featured->classroom?->room_number ?: $featured->room;
+                @endphp
+                <div>
+                    <strong>{{ $currentPeriods->isNotEmpty() ? __('Teaching now') : __('Up next') }}</strong>
+                    <span>· {{ substr($featured->starts_at, 0, 5) }}–{{ substr($featured->ends_at, 0, 5) }}</span>
+                    @if($featuredClass)<span>· {{ trim($featuredClass->name.' '.$featuredClass->section) }}</span>@endif
+                    @if($featured->subject)<span>· {{ $featured->subject->name }}</span>@endif
+                    @if($featuredRoom)<span>· {{ __('Room :room', ['room' => $featuredRoom]) }}</span>@endif
+                </div>
+            @empty
+                <strong>{{ __('No more teaching periods today.') }}</strong>
+            @endforelse
+        </div>
         <div class="table-responsive" role="region" aria-labelledby="today-teaching-periods-title" tabindex="0">
             <table class="table mb-0">
                 <thead><tr>
@@ -43,10 +67,18 @@
                                 $previousSession = $session;
                             @endphp
                         @endif
-                        <tr>
+                        <tr @class([
+                            'teaching-period-current' => $currentPeriods->contains($period),
+                            'teaching-period-next' => $nextPeriod?->id === $period->id,
+                        ])>
                             <th scope="row">
                                 {{ __('Period :number', ['number' => $loop->iteration]) }}
                                 <small class="d-block fw-normal text-secondary text-nowrap">{{ $start }}–{{ substr($period->ends_at, 0, 5) }}</small>
+                                @if($currentPeriods->contains($period))
+                                    <span class="badge text-bg-primary mt-1">{{ __('Now') }}</span>
+                                @elseif($nextPeriod?->id === $period->id)
+                                    <span class="badge text-bg-light mt-1">{{ __('Next') }}</span>
+                                @endif
                             </th>
                             <td>
                                 <strong>{{ $class ? trim($class->name.' '.$class->section) : __('Class not assigned') }}</strong>

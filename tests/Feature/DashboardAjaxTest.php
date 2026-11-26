@@ -95,6 +95,9 @@ class DashboardAjaxTest extends TestCase
         ];
 
         foreach ($pages as $html) {
+            $this->assertStringContainsString('Up next', $html);
+            $this->assertStringContainsString('class="teaching-period-next"', $html);
+            $this->assertStringNotContainsString('class="teaching-period-current"', $html);
             $this->assertStringNotContainsString('Monthly Attendance Trend', $html);
             $this->assertMatchesRegularExpression('~🌅</span>Morning.*08:00–08:50.*☀️</span>Afternoon.*13:00–14:00.*🌙</span>Evening.*17:00–18:00~s', $html);
             foreach (['Students in my classes', 'My classes', 'My subjects', 'View assignments', 'Daily attendance', 'Student attendance report', 'Student attendance updates', 'Attendance history', 'Today’s teaching schedule', 'Period 1', 'A-TEST', 'Building A', 'dashboard-khmer-calendar'] as $label) {
@@ -105,6 +108,16 @@ class DashboardAjaxTest extends TestCase
                 $this->assertStringNotContainsString($label, $html);
             }
         }
+
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-16 08:00'));
+        $html = $this->getJson('/dashboard/data')->assertOk()->json('html');
+        $this->assertStringContainsString('class="teaching-period-current"', $html);
+        $this->assertMatchesRegularExpression('~Teaching now.*08:00–08:50.*Room A-TEST~s', $html);
+
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-16 18:00'));
+        $html = $this->getJson('/dashboard/data')->assertOk()->json('html');
+        $this->assertStringContainsString('No more teaching periods today.', $html);
+        $this->assertStringNotContainsString('class="teaching-period-current"', $html);
     }
 
     public function test_teacher_dashboard_replaces_scheduled_periods_with_the_calendar_holiday(): void

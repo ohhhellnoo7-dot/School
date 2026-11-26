@@ -660,3 +660,24 @@ body:has(#request-money-modal.show) > .modal-backdrop.show {
     .dashboard-revenue-body { grid-template-columns: minmax(0, 1fr) minmax(145px, 26%); gap: 16px; }
     .dashboard-revenue-summary { grid-template-columns: 1fr; align-content: center; }
 }
+.teaching-schedule-note {
+    margin: 0 1rem .75rem;
+    padding: .65rem .85rem;
+    border-inline-start: 3px solid var(--bs-primary);
+    border-radius: .5rem;
+    background: color-mix(in srgb, var(--bs-primary) 9%, var(--surface));
+}
+
+.teaching-schedule-note > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .15rem .4rem;
+}
+
+.table > tbody > .teaching-period-current > * {
+    box-shadow: inset 0 0 0 999px color-mix(in srgb, var(--bs-primary) 17%, transparent);
+}
+
+.table > tbody > .teaching-period-next > * {
+    box-shadow: inset 0 0 0 999px color-mix(in srgb, var(--bs-primary) 7%, transparent);
+}
