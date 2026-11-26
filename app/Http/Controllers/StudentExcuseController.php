@@ -92,10 +92,10 @@ class StudentExcuseController extends Controller
     {
         $date = $request->validate(['date' => 'required|date_format:Y-m-d'])['date'];
         $through = StudentExcuse::submittedToday()->where('id', '>', $request->user()->last_seen_student_excuse_id ?? 0)->max('id');
-        $excuses = CarbonImmutable::parse($date)->isWeekend() || $holidays->holiday($date)
-            ? collect()
-            : StudentExcuse::overlapping($date, $date)->with('student:id,name,student_number')
-                ->latest('id')->get();
+        $closed = CarbonImmutable::parse($date)->isWeekend() || $holidays->holiday($date);
+        $excuses = StudentExcuse::overlapping($date, $date)->visibleInReport()
+            ->when($closed, fn ($query) => $query->where('session', StudentExcuse::RANDOM_SESSION))
+            ->with('student:id,name,student_number')->latest('id')->get();
 
         return response()->view('school.students.excuse-results', compact('excuses'))
             ->header('Cache-Control', 'private, no-store')->header('X-Excuse-Notifications-Through', (string) ($through ?? 0));

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Attendance;
 use App\Models\Student;
+use App\Models\StudentExcuse;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -46,6 +47,19 @@ class BulkAttendanceTest extends TestCase
         foreach (range(1, 2) as $attempt) {
             $this->post(route('dashboard.attendance.random'))->assertRedirect(route('dashboard'))->assertSessionHas('success');
             $this->assertSame(20, Attendance::whereDate('date', today())->count());
+            $excused = Attendance::whereDate('date', today())->where('status', 'excused')->firstOrFail();
+            $this->assertDatabaseCount('student_excuses', 1);
+            $reason = StudentExcuse::where('student_id', $excused->student_id)->sole()->reason;
+            $this->assertContains($reason, StudentExcuse::RANDOM_REASONS);
+            $this->getJson(route('students.excuses.count'))->assertExactJson(['count' => 1]);
+            $report = $this->get(route('students.excuses.index', ['date' => today()->toDateString()]))
+                ->assertOk()->assertSee($excused->student->name)
+                ->assertSee($reason)->assertSee('Generated reason');
+            $this->postJson(route('students.excuses.seen'), [
+                'through' => $report->headers->get('X-Excuse-Notifications-Through'),
+            ])->assertNoContent();
+            $admin->refresh();
+            $this->getJson(route('students.excuses.count'))->assertExactJson(['count' => 0]);
             $this->getJson('/dashboard/data')->assertOk()
                 ->assertJsonPath('summary.presentCount', 14)
                 ->assertJsonPath('summary.lateCount', 3)
@@ -53,6 +67,9 @@ class BulkAttendanceTest extends TestCase
                 ->assertJsonPath('charts.attendance', [14, 2, 3, 1]);
         }
         $this->assertSame(1, Attendance::whereDate('date', today()->subDay())->where('status', 'excused')->count());
+        $this->post(route('dashboard.attendance.all-present'))->assertRedirect();
+        $this->get(route('students.excuses.index', ['date' => today()->toDateString()]))
+            ->assertOk()->assertDontSee('Generated reason');
         $this->actingAs(User::factory()->create(['role' => 'teacher']))
             ->post(route('dashboard.attendance.random'))->assertForbidden();
     }

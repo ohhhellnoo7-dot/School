@@ -30,7 +30,7 @@
 <div class="attendance-summary">
     <div class="attendance-cards">
         @foreach(['total' => ['Total Students', 'people-fill'], ...array_slice($statuses, 0, 4)] as $key => [$label, $icon])
-            <article class="attendance-summary-card attendance-tone-{{ $key }}">
+            <article class="attendance-summary-card attendance-tone-{{ $key }}" @if($key === 'excused') id="student-excuses" @endif>
                 <span class="attendance-summary-icon" aria-hidden="true"><i class="bi bi-{{ $icon }}"></i></span>
                 <h2>{{ $isToday ? __(['present' => 'Present Today', 'absent' => 'Absent Today', 'late' => 'Late Today', 'excused' => 'Excused Today'][$key] ?? $label) : __($label) }}</h2>
                 <strong data-attendance-count="{{ $key }}" data-count="{{ $attendanceCounts[$key] }}">{{ number_format($attendanceCounts[$key]) }}</strong>

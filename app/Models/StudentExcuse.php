@@ -8,6 +8,26 @@ use Carbon\CarbonImmutable;
 
 class StudentExcuse extends Model
 {
+    public const RANDOM_SESSION = 'Random attendance';
+
+    public const RANDOM_REASONS = [
+        'Feeling unwell',
+        'Family obligation',
+        'Visiting hometown',
+        'Personal appointment',
+        'Transportation issues',
+        'Helping family at home',
+    ];
+
+    public function displayReason(): string
+    {
+        if ($this->session === self::RANDOM_SESSION && $this->reason === 'Automatically marked excused by Random attendance.') {
+            return self::RANDOM_REASONS[$this->id % count(self::RANDOM_REASONS)];
+        }
+
+        return $this->reason;
+    }
+
     protected $guarded = [];
 
     protected function casts(): array
@@ -39,6 +59,16 @@ class StudentExcuse extends Model
     {
         $day = today();
 
-        return $query->where('created_at', '>=', $day)->where('created_at', '<', $day->copy()->addDay());
+        return $query->visibleInReport()->where('created_at', '>=', $day)->where('created_at', '<', $day->copy()->addDay());
+    }
+
+    public function scopeVisibleInReport(Builder $query): Builder
+    {
+        return $query->where(fn ($excuses) => $excuses
+            ->where('session', '!=', self::RANDOM_SESSION)
+            ->orWhereExists(Attendance::query()->selectRaw('1')
+                ->whereColumn('attendances.student_id', 'student_excuses.student_id')
+                ->whereColumn('attendances.date', 'student_excuses.starts_on')
+                ->where('attendances.status', 'excused')->toBase()));
     }
 }

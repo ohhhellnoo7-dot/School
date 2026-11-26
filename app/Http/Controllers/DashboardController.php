@@ -11,6 +11,7 @@ use App\Models\Fee;
 use App\Models\Schedule;
 use App\Models\SchoolClass;
 use App\Models\Student;
+use App\Models\StudentExcuse;
 use App\Models\User;
 use App\Services\FamilyAnnouncementNotices;
 use App\Services\EmployeeSalaryAdvances;
@@ -43,8 +44,21 @@ class DashboardController extends Controller
                 'created_at' => $timestamp, 'updated_at' => $timestamp,
             ])->chunk(100)->each(fn ($rows) => Attendance::upsert($rows->all(), ['student_id', 'date'], ['status', 'updated_at']));
 
+            $students->chunk(500)->each(fn ($ids) => StudentExcuse::where('session', StudentExcuse::RANDOM_SESSION)
+                ->where('starts_on', $date)->whereIn('student_id', $ids->all())->delete());
+            $reasons = collect(StudentExcuse::RANDOM_REASONS)->shuffle()->values();
+            $students->slice($present + $late + $absent)->values()->map(fn ($id, $index) => [
+                'student_id' => $id,
+                'session' => StudentExcuse::RANDOM_SESSION,
+                'starts_on' => $date,
+                'ends_on' => $date,
+                'reason' => $reasons[$index % $reasons->count()],
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ])->chunk(100)->each(fn ($rows) => StudentExcuse::insert($rows->all()));
+
             return ['present' => $present, 'late' => $late, 'absent' => $absent, 'excused' => $total - $present - $late - $absent];
-        });
+        }, 3);
 
         return redirect()->route('dashboard', array_filter(['session' => $session]))->with('success', "Random attendance saved for today: {$counts['present']} present, {$counts['late']} late, {$counts['absent']} absent, {$counts['excused']} excused.");
     }

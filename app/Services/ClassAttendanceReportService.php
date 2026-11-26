@@ -14,6 +14,7 @@ class ClassAttendanceReportService
     {
         $records = collect();
         $excuses = StudentExcuse::whereIn('student_id', $students->modelKeys())
+            ->where('session', '!=', StudentExcuse::RANDOM_SESSION)
             ->overlapping($month->startOfMonth()->toDateString(), $month->endOfMonth()->toDateString())
             ->get()->groupBy('student_id');
         $daily = Attendance::whereIn('student_id', $students->modelKeys())
