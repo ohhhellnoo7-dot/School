@@ -321,7 +321,7 @@ class ClassroomController extends Controller
                 'source_class' => $label($lesson->schoolClass), 'target_class' => $label($receiving->schoolClass),
                 'subject' => $lesson->subject->name, 'teacher_name' => $receiving->teacher->name,
                 'covering_teacher_id' => $receiving->teacher->id,
-                'coverage_cents' => \App\Services\CombinedClassPay::lessonCents($filters['time'], $lesson->ends_at),
+                'coverage_cents' => \App\Services\CombinedClassPay::PER_LESSON_CENTS,
                 'source_room' => $classroom->room_number, 'target_room' => $match['classroom']->room_number,
             ]);
         });

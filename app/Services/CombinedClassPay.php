@@ -9,19 +9,7 @@ use Illuminate\Support\Collection;
 
 class CombinedClassPay
 {
-    public const HOURLY_CENTS = 125;
-
-    public static function lessonCents(string $startsAt, string $endsAt): int
-    {
-        $seconds = static function (string $time): int {
-            [$hours, $minutes, $seconds] = array_pad(array_map('intval', explode(':', $time)), 3, 0);
-
-            return $hours * 3600 + $minutes * 60 + $seconds;
-        };
-        $duration = $seconds($endsAt) - $seconds($startsAt);
-
-        return (int) round(max(3600, $duration) * self::HOURLY_CENTS / 3600);
-    }
+    public const PER_LESSON_CENTS = 125;
 
     public function unpaid(array $teacherIds, Carbon $salaryMonth): Builder
     {

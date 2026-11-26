@@ -246,7 +246,8 @@ class ClassroomManagementTest extends TestCase
         }
         $this->assertDatabaseCount('temporary_class_studies', 1);
         $this->assertDatabaseHas('temporary_class_studies', ['source_class' => '10 E', 'target_class' => '10 A',
-            'subject' => 'Biology', 'teacher_name' => 'Receiving Biology Teacher', 'starts_at' => '07:30:00', 'ends_at' => $sourceSchedule->ends_at]);
+            'subject' => 'Biology', 'teacher_name' => 'Receiving Biology Teacher', 'starts_at' => '07:30:00', 'ends_at' => $sourceSchedule->ends_at,
+            'coverage_cents' => 125]);
         $activeHtml = $this->getJson(route('classrooms.data', ['date' => '2026-11-02', 'time' => '08:15']))->assertOk()->json('html');
         $this->assertStringContainsString('Studying with Class 10 A', $activeHtml);
         $this->assertStringContainsString('Combined class with 10 E', $activeHtml);
@@ -261,6 +262,14 @@ class ClassroomManagementTest extends TestCase
         \App\Models\TeacherAttendance::create(['teacher_id' => $receiving->id, 'date' => '2026-11-02', 'status' => 'excused', 'recorded_by' => $admin->id]);
         $this->get(route('classrooms.matching-class', $params))->assertOk()->assertSee('Studying with Class 10 A');
 
+        \App\Models\TeacherAttendance::create([
+            'teacher_id' => $absent->id, 'date' => '2026-11-09', 'status' => 'excused', 'recorded_by' => $admin->id,
+        ]);
+        $this->post(route('classrooms.study-with', $rooms['E']), array_replace($studyData, [
+            'date' => '2026-11-09', 'time' => '08:50',
+        ]))->assertSessionHasNoErrors();
+        $this->assertDatabaseCount('temporary_class_studies', 2);
+
         \App\Models\EmployeeSalaryProfile::create([
             'teacher_id' => $receiving->id, 'day_sessions' => 1, 'evening_sessions' => 0,
             'service_started_on' => '2026-11-01', 'updated_by' => $admin->id,
@@ -269,15 +278,15 @@ class ClassroomManagementTest extends TestCase
         $salary = $this->get(route('employee-salaries.show', $payroll))->assertOk()
             ->assertSee('Combined-class lessons')->assertViewHas('salary')
             ->viewData('salary');
-        $this->assertSame(188, $salary['combined_class_cents']);
+        $this->assertSame(250, $salary['combined_class_cents']);
         $this->get(route('employee-salaries.show', $payroll + ['slip' => 'salary']))
-            ->assertOk()->assertSee('Combined-class pay')->assertSee('$1.88 USD');
+            ->assertOk()->assertSee('Combined-class pay')->assertSee('$2.50 USD');
         $this->post(route('employee-salaries.pay', $receiving), [
             'month' => '2026-11', 'paid_on' => '2026-11-23', 'confirm' => 1,
             'expected_total_cents' => $salary['total_cents'],
         ])->assertSessionHasNoErrors();
         $payment = \App\Models\EmployeeSalaryPayment::where('teacher_id', $receiving->id)->sole();
-        $this->assertSame(188, $payment->combined_class_cents);
+        $this->assertSame(250, $payment->combined_class_cents);
         $this->assertDatabaseHas('temporary_class_studies', [
             'covering_teacher_id' => $receiving->id, 'salary_payment_id' => $payment->id,
         ]);
@@ -287,12 +296,6 @@ class ClassroomManagementTest extends TestCase
         $this->actingAs($this->user('parent'))->get(route('classrooms.matching-class', $params))->assertForbidden();
         $this->post(route('classrooms.study-with', $rooms['E']), $studyData)->assertForbidden();
         $this->assertDatabaseCount('schedules', 6);
-    }
-
-    public function test_combined_class_pay_has_a_one_hour_minimum_and_scales_with_time(): void
-    {
-        $this->assertSame(125, \App\Services\CombinedClassPay::lessonCents('15:48:51', '16:00:00'));
-        $this->assertSame(250, \App\Services\CombinedClassPay::lessonCents('07:00', '09:00'));
     }
 
     public function test_teacher_absence_is_shown_as_a_free_period_without_releasing_the_room(): void
