@@ -410,7 +410,7 @@ class EmployeeSalaryTest extends TestCase
         ]);
         $this->get(route('employee-salaries.index'))->assertOk()->assertSee('1.5/50 h');
         $this->get(route('employee-salaries.teacher-reports', ['teacher' => $teacher->id, 'report' => 'salary']))
-            ->assertOk()->assertSee(['ចំនួនវេនការងារ', '1.5/50 ម៉ោង'])
+            ->assertOk()->assertSeeText(['ចំនួនវេនការងារ', '1.5/50 ម៉ោង'])
             ->assertSee('ម៉ោងការងារ<br>ប្រចាំសប្ដាហ៍', false)->assertSee('<td>4</td>', false);
         EmployeeSalaryProfile::where('teacher_id', $teacher->id)->update(['evening_sessions' => 0]);
         $this->get(route('employee-salaries.show', ['teacher' => $teacher, 'slip' => 'salary']))

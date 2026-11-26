@@ -1,9 +1,10 @@
+@php($teachingHourlyRate = \App\Support\Money::decimal(intdiv($salaryHourlyCents, 5)))
 <dialog id="salary-calculator" class="salary-calculator" aria-labelledby="salary-calculator-title" aria-describedby="salary-calculator-description" data-hourly-cents="{{ $salaryHourlyCents }}">
     <header class="salary-calculator-header">
         <i class="bi bi-calculator salary-calculator-icon" aria-hidden="true"></i>
         <div>
             <h2 id="salary-calculator-title">Salary Calculator</h2>
-            <p id="salary-calculator-description">Each hour in your weekly schedule adds ${{ \App\Support\Money::decimal($salaryHourlyCents) }} to your monthly base salary.</p>
+            <p id="salary-calculator-description">Teaching rate: <strong>${{ $teachingHourlyRate }} per hour</strong>. This monthly estimate counts each scheduled weekly hour 5 times.</p>
         </div>
     </header>
 
@@ -27,7 +28,7 @@
         <div class="salary-calculator-total">
             <label for="salary-monthly-estimate">Estimated monthly base salary</label>
             <output id="salary-monthly-estimate" for="salary-daytime-hours salary-evening-hours" data-estimate="total">${{ \App\Support\Money::decimal($salaryHourlyCents * 40) }}</output>
-            <p class="salary-calculator-formula"><span data-estimate="formula-hours">40 h/week</span> × ${{ \App\Support\Money::decimal($salaryHourlyCents) }} per weekly hour</p>
+            <p class="salary-calculator-formula"><span data-estimate="formula-hours">40 h/week</span> × 5 × ${{ $teachingHourlyRate }} per teaching hour</p>
         </div>
 
         <footer class="salary-calculator-actions">
