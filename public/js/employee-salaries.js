@@ -48,22 +48,26 @@ document.querySelectorAll('#salary-calculator').forEach((dialog) => {
     );
     const rateCents = Number(dialog.dataset.hourlyCents);
     const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
-    const formatSalary = (hours) => usd.format(hours * rateCents / 100);
+    const formatSalary = (hours, days) => usd.format(hours * days * rateCents / 100);
+    const formatDays = (days) => days === 1 ? '1 day' : `${days} days`;
 
     const update = () => {
-        const hours = Object.fromEntries(sliders.map((slider) => {
+        const { daytime, evening, days } = Object.fromEntries(sliders.map((slider) => {
             const selected = slider.valueAsNumber;
-            slider.closest('.salary-slider').style.setProperty('--slider-progress', `${100 * selected / Number(slider.max)}%`);
-            dialog.querySelector(`[data-hours="${slider.name}"]`).textContent = `${selected} h/week`;
+            const min = Number(slider.min);
+            const progress = 100 * (selected - min) / (Number(slider.max) - min);
+            slider.closest('.salary-slider').style.setProperty('--slider-progress', `${progress}%`);
+            dialog.querySelector(`[data-hours="${slider.name}"]`).textContent = slider.name === 'days' ? formatDays(selected) : `${selected} h/week`;
             return [slider.name, selected];
         }));
-        const totalHours = hours.daytime + hours.evening;
+        const totalHours = daytime + evening;
         const weeklyHours = `${totalHours} h/week`;
-        estimates.daytime.textContent = formatSalary(hours.daytime);
-        estimates.evening.textContent = formatSalary(hours.evening);
+        estimates.daytime.textContent = formatSalary(daytime, days);
+        estimates.evening.textContent = formatSalary(evening, days);
         estimates.hours.textContent = weeklyHours;
         estimates['formula-hours'].textContent = weeklyHours;
-        estimates.total.value = formatSalary(totalHours);
+        estimates['formula-days'].textContent = formatDays(days);
+        estimates.total.value = formatSalary(totalHours, days);
     };
 
     document.querySelector('[data-open-salary-calculator]').addEventListener('click', () => {
