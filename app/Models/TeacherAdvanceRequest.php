@@ -8,9 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TeacherAdvanceRequest extends Model
 {
-    protected $fillable = ['teacher_id', 'amount_cents', 'request_key', 'school_expense_id', 'repayment_months'];
+    protected $fillable = ['teacher_id', 'amount_cents', 'request_key', 'school_expense_id', 'repayment_months', 'salary_month'];
 
-    protected $casts = ['amount_cents' => 'integer', 'cancelled_at' => 'datetime', 'rejected_at' => 'datetime', 'repayment_months' => 'integer'];
+    protected $casts = ['amount_cents' => 'integer', 'cancelled_at' => 'datetime', 'rejected_at' => 'datetime', 'approved_at' => 'datetime', 'repayment_months' => 'integer', 'salary_month' => 'date'];
 
     public function scopePending(Builder $query): Builder
     {

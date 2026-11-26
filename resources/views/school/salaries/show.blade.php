@@ -8,6 +8,11 @@
 </div>
 <form class="panel salary-month-select" method="get"><label for="detail-month" class="form-label">Salary month</label><input id="detail-month" class="form-control" type="month" name="month" value="{{ $month->format('Y-m') }}"><button class="btn btn-primary">View month</button></form>
 @php($displaySalary = $payment ? $payment->only(['base_cents', 'raise_cents', 'total_cents', 'deduction_cents']) : $salary)
+@if($month->gte(\App\Services\EmployeeSalaryDeductions::FIRST_CARRY_FORWARD_MONTH))
+    <p class="small text-secondary mt-3">{{ __('Scheduled payday is :date. Attendance charges are from :previous and approved early salary already paid is credited against this payment.', [
+        'date' => $month->translatedFormat('j F Y'), 'previous' => $month->copy()->subMonthNoOverflow()->translatedFormat('F Y'),
+    ]) }}</p>
+@endif
 <div class="salary-summary-grid">
     <div class="panel salary-metric"><span>Base monthly salary</span><strong>{{ $displaySalary ? '$'.\App\Support\Money::decimal($displaySalary['base_cents']) : 'Not set' }}</strong></div>
     <div class="panel salary-metric"><span>Salary increase</span><strong>{{ $displaySalary ? '+$'.\App\Support\Money::decimal($displaySalary['raise_cents']) : '—' }}</strong><small>$5 every 3 completed months</small></div>
@@ -27,7 +32,7 @@
     </section>
     <section class="panel p-4"><div class="salary-section-title"><i class="bi bi-wallet2" aria-hidden="true"></i><h2>Salary payment</h2></div>
         @if($payment)<div class="salary-paid"><i class="bi bi-check-circle" aria-hidden="true"></i><h3>Salary recorded as paid</h3><p>${{ \App\Support\Money::decimal($payment->total_cents) }} · {{ $payment->paid_on->format('d F Y') }}</p><p>{{ $payment->reference ?: 'No payment reference' }}</p></div>
-        @elseif($salary && ($salary['total_cents'] > 0 || $salary['advance_cents'] > 0) && $month->lte(today()))
+        @elseif(($salary['gross_cents'] ?? 0) > 0 && $month->lte(today()))
         <form method="post" action="{{ route('employee-salaries.pay', $teacher) }}">@csrf<input type="hidden" name="month" value="{{ $month->format('Y-m') }}"><input type="hidden" name="expected_total_cents" value="{{ $salary['total_cents'] }}"><input type="hidden" name="expected_advance_cents" value="{{ $salary['advance_cents'] }}">
             <p class="salary-payment-amount">${{ \App\Support\Money::decimal($salary['total_cents']) }} <small>USD · {{ $month->format('F Y') }}</small></p>
             <label class="form-label" for="salary-paid-on">Payment date</label><input id="salary-paid-on" class="form-control mb-3" type="date" name="paid_on" min="{{ $month->toDateString() }}" max="{{ today()->toDateString() }}" value="{{ old('paid_on', today()->toDateString()) }}" required>

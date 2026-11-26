@@ -111,6 +111,7 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent', \App\Htt
         Route::put('/{teacher}', [\App\Http\Controllers\EmployeeSalaryController::class, 'update'])->whereNumber('teacher')->name('update');
         Route::put('/leave-bonus-eligibility', [\App\Http\Controllers\EmployeeSalaryController::class, 'updateLeaveBonusEligibility'])->name('leave-bonus-eligibility.update');
         Route::post('/{teacher}/payments', [\App\Http\Controllers\EmployeeSalaryController::class, 'pay'])->whereNumber('teacher')->name('pay');
+        Route::post('/{teacher}/payday', [\App\Http\Controllers\EmployeeSalaryController::class, 'pay'])->whereNumber('teacher')->name('payday');
     });
     Route::get('/reports/expenses', [\App\Http\Controllers\SchoolExpenseController::class, 'index'])->middleware('role:administrator')->name('reports.expenses.index');
     Route::get('/reports/expenses/create', [\App\Http\Controllers\SchoolExpenseController::class, 'create'])->middleware('role:administrator')->name('reports.expenses.create');
@@ -118,6 +119,7 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent', \App\Htt
     Route::get('/reports/expenses/advances/create', [\App\Http\Controllers\SchoolExpenseController::class, 'createAdvance'])->middleware('role:administrator')->name('reports.expenses.advances.create');
     Route::post('/reports/expenses/advances', [\App\Http\Controllers\SchoolExpenseController::class, 'storeAdvance'])->middleware('role:administrator')->name('reports.expenses.advances.store');
     Route::post('/reports/expenses/advance-requests/{advanceRequest}/confirm', [\App\Http\Controllers\SchoolExpenseController::class, 'confirmAdvanceRequest'])->middleware('role:administrator')->name('reports.expenses.advance-requests.confirm');
+    Route::post('/reports/expenses/advance-requests/{advanceRequest}/approve', [\App\Http\Controllers\SchoolExpenseController::class, 'approveEarlySalary'])->middleware('role:administrator')->name('reports.expenses.advance-requests.approve');
     Route::post('/reports/expenses/advance-requests/{advanceRequest}/reject', [\App\Http\Controllers\SchoolExpenseController::class, 'rejectAdvanceRequest'])->middleware('role:administrator')->name('reports.expenses.advance-requests.reject');
     Route::get('/users/{user}/photo', [ProfileController::class, 'userPhoto'])->name('users.photo');
     Route::get('/students/{student}/photo', [ProfileController::class, 'studentPhoto'])->name('students.photo');

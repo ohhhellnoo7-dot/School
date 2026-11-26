@@ -1,10 +1,13 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\SchoolExpense;
+use App\Models\EmployeeSalaryPayment;
 use App\Models\TeacherAdvanceRequest;
 use App\Models\User;
 use App\Services\{EmployeeSalaryAdvances, SchoolCashReport, SchoolFinanceService};
 use App\Support\Money;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 class SchoolExpenseController extends Controller {
@@ -97,33 +100,59 @@ class SchoolExpenseController extends Controller {
 
  public function requestAdvance(Request $request) {
   $data = $request->validate([
-   'requested_amount' => ['required', 'regex:/^\d{1,10}(?:\.\d{1,2})?$/'],
+   'request_type' => 'nullable|in:advance,early_salary',
+   'requested_amount' => ['exclude_if:request_type,early_salary', 'required', 'regex:/^\d{1,10}(?:\.\d{1,2})?$/'],
    'submission_key' => 'required|uuid',
-   'repayment_months' => 'nullable|integer|min:1|max:'.EmployeeSalaryAdvances::PLAN_MAX_MONTHS,
+   'repayment_months' => 'exclude_if:request_type,early_salary|nullable|integer|min:1|max:'.EmployeeSalaryAdvances::PLAN_MAX_MONTHS,
   ], ['requested_amount.regex' => 'Enter a number with up to two decimal places.']);
-  $amount = Money::cents($data['requested_amount']);
-  if ($amount <= 0) {
+  $early = ($data['request_type'] ?? 'advance') === 'early_salary';
+  $amount = $early ? 0 : Money::cents($data['requested_amount']);
+  if (!$early && $amount <= 0) {
    throw ValidationException::withMessages(['requested_amount' => 'Enter an amount greater than zero.']);
   }
   $months = (int) ($data['repayment_months'] ?? 1);
-  if ($amount >= EmployeeSalaryAdvances::PLAN_MINIMUM_CENTS && !isset($data['repayment_months'])) {
+  if (!$early && $amount >= EmployeeSalaryAdvances::PLAN_MINIMUM_CENTS && !isset($data['repayment_months'])) {
    throw ValidationException::withMessages(['repayment_months' => __('Choose how many months to repay this advance.')]);
   }
-  if ($amount < EmployeeSalaryAdvances::PLAN_MINIMUM_CENTS && $months !== 1) {
+  if (!$early && $amount < EmployeeSalaryAdvances::PLAN_MINIMUM_CENTS && $months !== 1) {
    throw ValidationException::withMessages(['repayment_months' => __('Installment plans start at $100.')]);
   }
 
-  $advance = TeacherAdvanceRequest::firstOrCreate(['request_key' => $data['submission_key']], [
-   'teacher_id' => $request->user()->id,
-   'amount_cents' => $amount,
-   'repayment_months' => $months,
-  ]);
-  abort_unless((int) $advance->teacher_id === $request->user()->id, 403);
-  if ($advance->amount_cents !== $amount || $advance->repayment_months !== $months) {
-   throw ValidationException::withMessages(['requested_amount' => 'This request has already been submitted. Reopen the form to make a new request.']);
-  }
+  $months = $early ? 1 : $months;
+  DB::transaction(function () use ($request, $data, $amount, $months, $early) {
+   $employee = User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
+   $advance = TeacherAdvanceRequest::where('request_key', $data['submission_key'])->first();
+   if ($advance) {
+    abort_unless((int) $advance->teacher_id === $employee->id, 403);
+    if ((!$early && $advance->amount_cents !== $amount) || $advance->repayment_months !== $months || ($advance->salary_month !== null) !== $early) {
+     throw ValidationException::withMessages(['requested_amount' => 'This request has already been submitted. Reopen the form to make a new request.']);
+    }
+    return;
+   }
 
-  return redirect()->route('dashboard')->with('success', 'Salary advance request sent for $'.Money::display($amount).'.');
+   $month = $early ? today()->startOfMonth()->addMonth() : null;
+   if ($month) {
+    $amount = app(EmployeeSalaryAdvances::class)->availableEarlySalary($employee->id, $month);
+    if ($amount === 0) {
+     throw ValidationException::withMessages(['requested_amount' => __('No early salary is available for :month.', ['month' => $month->translatedFormat('F Y')])]);
+    }
+   }
+   TeacherAdvanceRequest::create([
+    'request_key' => $data['submission_key'], 'teacher_id' => $employee->id, 'amount_cents' => $amount,
+    'repayment_months' => $months, 'salary_month' => $month?->toDateString(),
+   ]);
+  });
+
+  return redirect()->route('dashboard')->with('success', $early ? __('Early salary request sent.') : 'Salary advance request sent for $'.Money::display($amount).'.');
+ }
+
+ private function validateEarlySalary(int $employeeId, Carbon $month, int $amount, ?int $approvingId = null): void {
+  if ($month->lte(today()) || EmployeeSalaryPayment::where('teacher_id', $employeeId)->whereDate('salary_month', $month)->exists()) {
+   throw ValidationException::withMessages(['requested_amount' => __('The scheduled payday has arrived. Use regular payroll for this month.')]);
+  }
+  if ($amount > app(EmployeeSalaryAdvances::class)->availableEarlySalary($employeeId, $month, $approvingId)) {
+   throw ValidationException::withMessages(['requested_amount' => __('The request exceeds the available scheduled salary for :month.', ['month' => $month->translatedFormat('F Y')])]);
+  }
  }
 
  public function cancelAdvanceRequest(Request $request, TeacherAdvanceRequest $advanceRequest) {
@@ -166,6 +195,30 @@ class SchoolExpenseController extends Controller {
    ->with('success', __('Salary advance request rejected.'));
  }
 
+ public function approveEarlySalary(Request $request, TeacherAdvanceRequest $advanceRequest) {
+  $finance = app(SchoolFinanceService::class);
+  $finance->locked(function () use ($request, $advanceRequest, $finance) {
+   $advance = TeacherAdvanceRequest::findOrFail($advanceRequest->id);
+   abort_unless($advance->salary_month, 404);
+   if ($advance->cancelled_at || $advance->rejected_at) {
+    throw ValidationException::withMessages(['advance_request' => __('Only pending requests can be approved.')]);
+   }
+   if ($advance->approved_at) {
+    return;
+   }
+   User::whereKey($advance->teacher_id)->lockForUpdate()->firstOrFail();
+   $this->validateEarlySalary($advance->teacher_id, $advance->salary_month, $advance->amount_cents, $advance->id);
+   $advance->approved_at = now();
+   $advance->save();
+   $finance->audit($request->user(), 'approve_early_salary', 'teacher_advance_request', $advance->id, [
+    'teacher_id' => $advance->teacher_id, 'amount_cents' => $advance->amount_cents,
+    'salary_month' => $advance->salary_month->toDateString(),
+   ]);
+  });
+
+  return redirect()->back(302, [], route('reports.expenses.index'))->with('success', __('Early salary approved. Record the payout when paid.'));
+ }
+
  public function confirmAdvanceRequest(Request $request, TeacherAdvanceRequest $advanceRequest) {
   $expense = app(SchoolFinanceService::class)->locked(function () use ($request, $advanceRequest) {
    $advance = TeacherAdvanceRequest::findOrFail($advanceRequest->id);
@@ -178,13 +231,21 @@ class SchoolExpenseController extends Controller {
    if ($advance->school_expense_id) {
     return SchoolExpense::findOrFail($advance->school_expense_id);
    }
+   if ($advance->salary_month) {
+    if (!$advance->approved_at) {
+     throw ValidationException::withMessages(['advance_request' => __('Approve the early salary request before recording a payout.')]);
+    }
+    User::whereKey($advance->teacher_id)->lockForUpdate()->firstOrFail();
+    $this->validateEarlySalary($advance->teacher_id, $advance->salary_month, $advance->amount_cents, $advance->id);
+   }
 
    $expense = $this->recordExpense($request, [
     'employee_id' => $advance->teacher_id,
     'amount' => Money::decimal($advance->amount_cents),
     'currency' => 'USD',
     'spent_on' => today()->toDateString(),
-    'note' => 'Teacher salary advance request',
+    'note' => $advance->salary_month ? 'Early salary for '.$advance->salary_month->format('F Y') : 'Teacher salary advance request',
+    'recover_from_month' => $advance->salary_month?->toDateString(),
     'repayment_months' => $advance->repayment_months,
     'request_key' => (string) \Illuminate\Support\Str::uuid(),
    ]);

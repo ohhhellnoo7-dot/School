@@ -12,6 +12,116 @@ class EmployeeSalaryTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_first_day_withdrawal_counts_completed_month_and_pay_moves_the_monthly_status(): void
+    {
+        $this->travelTo(Carbon::parse('2028-02-29 12:00'));
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = $this->employee();
+        $this->profile($teacher, $admin)->update(['service_started_on' => '2028-02-01', 'evening_sessions' => 0]);
+        $this->assignHours($teacher, 40);
+        $withdrawal = route('employee-salaries.index', ['withdrawal' => 1]);
+        $pay = route('employee-salaries.payday', $teacher);
+        $this->actingAs($admin)->get($withdrawal)->assertForbidden();
+        $this->get(route('reports'))->assertOk()->assertSee('Available on the 1st of each month');
+        $this->post(route('employee-salaries.attendance.store', $teacher), [
+            'date' => '2028-02-29', 'session' => 'All', 'status' => 'absent',
+        ])->assertSessionHasNoErrors();
+
+        $this->travelTo(Carbon::parse('2028-03-01 08:00'));
+        $this->get(route('reports'))->assertOk()->assertSee('#payday-withdrawal', false)
+            ->assertSee('data-payroll-withdrawal-remaining>$235.00', false)
+            ->assertSee('data-payroll-withdrawal-paid>$0.00', false);
+        $this->get($withdrawal)->assertOk()->assertSee('29 February 2028')->assertSee('Total still to pay $235.00 USD')
+            ->assertSee($pay, false)->assertViewHas('recorded', fn ($recorded) => (int) $recorded->paid_count === 0);
+        $this->post($pay, [
+            'month' => '2028-03', 'paid_on' => '2028-03-01', 'confirm' => 1, 'expected_total_cents' => 23500, 'expected_advance_cents' => 0,
+        ])->assertSessionHasNoErrors()->assertRedirect();
+        $this->get($withdrawal)->assertOk()->assertSee('Total still to pay $0.00 USD')->assertDontSee($pay, false)
+            ->assertViewHas('recorded', fn ($recorded) => (int) $recorded->paid_count === 1);
+        $this->get(route('reports'))->assertOk()
+            ->assertSee('data-payroll-withdrawal-remaining>$0.00', false)
+            ->assertSee('data-payroll-withdrawal-paid>$235.00', false);
+        $this->get(route('employee-salaries.index', ['month' => '2028-04']))->assertOk()
+            ->assertViewHas('recorded', fn ($recorded) => (int) $recorded->paid_count === 0);
+        $this->travelTo(Carbon::parse('2028-03-02 08:00'));
+        $this->get($withdrawal)->assertForbidden();
+    }
+
+    public function test_early_salary_requires_approval_before_payout_and_is_applied_to_the_next_payday(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-25 12:00'));
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = $this->employee();
+        $this->profile($teacher, $admin)->update(['service_started_on' => '2026-11-01', 'evening_sessions' => 0]);
+        $this->assignHours($teacher, 40);
+        $fee = \App\Models\Fee::create([
+            'student_id' => \App\Models\Student::factory()->create()->id,
+            'description' => 'Tuition', 'amount' => '300.00', 'paid' => '300.00', 'currency' => 'USD', 'due_date' => today(),
+        ]);
+        \App\Models\FeePayment::create([
+            'fee_id' => $fee->id, 'receipt_number' => 'EARLY-SALARY', 'request_key' => (string) \Illuminate\Support\Str::uuid(),
+            'amount' => '300.00', 'currency' => 'USD', 'paid_on' => today(), 'method' => 'cash', 'recorded_by' => $admin->id,
+        ]);
+        $payload = ['request_type' => 'early_salary', 'submission_key' => (string) \Illuminate\Support\Str::uuid()];
+        $store = route('dashboard.advance-requests.store');
+        $this->actingAs($teacher)->get(route('dashboard'))->assertOk()->assertSee('data-early-salary-amount="250.00"', false);
+        $this->post($store, $payload + ['requested_amount' => '20.00'])->assertSessionHasNoErrors()->assertRedirect();
+        $this->post($store, $payload)->assertSessionHasNoErrors()->assertRedirect();
+        $early = \App\Models\TeacherAdvanceRequest::sole();
+        $this->assertSame('2026-12-01', $early->salary_month->toDateString());
+        $this->assertSame(25000, $early->amount_cents);
+        $this->post($store, array_replace($payload, ['submission_key' => (string) \Illuminate\Support\Str::uuid()]))->assertSessionHasErrors('requested_amount');
+        $approve = route('reports.expenses.advance-requests.approve', $early);
+        $payout = route('reports.expenses.advance-requests.confirm', $early);
+        $this->post($approve)->assertForbidden();
+        $this->actingAs($admin)->post($payout)->assertSessionHasErrors('advance_request');
+        $this->get(route('employee-salaries.teacher-reports'))->assertOk()
+            ->assertDontSee('data-pending-advance-badge', false)->assertDontSee('Pending money requests');
+        $this->get(route('reports.expenses.index'))->assertOk()
+            ->assertSee('text-bg-danger ms-2" data-expense-live-count="modal"', false)
+            ->assertSee('1 pending request')->assertSee('Early salary');
+        $this->post($approve)->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertDatabaseCount('school_expenses', 0);
+        $approvedReport = $this->get(route('employee-salaries.teacher-reports', ['month' => '2026-11', 'report' => 'salary']))
+            ->assertOk()->assertSee('Early salary awaiting payout')->assertSee('payroll-strip-early-paid', false);
+        $this->assertSame(5, substr_count($approvedReport->getContent(), '<td class="payroll-strip-deduction"></td>'));
+        $this->post($payout)->assertSessionHasNoErrors()->assertRedirect();
+        $this->post($payout)->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertDatabaseCount('school_expenses', 1);
+        $this->post(route('employee-salaries.attendance.store', $teacher), [
+            'date' => '2026-11-19', 'session' => 'All', 'status' => 'absent',
+        ])->assertSessionHasNoErrors();
+        $detail = fn ($month) => route('employee-salaries.show', ['teacher' => $teacher, 'month' => $month]);
+        $report = fn ($month) => route('employee-salaries.teacher-reports', ['month' => $month, 'report' => 'salary', 'teacher' => $teacher->id]);
+        $this->get($detail('2026-11'))->assertOk()->assertViewHas('salary', fn ($salary) => $salary['advance_cents'] === 0);
+        $this->get($report('2026-11'))->assertOk()
+            ->assertSee('payroll-strip-total payroll-strip-early-paid', false)->assertSee('Paid early')->assertDontSee('$15.00 USD');
+        $this->get(route('employee-salaries.show', ['teacher' => $teacher, 'month' => '2026-11', 'slip' => 'salary']))
+            ->assertOk()->assertSee('payroll-strip-total payroll-strip-early-paid', false)->assertSee('$250.00 USD')->assertDontSee('$15.00 USD');
+        $this->travelTo(Carbon::parse('2026-12-01 12:00'));
+        $quickPay = route('employee-salaries.payday', $teacher);
+        $this->get(route('employee-salaries.index', ['withdrawal' => 1]))->assertOk()
+            ->assertSee('Paid early')->assertSee('Total still to pay $0.00 USD')->assertDontSee($quickPay, false)
+            ->assertViewHas('recorded', fn ($recorded) => (int) $recorded->paid_count === 1);
+        $this->post($quickPay, [
+            'month' => '2026-12', 'paid_on' => '2026-12-01', 'confirm' => 1, 'expected_total_cents' => 0,
+        ])->assertSessionHasErrors('salary');
+        $this->travelTo(Carbon::parse('2026-12-02 12:00'));
+        $this->post(route('employee-salaries.attendance.store', $teacher), [
+            'date' => '2026-12-02', 'session' => 'All', 'status' => 'absent',
+        ])->assertSessionHasNoErrors();
+        $salary = $this->get($detail('2026-12'))->assertOk()->assertSee('Scheduled payday is 1 December 2026')->viewData('salary');
+        $this->assertSame(['total_cents' => 0, 'advance_cents' => 23500], array_intersect_key($salary, array_flip(['total_cents', 'advance_cents'])), json_encode($salary));
+        $this->assertSame('2026-11-19', $salary['deduction_details'][0]['date']);
+        $this->get($report('2026-12'))->assertOk()->assertDontSee('payroll-strip-early-paid', false)->assertSee('$15.00 USD');
+        $this->post(route('employee-salaries.pay', $teacher), [
+            'month' => '2026-12', 'paid_on' => '2026-12-01', 'confirm' => 1, 'expected_total_cents' => 0, 'expected_advance_cents' => 23500,
+        ])->assertSessionHasNoErrors();
+        $this->get($detail('2026-11'))->assertOk()->assertViewHas('salary', fn ($salary) => $salary['deduction_cents'] === 0);
+        $this->get($detail('2027-01'))->assertOk()->assertViewHas('salary', fn ($salary) => $salary['advance_cents'] === 1500
+            && $salary['deduction_details'][0]['date'] === '2026-12-02');
+    }
+
     public function test_outstanding_advance_totals_are_separate_for_each_employee(): void
     {
         $admin = User::factory()->create(['role' => 'administrator']);

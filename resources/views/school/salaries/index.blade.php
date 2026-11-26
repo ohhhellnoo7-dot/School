@@ -59,6 +59,18 @@
     @endforeach
 </dl>
 @include('school.salaries._overview')
+@if($withdrawalTotals)
+    <section class="payroll-surface p-4 mb-3" id="payday-withdrawal" aria-labelledby="payday-withdrawal-title">
+        <h2 class="h4" id="payday-withdrawal-title">{{ __('Withdraw money for employees') }}</h2>
+        <p class="mb-1">{{ __('Payday :payday · Attendance through :end', [
+            'payday' => $month->translatedFormat('j F Y'),
+            'end' => $month->copy()->subDay()->translatedFormat('j F Y'),
+        ]) }}</p>
+        <p class="mb-0"><strong>{{ __('Total still to pay') }} ${{ \App\Support\Money::decimal($withdrawalTotals['remaining']) }} USD</strong></p>
+        <p class="mb-0">{{ __('Paid to employees') }} ${{ \App\Support\Money::decimal($withdrawalTotals['paid']) }} USD</p>
+        <small class="text-secondary">{{ __('Recorded salaries and early payouts are excluded.') }}</small>
+    </section>
+@endif
 <section class="payroll-surface payroll-register" aria-labelledby="payroll-register-heading">
     <div class="payroll-register-heading">
         <div class="payroll-heading-group">
@@ -119,7 +131,24 @@
                 <span class="text-secondary" title="Full monthly salary before raises and deductions">/ ${{ \App\Support\Money::decimal($row['full_salary_cents']) }}</span>
             @endif
         </td>
-        <td><span class="status-badge {{ $row['payment'] ? 'paid' : 'pending' }}">{{ $row['payment'] ? 'Paid' : ($row['profile'] ? 'Not recorded' : 'Setup needed') }}</span></td><td><a class="btn btn-sm btn-outline-primary" href="{{ route('employee-salaries.show', ['teacher' => $row['teacher'], 'month' => $month->format('Y-m')]) }}"><i class="bi bi-eye me-1" aria-hidden="true"></i>{{ $row['profile'] ? 'View details' : 'Set up salary' }}</a></td></tr>
+        <td>
+            @if($row['payment'] || $row['paid_early'])
+                <span class="status-badge paid">{{ $row['paid_early'] ? __('Paid early') : __('Paid') }}</span>
+            @else
+                <span class="status-badge pending">{{ $row['profile'] ? __('Not recorded') : __('Setup needed') }}</span>
+                @if($payday && ($row['salary']['gross_cents'] ?? 0) > 0)
+                    <form method="post" action="{{ route('employee-salaries.payday', $row['teacher']) }}" class="mt-2">
+                        @csrf
+                        <input type="hidden" name="month" value="{{ $month->format('Y-m') }}">
+                        <input type="hidden" name="paid_on" value="{{ $month->toDateString() }}">
+                        <input type="hidden" name="confirm" value="1">
+                        <input type="hidden" name="expected_total_cents" value="{{ $row['salary']['total_cents'] }}">
+                        <input type="hidden" name="expected_advance_cents" value="{{ $row['salary']['advance_cents'] }}">
+                        <button class="btn btn-sm btn-primary" type="submit" aria-label="{{ __('Record payment for :name', ['name' => $row['teacher']->name]) }}">{{ __('Pay') }}</button>
+                    </form>
+                @endif
+            @endif
+        </td><td><a class="btn btn-sm btn-outline-primary" href="{{ route('employee-salaries.show', ['teacher' => $row['teacher'], 'month' => $month->format('Y-m')]) }}"><i class="bi bi-eye me-1" aria-hidden="true"></i>{{ $row['profile'] ? 'View details' : 'Set up salary' }}</a></td></tr>
     @empty<tr><td colspan="10" class="p-4 text-center">No teachers found.</td></tr>@endforelse
     </tbody></table></div><div class="p-3">{{ $teachers->links() }}</div></div>
 </section>

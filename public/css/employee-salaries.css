@@ -546,6 +546,11 @@
 .payroll-slip-table tbody th { text-align: center; font-weight: 500; }
 .payroll-slip-table .payroll-strip-amount { background: #fbebd8; }
 .payroll-slip-table .payroll-strip-total { background: #ffdf35; font-weight: 800; }
+.payroll-slip-table .payroll-strip-early-paid {
+    background: #bd2538;
+    color: #fff;
+    print-color-adjust: exact;
+}
 .payroll-slip-table .payroll-strip-short-service { background: #ffd2d2; color: #721919; }
 .payroll-slip-table-leave { table-layout: fixed; font-size: .7rem; }
 .payroll-leave-col-name { width: 11%; }

@@ -7,6 +7,7 @@ use App\Models\{EmployeeSalaryAttendance, EmployeeSalaryPayment, EmployeeSalaryP
 use App\Services\EmployeeAttendanceBonus;
 use App\Services\EmployeeSalaryCalculator;
 use App\Services\EmployeeSalaryAdvances;
+use App\Services\EmployeeSalaryDeductions;
 use App\Services\EmployeeSalaryRates;
 use App\Services\{TeacherLeaveReport, TeacherManagementService, TeacherSessionStops};
 use App\Support\AttendanceSession;
@@ -33,72 +34,76 @@ class EmployeeSalaryController extends Controller
 
     private function assessmentDate(Carbon $month): Carbon
     {
+        if ($month->gte(EmployeeSalaryDeductions::FIRST_CARRY_FORWARD_MONTH)) {
+            return $month->copy();
+        }
         return $month->isCurrentMonth() ? today() : $month->copy()->endOfMonth()->startOfDay();
     }
 
-    private function salary(EmployeeSalaryProfile $profile, Carbon $month, EmployeeSalaryCalculator $calculator, ?int $assignedMinutes = null, ?\Illuminate\Support\Collection $advances = null): array
+    private function settledTransitionAttendance(Carbon $month, array $ids): array
     {
-        $range = [$month->toDateString(), $month->copy()->endOfMonth()->toDateString()];
-        $assignedMinutes ??= $calculator->assignedMinutes([$profile->teacher_id])->get($profile->teacher_id, 0);
+        $first = Carbon::parse(EmployeeSalaryDeductions::FIRST_CARRY_FORWARD_MONTH);
+        $previous = $first->copy()->subMonthNoOverflow();
+        $other = match ($month->toDateString()) {
+            $first->toDateString() => $previous,
+            $previous->toDateString() => $first,
+            default => null,
+        };
 
-        $salary = app(\App\Services\EmployeeSalaryDeductions::class)->apply(
-            $calculator->calculate($profile, $this->assessmentDate($month), $assignedMinutes), $profile,
-            TeacherAttendance::where('teacher_id', $profile->teacher_id)->whereBetween('date', $range)->get(),
-            TeacherSessionAttendance::where('teacher_id', $profile->teacher_id)->whereBetween('date', $range)->get(),
-            EmployeeSalaryAttendance::where('teacher_id', $profile->teacher_id)->whereBetween('date', $range)->get(),
-            $this->assessmentDate($month)
+        if (!$other) {
+            return [];
+        }
+        $advances = app(EmployeeSalaryAdvances::class);
+        $earlyTeachers = $advances->earlyPayoutsInMonth($ids, $previous)->keys()
+            ->merge($advances->approvedEarlyRequestsInMonth($ids, $previous)->keys())->flip();
+        $payments = EmployeeSalaryPayment::whereIn('teacher_id', $ids)->whereDate('salary_month', $other)
+            ->get(['teacher_id', 'deduction_details']);
+        if ($month->isSameMonth($previous)) {
+            return $payments->pluck('teacher_id')->merge($earlyTeachers->keys())->flip()->all();
+        }
+
+        return $payments->filter(fn ($payment) => !$earlyTeachers->has($payment->teacher_id) || !empty($payment->deduction_details))
+            ->pluck('teacher_id')->flip()->all();
+    }
+
+    private function salary(EmployeeSalaryProfile $profile, ?EmployeeSalaryProfile $attendanceProfile, Carbon $month, EmployeeSalaryCalculator $calculator, int $assignedMinutes, ?\Illuminate\Support\Collection $advances = null): array
+    {
+        $deductions = app(EmployeeSalaryDeductions::class);
+        $attendanceMonth = $deductions->attendanceMonth($month);
+        $from = $attendanceMonth->toDateString();
+        $until = $attendanceMonth->copy()->addMonth()->toDateString();
+
+        $salary = $deductions->payroll(
+            $calculator->calculate($profile, $this->assessmentDate($month), $assignedMinutes), $attendanceProfile,
+            TeacherAttendance::where('teacher_id', $profile->teacher_id)->where('date', '>=', $from)->where('date', '<', $until)->get(),
+            TeacherSessionAttendance::where('teacher_id', $profile->teacher_id)->where('date', '>=', $from)->where('date', '<', $until)->get(),
+            EmployeeSalaryAttendance::where('teacher_id', $profile->teacher_id)->where('date', '>=', $from)->where('date', '<', $until)->get(),
+            $month, $this->assessmentDate($month), isset($this->settledTransitionAttendance($month, [$profile->teacher_id])[$profile->teacher_id])
         );
         $service = app(EmployeeSalaryAdvances::class);
 
-        return $service->apply($salary, $advances ?? $service->outstanding([$profile->teacher_id], $this->assessmentDate($month))->get($profile->teacher_id, collect()));
+        return $service->apply($salary, $advances ?? $service->outstanding([$profile->teacher_id], $this->assessmentDate($month)->min(today()), $month)->get($profile->teacher_id, collect()));
     }
 
     public function index(Request $request, EmployeeSalaryCalculator $calculator, TeacherManagementService $teaching)
     {
         $month = $this->month($request);
         $asOf = $this->assessmentDate($month);
+        $payday = today()->isSameDay($month) && $month->gte(EmployeeSalaryDeductions::FIRST_CARRY_FORWARD_MONTH);
+        $withdrawal = $request->boolean('withdrawal');
+        abort_if($withdrawal && !$payday, 403);
         $request->validate(['search' => 'nullable|string|max:255', 'export' => 'nullable|in:csv']);
         $teacherPopulation = User::where('role', 'teacher');
         $teacherQuery = (clone $teacherPopulation)
-            ->when($request->filled('search'), fn ($q) => $q->where(fn ($q) => $q
+            ->when(!$withdrawal && $request->filled('search'), fn ($q) => $q->where(fn ($q) => $q
                 ->whereRaw('LOWER(name) LIKE ?', [mb_strtolower($request->search).'%'])
                 ->orWhere('profile_number', 'like', '%'.$request->search.'%')))
             ->orderBy('name')->orderBy('id');
         $exporting = $request->input('export') === 'csv';
-        $teachers = $exporting ? $teacherQuery->get() : $teacherQuery->paginate(20)->withQueryString();
-        $profiles = EmployeeSalaryProfile::whereIn('teacher_id', $teachers->modelKeys())->get()->keyBy('teacher_id');
-        $payments = EmployeeSalaryPayment::whereIn('teacher_id', $teachers->modelKeys())->whereDate('salary_month', $month)->get()->keyBy('teacher_id');
-        $attendance = TeacherAttendance::whereIn('teacher_id', $teachers->modelKeys())
-            ->whereBetween('date', [$month->toDateString(), $month->copy()->endOfMonth()->toDateString()])->get()->groupBy('teacher_id');
-        $range = [$month->toDateString(), $month->copy()->endOfMonth()->toDateString()];
-        $scans = TeacherSessionAttendance::whereIn('teacher_id', $teachers->modelKeys())->whereBetween('date', $range)->get()->groupBy('teacher_id');
-        $overrides = EmployeeSalaryAttendance::whereIn('teacher_id', $teachers->modelKeys())->whereBetween('date', $range)->get()->groupBy('teacher_id');
-        $teachingMinutes = $calculator->assignedMinutes($teachers->modelKeys());
-        $stops = app(TeacherSessionStops::class);
-        $stopHistory = $stops->history($teachers->modelKeys());
-        $weeklyLimits = DB::table('teacher_profiles')->whereIn('teacher_id', $teachers->modelKeys())->pluck('weekly_minutes', 'teacher_id');
-        $advanceService = app(EmployeeSalaryAdvances::class);
-        $advances = $advanceService->outstanding($teachers->modelKeys(), $asOf->min(today()));
-        $rows = ($exporting ? $teachers : $teachers->getCollection())->map(function ($teacher) use ($profiles, $payments, $attendance, $calculator, $asOf, $scans, $overrides, $teaching, $teachingMinutes, $weeklyLimits, $stops, $stopHistory, $month, $advanceService, $advances) {
-            $profile = $profiles->get($teacher->id);
-            $payment = $payments->get($teacher->id);
-            [$profile, $assignedMinutes] = $stops->payrollAt($stopHistory->get($teacher->id, collect()), $month, $profile, $teachingMinutes->get($teacher->id, 0));
-            $workSessions = $payment ?? $profile;
-            $weeklyHours = $workSessions
-                ? $calculator->weeklyWorkHours($workSessions->day_sessions, $workSessions->evening_sessions)
-                : null;
-
-            return ['teacher' => $teacher, 'profile' => $profile, 'payment' => $payment,
-                'weekly_hours' => $assignedMinutes / 60,
-                'weekly_work_hours' => $weeklyHours,
-                'full_salary_cents' => $workSessions ? $calculator->fullSalaryCents($workSessions) : null,
-                'weekly_limit' => $weeklyHours ?? ($weeklyLimits->get($teacher->id) ?? $teaching->defaultLimit($teacher->program)) / 60,
-                'salary' => $payment ? $payment->only(['base_cents', 'raise_cents', 'total_cents', 'deduction_cents']) : ($profile ? $advanceService->apply(app(\App\Services\EmployeeSalaryDeductions::class)->apply(
-                    $calculator->calculate($profile, $asOf, $assignedMinutes), $profile, $attendance->get($teacher->id, collect()),
-                    $scans->get($teacher->id, collect()), $overrides->get($teacher->id, collect()), $asOf
-                ), $advances->get($teacher->id, collect())) : null),
-                'attendance' => app(\App\Services\EmployeeSalaryDeductions::class)->counts($attendance->get($teacher->id, collect()), $scans->get($teacher->id, collect()), $overrides->get($teacher->id, collect()))];
-        });
+        $teachers = $exporting ? $teacherQuery->get() : $teacherQuery
+            ->paginate($withdrawal ? max(1, $teacherPopulation->count()) : 20, page: $withdrawal ? 1 : null)->withQueryString();
+        $earlyPayments = app(EmployeeSalaryAdvances::class)->earlyPaymentsForPayroll($month);
+        $rows = $this->payrollRows($exporting ? $teachers : $teachers->getCollection(), $month, $calculator, $teaching, $earlyPayments);
 
         if ($exporting) {
             return response()->streamDownload(function () use ($rows) {
@@ -114,7 +119,7 @@ class EmployeeSalaryController extends Controller
                         $salary ? Money::decimal($salary['raise_cents']) : '',
                         $salary ? Money::decimal($salary['deduction_cents']) : '',
                         $salary ? Money::decimal($salary['total_cents']) : '',
-                        $row['payment'] ? 'Paid' : ($row['profile'] ? 'Not recorded' : 'Setup needed'),
+                        $row['payment'] ? 'Paid' : ($row['paid_early'] ? 'Paid early' : ($row['profile'] ? 'Not recorded' : 'Setup needed')),
                     ], escape: '');
                 }
                 fclose($output);
@@ -126,11 +131,78 @@ class EmployeeSalaryController extends Controller
             ->whereDate('salary_month', $month)
             ->selectRaw('COUNT(*) AS paid_count, COALESCE(SUM(total_cents), 0) AS paid_cents')
             ->first();
+        $earlyOnly = $earlyPayments->except(EmployeeSalaryPayment::whereIn('teacher_id', $earlyPayments->keys())
+            ->whereDate('salary_month', $month)->pluck('teacher_id')->all());
+        $recorded->paid_count += $earlyOnly->count();
+        $recorded->paid_cents += $earlyPayments->sum();
+        $withdrawalTotals = $withdrawal ? $this->withdrawalTotals($month, $rows) : null;
 
-        return view('school.salaries.index', compact('month', 'teachers', 'rows', 'asOf', 'teacherCount', 'recorded') + [
+        return view('school.salaries.index', compact('month', 'teachers', 'rows', 'asOf', 'teacherCount', 'recorded', 'payday', 'withdrawalTotals') + [
             'salaryHourlyCents' => $calculator->baseCents(60),
             'salaryRates' => collect([5, 10, 20, 40, 50])->mapWithKeys(fn ($hours) => [$hours => $calculator->baseCents($hours * 60)]),
         ]);
+    }
+
+    public function withdrawalTotals(Carbon $month, ?\Illuminate\Support\Collection $rows = null): array
+    {
+        if ($month->gt(today()) || $month->lt(EmployeeSalaryDeductions::FIRST_CARRY_FORWARD_MONTH)) {
+            return ['remaining' => 0, 'paid' => 0];
+        }
+
+        $rows ??= $this->payrollRows(
+            User::where('role', 'teacher')->get(), $month, app(EmployeeSalaryCalculator::class),
+            app(TeacherManagementService::class), app(EmployeeSalaryAdvances::class)->earlyPaymentsForPayroll($month),
+        );
+        $regular = $rows->reject('paid_early');
+
+        return [
+            'remaining' => $regular->whereNull('payment')->sum('salary.total_cents'),
+            'paid' => $regular->sum('payment.total_cents'),
+        ];
+    }
+
+    private function payrollRows(\Illuminate\Database\Eloquent\Collection $teachers, Carbon $month, EmployeeSalaryCalculator $calculator, TeacherManagementService $teaching, \Illuminate\Support\Collection $earlyPayments): \Illuminate\Support\Collection
+    {
+        $asOf = $this->assessmentDate($month);
+        $profiles = EmployeeSalaryProfile::whereIn('teacher_id', $teachers->modelKeys())->get()->keyBy('teacher_id');
+        $payments = EmployeeSalaryPayment::whereIn('teacher_id', $teachers->modelKeys())->whereDate('salary_month', $month)->get()->keyBy('teacher_id');
+        $deductions = app(EmployeeSalaryDeductions::class);
+        $legacy = $this->settledTransitionAttendance($month, $teachers->modelKeys());
+        $range = [$deductions->attendanceMonth($month)->toDateString(), $month->copy()->endOfMonth()->toDateString()];
+        $attendance = TeacherAttendance::whereIn('teacher_id', $teachers->modelKeys())->whereBetween('date', $range)->get()->groupBy('teacher_id');
+        $scans = TeacherSessionAttendance::whereIn('teacher_id', $teachers->modelKeys())->whereBetween('date', $range)->get()->groupBy('teacher_id');
+        $overrides = EmployeeSalaryAttendance::whereIn('teacher_id', $teachers->modelKeys())->whereBetween('date', $range)->get()->groupBy('teacher_id');
+        $teachingMinutes = $calculator->assignedMinutes($teachers->modelKeys());
+        $stops = app(TeacherSessionStops::class);
+        $stopHistory = $stops->history($teachers->modelKeys());
+        $weeklyLimits = DB::table('teacher_profiles')->whereIn('teacher_id', $teachers->modelKeys())->pluck('weekly_minutes', 'teacher_id');
+        $advanceService = app(EmployeeSalaryAdvances::class);
+        $advances = $advanceService->outstanding($teachers->modelKeys(), $asOf->min(today()), $month);
+        return $teachers->map(function ($teacher) use ($profiles, $payments, $attendance, $calculator, $asOf, $scans, $overrides, $teaching, $teachingMinutes, $weeklyLimits, $stops, $stopHistory, $month, $advanceService, $advances, $deductions, $legacy, $earlyPayments) {
+            $profile = $profiles->get($teacher->id);
+            $payment = $payments->get($teacher->id);
+            [$attendanceProfile] = $stops->payrollAt($stopHistory->get($teacher->id, collect()), $deductions->attendanceMonth($month), $profile, 0);
+            [$profile, $assignedMinutes] = $stops->payrollAt($stopHistory->get($teacher->id, collect()), $month, $profile, $teachingMinutes->get($teacher->id, 0));
+            $workSessions = $payment ?? $profile;
+            $weeklyHours = $workSessions
+                ? $calculator->weeklyWorkHours($workSessions->day_sessions, $workSessions->evening_sessions)
+                : null;
+
+            return ['teacher' => $teacher, 'profile' => $profile, 'payment' => $payment,
+                'paid_early' => $earlyPayments->has($teacher->id),
+                'weekly_hours' => $assignedMinutes / 60,
+                'weekly_work_hours' => $weeklyHours,
+                'full_salary_cents' => $workSessions ? $calculator->fullSalaryCents($workSessions) : null,
+                'weekly_limit' => $weeklyHours ?? ($weeklyLimits->get($teacher->id) ?? $teaching->defaultLimit($teacher->program)) / 60,
+                'salary' => $payment ? $payment->only(['base_cents', 'raise_cents', 'total_cents', 'deduction_cents']) : ($profile ? $advanceService->apply($deductions->payroll(
+                    $calculator->calculate($profile, $asOf, $assignedMinutes), $attendanceProfile, $attendance->get($teacher->id, collect()),
+                    $scans->get($teacher->id, collect()), $overrides->get($teacher->id, collect()), $month, $asOf, isset($legacy[$teacher->id])
+                ), $advances->get($teacher->id, collect())) : null),
+                'attendance' => $deductions->counts(...array_map(
+                    fn ($records) => $records->get($teacher->id, collect())->filter(fn ($record) => $record->date->isSameMonth($month)),
+                    [$attendance, $scans, $overrides],
+                ))];
+        });
     }
 
     public function teacherReports(Request $request, EmployeeSalaryCalculator $calculator, \App\Services\EmployeeSalaryDeductions $deductions)
@@ -174,9 +246,11 @@ class EmployeeSalaryController extends Controller
         $ids = $teachers->modelKeys();
         $profiles = EmployeeSalaryProfile::whereIn('teacher_id', $ids)->get()->keyBy('teacher_id');
         $payments = EmployeeSalaryPayment::whereIn('teacher_id', $ids)->whereDate('salary_month', $month)->get()->keyBy('teacher_id');
-        $daily = TeacherAttendance::whereIn('teacher_id', $ids)->whereBetween('date', $year)->get()->groupBy('teacher_id');
-        $sessions = TeacherSessionAttendance::whereIn('teacher_id', $ids)->whereBetween('date', $year)->get()->groupBy('teacher_id');
-        $overrides = EmployeeSalaryAttendance::whereIn('teacher_id', $ids)->whereBetween('date', $year)->get()->groupBy('teacher_id');
+        $attendanceFrom = min($year[0], $deductions->attendanceMonth($month)->toDateString());
+        $attendanceUntil = $month->copy()->startOfYear()->addYear()->toDateString();
+        $daily = TeacherAttendance::whereIn('teacher_id', $ids)->where('date', '>=', $attendanceFrom)->where('date', '<', $attendanceUntil)->get()->groupBy('teacher_id');
+        $sessions = TeacherSessionAttendance::whereIn('teacher_id', $ids)->where('date', '>=', $attendanceFrom)->where('date', '<', $attendanceUntil)->get()->groupBy('teacher_id');
+        $overrides = EmployeeSalaryAttendance::whereIn('teacher_id', $ids)->where('date', '>=', $attendanceFrom)->where('date', '<', $attendanceUntil)->get()->groupBy('teacher_id');
         $minutes = $calculator->assignedMinutes($ids);
         $bonus = app(EmployeeAttendanceBonus::class);
         $requiredMonths = $bonus->requiredServiceMonths();
@@ -189,29 +263,34 @@ class EmployeeSalaryController extends Controller
         $stopHistory = $stops->history($ids);
         $leave = app(TeacherLeaveReport::class);
         $advanceService = app(EmployeeSalaryAdvances::class);
-        $advances = $advanceService->outstanding($ids, $asOf->min(today()));
-        $reports = $teachers->getCollection()->map(function (User $teacher) use ($month, $asOf, $profiles, $payments, $daily, $sessions, $overrides, $minutes, $calculator, $deductions, $bonus, $showLeave, $bonusTimetables, $bonusPayments, $closedDates, $stops, $stopHistory, $leave, $requiredMonths, $advanceService, $advances) {
+        $advances = $advanceService->outstanding($ids, $asOf->min(today()), $month);
+        $legacy = $this->settledTransitionAttendance($month, $ids);
+        $earlyPayouts = $advanceService->earlyPayoutsInMonth($ids, $month);
+        $approvedEarlyRequests = $advanceService->approvedEarlyRequestsInMonth($ids, $month);
+        $reports = $teachers->getCollection()->map(function (User $teacher) use ($month, $asOf, $profiles, $payments, $daily, $sessions, $overrides, $minutes, $calculator, $deductions, $bonus, $showLeave, $bonusTimetables, $bonusPayments, $closedDates, $stops, $stopHistory, $leave, $requiredMonths, $advanceService, $advances, $legacy, $earlyPayouts, $approvedEarlyRequests) {
             $id = $teacher->id;
             $profile = $profiles->get($id);
             $payment = $payments->get($id);
             $history = $stopHistory->get($id, collect());
             [$salaryProfile, $salaryMinutes] = $stops->payrollAt($history, $month, $profile, $minutes->get($id, 0));
             $byMonth = fn ($record) => $record->date->month;
-            $dailyMonths = $daily->get($id, collect())->groupBy($byMonth);
-            $sessionMonths = $sessions->get($id, collect())->groupBy($byMonth);
-            $overrideMonths = $overrides->get($id, collect())->groupBy($byMonth);
-            $marks = [
-                $dailyMonths->get($month->month, collect()),
-                $sessionMonths->get($month->month, collect()),
-                $overrideMonths->get($month->month, collect()),
-            ];
-            $salary = $salaryProfile && !$payment ? $advanceService->apply($deductions->apply(
-                $calculator->calculate($salaryProfile, $asOf, $salaryMinutes), $salaryProfile,
-                $marks[0], $marks[1], $marks[2], $asOf,
+            $inYear = fn ($record) => $record->date->year === $month->year;
+            $dailyMonths = $daily->get($id, collect())->filter($inYear)->groupBy($byMonth);
+            $sessionMonths = $sessions->get($id, collect())->filter($inYear)->groupBy($byMonth);
+            $overrideMonths = $overrides->get($id, collect())->filter($inYear)->groupBy($byMonth);
+            $attendanceMonth = $deductions->attendanceMonth($month);
+            [$attendanceProfile] = $stops->payrollAt($history, $attendanceMonth, $profile, 0);
+            $marks = array_map(fn ($records) => $records->get($id, collect())
+                ->filter(fn ($record) => $record->date->isSameMonth($attendanceMonth)), [$daily, $sessions, $overrides]);
+            $salary = $salaryProfile && !$payment ? $advanceService->apply($deductions->payroll(
+                $calculator->calculate($salaryProfile, $asOf, $salaryMinutes), $attendanceProfile,
+                $daily->get($id, collect()), $sessions->get($id, collect()), $overrides->get($id, collect()), $month, $asOf, isset($legacy[$id]),
             ), $advances->get($id, collect())) : null;
 
             $report = compact('teacher', 'payment', 'salary') + [
-                'counts' => $deductions->slipCounts($marks[0], $marks[1], $marks[2], $payment ?? $salaryProfile),
+                'earlyPayout' => $earlyPayouts->get($id),
+                'earlyPayoutAwaiting' => $approvedEarlyRequests->has($id),
+                'counts' => $deductions->slipCounts($marks[0], $marks[1], $marks[2], $attendanceMonth->isSameMonth($month) ? ($payment ?? $salaryProfile) : $attendanceProfile),
                 'work' => $this->reportWork($payment ?? $salaryProfile, $salaryMinutes, $calculator, $asOf, $requiredMonths),
                 'leaveMonths' => $showLeave ? $leave->countLeaveMonths($dailyMonths, $sessionMonths, $overrideMonths, $deductions) : collect(),
                 'attendanceBonus' => $showLeave ? $bonus->forYear(
@@ -249,7 +328,9 @@ class EmployeeSalaryController extends Controller
         $history = $stops->history([$teacher->id])->get($teacher->id, collect());
         $minutes = $calculator->assignedMinutes([$teacher->id])->get($teacher->id, 0);
         [$salaryProfile, $salaryMinutes] = $stops->payrollAt($history, $month, $profile, $minutes);
-        $salary = $salaryProfile ? $this->salary($salaryProfile, $month, $calculator, $salaryMinutes) : null;
+        $source = app(EmployeeSalaryDeductions::class)->attendanceMonth($month);
+        [$attendanceProfile] = $stops->payrollAt($history, $source, $profile, 0);
+        $salary = $salaryProfile ? $this->salary($salaryProfile, $attendanceProfile, $month, $calculator, $salaryMinutes) : null;
         $slip = $request->validate(['slip' => 'nullable|in:salary,leave'])['slip'] ?? null;
         $attendance = TeacherAttendance::where('teacher_id', $teacher->id)
             ->whereBetween('date', [$month->toDateString(), $month->copy()->endOfMonth()->toDateString()])->get()->keyBy(fn ($record) => $record->date->toDateString());
@@ -260,13 +341,24 @@ class EmployeeSalaryController extends Controller
 
         if ($slip) {
             if ($slip === 'salary') {
-                $counts = app(\App\Services\EmployeeSalaryDeductions::class)->slipCounts(
-                    $attendance->values(), $scans->flatten(1), $overrides->flatten(1), $payment ?? $salaryProfile
-                );
+                $deductions = app(EmployeeSalaryDeductions::class);
+                $marks = [$attendance->values(), $scans->flatten(1), $overrides->flatten(1)];
+                if (!$source->isSameMonth($month)) {
+                    $until = $source->copy()->addMonth()->toDateString();
+                    $marks = array_map(fn ($model) => $model::where('teacher_id', $teacher->id)
+                        ->where('date', '>=', $source->toDateString())->where('date', '<', $until)->get(),
+                        [TeacherAttendance::class, TeacherSessionAttendance::class, EmployeeSalaryAttendance::class]);
+                }
+                $counts = $deductions->slipCounts(...[...$marks, $source->isSameMonth($month) ? ($payment ?? $salaryProfile) : $attendanceProfile]);
             }
             $requiredMonths = app(EmployeeAttendanceBonus::class)->requiredServiceMonths();
             $work = $this->reportWork($payment ?? $salaryProfile, $salaryMinutes, $calculator, $asOf, $requiredMonths);
             $data = compact('slip', 'teacher', 'month', 'profile', 'salary', 'payment', 'counts', 'work');
+            if ($slip === 'salary') {
+                $advances = app(EmployeeSalaryAdvances::class);
+                $data['earlyPayout'] = $advances->earlyPayoutsInMonth([$teacher->id], $month)->get($teacher->id);
+                $data['earlyPayoutAwaiting'] = $advances->approvedEarlyRequestsInMonth([$teacher->id], $month)->has($teacher->id);
+            }
             if ($slip === 'leave') {
                 $leave = app(TeacherLeaveReport::class);
                 $data += $leave->forTeacher($teacher, $month, $profile);
@@ -353,8 +445,15 @@ class EmployeeSalaryController extends Controller
             'expected_total_cents' => 'required|integer|min:0',
             'expected_advance_cents' => 'nullable|integer|min:0']);
         $month = Carbon::createFromFormat('!Y-m', $data['month']);
+        $payday = $request->routeIs('employee-salaries.payday');
+        abort_if($payday && (!today()->isSameDay($month) || $month->lt(EmployeeSalaryDeductions::FIRST_CARRY_FORWARD_MONTH)
+            || $data['paid_on'] !== today()->toDateString()), 403);
         DB::transaction(function () use ($teacher, $calculator, $request, $data, $month) {
             User::whereKey($teacher->id)->lockForUpdate()->firstOrFail();
+            if ($request->routeIs('employee-salaries.payday')
+                && app(EmployeeSalaryAdvances::class)->earlyPaymentsForPayroll($month)->has($teacher->id)) {
+                throw ValidationException::withMessages(['salary' => __('Early salary has already been paid for this month.')]);
+            }
             $profile = EmployeeSalaryProfile::where('teacher_id', $teacher->id)->lockForUpdate()->first();
             if (! $profile) {
                 throw ValidationException::withMessages(['salary' => 'Save the work sessions and service start date first.']);
@@ -363,8 +462,10 @@ class EmployeeSalaryController extends Controller
                 throw ValidationException::withMessages(['salary' => 'Salary payment has already been recorded for this month.']);
             }
             $stops = app(TeacherSessionStops::class);
+            $history = $stops->history([$teacher->id])->get($teacher->id, collect());
+            [$attendanceProfile] = $stops->payrollAt($history, app(EmployeeSalaryDeductions::class)->attendanceMonth($month), $profile, 0);
             [$profile, $minutes] = $stops->payrollAt(
-                $stops->history([$teacher->id])->get($teacher->id, collect()), $month, $profile,
+                $history, $month, $profile,
                 $calculator->assignedMinutes([$teacher->id])->get($teacher->id, 0),
             );
             if (!$profile) {
@@ -372,9 +473,9 @@ class EmployeeSalaryController extends Controller
             }
             $paidOn = Carbon::parse($data['paid_on']);
             $advanceService = app(EmployeeSalaryAdvances::class);
-            $advances = $advanceService->outstanding([$teacher->id], $this->assessmentDate($month)->min($paidOn))->get($teacher->id, collect());
-            $salary = $this->salary($profile, $month, $calculator, $minutes, $advances);
-            if (($salary['total_cents'] === 0 && $salary['advance_cents'] === 0) || $paidOn->lt($month) || $paidOn->lt($profile->service_started_on)
+            $advances = $advanceService->outstanding([$teacher->id], $this->assessmentDate($month)->min($paidOn), $month)->get($teacher->id, collect());
+            $salary = $this->salary($profile, $attendanceProfile, $month, $calculator, $minutes, $advances);
+            if ($salary['gross_cents'] === 0 || $paidOn->lt($month) || $paidOn->lt($profile->service_started_on)
                 || $salary['total_cents'] !== (int) $data['expected_total_cents']
                 || (isset($data['expected_advance_cents']) && $salary['advance_cents'] !== (int) $data['expected_advance_cents'])) {
                 throw ValidationException::withMessages(['salary' => 'Check the salary amount and payment date, then refresh before recording payment.']);
@@ -416,7 +517,13 @@ class EmployeeSalaryController extends Controller
         DB::transaction(function () use ($teacher, $data, $request) {
             User::whereKey($teacher->id)->lockForUpdate()->firstOrFail();
             $month = Carbon::parse($data['date'])->startOfMonth();
-            if (EmployeeSalaryPayment::where('teacher_id', $teacher->id)->whereDate('salary_month', $month)->exists()) {
+            $following = $month->copy()->addMonth();
+            $lockedMonths = array_filter([
+                $month->lt(EmployeeSalaryDeductions::FIRST_CARRY_FORWARD_MONTH) ? $month->toDateString() : null,
+                $following->gte(EmployeeSalaryDeductions::FIRST_CARRY_FORWARD_MONTH) ? $following->toDateString() : null,
+            ]);
+            if (EmployeeSalaryPayment::where('teacher_id', $teacher->id)
+                ->where(fn ($query) => collect($lockedMonths)->each(fn ($date) => $query->orWhereDate('salary_month', $date)))->exists()) {
                 throw ValidationException::withMessages(['attendance' => 'Salary is already recorded for this month. Its attendance deductions are locked.']);
             }
             EmployeeSalaryAttendance::updateOrCreate(['teacher_id' => $teacher->id, 'date' => $data['date'], 'session' => $data['session']],

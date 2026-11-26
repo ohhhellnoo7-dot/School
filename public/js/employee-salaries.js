@@ -18,6 +18,7 @@ document.querySelectorAll('[data-salary-search]').forEach((form) => {
             if (!replacement) throw new Error('Search results unavailable');
             if (signal.aborted) return;
             results.innerHTML = replacement.innerHTML;
+            document.getElementById('payday-withdrawal')?.remove();
             for (const id of ['salary-teacher-count', 'salary-payroll-month', 'salary-payroll-metrics', 'salary-payroll-overview', 'salary-monthly-attendance', 'salary-export']) {
                 const current = document.getElementById(id);
                 const updated = documentResult.getElementById(id);

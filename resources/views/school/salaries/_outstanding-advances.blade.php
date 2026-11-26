@@ -37,7 +37,11 @@
                                             default => '—',
                                         } }}</td>
                                         <td class="text-nowrap">{{ $advance->spent_on->translatedFormat('M j, Y') }}</td>
-                                        <td class="text-nowrap">{{ trans_choice(':count month|:count months', $advance->repayment_months) }}</td>
+                                        <td class="text-nowrap">
+                                            {{ $advance->recover_from_month
+                                                ? __('Early salary for :month', ['month' => $advance->recover_from_month->translatedFormat('F Y')])
+                                                : trans_choice(':count month|:count months', $advance->repayment_months) }}
+                                        </td>
                                         <td class="text-end text-nowrap">${{ \App\Support\Money::display($borrowed) }}</td>
                                         <td class="text-end text-nowrap">${{ \App\Support\Money::display($repaid) }}</td>
                                         <td class="text-end text-nowrap fw-bold">${{ \App\Support\Money::display($borrowed - $repaid) }}</td>

@@ -2,14 +2,21 @@
     $isBatch = isset($reportRows) && empty($individualSlip);
     $tableRows = $reportRows ?? [compact('teacher', 'salary', 'payment', 'counts', 'work') + [
         'leaveMonths' => $leaveMonths ?? collect(), 'attendanceBonus' => $attendanceBonus ?? null,
+        'earlyPayout' => $earlyPayout ?? null,
+        'earlyPayoutAwaiting' => $earlyPayoutAwaiting ?? false,
     ]];
     $khmerMonths = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
 @endphp
 @if($slip === 'salary')
     @php
-        $monthStart = $month->copy()->startOfMonth();
+        $monthStart = app(\App\Services\EmployeeSalaryDeductions::class)->attendanceMonth($month);
         $workingDays = $monthStart->diffInWeekdays($monthStart->copy()->addMonth());
     @endphp
+    @if(!$monthStart->isSameMonth($month))
+        <p class="small text-secondary mb-2">{{ __('Payday :payday. Base salary is based on scheduled weekly work hours. Attendance adjustments are from :attendanceMonth.', [
+            'payday' => $month->translatedFormat('j F Y'), 'attendanceMonth' => $monthStart->translatedFormat('F Y'),
+        ]) }}</p>
+    @endif
     <div class="table-responsive mb-3">
         <table class="payroll-slip-table payroll-slip-table-salary" lang="km" aria-label="{{ __('Salary slip') }}">
             <colgroup>

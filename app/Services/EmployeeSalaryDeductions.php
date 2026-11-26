@@ -9,6 +9,28 @@ use Illuminate\Support\Collection;
 
 class EmployeeSalaryDeductions
 {
+    public const FIRST_CARRY_FORWARD_MONTH = '2026-12-01';
+
+    public function attendanceMonth(Carbon $salaryMonth): Carbon
+    {
+        return $salaryMonth->gte(self::FIRST_CARRY_FORWARD_MONTH)
+            ? $salaryMonth->copy()->subMonthNoOverflow()->startOfMonth()
+            : $salaryMonth->copy()->startOfMonth();
+    }
+
+    public function payroll(array $salary, ?EmployeeSalaryProfile $profile, Collection $daily, Collection $scans, Collection $overrides, Carbon $salaryMonth, Carbon $asOf, bool $attendanceAlreadyCharged): array
+    {
+        if (!$profile) {
+            return $salary + ['gross_cents' => $salary['total_cents'], 'deduction_cents' => 0, 'deduction_details' => []];
+        }
+        $month = $this->attendanceMonth($salaryMonth);
+        $marks = fn (Collection $records) => ! $attendanceAlreadyCharged
+            ? $records->filter(fn ($record) => $record->date->isSameMonth($month))
+            : collect();
+
+        return $this->apply($salary, $profile, $marks($daily), $marks($scans), $marks($overrides), $month->copy()->endOfMonth()->min($asOf));
+    }
+
     public function counts(Collection $daily, Collection $scans, Collection $overrides): Collection
     {
         return $this->attendanceStatuses($daily, $scans, $overrides)

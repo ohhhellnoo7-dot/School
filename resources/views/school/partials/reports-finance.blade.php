@@ -20,7 +20,26 @@ $cash = $cashReport['totals'][$currency] ?? ['receipts' => 0, 'refunds' => 0, 'e
 @endphp
 <div class="reports-section-title"><h2><i class="bi bi-wallet2"></i> Money remaining &middot; {{ $cashReport['month']->format('F Y') }}</h2><span>All academic years &middot; {{ $currency }}</span></div>
 <div class="reports-metrics reports-cash-metrics">
-    <section class="reports-metric rose"><span class="reports-metric-icon"><i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></span><div><h3>Money taken out</h3><strong>{{ $currency === 'USD' ? '$' : '' }}{{ \App\Support\Money::display($cash['expenses']) }}</strong><small>Recorded expenses this month</small><a class="btn btn-sm btn-outline-primary mt-2" href="{{ route('reports.expenses.create', ['currency' => $currency]) }}">Add expense &amp; reason</a></div><a class="reports-expense-view" href="{{ route('reports.expenses.index', ['currency' => $currency, 'month' => $cashReport['month']->format('Y-m')]) }}" aria-label="View expense details in {{ $currency }}" title="View expense details"><i class="bi bi-eye" aria-hidden="true"></i></a></section>
+    <section class="reports-metric rose">
+        <span class="reports-metric-icon"><i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></span>
+        <div class="flex-grow-1">
+            <div class="d-flex flex-wrap align-items-start gap-3">
+                <div>
+                    <h3>Money taken out</h3><strong>{{ $currency === 'USD' ? '$' : '' }}{{ \App\Support\Money::display($cash['expenses']) }}</strong><small>Recorded expenses this month</small>
+                </div>
+                @if($currency === 'USD' && auth()->user()->role === 'administrator')
+                    @include('school.salaries._withdrawal-totals')
+                @endif
+            </div>
+            <div class="d-flex flex-wrap gap-2 mt-2 pe-4">
+                <a class="btn btn-sm btn-outline-primary" href="{{ route('reports.expenses.create', ['currency' => $currency]) }}">Add expense &amp; reason</a>
+                @if($currency === 'USD' && auth()->user()->role === 'administrator')
+                    @include('school.salaries._withdrawal-button')
+                @endif
+            </div>
+        </div>
+        <a class="reports-expense-view" href="{{ route('reports.expenses.index', ['currency' => $currency, 'month' => $cashReport['month']->format('Y-m')]) }}" aria-label="View expense details in {{ $currency }}" title="View expense details"><i class="bi bi-eye" aria-hidden="true"></i></a>
+    </section>
     <section class="reports-metric mint"><span class="reports-metric-icon"><i class="bi bi-wallet2" aria-hidden="true"></i></span><div><h3>Money remaining</h3><strong>{{ $currency === 'USD' ? '$' : '' }}{{ \App\Support\Money::display($cash['remaining']) }}</strong><small>Net receipts minus money taken out</small></div></section>
 </div>
 <div class="reports-chart-grid">
@@ -55,3 +74,9 @@ $barMax = max(1, ...$programs->map(fn ($name) => max(0, $s['programs'][$name] ??
 @empty
 <section class="panel p-4 mb-4">No invoices for this academic year. <a href="{{ route('finance.index') }}">View invoices &amp; payments</a></section>
 @endforelse
+@if(!isset($summary['USD']) && auth()->user()->role === 'administrator')
+    <div class="panel p-4 mb-4">
+        @include('school.salaries._withdrawal-totals')
+        <div class="d-flex flex-wrap gap-2 mt-2">@include('school.salaries._withdrawal-button')</div>
+    </div>
+@endif

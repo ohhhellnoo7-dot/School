@@ -13,6 +13,7 @@ use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\FamilyAnnouncementNotices;
+use App\Services\EmployeeSalaryAdvances;
 use App\Services\MonthlyStudentAttendance;
 use App\Services\TuitionPaymentCoverage;
 use App\Support\SchoolModules;
@@ -81,7 +82,13 @@ class DashboardController extends Controller
             return app(StudentWorkspaceController::class)->show($request);
         }
 
-        return view('school.dashboard', $this->dashboardData($request));
+        $data = $this->dashboardData($request);
+        if ($request->user()->role === 'teacher') {
+            $data['earlySalaryMonth'] = today()->startOfMonth()->addMonth();
+            $data['earlySalaryCents'] = app(EmployeeSalaryAdvances::class)->availableEarlySalary($request->user()->id, $data['earlySalaryMonth']);
+        }
+
+        return view('school.dashboard', $data);
     }
 
     public function data(Request $request)
@@ -327,7 +334,8 @@ class DashboardController extends Controller
         $studentsByProgram = collect(['Khmer', 'Chinese', 'English', 'Japan'])->merge(\App\Models\Program::names())->unique()->mapWithKeys(fn ($program) => [$program => Student::where('status', 'active')->whereDate('enrollment_date', '<=', today())->whereHas('studyClasses', fn ($q) => $q->where('program', $program))->count()]);
 
         $cashReport = app(\App\Services\SchoolCashReport::class)->month($date);
+        $withdrawalTotals = app(EmployeeSalaryController::class)->withdrawalTotals($cashReport['month']);
         $dailyExpenses = \App\Models\SchoolExpense::with('recorder')->whereDate('spent_on', $date)->latest('id')->get();
-        return view('school.reports', compact('classes', 'date', 'attendance', 'summary', 'studentsByProgram', 'reportDetails', 'reportYears', 'cashReport', 'dailyExpenses'));
+        return view('school.reports', compact('classes', 'date', 'attendance', 'summary', 'studentsByProgram', 'reportDetails', 'reportYears', 'cashReport', 'dailyExpenses', 'withdrawalTotals'));
     }
 }

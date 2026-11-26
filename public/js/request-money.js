@@ -3,6 +3,11 @@
     if (!form) return;
 
     const amount = form.querySelector('#requested-amount');
+    const type = form.elements.request_type;
+    const earlyNote = form.querySelector('[data-early-salary-note]');
+    const submit = form.querySelector('button[type="submit"]');
+    const earlyAmount = form.dataset.earlySalaryAmount;
+    let advanceAmount = type.value === 'advance' ? amount.value : '';
     const plan = form.querySelector('[data-repayment-plan]');
     const months = form.querySelector('#repayment-months');
     const summary = form.querySelector('[data-repayment-summary]');
@@ -13,7 +18,8 @@
 
     function updatePlan() {
         const cents = amountCents();
-        if (!(cents >= minimum)) {
+        earlyNote.hidden = type.value !== 'early_salary';
+        if (!earlyNote.hidden || !(cents >= minimum)) {
             plan.hidden = true;
             plan.disabled = true;
             months.value = '';
@@ -43,16 +49,28 @@
     }
 
     amount.addEventListener('input', updatePlan);
+    function updateType() {
+        const early = type.value === 'early_salary';
+        if (early && !amount.readOnly) advanceAmount = amount.value;
+        amount.value = early ? earlyAmount : advanceAmount;
+        amount.readOnly = early;
+        amount.required = !early;
+        submit.disabled = early && Number(earlyAmount) <= 0;
+        updatePlan();
+    }
+
+    type.addEventListener('change', updateType);
     months.addEventListener('change', updatePlan);
     form.addEventListener('submit', event => {
-        if (amountCents() < minimum || !plan.hidden) return;
+        if (type.value === 'early_salary' || amountCents() < minimum || !plan.hidden) return;
         event.preventDefault();
         showPlan();
         months.focus();
     });
 
-    if (form.hasAttribute('data-reopen-plan') && amountCents() >= minimum) {
-        showPlan();
+    updateType();
+    if (form.hasAttribute('data-reopen-request')) {
+        if (type.value === 'advance' && amountCents() >= minimum) showPlan();
         bootstrap.Modal.getOrCreateInstance(form.closest('.modal')).show();
     }
 })();

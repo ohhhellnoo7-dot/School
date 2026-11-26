@@ -7,7 +7,7 @@
 @if(auth()->user()->role === 'teacher')
     <div class="modal fade" id="request-money-modal" tabindex="-1" aria-labelledby="request-money-title" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable request-money-dialog">
-            <form class="modal-content" method="post" action="{{ route('dashboard.advance-requests.store') }}" data-request-money-form data-plan-minimum-cents="{{ \App\Services\EmployeeSalaryAdvances::PLAN_MINIMUM_CENTS }}" @if($errors->has('repayment_months')) data-reopen-plan @endif>
+            <form class="modal-content" method="post" action="{{ route('dashboard.advance-requests.store') }}" data-request-money-form data-early-salary-amount="{{ \App\Support\Money::decimal($earlySalaryCents) }}" data-plan-minimum-cents="{{ \App\Services\EmployeeSalaryAdvances::PLAN_MINIMUM_CENTS }}" @if($errors->hasAny(['request_type', 'requested_amount', 'repayment_months'])) data-reopen-request @endif>
                 @csrf
                 <input type="hidden" name="submission_key" value="{{ \Illuminate\Support\Str::uuid() }}">
                 <div class="request-money-header">
@@ -21,6 +21,19 @@
                     <button type="button" class="request-money-close" data-bs-dismiss="modal" aria-label="{{ __('Close') }}"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
                 </div>
                 <div class="request-money-body modal-body">
+                    <label class="form-label" for="money-request-type">{{ __('Request type') }}</label>
+                    <select class="form-select mb-3" id="money-request-type" name="request_type">
+                        <option value="advance">{{ __('Salary advance') }}</option>
+                        <option value="early_salary" @selected(old('request_type') === 'early_salary')>{{ __('Early salary') }}</option>
+                    </select>
+                    <p class="small text-secondary" data-early-salary-note hidden>
+                        {{ $earlySalaryCents > 0
+                            ? __('Request the available salary due on :date. After approval and payout, the amount is credited against that salary.', ['date' => $earlySalaryMonth->translatedFormat('j F Y')])
+                            : __('No early salary is available for :month.', ['month' => $earlySalaryMonth->translatedFormat('F Y')]) }}
+                    </p>
+                    @foreach(['request_type', 'requested_amount', 'repayment_months'] as $field)
+                        @error($field)<p class="small text-danger">{{ $message }}</p>@enderror
+                    @endforeach
                     <label class="form-label" for="requested-amount"><i class="bi bi-coin" aria-hidden="true"></i>{{ __('Amount (USD)') }}</label>
                     <div class="request-money-field">
                         <span aria-hidden="true">$</span>

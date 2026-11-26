@@ -22,7 +22,7 @@
         <div class="expense-overview-actions">
             <a class="btn expense-overview-secondary" href="{{ route('reports.expenses.advances.create') }}" data-bs-toggle="modal" data-bs-target="#employee-advance-modal" aria-haspopup="dialog">
                 <i class="bi bi-person" aria-hidden="true"></i> {{ __('Employee advance') }}
-                <span class="badge rounded-pill text-bg-primary" data-expense-live-count="button" aria-label="{{ trans_choice(':count pending request|:count pending requests', $pendingAdvanceCount) }}" @if(!$pendingAdvanceCount) hidden @endif>{{ $pendingAdvanceCount }}</span>
+                <span class="badge rounded-pill text-bg-danger" data-expense-live-count="button" aria-label="{{ trans_choice(':count pending request|:count pending requests', $pendingAdvanceCount) }}" @if(!$pendingAdvanceCount) hidden @endif>{{ $pendingAdvanceCount }}</span>
             </a>
             <a class="btn btn-primary expense-overview-primary" href="{{ route('reports.expenses.create', ['currency' => $currency]) }}"><i class="bi bi-plus-lg" aria-hidden="true"></i> {{ __('Add expense & reason') }}</a>
         </div>
@@ -122,42 +122,14 @@
             <div class="modal-header">
                 <h2 class="modal-title h5" id="employee-advance-title">
                     Employee advance
-                    <span class="badge rounded-pill text-bg-primary ms-2" data-expense-live-count="modal" @if(!$pendingAdvanceCount) hidden @endif>{{ trans_choice(':count pending request|:count pending requests', $pendingAdvanceCount) }}</span>
+                    <span class="badge rounded-pill text-bg-danger ms-2" data-expense-live-count="modal" @if(!$pendingAdvanceCount) hidden @endif>{{ trans_choice(':count pending request|:count pending requests', $pendingAdvanceCount) }}</span>
                 </h2>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Close') }}"></button>
             </div>
             <div class="modal-body p-4">
                 @fragment('expense-live-queue')
                 <div data-expense-live="queue">
-                @if($advanceRequests->isNotEmpty())
-                    <section class="border rounded p-3 mb-4" aria-labelledby="teacher-advance-requests-title">
-                        <h3 class="h6" id="teacher-advance-requests-title">{{ __('Teacher money requests') }}</h3>
-                        <ul class="list-group list-group-flush">
-                            @foreach($advanceRequests as $advanceRequest)
-                                <li class="list-group-item px-0 d-flex flex-wrap align-items-center justify-content-between gap-2">
-                                    <div>
-                                        <span>{{ __(':teacher requested :amount', [
-                                            'teacher' => $advanceRequest->teacher?->name ?? __('Unavailable teacher'),
-                                            'amount' => '$'.\App\Support\Money::display($advanceRequest->amount_cents),
-                                        ]) }}</span>
-                                        @include('school.expenses._repayment-plan', ['amountCents' => $advanceRequest->amount_cents, 'months' => $advanceRequest->repayment_months])
-                                    </div>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        <form method="post" action="{{ route('reports.expenses.advance-requests.reject', $advanceRequest) }}">
-                                            @csrf
-                                            <button class="btn btn-sm btn-outline-danger" type="submit">{{ __('Reject') }}</button>
-                                        </form>
-                                        <form method="post" action="{{ route('reports.expenses.advance-requests.confirm', $advanceRequest) }}">
-                                            @csrf
-                                            <button class="btn btn-sm btn-primary" type="submit" @disabled(!$advanceRequest->teacher)>{{ __('Confirm payout') }}</button>
-                                        </form>
-                                    </div>
-                                </li>
-                            @endforeach
-                        </ul>
-                        <p class="small text-secondary mb-0 mt-2">{{ __('Confirm after handing the money to the teacher.') }}</p>
-                    </section>
-                @endif
+                @include('school.expenses._pending-requests')
                 </div>
                 @endfragment
                 <p class="text-secondary">Record money paid to a teacher before payroll. The amount will be deducted from their salary.</p>

@@ -61,6 +61,7 @@
                                 (bool) $advance->expense => [__('Paid'), 'check-circle-fill', 'paid'],
                                 (bool) $advance->cancelled_at => [__('Cancelled'), 'x-circle-fill', 'cancelled'],
                                 (bool) $advance->rejected_at => [__('Rejected'), 'slash-circle-fill', 'rejected'],
+                                (bool) $advance->approved_at => [__('Approved'), 'check-circle', 'pending'],
                                 default => [__('Pending'), 'clock-fill', 'pending'],
                             };
                         @endphp
@@ -68,7 +69,11 @@
                             <td class="text-nowrap"><i class="bi bi-calendar3 expense-overview-row-icon" aria-hidden="true"></i>{{ $advance->created_at->translatedFormat('M j, Y') }}</td>
                             <td>
                                 <span class="expense-overview-chip expense-overview-amount">${{ \App\Support\Money::display($advance->amount_cents) }}</span>
-                                @include('school.expenses._repayment-plan', ['amountCents' => $advance->amount_cents, 'months' => $advance->repayment_months])
+                                @if($advance->salary_month)
+                                    <small class="d-block">{{ __('Early salary for :month', ['month' => $advance->salary_month->translatedFormat('F Y')]) }}</small>
+                                @else
+                                    @include('school.expenses._repayment-plan', ['amountCents' => $advance->amount_cents, 'months' => $advance->repayment_months])
+                                @endif
                             </td>
                             <td><span class="advance-history-status advance-history-status--{{ $statusClass }}"><i class="bi bi-{{ $statusIcon }}" aria-hidden="true"></i>{{ $status }}</span></td>
                             <td class="text-nowrap">

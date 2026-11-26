@@ -1,6 +1,8 @@
 @php
     $displaySalary = $payment ? $payment->only(['base_cents', 'raise_cents', 'deduction_cents', 'total_cents']) : $salary;
     $deductions = collect($payment ? $payment->deduction_details : ($salary['deduction_details'] ?? []));
+    $earlyPayout ??= null;
+    $earlySalary = $earlyPayout || ($earlyPayoutAwaiting ?? false);
     $money = fn ($cents) => $cents === null ? '—' : '$'.\App\Support\Money::decimal($cents).' USD';
     $gender = match (strtolower(trim($teacher->gender ?? ''))) {
         'male' => 'ប្រុស',
@@ -29,11 +31,18 @@
         <td class="payroll-strip-amount">{{ $money($displaySalary['base_cents'] ?? null) }}</td>
         <td class="payroll-strip-amount">{{ $money($displaySalary['raise_cents'] ?? null) }}</td>
         @foreach(['absence_cents', 'late_cents', 'excused_cents'] as $field)
-            <td class="payroll-strip-deduction">{{ $money($displaySalary && ($deductions->isNotEmpty() || !($displaySalary['deduction_cents'] ?? 0)) ? $deductions->sum($field) : null) }}</td>
+            <td class="payroll-strip-deduction">@unless($earlySalary){{ $money($displaySalary && ($deductions->isNotEmpty() || !($displaySalary['deduction_cents'] ?? 0)) ? $deductions->sum($field) : null) }}@endunless</td>
         @endforeach
-        <td class="payroll-strip-deduction">{{ $money($displaySalary ? ($payment?->advance_cents ?? $salary['advance_cents'] ?? 0) : null) }}</td>
-        <td class="payroll-strip-deduction">{{ $money($displaySalary['deduction_cents'] ?? null) }}</td>
-        <td class="payroll-strip-total">{{ $money($displaySalary['total_cents'] ?? null) }}</td>
+        <td class="payroll-strip-deduction">@unless($earlySalary){{ $money($displaySalary ? ($payment?->advance_cents ?? $salary['advance_cents'] ?? 0) : null) }}@endunless</td>
+        <td class="payroll-strip-deduction">@unless($earlySalary){{ $money($displaySalary['deduction_cents'] ?? null) }}@endunless</td>
+        <td @class(['payroll-strip-total', 'payroll-strip-early-paid' => $earlySalary])>
+            @if($earlySalary)
+                {{ $money($displaySalary['base_cents'] ?? ($earlyPayout ? \App\Support\Money::cents($earlyPayout->amount) : null)) }}
+                <small class="d-block">{{ $earlyPayout ? __('Paid early') : __('Early salary awaiting payout') }}</small>
+            @else
+                {{ $money($displaySalary['total_cents'] ?? null) }}
+            @endif
+        </td>
     @else
         <td>គ្រូបង្រៀន</td>
         <td>{{ $work['sessions'] ?? '—' }}</td>

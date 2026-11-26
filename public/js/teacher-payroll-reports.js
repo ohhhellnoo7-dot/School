@@ -5,6 +5,7 @@
     const status = document.querySelector('[data-teacher-report-status]');
     const refreshButton = document.querySelector('[data-refresh-teacher-reports]');
     const advancesModal = document.getElementById('outstanding-advances-modal');
+    advancesModal?.addEventListener('show.bs.modal', () => update(true));
     const printButton = document.querySelector('[data-print-teacher-reports]');
     printButton.addEventListener('click', () => window.print());
     const ratesDialog = document.getElementById('salary-rates-dialog');
