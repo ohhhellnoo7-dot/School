@@ -54,7 +54,7 @@ class BulkAttendanceTest extends TestCase
             $this->getJson(route('students.excuses.count'))->assertExactJson(['count' => 1]);
             $report = $this->get(route('students.excuses.index', ['date' => today()->toDateString()]))
                 ->assertOk()->assertSee($excused->student->name)
-                ->assertSee($reason)->assertSee('Generated reason');
+                ->assertSee($reason)->assertDontSee('Generated reason');
             $this->postJson(route('students.excuses.seen'), [
                 'through' => $report->headers->get('X-Excuse-Notifications-Through'),
             ])->assertNoContent();
@@ -69,7 +69,7 @@ class BulkAttendanceTest extends TestCase
         $this->assertSame(1, Attendance::whereDate('date', today()->subDay())->where('status', 'excused')->count());
         $this->post(route('dashboard.attendance.all-present'))->assertRedirect();
         $this->get(route('students.excuses.index', ['date' => today()->toDateString()]))
-            ->assertOk()->assertDontSee('Generated reason');
+            ->assertOk()->assertSee('No excuse requests for this date.');
         $this->actingAs(User::factory()->create(['role' => 'teacher']))
             ->post(route('dashboard.attendance.random'))->assertForbidden();
     }

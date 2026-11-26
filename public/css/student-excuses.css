@@ -11,6 +11,17 @@
     width: min(54rem, calc(100% - 2rem));
 }
 
+.student-excuse-report[open] {
+    display: flex;
+    flex-direction: column;
+}
+
+.student-excuse-report [data-excuse-results] {
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+
 .student-excuse-dialog::backdrop {
     background: rgb(10 25 45 / 55%);
 }
