@@ -313,8 +313,6 @@ class ClassroomController extends Controller
                 throw ValidationException::withMessages(['match' => 'A class already has an overlapping study arrangement. Refresh the matching list.']);
             }
             $label = fn ($class) => trim(preg_replace('/^Grade\s*/i', '', $class->name).' '.$class->section);
-            $coverageMinutes = \App\Services\TeacherManagementService::minute($lesson->ends_at)
-                - \App\Services\TeacherManagementService::minute($filters['time']);
             return \App\Models\TemporaryClassStudy::create([
                 'source_schedule_id' => $lesson->id, 'target_schedule_id' => $receiving->id,
                 'source_classroom_id' => $classroom->id, 'target_classroom_id' => $match['classroom']->id,
@@ -323,7 +321,7 @@ class ClassroomController extends Controller
                 'source_class' => $label($lesson->schoolClass), 'target_class' => $label($receiving->schoolClass),
                 'subject' => $lesson->subject->name, 'teacher_name' => $receiving->teacher->name,
                 'covering_teacher_id' => $receiving->teacher->id,
-                'coverage_cents' => (int) round($coverageMinutes * \App\Services\CombinedClassPay::HOURLY_CENTS / 60),
+                'coverage_cents' => \App\Services\CombinedClassPay::lessonCents($filters['time'], $lesson->ends_at),
                 'source_room' => $classroom->room_number, 'target_room' => $match['classroom']->room_number,
             ]);
         });

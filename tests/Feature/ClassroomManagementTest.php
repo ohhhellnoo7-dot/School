@@ -289,6 +289,12 @@ class ClassroomManagementTest extends TestCase
         $this->assertDatabaseCount('schedules', 6);
     }
 
+    public function test_combined_class_pay_has_a_one_hour_minimum_and_scales_with_time(): void
+    {
+        $this->assertSame(125, \App\Services\CombinedClassPay::lessonCents('15:48:51', '16:00:00'));
+        $this->assertSame(250, \App\Services\CombinedClassPay::lessonCents('07:00', '09:00'));
+    }
+
     public function test_teacher_absence_is_shown_as_a_free_period_without_releasing_the_room(): void
     {
         $admin = $this->user('administrator');

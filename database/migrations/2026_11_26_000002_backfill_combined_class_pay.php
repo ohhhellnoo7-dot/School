@@ -1,6 +1,5 @@
 <?php
 
-use App\Services\CombinedClassPay;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
@@ -36,7 +35,7 @@ return new class extends Migration {
                         ->whereNull('covering_teacher_id')->whereNull('salary_payment_id')
                         ->update([
                             'covering_teacher_id' => $study->teacher_id,
-                            'coverage_cents' => (int) round($duration * CombinedClassPay::HOURLY_CENTS / 3600),
+                            'coverage_cents' => (int) round($duration * 125 / 3600),
                         ]);
                 }
             }, 'study.id', 'id');

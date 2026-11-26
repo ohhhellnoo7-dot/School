@@ -486,7 +486,7 @@ class EmployeeSalaryController extends Controller
             $paidOn = Carbon::parse($data['paid_on']);
             $advanceService = app(EmployeeSalaryAdvances::class);
             $advances = $advanceService->outstanding([$teacher->id], $this->assessmentDate($month)->min($paidOn), $month)->get($teacher->id, collect());
-            $coverage = app(CombinedClassPay::class)->unpaid([$teacher->id], $month)->get(['id', 'coverage_cents']);
+            $coverage = app(CombinedClassPay::class)->unpaid([$teacher->id], $month)->lockForUpdate()->get(['id', 'coverage_cents']);
             $salary = $this->salary($profile, $attendanceProfile, $month, $calculator, $minutes, $advances, $coverage->sum('coverage_cents'));
             if ($salary['gross_cents'] === 0 || $paidOn->lt($month) || $paidOn->lt($profile->service_started_on)
                 || $salary['total_cents'] !== (int) $data['expected_total_cents']
