@@ -6,16 +6,23 @@
         </div>
         <a class="text-link" href="{{ route('teachers.schedule', auth()->id()) }}">{{ __('Full schedule') }}</a>
     </div>
+    @if($todayTeacherExcuse)
+        <div class="teaching-schedule-note" role="status">
+            <strong>{{ __('Excused today') }}</strong>
+            @if($todayTeacherExcuse->notes)<span>· {{ $todayTeacherExcuse->notes }}</span>@endif
+        </div>
+    @endif
     @if($todayTeachingPeriods->isEmpty())
         <p class="empty-state p-3 mb-0">{{ __('You have no teaching periods scheduled today.') }}</p>
     @else
         @php
             $schoolTime = now()->format('H:i:s');
             $withSeconds = fn ($time) => strlen($time) === 5 ? $time.':00' : $time;
-            $currentPeriods = $todayTeachingPeriods->filter(fn ($period) => $withSeconds($period->starts_at) <= $schoolTime && $schoolTime < $withSeconds($period->ends_at));
-            $nextPeriod = $todayTeachingPeriods->first(fn ($period) => $withSeconds($period->starts_at) > $schoolTime);
+            $currentPeriods = $todayTeacherExcuse ? collect() : $todayTeachingPeriods->filter(fn ($period) => $withSeconds($period->starts_at) <= $schoolTime && $schoolTime < $withSeconds($period->ends_at));
+            $nextPeriod = $todayTeacherExcuse ? null : $todayTeachingPeriods->first(fn ($period) => $withSeconds($period->starts_at) > $schoolTime);
             $featuredPeriods = $currentPeriods->isNotEmpty() ? $currentPeriods : collect([$nextPeriod])->filter();
         @endphp
+        @unless($todayTeacherExcuse)
         <div class="teaching-schedule-note" aria-live="polite">
             @forelse($featuredPeriods as $featured)
                 @php
@@ -33,6 +40,7 @@
                 <strong>{{ __('No more teaching periods today.') }}</strong>
             @endforelse
         </div>
+        @endunless
         <div class="table-responsive" role="region" aria-labelledby="today-teaching-periods-title" tabindex="0">
             <table class="table mb-0">
                 <thead><tr>

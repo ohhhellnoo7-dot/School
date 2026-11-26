@@ -86,6 +86,7 @@
     <button class="btn btn-sm btn-primary" type="submit" aria-label="Save teacher attendance for {{ $t->name }}"><i class="bi bi-check2 me-1" aria-hidden="true"></i>Save</button>
 </form>
 </details>
+@if($attendanceState === 'excused' && $dailyRecord->notes)<small class="d-block text-secondary text-break">{{ $dailyRecord->notes }}</small>@endif
 @else
 <span class="teacher-attendance-status" data-state="{{ $attendanceState }}">{{ ucfirst($attendanceState) }}</span>
 @if($dailyRecord?->notes)<small class="d-block text-secondary">{{ $dailyRecord->notes }}</small>@endif

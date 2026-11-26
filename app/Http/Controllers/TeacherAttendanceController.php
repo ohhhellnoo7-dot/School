@@ -5,6 +5,7 @@ use App\Models\Program;
 use App\Services\SchoolHolidayClosure;
 use App\Support\AttendanceSession;
 use App\Models\TeacherAttendance;
+use App\Models\TeacherExcuse;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,10 +24,11 @@ class TeacherAttendanceController extends Controller
             ->when($request->user()->role === 'teacher', fn ($q) => $q->whereKey($request->user()->id))
             ->when($filters['program'] ?? null, fn ($q, $program) => $q->where('program', $program))
             ->orderBy('program')->orderBy('name')->get();
+        $until = $month->copy()->addMonth()->toDateString();
         $records = \App\Models\TeacherSessionAttendance::whereIn('teacher_id', $teachers->modelKeys())
-            ->whereBetween('date', [$month->toDateString(), $month->copy()->endOfMonth()->toDateString()])->get();
+            ->where('date', '>=', $month->toDateString())->where('date', '<', $until)->get();
         $dailyRecords = TeacherAttendance::whereIn('teacher_id', $teachers->modelKeys())
-            ->whereBetween('date', [$month->toDateString(), $month->copy()->endOfMonth()->toDateString()])->get()->groupBy('teacher_id');
+            ->where('date', '>=', $month->toDateString())->where('date', '<', $until)->get()->groupBy('teacher_id');
         $lessons = \App\Models\Schedule::with('schoolClass')->whereIn('teacher_id', $teachers->modelKeys())
             ->where(fn ($q) => $q->whereNull('entry_type')->orWhere('entry_type', \App\Models\Schedule::TYPE_ACADEMIC))->get()->groupBy('teacher_id');
         $rows = collect();
@@ -118,9 +120,12 @@ class TeacherAttendanceController extends Controller
                 ->whereNotNull('scanned_at')->pluck('teacher_id')->flip();
             $checkedInRecords = DB::table('school_location_check_ins')->whereIn('teacher_attendance_id',
                 TeacherAttendance::whereDate('date', today())->select('id'))->pluck('teacher_attendance_id')->flip();
+            $date = today()->toDateString();
+            $approvedExcuses = TeacherExcuse::where('status', 'approved')->overlapping($date, $date)->pluck('teacher_id')->flip();
             $saved = 0;
             foreach ($teachers as $index => $teacher) {
                 $existing = TeacherAttendance::where('teacher_id', $teacher->id)->whereDate('date', today())->first();
+                if ($existing?->status === 'excused' && $approvedExcuses->has($teacher->id)) continue;
                 if ($action === 'all-present' && $existing && (
                     $scannedTeachers->has($teacher->id) || (! $session && $checkedInRecords->has($existing->id))
                 )) continue;
@@ -161,9 +166,13 @@ class TeacherAttendanceController extends Controller
             $teachers = AttendanceSession::teachers(User::where('role', 'teacher'), $session)
                 ->where(fn ($q) => $q->where('status', 'active')->orWhereNull('status'))
                 ->lockForUpdate()->get();
+            $excusedTeachers = $action === 'scan-in'
+                ? TeacherAttendance::excusedOn(today()->toDateString())->pluck('teacher_id')->flip()
+                : collect();
             $saved = 0;
             foreach ($teachers as $teacher) {
                 if ($action === 'scan-in') {
+                    if ($excusedTeachers->has($teacher->id)) continue;
                     foreach ($service->sessions($teacher, today()->toDateString()) as $name => $times) {
                         if (($session && $session !== $name) || now()->lt($times['start']) || now()->gt($times['end'])) continue;
                         $record = \App\Models\TeacherSessionAttendance::firstOrNew([

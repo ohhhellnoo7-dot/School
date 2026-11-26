@@ -99,6 +99,10 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent', \App\Htt
     Route::post('/dashboard/teacher-attendance/{action}', [\App\Http\Controllers\TeacherAttendanceController::class, 'bulk'])->where('action', 'all-present|random|scan-in|scan-out')->middleware('role:administrator')->name('dashboard.teacher-attendance.bulk');
     Route::get('/teacher-attendance/monthly', [\App\Http\Controllers\TeacherAttendanceController::class, 'monthly'])->name('teacher-attendance.monthly');
     Route::get('/teacher-attendance', [\App\Http\Controllers\TeacherAttendanceController::class, 'index'])->name('teacher-attendance.index');
+    Route::get('/teacher-excuses', [\App\Http\Controllers\TeacherExcuseController::class, 'index'])->middleware('role:administrator,teacher')->name('teacher-excuses.index');
+    Route::get('/teacher-excuses/count', [\App\Http\Controllers\TeacherExcuseController::class, 'count'])->middleware('role:administrator')->name('teacher-excuses.count');
+    Route::post('/teacher-excuses', [\App\Http\Controllers\TeacherExcuseController::class, 'store'])->middleware('role:teacher')->name('teacher-excuses.store');
+    Route::patch('/teacher-excuses/{excuse}', [\App\Http\Controllers\TeacherExcuseController::class, 'review'])->middleware('role:administrator')->name('teacher-excuses.review');
     Route::post('/teacher-attendance', [\App\Http\Controllers\TeacherAttendanceController::class, 'store'])->middleware('role:administrator')->name('teacher-attendance.store');
     Route::get('/reports', [DashboardController::class, 'reports'])->middleware('role:administrator,teacher')->name('reports');
     Route::middleware('role:administrator')->prefix('employee-salaries')->name('employee-salaries.')->group(function () {

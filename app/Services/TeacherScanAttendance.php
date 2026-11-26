@@ -76,6 +76,8 @@ class TeacherScanAttendance
         if (app(SchoolHolidayClosure::class)->holiday($date)) return;
         DB::transaction(function () use ($teacher, $date) {
             User::whereKey($teacher->id)->lockForUpdate()->firstOrFail();
+            $existing = TeacherAttendance::where('teacher_id', $teacher->id)->whereDate('date', $date)->first();
+            if ($existing?->status === 'excused') return;
             foreach ($this->sessions($teacher, $date) as $session => $times) {
                 if (now()->gt($times['start']->copy()->addMinutes($times['grace_minutes']))) {
                     TeacherSessionAttendance::firstOrCreate([
@@ -85,7 +87,6 @@ class TeacherScanAttendance
             }
             $records = TeacherSessionAttendance::where('teacher_id', $teacher->id)->whereDate('date', $date)->get();
             if ($records->isEmpty()) return;
-            $existing = TeacherAttendance::where('teacher_id', $teacher->id)->whereDate('date', $date)->first();
             // Explicit administrator marks remain authoritative in the daily summary.
             if ($existing && $existing->recorded_by !== $teacher->id) return;
             $status = $records->contains('status', 'absent') ? 'absent'

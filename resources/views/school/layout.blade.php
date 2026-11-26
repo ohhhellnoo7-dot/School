@@ -108,7 +108,14 @@ a.attendance-status-tile:hover, a.attendance-status-tile:focus-visible { outline
         <div class="nav-group-caption">{{ __('Academics') }}</div>
         @foreach(\App\Support\SchoolModules::all() as $key => $module)
             @if(\App\Support\SchoolModules::canView(auth()->user(), $key))
-                <a class="{{ ($key === 'classes' ? request()->routeIs('class-groups.*') : (request()->route('module') === $key || ($key === 'attendance' && $parentChildAttendance) || ($key === 'fees' && request()->routeIs('finance.*')) || ($key === 'teachers' && request()->routeIs('teacher-management.*', 'teachers.schedule*', 'teacher-attendance.*')))) ? 'active' : '' }}" href="{{ $key === 'classes' ? route('class-groups.index') : route('modules.index', $key) }}"><i class="bi bi-{{ $module['icon'] }}"></i><span class="nav-label">{{ __($module['title']) }}</span></a>
+                <a class="{{ ($key === 'classes' ? request()->routeIs('class-groups.*') : (request()->route('module') === $key || ($key === 'attendance' && $parentChildAttendance) || ($key === 'fees' && request()->routeIs('finance.*')) || ($key === 'teachers' && request()->routeIs('teacher-management.*', 'teachers.schedule*', 'teacher-attendance.*', 'teacher-excuses.*')))) ? 'active' : '' }}" href="{{ $key === 'classes' ? route('class-groups.index') : route('modules.index', $key) }}">
+                    <i class="bi bi-{{ $module['icon'] }}"></i><span class="nav-label">{{ __($module['title']) }}
+                        @if($key === 'teachers' && auth()->user()->role === 'administrator')
+                            @php($pendingTeacherExcuses = \App\Models\TeacherExcuse::pending()->count())
+                            <span class="student-excuse-badge" data-teacher-excuse-count="{{ route('teacher-excuses.count') }}" title="{{ __('Pending teacher excuse requests') }}" @if(!$pendingTeacherExcuses) hidden @endif>{{ $pendingTeacherExcuses }}</span>
+                        @endif
+                    </span>
+                </a>
             @endif
         @endforeach
 <div class="nav-group-caption">{{ __('Workspace') }}</div>
@@ -201,6 +208,9 @@ a.attendance-status-tile:hover, a.attendance-status-tile:focus-visible { outline
 
 @if(auth()->user()->role === 'administrator' || request()->routeIs('students.index'))
     <script src="{{ asset('js/student-excuses.js') }}?v={{ filemtime(public_path('js/student-excuses.js')) }}" defer></script>
+@endif
+@if(auth()->user()->role === 'administrator' || (auth()->user()->role === 'teacher' && request()->routeIs('dashboard')))
+    <script src="{{ asset('js/teacher-excuses.js') }}?v={{ filemtime(public_path('js/teacher-excuses.js')) }}" defer></script>
 @endif
 @stack('scripts')
 @if(session()->has('student_draft_clear'))

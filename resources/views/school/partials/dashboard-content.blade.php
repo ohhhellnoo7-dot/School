@@ -30,6 +30,7 @@
         <a class="btn btn-outline-secondary mt-2" href="{{ route('modules.index', 'assignments') }}">{{ __('View assignments') }}</a>
         <a class="btn btn-outline-secondary mt-2" href="{{ route('students.index', ['my_children' => 1]) }}"><i class="bi bi-person-heart me-2" aria-hidden="true"></i>{{ __('My children') }}</a>
         @include('school.partials.request-money-button', ['buttonClass' => 'btn-outline-secondary mt-2'])
+        @include('school.partials.teacher-excuse-button', ['buttonClass' => 'btn-outline-secondary mt-2'])
     </div>
 </x-scholar-hero>
 <section class="student-attendance-hero teacher-dashboard-hero windy-only" aria-labelledby="teacher-dashboard-heading">
@@ -49,6 +50,7 @@
         <a class="btn btn-light" href="{{ route('teachers.schedule', auth()->id()) }}"><i class="bi bi-calendar-week me-2" aria-hidden="true"></i>{{ __('My teaching schedule') }}</a>
         <a class="btn btn-light" href="{{ route('students.index', ['my_children' => 1]) }}"><i class="bi bi-person-heart me-2" aria-hidden="true"></i>{{ __('My children') }}</a>
         @include('school.partials.request-money-button', ['buttonClass' => 'btn-light'])
+        @include('school.partials.teacher-excuse-button', ['buttonClass' => 'btn-light'])
     </div>
 </section>
 @else

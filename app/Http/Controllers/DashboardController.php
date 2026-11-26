@@ -236,6 +236,9 @@ class DashboardController extends Controller
             'programBreakdowns' => $programBreakdowns,
             'todayClasses' => $user->role === 'student' && ! app(SchoolHolidayClosure::class)->holiday(today()) ? SchoolModules::query('schedules', $user)->with('subject')->where('day', today()->format('l'))->orderBy('starts_at')->get() : collect(),
             'teachingHoliday' => $teachingHoliday,
+            'todayTeacherExcuse' => $user->role === 'teacher'
+                ? \App\Models\TeacherAttendance::excusedOn($today->toDateString())->where('teacher_id', $user->id)->first()
+                : null,
             'teachingHolidayArtwork' => match ($teachingHoliday) {
                 null => [],
                 'labour_and_visak' => ['labour', 'visak'],

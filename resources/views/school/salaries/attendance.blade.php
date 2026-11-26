@@ -16,7 +16,10 @@
         @php($scanMarks = $scans->get($teacher->id, collect())->keyBy('session'))
         <tr><td><div class="payroll-person">
             @include('school.partials.avatar', ['person' => $teacher, 'avatarClass' => 'payroll-avatar', 'teacherIcon' => true])
-            <div><strong>{{ $teacher->name }}</strong><small>{{ $teacher->profile_number }}</small><a class="small" href="{{ route('employee-salaries.show', ['teacher' => $teacher, 'month' => substr($date, 0, 7)]) }}#salary-attendance">Monthly history</a></div>
+            @php($dailyMark = $daily->get($teacher->id))
+            <div><strong>{{ $teacher->name }}</strong><small>{{ $teacher->profile_number }}</small><a class="small" href="{{ route('employee-salaries.show', ['teacher' => $teacher, 'month' => substr($date, 0, 7)]) }}#salary-attendance">Monthly history</a>
+                @if($dailyMark?->status === 'excused' && $dailyMark->notes)<small class="d-block text-break">{{ $dailyMark->notes }}</small>@endif
+            </div>
         </div></td>
         @foreach(['Morning', 'Afternoon', 'Evening'] as $session)
             @php($status = $marks->get($session)?->status ?? $marks->get('All')?->status ?? $daily->get($teacher->id)?->status ?? $scanMarks->get($session)?->status)

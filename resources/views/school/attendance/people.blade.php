@@ -2,7 +2,16 @@
 @section('title', ucfirst($status).' '.$kind)
 @section('content')
 <div data-attendance-people>
-<div class="page-heading"><div><h1>{{ ucfirst($status) }} {{ $kind }}</h1><p>{{ \Carbon\Carbon::parse($date)->format('l, F j, Y') }} &middot; {{ $session ?: 'All sessions' }} &middot; {{ $records->total() }} recorded</p></div><a class="btn btn-outline-secondary" href="{{ route('dashboard', array_filter(['date' => $date, 'session' => $session])) }}">Back to overview</a></div>
+<div class="page-heading">
+    <div class="d-flex flex-wrap align-items-end gap-3">
+        <div><h1>{{ ucfirst($status) }} {{ $kind }}</h1><p>{{ \Carbon\Carbon::parse($date)->format('l, F j, Y') }} &middot; {{ $session ?: 'All sessions' }} &middot; {{ $records->total() }} recorded</p></div>
+        <div>
+            <label class="form-label" for="attendance-people-date">{{ __('Report date') }}</label>
+            <input class="form-control w-auto" type="date" id="attendance-people-date" name="date" value="{{ $date }}" form="attendance-people-filters" required>
+        </div>
+    </div>
+    <a class="btn btn-outline-secondary" href="{{ route('dashboard', array_filter(['date' => $date, 'session' => $session])) }}">Back to overview</a>
+</div>
 <nav class="d-flex flex-wrap gap-2 mb-3" aria-label="Filter {{ $kind }} by program">
     @php($selectedProgram = request('program'))
     @foreach(['' => 'All '.$kind] + array_combine(\App\Models\Program::names(), \App\Models\Program::names()) as $program => $label)
@@ -16,9 +25,11 @@
         <a class="btn {{ $status === $attendanceStatus ? 'btn-primary' : 'btn-outline-secondary' }}" @if($status === $attendanceStatus) aria-current="page" @endif href="{{ route('attendance.people', array_filter(['kind' => $kind, 'status' => $attendanceStatus, 'date' => $date, 'session' => $session, 'program' => request('program'), 'search' => request('search'), 'name_part' => request('name_part')])) }}">{{ ucfirst($attendanceStatus) }}</a>
     @endforeach
 </nav>
+@if($kind === 'teachers' && $status === 'excused' && auth()->user()->role === 'administrator')
+    <a class="btn btn-outline-secondary mb-3" href="{{ route('teacher-excuses.index') }}">{{ __('Review excuse requests') }}</a>
+@endif
 <section class="panel p-3 mb-3" aria-label="Find {{ $kind }}">
-    <form method="get" action="{{ route('attendance.people', ['kind' => $kind, 'status' => $status]) }}" data-attendance-search class="d-flex flex-wrap align-items-end gap-2">
-        <input type="hidden" name="date" value="{{ $date }}">
+    <form method="get" id="attendance-people-filters" action="{{ route('attendance.people', ['kind' => $kind, 'status' => $status]) }}" data-attendance-search class="d-flex flex-wrap align-items-end gap-2">
         @foreach(['session', 'program'] as $filter)
             @if(request($filter))<input type="hidden" name="{{ $filter }}" value="{{ request($filter) }}">@endif
         @endforeach

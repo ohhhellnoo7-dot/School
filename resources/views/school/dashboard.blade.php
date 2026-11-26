@@ -5,6 +5,7 @@
     @include('school.partials.dashboard-content')
 </div>
 @if(auth()->user()->role === 'teacher')
+    @include('school.attendance.teacher-excuse-form')
     <div class="modal fade" id="request-money-modal" tabindex="-1" aria-labelledby="request-money-title" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable request-money-dialog">
             <form class="modal-content" method="post" action="{{ route('dashboard.advance-requests.store') }}" data-request-money-form data-early-salary-amount="{{ \App\Support\Money::decimal($earlySalaryCents) }}" data-plan-minimum-cents="{{ \App\Services\EmployeeSalaryAdvances::PLAN_MINIMUM_CENTS }}" @if($errors->hasAny(['request_type', 'requested_amount', 'repayment_months'])) data-reopen-request @endif>

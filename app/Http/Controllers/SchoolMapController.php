@@ -206,6 +206,13 @@ class SchoolMapController extends Controller
                 return response()->json($result + $scan + ['teacher_name' => $teacher->name,
                     'teacher_number' => $teacher->profile_number, 'timezone' => config('app.timezone')], $scan['success'] ? 200 : 422);
             }
+            $attendance = TeacherAttendance::where('teacher_id', $teacher->id)->whereDate('date', today())->first();
+            if ($attendance?->status === 'excused') {
+                return response()->json($result + [
+                    'success' => false, 'status' => 'excused',
+                    'message' => __('You are excused today. No check-in is needed.'),
+                ], 422);
+            }
             if ($scanService->sessions($teacher, today()->toDateString())->isNotEmpty()) {
                 $scan = $scanService->scan($teacher);
                 if (! $scan['success']) return response()->json($result + $scan, 422);
@@ -223,7 +230,6 @@ class SchoolMapController extends Controller
                 unset($scan['attendance'], $scan['fresh'], $scan['session_record_id']);
                 return response()->json($result + $scan + ['teacher_name' => $teacher->name, 'teacher_number' => $teacher->profile_number, 'timezone' => config('app.timezone')]);
             }
-            $attendance = TeacherAttendance::where('teacher_id', $teacher->id)->whereDate('date', today())->first();
             if (! $attendance) {
                 $attendance = TeacherAttendance::create([
                     'teacher_id' => $teacher->id, 'date' => today()->toDateString(),

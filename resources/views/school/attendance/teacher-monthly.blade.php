@@ -169,6 +169,7 @@ $symbol = ['present' => '✓', 'late' => 'L', 'absent' => 'X', 'excused' => 'E']
 $checkoutDescription = $departure ? ' | Out '.$departure->format('H:i') : ($arrival ? ' | Out: Not scanned' : '');
 $adminMark = $record instanceof \App\Models\TeacherAttendance && $record->recorded_by !== $row['teacher']->id;
 $description = $dateLabel.' · '.($status ?: 'Not recorded').($record?->scanned_at ? ' · Scanned '.$record->scanned_at->format('H:i') : '');
+if ($status === 'excused' && $record->notes) $description .= ' · '.$record->notes;
 @endphp
 <td class="attendance-mark mark-{{ $status ?: 'empty' }}" title="{{ $description }}{{ $timingDescription }}{{ $checkoutDescription }}{{ $adminMark ? ' · Administrator daily mark' : '' }}" aria-label="{{ $description }}{{ $timingDescription }}{{ $checkoutDescription }}{{ $adminMark ? ' · Administrator daily mark' : '' }}">
 <div class="attendance-scan-half attendance-scan-in">

@@ -37,6 +37,7 @@
         }
     };
     const schedule = (url, delay = 0) => {
+        if (!url) return;
         clearTimeout(timer);
         controller?.abort();
         const current = ++version;
@@ -44,6 +45,7 @@
     };
     const searchUrl = () => {
         const form = root.querySelector('[data-attendance-search]');
+        if (!form.checkValidity()) return;
         const url = new URL(form.action);
         url.search = new URLSearchParams(new FormData(form)).toString();
         url.searchParams.delete('page');
@@ -53,7 +55,7 @@
         if (event.target.matches('input[name="search"]')) schedule(searchUrl(), 200);
     });
     root.addEventListener('change', event => {
-        if (event.target.matches('select[name="name_part"]')) schedule(searchUrl());
+        if (event.target.matches('select[name="name_part"], #attendance-people-date')) schedule(searchUrl());
     });
     root.addEventListener('submit', event => {
         if (!event.target.matches('[data-attendance-search]')) return;
