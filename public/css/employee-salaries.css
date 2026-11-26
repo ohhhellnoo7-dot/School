@@ -574,30 +574,31 @@
     .payroll-slip-table-leave { min-width: 1120px; }
 }
 .payroll-slip-table-salary { table-layout: fixed; }
-.payroll-strip-col-name { width: 10%; }
-.payroll-strip-col-gender { width: 3.4%; }
-.payroll-strip-col-sessions { width: 6.5%; }
-.payroll-strip-col-hours { width: 9%; }
-.payroll-strip-col-working-days { width: 4.5%; }
-.payroll-strip-col-days { width: 3.7%; }
-.payroll-strip-col-absence { width: 5.8%; }
-.payroll-strip-col-salary { width: 6%; }
-.payroll-strip-col-deduction { width: 5.8%; }
-.payroll-strip-col-net { width: 7.5%; }
+.payroll-strip-col-name { width: 9%; }
+.payroll-strip-col-gender { width: 3%; }
+.payroll-strip-col-sessions { width: 6%; }
+.payroll-strip-col-hours { width: 8%; }
+.payroll-strip-col-working-days { width: 4%; }
+.payroll-strip-col-days { width: 3.5%; }
+.payroll-strip-col-absence { width: 5%; }
+.payroll-strip-col-salary { width: 5.5%; }
+.payroll-strip-col-deduction { width: 4.2%; }
+.payroll-strip-col-net { width: 6.5%; }
 @media screen {
     .table-responsive:has(> .payroll-slip-table-salary) { container-type: inline-size; }
     .payroll-slip-table-salary {
         min-width: 980px;
         font-size: clamp(.62rem, .96cqw, .76rem);
     }
-    .payroll-slip-table-salary :is(thead th, tbody td) {
+    .payroll-slip-table-salary thead th {
+        padding-inline: .18rem;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+    .payroll-slip-table-salary tbody td {
         padding-inline: .18rem;
         white-space: nowrap;
         overflow-wrap: normal;
-    }
-    .payroll-slip-table-salary thead th.payroll-strip-wrap-heading {
-        white-space: normal;
-        overflow-wrap: anywhere;
     }
 }
 @media screen and (min-width: 1280px) {

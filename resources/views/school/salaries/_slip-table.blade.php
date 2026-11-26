@@ -37,7 +37,7 @@
             <thead>
                 <tr>
                     <th scope="col" rowspan="2">ឈ្មោះ</th><th scope="col" rowspan="2">ភេទ</th>
-                    <th scope="col" rowspan="2">ចំនួនវេនការងារ</th>
+                    <th scope="col" rowspan="2">ចំនួនវេន<br>ការងារ</th>
                     <th scope="col" rowspan="2" class="payroll-strip-wrap-heading" title="ម៉ោងបង្រៀនតាមកាលវិភាគ / ម៉ោងការងារកំណត់ក្នុងមួយសប្ដាហ៍">ម៉ោងការងារ<br>ប្រចាំសប្ដាហ៍</th>
                     <th scope="colgroup" colspan="6">ចំនួនថ្ងៃ</th>
                     <th scope="colgroup" colspan="4">ប្រាក់ខែ</th>
@@ -50,14 +50,14 @@
                     <th scope="col" title="Late">មកយឺត</th>
                     <th scope="col" class="payroll-strip-wrap-heading" title="{{ __('Full-day absence') }}">អវត្តមាន<br>ពេញថ្ងៃ</th>
                     <th scope="col" class="payroll-strip-wrap-heading" title="{{ __('Partial absence') }}">អវត្តមាន<br>តាមវេន</th>
-                    <th scope="col" title="Excused">មានច្បាប់</th>
-                    <th scope="col" title="Monthly salary at configured weekly hours">ប្រាក់ខែពេញ</th>
-                    <th scope="col" title="Base salary based on scheduled teaching hours">ប្រាក់ខែតាមម៉ោង</th>
+                    <th scope="col" title="Excused">មាន<wbr>ច្បាប់</th>
+                    <th scope="col" title="Monthly salary at configured weekly hours">ប្រាក់ខែ<br>ពេញ</th>
+                    <th scope="col" title="Base salary based on scheduled teaching hours">ប្រាក់ខែ<br>តាមម៉ោង</th>
                     <th scope="col" title="Salary increase">ដំឡើង</th>
                     <th scope="col" class="payroll-strip-wrap-heading" title="Combined-class pay">ប្រាក់បង្រៀន<br>ថ្នាក់រួម</th>
                     <th scope="col" title="Absence deduction">អវត្តមាន</th>
                     <th scope="col" title="Late deduction">មកយឺត</th>
-                    <th scope="col" title="Excused deduction">មានច្បាប់</th>
+                    <th scope="col" title="Excused deduction">មាន<wbr>ច្បាប់</th>
                     <th scope="col" class="payroll-strip-wrap-heading" title="{{ __('Employee advance') }}">ប្រាក់ខ្ចី</th>
                     <th scope="col" title="Total deductions">សរុប</th>
                 </tr>
