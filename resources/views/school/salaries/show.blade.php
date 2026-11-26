@@ -7,7 +7,7 @@
     @include('school.salaries._slip-link', ['reportTeacher' => $teacher, 'reportType' => 'leave'])
 </div>
 <form class="panel salary-month-select" method="get"><label for="detail-month" class="form-label">Salary month</label><input id="detail-month" class="form-control" type="month" name="month" value="{{ $month->format('Y-m') }}"><button class="btn btn-primary">View month</button></form>
-@php($displaySalary = $payment ? $payment->only(['base_cents', 'raise_cents', 'total_cents', 'deduction_cents']) : $salary)
+@php($displaySalary = $payment ? $payment->only(['base_cents', 'raise_cents', 'total_cents', 'deduction_cents', 'combined_class_cents']) : $salary)
 @if($month->gte(\App\Services\EmployeeSalaryDeductions::FIRST_CARRY_FORWARD_MONTH))
     <p class="small text-secondary mt-3">{{ __('Scheduled payday is :date. Attendance charges are from :previous and approved early salary already paid is credited against this payment.', [
         'date' => $month->translatedFormat('j F Y'), 'previous' => $month->copy()->subMonthNoOverflow()->translatedFormat('F Y'),
@@ -16,6 +16,7 @@
 <div class="salary-summary-grid">
     <div class="panel salary-metric"><span>Base monthly salary</span><strong>{{ $displaySalary ? '$'.\App\Support\Money::decimal($displaySalary['base_cents']) : 'Not set' }}</strong></div>
     <div class="panel salary-metric"><span>Salary increase</span><strong>{{ $displaySalary ? '+$'.\App\Support\Money::decimal($displaySalary['raise_cents']) : '—' }}</strong><small>$5 every 3 completed months</small></div>
+    <div class="panel salary-metric"><span>{{ __('Combined-class pay') }}</span><strong>{{ $displaySalary ? '+$'.\App\Support\Money::decimal($displaySalary['combined_class_cents']) : '—' }}</strong></div>
     <div class="panel salary-metric"><span>Total deductions</span><strong>{{ $displaySalary ? '-$'.\App\Support\Money::decimal($displaySalary['deduction_cents'] ?? 0) : '—' }}</strong><small>Employee advance: ${{ \App\Support\Money::decimal($payment?->advance_cents ?? $salary['advance_cents'] ?? 0) }}</small></div>
     <div class="panel salary-metric salary-metric-total"><span>{{ $month->format('F Y') }} net salary</span><strong>{{ $displaySalary ? '$'.\App\Support\Money::decimal($displaySalary['total_cents']) : 'Not set' }}</strong><small>{{ $payment ? 'Paid on '.$payment->paid_on->format('d M Y') : 'Payment not recorded' }}</small></div>
 </div>
@@ -54,5 +55,20 @@
     @endforeach
     </tbody></table></div>
 </section>
-<section class="panel mt-4"><div class="panel-header"><h2>Salary payment history</h2><span class="text-secondary small">Latest 12 payments</span></div><div class="table-responsive"><table class="table salary-table"><thead><tr><th>Salary month</th><th>Paid on</th><th>Base salary</th><th>Salary increase</th><th>Deductions</th><th>Total paid (USD)</th><th>Reference</th></tr></thead><tbody>@forelse($history as $paid)<tr><td>{{ $paid->salary_month->format('F Y') }}</td><td>{{ $paid->paid_on->format('d M Y') }}</td><td>${{ \App\Support\Money::decimal($paid->base_cents) }}</td><td>${{ \App\Support\Money::decimal($paid->raise_cents) }}</td><td>-${{ \App\Support\Money::decimal($paid->deduction_cents ?? 0) }}</td><td><strong>${{ \App\Support\Money::decimal($paid->total_cents) }}</strong></td><td>{{ $paid->reference ?: '—' }}</td></tr>@empty<tr><td colspan="7" class="p-4 text-center text-secondary">No salary payments recorded yet.</td></tr>@endforelse</tbody></table></div></section>
+@if($coverageStudies->isNotEmpty())
+    <section class="panel mt-4">
+        <div class="panel-header"><h2>{{ __('Combined-class lessons') }}</h2></div>
+        <div class="table-responsive">
+            <table class="table salary-table">
+                <thead><tr><th>{{ __('Date') }}</th><th>{{ __('Joined class') }}</th><th>{{ __('Receiving class') }}</th><th>{{ __('Subject') }}</th><th>{{ __('Time') }}</th><th>{{ __('Extra pay (USD)') }}</th></tr></thead>
+                <tbody>
+                    @foreach($coverageStudies as $study)
+                        <tr><td>{{ $study->date }}</td><td>{{ $study->source_class }}</td><td>{{ $study->target_class }}</td><td>{{ $study->subject }}</td><td>{{ substr($study->starts_at, 0, 5) }}–{{ substr($study->ends_at, 0, 5) }}</td><td>${{ \App\Support\Money::decimal($study->coverage_cents) }}</td></tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </section>
+@endif
+<section class="panel mt-4"><div class="panel-header"><h2>Salary payment history</h2><span class="text-secondary small">Latest 12 payments</span></div><div class="table-responsive"><table class="table salary-table"><thead><tr><th>Salary month</th><th>Paid on</th><th>Base salary</th><th>Salary increase</th><th>{{ __('Combined-class pay') }}</th><th>Deductions</th><th>Total paid (USD)</th><th>Reference</th></tr></thead><tbody>@forelse($history as $paid)<tr><td>{{ $paid->salary_month->format('F Y') }}</td><td>{{ $paid->paid_on->format('d M Y') }}</td><td>${{ \App\Support\Money::decimal($paid->base_cents) }}</td><td>${{ \App\Support\Money::decimal($paid->raise_cents) }}</td><td>${{ \App\Support\Money::decimal($paid->combined_class_cents) }}</td><td>-${{ \App\Support\Money::decimal($paid->deduction_cents ?? 0) }}</td><td><strong>${{ \App\Support\Money::decimal($paid->total_cents) }}</strong></td><td>{{ $paid->reference ?: '—' }}</td></tr>@empty<tr><td colspan="8" class="p-4 text-center text-secondary">No salary payments recorded yet.</td></tr>@endforelse</tbody></table></div></section>
 @endsection

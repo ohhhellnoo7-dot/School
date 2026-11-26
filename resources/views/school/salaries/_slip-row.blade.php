@@ -1,5 +1,5 @@
 @php
-    $displaySalary = $payment ? $payment->only(['base_cents', 'raise_cents', 'deduction_cents', 'total_cents']) : $salary;
+    $displaySalary = $payment ? $payment->only(['base_cents', 'raise_cents', 'deduction_cents', 'total_cents', 'combined_class_cents']) : $salary;
     $deductions = collect($payment ? $payment->deduction_details : ($salary['deduction_details'] ?? []));
     $earlyPayout ??= null;
     $earlySalary = $earlyPayout || ($earlyPayoutAwaiting ?? false);
@@ -30,6 +30,7 @@
         <td class="payroll-strip-amount">{{ $money($work['fullSalaryCents']) }}</td>
         <td class="payroll-strip-amount">{{ $money($displaySalary['base_cents'] ?? null) }}</td>
         <td class="payroll-strip-amount">{{ $money($displaySalary['raise_cents'] ?? null) }}</td>
+        <td class="payroll-strip-amount">{{ $money($displaySalary['combined_class_cents'] ?? null) }}</td>
         @foreach(['absence_cents', 'late_cents', 'excused_cents'] as $field)
             <td class="payroll-strip-deduction">@unless($earlySalary){{ $money($displaySalary && ($deductions->isNotEmpty() || !($displaySalary['deduction_cents'] ?? 0)) ? $deductions->sum($field) : null) }}@endunless</td>
         @endforeach

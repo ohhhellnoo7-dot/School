@@ -581,7 +581,7 @@
 .payroll-strip-col-working-days { width: 4.5%; }
 .payroll-strip-col-days { width: 3.7%; }
 .payroll-strip-col-absence { width: 5.8%; }
-.payroll-strip-col-salary { width: 7%; }
+.payroll-strip-col-salary { width: 6%; }
 .payroll-strip-col-deduction { width: 5.8%; }
 .payroll-strip-col-net { width: 7.5%; }
 @media screen {

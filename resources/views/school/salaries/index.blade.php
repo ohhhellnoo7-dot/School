@@ -130,6 +130,9 @@
             @if($row['salary'] && $row['full_salary_cents'] !== null)
                 <span class="text-secondary" title="Full monthly salary before raises and deductions">/ ${{ \App\Support\Money::decimal($row['full_salary_cents']) }}</span>
             @endif
+            @if($row['salary']['combined_class_cents'] ?? 0)
+                <small class="d-block text-secondary">{{ __('Combined-class pay') }} +${{ \App\Support\Money::decimal($row['salary']['combined_class_cents']) }}</small>
+            @endif
         </td>
         <td>
             @if($row['payment'] || $row['paid_early'])

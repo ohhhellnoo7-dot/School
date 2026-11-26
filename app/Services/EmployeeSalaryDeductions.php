@@ -18,17 +18,21 @@ class EmployeeSalaryDeductions
             : $salaryMonth->copy()->startOfMonth();
     }
 
-    public function payroll(array $salary, ?EmployeeSalaryProfile $profile, Collection $daily, Collection $scans, Collection $overrides, Carbon $salaryMonth, Carbon $asOf, bool $attendanceAlreadyCharged): array
+    public function payroll(array $salary, ?EmployeeSalaryProfile $profile, Collection $daily, Collection $scans, Collection $overrides, Carbon $salaryMonth, Carbon $asOf, bool $attendanceAlreadyCharged, int $combinedClassCents = 0): array
     {
+        $coverage = app(CombinedClassPay::class);
         if (!$profile) {
-            return $salary + ['gross_cents' => $salary['total_cents'], 'deduction_cents' => 0, 'deduction_details' => []];
+            return $coverage->addToSalary($salary + ['gross_cents' => $salary['total_cents'], 'deduction_cents' => 0, 'deduction_details' => []], $combinedClassCents);
         }
         $month = $this->attendanceMonth($salaryMonth);
         $marks = fn (Collection $records) => ! $attendanceAlreadyCharged
             ? $records->filter(fn ($record) => $record->date->isSameMonth($month))
             : collect();
 
-        return $this->apply($salary, $profile, $marks($daily), $marks($scans), $marks($overrides), $month->copy()->endOfMonth()->min($asOf));
+        return $coverage->addToSalary(
+            $this->apply($salary, $profile, $marks($daily), $marks($scans), $marks($overrides), $month->copy()->endOfMonth()->min($asOf)),
+            $combinedClassCents,
+        );
     }
 
     public function counts(Collection $daily, Collection $scans, Collection $overrides): Collection

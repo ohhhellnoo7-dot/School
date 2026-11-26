@@ -200,6 +200,7 @@ class ClassroomManagementTest extends TestCase
 
     public function test_matching_class_finds_same_grade_subject_and_period_with_another_teacher(): void
     {
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-23 09:00'));
         $admin = $this->user('administrator');
         $this->actingAs($admin);
         $absent = $this->user('teacher', ['name' => 'Absent Biology Teacher', 'status' => 'active']);
@@ -259,6 +260,30 @@ class ClassroomManagementTest extends TestCase
         }
         \App\Models\TeacherAttendance::create(['teacher_id' => $receiving->id, 'date' => '2026-11-02', 'status' => 'excused', 'recorded_by' => $admin->id]);
         $this->get(route('classrooms.matching-class', $params))->assertOk()->assertSee('Studying with Class 10 A');
+
+        \App\Models\EmployeeSalaryProfile::create([
+            'teacher_id' => $receiving->id, 'day_sessions' => 1, 'evening_sessions' => 0,
+            'service_started_on' => '2026-11-01', 'updated_by' => $admin->id,
+        ]);
+        $payroll = ['teacher' => $receiving, 'month' => '2026-11'];
+        $salary = $this->get(route('employee-salaries.show', $payroll))->assertOk()
+            ->assertSee('Combined-class lessons')->assertViewHas('salary')
+            ->viewData('salary');
+        $this->assertSame(188, $salary['combined_class_cents']);
+        $this->get(route('employee-salaries.show', $payroll + ['slip' => 'salary']))
+            ->assertOk()->assertSee('Combined-class pay')->assertSee('$1.88 USD');
+        $this->post(route('employee-salaries.pay', $receiving), [
+            'month' => '2026-11', 'paid_on' => '2026-11-23', 'confirm' => 1,
+            'expected_total_cents' => $salary['total_cents'],
+        ])->assertSessionHasNoErrors();
+        $payment = \App\Models\EmployeeSalaryPayment::where('teacher_id', $receiving->id)->sole();
+        $this->assertSame(188, $payment->combined_class_cents);
+        $this->assertDatabaseHas('temporary_class_studies', [
+            'covering_teacher_id' => $receiving->id, 'salary_payment_id' => $payment->id,
+        ]);
+        $this->get(route('employee-salaries.show', ['teacher' => $receiving, 'month' => '2026-12']))
+            ->assertOk()->assertViewHas('salary', fn ($salary) => $salary['combined_class_cents'] === 0);
+
         $this->actingAs($this->user('parent'))->get(route('classrooms.matching-class', $params))->assertForbidden();
         $this->post(route('classrooms.study-with', $rooms['E']), $studyData)->assertForbidden();
         $this->assertDatabaseCount('schedules', 6);

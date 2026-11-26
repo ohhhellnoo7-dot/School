@@ -12,6 +12,7 @@ class EmployeeSalaryPayment extends Model
     {
         return ['salary_month' => 'date', 'service_started_on' => 'date', 'paid_on' => 'date',
             'base_cents' => 'integer', 'full_salary_cents' => 'integer', 'raise_cents' => 'integer', 'total_cents' => 'integer',
-            'deduction_cents' => 'integer', 'deduction_details' => 'array', 'advance_cents' => 'integer'];
+            'deduction_cents' => 'integer', 'deduction_details' => 'array', 'advance_cents' => 'integer',
+            'combined_class_cents' => 'integer'];
     }
 }
