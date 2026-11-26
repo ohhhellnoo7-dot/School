@@ -111,8 +111,7 @@ a.attendance-status-tile:hover, a.attendance-status-tile:focus-visible { outline
                 <a class="{{ ($key === 'classes' ? request()->routeIs('class-groups.*') : (request()->route('module') === $key || ($key === 'attendance' && $parentChildAttendance) || ($key === 'fees' && request()->routeIs('finance.*')) || ($key === 'teachers' && request()->routeIs('teacher-management.*', 'teachers.schedule*', 'teacher-attendance.*', 'teacher-excuses.*')))) ? 'active' : '' }}" href="{{ $key === 'classes' ? route('class-groups.index') : route('modules.index', $key) }}">
                     <i class="bi bi-{{ $module['icon'] }}"></i><span class="nav-label">{{ __($module['title']) }}
                         @if($key === 'teachers' && auth()->user()->role === 'administrator')
-                            @php($pendingTeacherExcuses = \App\Models\TeacherExcuse::pending()->count())
-                            <span class="student-excuse-badge" data-teacher-excuse-count="{{ route('teacher-excuses.count') }}" title="{{ __('Pending teacher excuse requests') }}" @if(!$pendingTeacherExcuses) hidden @endif>{{ $pendingTeacherExcuses }}</span>
+                            @include('school.attendance._teacher-excuse-badge')
                         @endif
                     </span>
                 </a>

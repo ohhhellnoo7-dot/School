@@ -42,7 +42,10 @@
             <a href="{{ route('attendance.people', array_filter(['kind' => 'teachers', 'status' => $status, 'date' => $date, 'session' => $filters['session'] ?? null, 'program' => $filters['program'] ?? null, 'search' => $filters['search'] ?? null])) }}" aria-label="View {{ strtolower($label) }} teachers" class="attendance-status-tile attendance-status-{{ $status }}"><span class="attendance-status-icon"><i class="bi bi-{{ $icon }}" aria-hidden="true"></i></span><div><span>{{ $label }}</span><strong>{{ $counts[$status] ?? 0 }}</strong></div><small>{{ $holiday ? __('N/A') : ($recorded ? round(($counts[$status] ?? 0) / $recorded * 100) : 0).'%' }}</small></a>
             @endforeach
             @if(auth()->user()->role === 'administrator')
-                <a class="btn btn-sm btn-outline-secondary teacher-excuse-review-link" href="{{ route('teacher-excuses.index') }}"><i class="bi bi-list-check me-1" aria-hidden="true"></i>{{ __('Review excuse requests') }}</a>
+                <a class="btn btn-sm btn-outline-secondary teacher-excuse-review-link" href="{{ route('teacher-excuses.index') }}">
+                    <i class="bi bi-list-check me-1" aria-hidden="true"></i>{{ __('Review excuse requests') }}
+                    @include('school.attendance._teacher-excuse-badge')
+                </a>
             @endif
         </div>
         @unless($holiday)

@@ -16,8 +16,10 @@
             });
             if (!response.ok || response.redirected) return;
             const { count } = await response.json();
-            badge.hidden = count === 0;
-            badge.textContent = count;
+            document.querySelectorAll('[data-teacher-excuse-count]').forEach(badge => {
+                badge.hidden = count === 0;
+                badge.textContent = count;
+            });
         } catch {
             // Keep the last count until the next successful refresh.
         } finally {

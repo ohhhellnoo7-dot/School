@@ -39,7 +39,8 @@ class TeacherExcuseTest extends TestCase
         $this->actingAs($otherTeacher)->get(route('teacher-excuses.index'))->assertOk()->assertDontSee('Family appointment');
 
         $this->actingAs($admin)->getJson(route('teacher-excuses.count'))->assertExactJson(['count' => 1]);
-        $this->get(route('modules.index', 'teachers'))->assertOk()->assertSee('Review excuse requests');
+        $overview = $this->get(route('modules.index', 'teachers'))->assertOk()->assertSee('Review excuse requests');
+        $this->assertSame(2, substr_count($overview->getContent(), 'title="Pending teacher excuse requests" >1</span>'));
         $this->get(route('teacher-excuses.index'))->assertOk()->assertSee('Family appointment')->assertSee('Approve')->assertSee('Reject');
         $daily = TeacherAttendance::where('teacher_id', $teacher->id)->whereDate('date', today())->first()
             ?? new TeacherAttendance(['teacher_id' => $teacher->id, 'date' => today()]);
