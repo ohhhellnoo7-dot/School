@@ -22,25 +22,36 @@
 }
 .attendance-gender--male { color: #154d99; background-color: #e0edff; }
 .attendance-gender--female { color: #9e235f; background-color: #fce4f0; }
-.roster-status[data-status="present"] {
+#class-attendance-roster .roster-status[data-status] {
+    background-image: var(--bs-form-select-bg-img), var(--roster-status-gradient, none);
+    background-position: right .75rem center, center;
+    background-size: 16px 12px, 100% 100%;
+    background-repeat: no-repeat;
+}
+
+#class-attendance-roster .roster-status[data-status="present"] {
+    --roster-status-gradient: linear-gradient(125deg, var(--bs-body-bg), var(--bs-success-bg-subtle) 72%, var(--bs-success-border-subtle));
     background-color: var(--bs-success-bg-subtle);
     color: var(--bs-success-text-emphasis);
     border-color: var(--bs-success-border-subtle);
 }
 
-.roster-status[data-status="absent"] {
+#class-attendance-roster .roster-status[data-status="absent"] {
+    --roster-status-gradient: linear-gradient(125deg, var(--bs-body-bg), var(--bs-danger-bg-subtle) 72%, var(--bs-danger-border-subtle));
     background-color: var(--bs-danger-bg-subtle);
     color: var(--bs-danger-text-emphasis);
     border-color: var(--bs-danger-border-subtle);
 }
 
-.roster-status[data-status="late"] {
+#class-attendance-roster .roster-status[data-status="late"] {
+    --roster-status-gradient: linear-gradient(125deg, var(--bs-body-bg), var(--bs-warning-bg-subtle) 72%, var(--bs-warning-border-subtle));
     background-color: var(--bs-warning-bg-subtle);
     color: var(--bs-warning-text-emphasis);
     border-color: var(--bs-warning-border-subtle);
 }
 
-.roster-status[data-status="excused"] {
+#class-attendance-roster .roster-status[data-status="excused"] {
+    --roster-status-gradient: linear-gradient(125deg, var(--bs-body-bg), var(--bs-info-bg-subtle) 72%, var(--bs-info-border-subtle));
     background-color: var(--bs-info-bg-subtle);
     color: var(--bs-info-text-emphasis);
     border-color: var(--bs-info-border-subtle);
