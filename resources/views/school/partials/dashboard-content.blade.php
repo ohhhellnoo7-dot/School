@@ -216,7 +216,7 @@
         </div>
         <div class="col-xl-6">
             <div class="panel h-100">
-                @include('school.partials.khmer-calendar', ['calendarLocale' => 'km'])
+                @include('school.partials.khmer-calendar', ['calendarLocale' => 'km', 'calendarClass' => 'border-top p-3 khmer-calendar-stacked'])
             </div>
         </div>
     </div>

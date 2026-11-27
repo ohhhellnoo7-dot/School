@@ -439,6 +439,10 @@
 .khmer-calendar-month { flex: 3 1 17rem; }
 .khmer-calendar-sidebar { flex: 2 1 13rem; display: grid; align-content: start; gap: .5rem; }
 .khmer-calendar-month, .khmer-calendar-sidebar { min-width: 0; }
+.khmer-calendar-stacked .khmer-calendar-layout:not([hidden]) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+}
 .khmer-calendar-month, .khmer-calendar-selection, .khmer-calendar-holidays {
     padding: .55rem .65rem;
     border: 1px solid var(--border);
