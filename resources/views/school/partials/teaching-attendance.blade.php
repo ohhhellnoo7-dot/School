@@ -77,13 +77,13 @@
                         <td class="align-middle text-nowrap">{{ $student->student_number ?: '—' }}</td>
                         <td>
                             @if($classAttendanceExcuses->has($student->id))
-                                {{ __('Excused') }} · {{ __('Approved excuse') }}
+                                <span class="badge text-bg-info">{{ __('Excused') }}</span> · {{ __('Approved excuse') }}
                             @else
                                 <form class="d-flex flex-wrap gap-2 align-items-center" data-attendance-edit method="post" action="{{ route('dashboard.class-attendance.update', [$classAttendancePeriod->id, $student]) }}">
                                     @csrf
                                     @method('PUT')
                                     <input type="hidden" name="attendance_date" value="{{ $classAttendanceDate }}">
-                                    <select class="form-select w-auto" name="status" aria-label="{{ __('Attendance status for :student', ['student' => $student->name]) }}" required>
+                                    <select class="form-select w-auto roster-status" name="status" data-status="{{ $record?->status }}" aria-label="{{ __('Attendance status for :student', ['student' => $student->name]) }}" required>
                                         @unless(in_array($record?->status, $classAttendanceStatuses, true))
                                             <option value="" selected disabled hidden>{{ __('Choose status') }}</option>
                                         @endunless

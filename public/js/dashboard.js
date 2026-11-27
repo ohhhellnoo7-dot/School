@@ -299,6 +299,7 @@
         const attendanceForm = event.target.closest('[data-attendance-edit]');
         if (attendanceForm) {
             const select = attendanceForm.elements.status;
+            select.dataset.status = select.value;
             attendanceForm.toggleAttribute('data-dirty', !select.selectedOptions[0].defaultSelected);
             attendanceForm.querySelector('[data-attendance-result]').textContent = '';
         } else {
