@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\SchoolHolidayClosure;
+use App\Services\TeachingAttendance;
 use App\Models\Announcement;
 use App\Models\Attendance;
 use App\Models\ClassAttendance;
@@ -25,6 +26,75 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
+    public function saveTeachingAttendance(Request $request, int $schedule, Student $student, TeachingAttendance $attendance)
+    {
+        $data = $request->validate([
+            'attendance_date' => ['required', 'date_format:Y-m-d', 'before_or_equal:'.today()->toDateString()],
+            'status' => ['present', 'nullable', 'in:'.implode(',', TeachingAttendance::STATUSES)],
+        ]);
+        $date = Carbon::parse($data['attendance_date']);
+        app(SchoolHolidayClosure::class)->ensureOpen($date);
+        $period = $attendance->periods($request->user(), $date)->findOrFail($schedule);
+        $attendance->save($request->user(), $period, $student, $data['attendance_date'], $data['status']);
+
+        if ($request->expectsJson()) {
+            return response()->noContent();
+        }
+
+        return redirect()->to(route('dashboard', [
+            'class_attendance_date' => $data['attendance_date'],
+            'class_attendance_period' => $period->id,
+        ]).'#class-attendance-roster')->with('success', __('Class attendance saved.'));
+    }
+
+    private function teachingAttendanceData(Request $request, $today, bool $teachingHoliday): array
+    {
+        if ($request->user()->role !== 'teacher') {
+            return ['todayTeachingPeriods' => collect(), 'todayTeacherExcuse' => null];
+        }
+
+        $attendance = app(TeachingAttendance::class);
+        $filters = $request->validate([
+            'class_attendance_date' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:'.$today->toDateString()],
+            'class_attendance_period' => ['nullable', 'integer'],
+        ]);
+        $date = isset($filters['class_attendance_date']) ? Carbon::parse($filters['class_attendance_date']) : $today;
+        $todayPeriods = $teachingHoliday ? collect() : $attendance->periods($request->user(), $today)->get();
+        $todayTeacherExcuse = \App\Models\TeacherAttendance::excusedOn($today->toDateString())
+            ->where('teacher_id', $request->user()->id)->first();
+        $periods = $date->isSameDay($today) ? $todayPeriods : (
+            app(SchoolHolidayClosure::class)->holiday($date) ? collect() : $attendance->periods($request->user(), $date)->get()
+        );
+        $periods = $periods->filter(fn (Schedule $period) => $period->schoolClass || $period->subject?->schoolClass);
+        $time = now()->format('H:i:s');
+        $current = $date->isSameDay($today) && ! $todayTeacherExcuse ? $periods->first(
+            fn (Schedule $period) => str_pad($period->starts_at, 8, ':00') <= $time
+                && $time < str_pad($period->ends_at, 8, ':00')
+        ) : null;
+        $period = $request->filled('class_attendance_period')
+            ? $periods->firstWhere('id', $request->integer('class_attendance_period'))
+            : ($current ?? ($date->isSameDay($today) ? null : $periods->first()));
+        $students = $period ? $attendance->roster($period)->with('user:id,gender,profile_photo_path')
+            ->orderBy('name')->orderBy('id')->get(['id', 'name', 'student_number', 'gender', 'photo', 'user_id']) : collect();
+        $profileIds = $students->isEmpty() ? collect() : Student::visibleTo($request->user())
+            ->whereKey($students->modelKeys())->pluck('id')->flip();
+        $dateString = $date->toDateString();
+
+        return [
+            'todayTeachingPeriods' => $todayPeriods,
+            'todayTeacherExcuse' => $todayTeacherExcuse,
+            'classAttendanceDate' => $dateString,
+            'classAttendancePeriods' => $periods,
+            'classAttendancePeriod' => $period,
+            'classAttendanceStudents' => $students,
+            'classAttendanceProfileIds' => $profileIds,
+            'classAttendanceStatuses' => TeachingAttendance::STATUSES,
+            'classAttendanceRecords' => $period ? $attendance->records($period, $students, $dateString) : collect(),
+            'classAttendanceExcuses' => $period && ! $date->isWeekend()
+                ? $attendance->excuses($period, $dateString)->whereIn('student_id', $students->modelKeys())->pluck('student_id')->flip()
+                : collect(),
+        ];
+    }
     public function randomAttendance(Request $request)
     {
         abort_unless($request->user()->role === 'administrator', 403);
@@ -163,7 +233,6 @@ class DashboardController extends Controller
         $today = today();
         $teachingHoliday = $user->role === 'teacher' ? app(SchoolHolidayClosure::class)->calendarHolidayKey($today) : null;
         $attendanceWeekStart = $today->copy()->startOfWeek(Carbon::MONDAY);
-        $academicYear = $today->year.'-'.($today->year + 1);
         $reportDate = Carbon::parse($validated['date'] ?? today()->toDateString())->startOfDay();
         $students = Student::visibleTo($user);
         $dashboardChildren = $isParent ? (clone $students)->with(['schoolClass.classGroup', 'studyClasses', 'user', 'fees.adjustments'])->orderBy('name')->orderBy('id')->get() : collect();
@@ -236,22 +305,12 @@ class DashboardController extends Controller
             'programBreakdowns' => $programBreakdowns,
             'todayClasses' => $user->role === 'student' && ! app(SchoolHolidayClosure::class)->holiday(today()) ? SchoolModules::query('schedules', $user)->with('subject')->where('day', today()->format('l'))->orderBy('starts_at')->get() : collect(),
             'teachingHoliday' => $teachingHoliday,
-            'todayTeacherExcuse' => $user->role === 'teacher'
-                ? \App\Models\TeacherAttendance::excusedOn($today->toDateString())->where('teacher_id', $user->id)->first()
-                : null,
             'teachingHolidayArtwork' => match ($teachingHoliday) {
                 null => [],
                 'labour_and_visak' => ['labour', 'visak'],
                 default => [$teachingHoliday],
             },
-            'todayTeachingPeriods' => $user->role === 'teacher' && !$teachingHoliday
-                ? Schedule::with(['subject.schoolClass', 'schoolClass', 'classroom.buildingRecord'])
-                    ->where('teacher_id', $user->id)
-                    ->whereNotNull('subject_id')
-                    ->where('day', $today->format('l'))
-                    ->where(fn ($query) => $query->where('academic_year', $academicYear)->orWhereNull('academic_year'))
-                    ->orderBy('starts_at')->orderBy('id')->get()
-                : collect(),
+            ...$this->teachingAttendanceData($request, $today, (bool) $teachingHoliday),
             'upcomingAssignments' => $user->role === 'student' ? SchoolModules::query('assignments', $user)->with('subject')->whereDate('due_date', '>=', today())->orderBy('due_date')->orderBy('id')->limit(5)->get() : collect(),
             'upcomingExams' => $user->role === 'student' ? SchoolModules::query('examinations', $user)->with('subject')->whereDate('date', '>=', today())->orderBy('date')->orderBy('id')->limit(3)->get() : collect(),
             'studentCount' => (clone $students)->count(),

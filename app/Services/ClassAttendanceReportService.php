@@ -12,14 +12,19 @@ class ClassAttendanceReportService
 {
     public function forMonth(Collection $classes, Collection $students, CarbonImmutable $month): Collection
     {
+        return $this->forDates($classes, $students, $month->startOfMonth()->toDateString(), $month->endOfMonth()->toDateString());
+    }
+
+    public function forDates(Collection $classes, Collection $students, string $start, string $end): Collection
+    {
         $records = collect();
         $excuses = StudentExcuse::whereIn('student_id', $students->modelKeys())
             ->where('session', '!=', StudentExcuse::RANDOM_SESSION)
-            ->overlapping($month->startOfMonth()->toDateString(), $month->endOfMonth()->toDateString())
+            ->overlapping($start, $end)
             ->get()->groupBy('student_id');
         $daily = Attendance::whereIn('student_id', $students->modelKeys())
-            ->whereDate('date', '>=', $month->startOfMonth()->toDateString())
-            ->whereDate('date', '<=', $month->endOfMonth()->toDateString())->get()->groupBy('student_id');
+            ->whereDate('date', '>=', $start)
+            ->whereDate('date', '<=', $end)->get()->groupBy('student_id');
 
         // Daily attendance is the default for every enrolled class. Explicit class marks take priority.
         foreach ($students as $student) {
@@ -41,8 +46,8 @@ class ClassAttendanceReportService
 
         $overrides = ClassAttendance::whereIn('school_class_id', $classes->modelKeys())
             ->whereIn('student_id', $students->modelKeys())
-            ->whereDate('date', '>=', $month->startOfMonth()->toDateString())
-            ->whereDate('date', '<=', $month->endOfMonth()->toDateString())->get();
+            ->whereDate('date', '>=', $start)
+            ->whereDate('date', '<=', $end)->get();
         $sessions = $classes->pluck('session', 'id');
         foreach ($overrides as $record) {
             $date = $record->date->toDateString();

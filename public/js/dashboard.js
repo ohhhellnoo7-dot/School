@@ -11,6 +11,7 @@
     let pending = false;
     let sessionExpired = false;
     const weeklyFiltersAreEditing = () => content.querySelector('[data-weekly-filters]:focus-within, [data-weekly-filters][data-dirty]');
+    const rosterIsEditing = () => content.querySelector('#class-attendance-roster form:focus-within, #class-attendance-roster form[data-dirty], [data-attendance-edit][aria-busy="true"]');
 
     function renderCharts(payload) {
         if (typeof Chart === 'undefined') return;
@@ -191,7 +192,7 @@
     }
 
     async function refresh() {
-        if (pending || document.hidden || sessionExpired || weeklyFiltersAreEditing() || content.querySelector('.attendance-actions[open]')) return;
+        if (pending || document.hidden || sessionExpired || weeklyFiltersAreEditing() || rosterIsEditing() || content.querySelector('.attendance-actions[open]')) return;
         pending = true;
         button.disabled = true;
         content.setAttribute('aria-busy', 'true');
@@ -201,7 +202,7 @@
         try {
             const url = new URL(content.dataset.url, window.location.origin);
             const selected = new URLSearchParams(window.location.search);
-            for (const key of ['date', 'session', 'weekly_program', 'weekly_grade', 'weekly_class', 'weekly_session', 'attendance_scope']) {
+            for (const key of ['date', 'session', 'weekly_program', 'weekly_grade', 'weekly_class', 'weekly_session', 'attendance_scope', 'class_attendance_date', 'class_attendance_period']) {
                 if (selected.get(key)) url.searchParams.set(key, selected.get(key));
             }
             const response = await fetch(url, {
@@ -216,8 +217,8 @@
             if (!response.ok) throw new Error('Dashboard request failed');
             const payload = await response.json();
             if (typeof payload.html !== 'string' || !payload.charts) throw new Error('Invalid dashboard response');
-            if (weeklyFiltersAreEditing()) {
-                status.textContent = 'Dashboard refresh paused while editing attendance filters.';
+            if (weeklyFiltersAreEditing() || rosterIsEditing()) {
+                status.textContent = 'Dashboard refresh paused while editing attendance.';
                 return;
             }
             charts.forEach(chart => chart.destroy());
@@ -295,10 +296,54 @@
         }
     });
     content.addEventListener('change', event => {
+        const attendanceForm = event.target.closest('[data-attendance-edit]');
+        if (attendanceForm) {
+            const select = attendanceForm.elements.status;
+            attendanceForm.toggleAttribute('data-dirty', !select.selectedOptions[0].defaultSelected);
+            attendanceForm.querySelector('[data-attendance-result]').textContent = '';
+        } else {
+            event.target.closest('#class-attendance-roster form')?.setAttribute('data-dirty', '');
+        }
         const weeklyFilters = event.target.closest('[data-weekly-filters]');
         if (weeklyFilters) weeklyFilters.dataset.dirty = '';
         if ((event.target.id === 'attendance-report-date' && event.target.value) || event.target.id === 'attendance-report-session') {
             event.target.form.requestSubmit();
+        }
+    });
+    content.addEventListener('submit', async event => {
+        const form = event.target.closest('[data-attendance-edit]');
+        if (!form) return;
+        event.preventDefault();
+        if (form.getAttribute('aria-busy') === 'true') return;
+
+        const roster = form.closest('#class-attendance-roster');
+        const result = form.querySelector('[data-attendance-result]');
+        const select = form.elements.status;
+        const saveButton = form.querySelector('button');
+        const data = new FormData(form);
+        form.setAttribute('aria-busy', 'true');
+        select.disabled = saveButton.disabled = true;
+        result.textContent = '';
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: data,
+                headers: {'Accept': 'application/json'},
+            });
+            if (response.status !== 204) {
+                const error = await response.json().catch(() => ({}));
+                throw new Error(error.errors?.status?.[0] || roster.dataset.saveError);
+            }
+            const savedStatus = data.get('status');
+            for (const option of select.options) option.defaultSelected = option.value === savedStatus;
+            select.value = savedStatus;
+            delete form.dataset.dirty;
+            result.textContent = roster.dataset.saveSuccess;
+        } catch (error) {
+            result.textContent = error.message || roster.dataset.saveError;
+        } finally {
+            select.disabled = saveButton.disabled = false;
+            form.removeAttribute('aria-busy');
         }
     });
     document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });

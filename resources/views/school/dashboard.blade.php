@@ -1,5 +1,10 @@
 @extends('school.layout')
 @section('title', auth()->user()->role === 'student' ? 'My school day' : 'Overview')
+@if(auth()->user()->role === 'teacher')
+    @push('styles')
+        <link rel="stylesheet" href="{{ asset('css/teaching-attendance.css') }}?v={{ filemtime(public_path('css/teaching-attendance.css')) }}">
+    @endpush
+@endif
 @section('content')
 <div id="dashboard-content" data-url="{{ route('dashboard.data') }}" aria-busy="false">
     @include('school.partials.dashboard-content')

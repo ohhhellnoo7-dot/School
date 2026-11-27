@@ -91,6 +91,9 @@
                             <td>
                                 <strong>{{ $class ? trim($class->name.' '.$class->section) : __('Class not assigned') }}</strong>
                                 <small class="d-block text-secondary">{{ $period->subject?->name }}</small>
+                                @if($class)
+                                    <a class="text-link" href="{{ route('dashboard', array_merge(request()->only(['date', 'session', 'attendance_scope']), ['class_attendance_date' => today()->toDateString(), 'class_attendance_period' => $period->id])) }}#class-attendance-roster">{{ __('Attendance') }}</a>
+                                @endif
                             </td>
                             <td>
                                 <strong>{{ $room?->room_number ?: ($period->room ?: __('Room not assigned')) }}</strong>

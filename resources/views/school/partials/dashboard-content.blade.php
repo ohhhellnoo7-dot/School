@@ -221,6 +221,9 @@
         </div>
     </div>
 @endif
+@if($role === 'teacher')
+    @include('school.partials.teaching-attendance')
+@endif
 @if($isParent && $dashboardChildren->isNotEmpty())
     @include('school.partials.dashboard-children')
 @endif

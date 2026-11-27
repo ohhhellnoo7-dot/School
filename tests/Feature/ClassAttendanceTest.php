@@ -79,6 +79,32 @@ class ClassAttendanceTest extends TestCase
         $this->assertDatabaseCount('class_attendances', 1);
     }
 
+    public function test_dashboard_follows_current_class_and_allows_a_teacher_to_correct_its_marks(): void
+    {
+        [, $teacher, , $classes, $student] = $this->fixture();
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-16 07:30'));
+        $morning = DB::table('schedules')->where('school_class_id', $classes['Morning']->id)->value('id');
+        $url = route('dashboard.class-attendance.update', [$morning, $student]);
+        $payload = ['attendance_date' => '2026-11-16', 'status' => 'present'];
+        \App\Models\Attendance::create(['student_id' => $student->id, 'date' => '2026-11-16', 'status' => 'absent']);
+
+        $this->actingAs($teacher)->get('/dashboard')->assertOk()
+            ->assertSee('Daily attendance · Absent')
+            ->assertViewHas('classAttendancePeriod', fn ($period) => $period->id === $morning)
+            ->assertViewHas('classAttendanceStudents', fn ($students) => $students->modelKeys() === [$student->id]);
+        $this->putJson($url, $payload)->assertNoContent();
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-16 13:30'));
+        $this->getJson('/dashboard/data')->assertOk()
+            ->assertJsonPath('html', fn ($html) => str_contains($html, 'Mathematics Afternoon · 13:00–14:00'));
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-17 13:30'));
+        $this->putJson($url, [...$payload, 'status' => 'late'])->assertNoContent();
+        $this->assertDatabaseCount('class_attendances', 1);
+        $this->assertSame('late', ClassAttendance::firstOrFail()->status);
+
+        $this->actingAs(User::factory()->create(['role' => 'teacher']))
+            ->putJson($url, $payload)->assertNotFound();
+    }
+
     public function test_dashboard_attendance_automatically_populates_sheets_and_class_marks_take_priority(): void
     {
         [$admin, $teacher, $room, $classes, $student] = $this->fixture();

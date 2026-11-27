@@ -91,6 +91,7 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent', \App\Htt
     Route::get('/classrooms/{classroom}/matching-class', [ClassroomController::class, 'matchingClass'])->middleware('role:administrator,teacher')->name('classrooms.matching-class');
     Route::get('/dashboard/data', [DashboardController::class, 'data'])->name('dashboard.data');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::put('/dashboard/class-attendance/{schedule}/{student}', [DashboardController::class, 'saveTeachingAttendance'])->whereNumber('schedule')->middleware('role:teacher')->name('dashboard.class-attendance.update');
     Route::post('/dashboard/salary-advance-requests', [\App\Http\Controllers\SchoolExpenseController::class, 'requestAdvance'])->middleware('role:teacher')->name('dashboard.advance-requests.store');
     Route::get('/dashboard/salary-advance-requests', [\App\Http\Controllers\SchoolExpenseController::class, 'advanceRequestHistory'])->middleware('role:teacher')->name('dashboard.advance-requests.history');
     Route::post('/dashboard/salary-advance-requests/{advanceRequest}/cancel', [\App\Http\Controllers\SchoolExpenseController::class, 'cancelAdvanceRequest'])->middleware('role:teacher')->name('dashboard.advance-requests.cancel');
