@@ -364,6 +364,14 @@
 .family-filter .form-label { display: block; }
 .family-mark-legend { display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin: 0 0 .75rem; padding: 0; list-style: none; }
 .family-mark-legend li { display: flex; align-items: center; gap: .35rem; }
+.family-program-report {
+    margin-block: 1rem;
+    padding: .85rem;
+    border: 1px solid var(--family-border, var(--border-color, #cbd5e1));
+    border-radius: .85rem;
+}
+.family-program-report h4 { margin: 0 0 .25rem; font-size: 1rem; font-weight: 750; }
+.family-program-report p { margin: 0 0 .65rem; }
 .family-month-scroll { overflow-x: auto; }
 .family-month-grid { width: 100%; border-collapse: separate; border-spacing: 0; text-align: center; font-size: .875rem; }
 .family-month-grid :is(th, td) {
@@ -376,9 +384,7 @@
 .family-month-grid thead .is-weekend { background: #c9232b; }
 .family-month-grid thead .is-holiday, .family-month-grid tbody .is-holiday { background: #e8dfd0; color: #183549; }
 .family-month-grid thead th time { color: inherit; }
-.family-month-grid tr > :nth-child(n+3) { min-width: 2rem; padding-inline: .2rem; }
-.family-month-grid tr > :first-child { position: sticky; inset-inline-start: 0; text-align: start; }
-.family-month-grid tbody th { background: var(--surface-raised, #fff); }
+.family-month-grid tr > * { min-width: 2rem; padding-inline: .2rem; }
 .family-day-mark {
     display: inline-grid;
     place-items: center;

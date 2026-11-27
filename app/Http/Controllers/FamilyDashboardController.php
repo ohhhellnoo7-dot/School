@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Announcement;
+use App\Models\ClassAttendance;
 use App\Models\Examination;
 use App\Models\Schedule;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\User;
-use App\Services\ClassAttendanceReportService;
 use App\Services\MonthlyStudentAttendance;
 use App\Services\TuitionPaymentCoverage;
 use App\Support\AcademicYear;
@@ -213,8 +213,13 @@ class FamilyDashboardController extends Controller
             'month' => $start, 'records' => $records->keyBy(fn ($record) => $record->date->toDateString()),
             'counts' => $counts, 'rate' => $recorded ? round(100 * ($counts->get('present', 0) + $counts->get('late', 0)) / $recorded, $withTrend ? 1 : 0) : null,
             'trend' => $trend,
-            'classRecords' => $classes->isEmpty() ? collect() : app(ClassAttendanceReportService::class)
-                ->forMonth($classes, $student->newCollection([$student]), $start),
+            'classRecords' => $classes->isEmpty() ? collect() : ClassAttendance::query()
+                ->where('student_id', $student->id)
+                ->whereIn('school_class_id', $classes->modelKeys())
+                ->whereBetween('date', [$start->toDateString(), $start->endOfMonth()->toDateString()])
+                ->get()
+                ->groupBy('school_class_id')
+                ->map(fn ($marks) => $marks->keyBy(fn ($mark) => $mark->date->toDateString())),
         ];
     }
 

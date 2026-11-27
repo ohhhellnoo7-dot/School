@@ -28,6 +28,7 @@ class FamilyDashboardTest extends TestCase
         $khmer = SchoolClass::create(['name' => 'Grade 8', 'section' => 'B', 'program' => 'Khmer', 'session' => 'Morning']);
         $child = Student::factory()->create(['parent_id' => $teacher->id, 'school_class_id' => $english->id]);
         $child->studyClasses()->attach($khmer);
+        Attendance::create(['student_id' => $child->id, 'date' => '2028-02-02', 'status' => 'present']);
 
         foreach (['2028-02-01' => ['present', 'late'], '2028-02-29' => ['absent', 'excused']] as $date => $statuses) {
             foreach ([$english, $khmer] as $index => $class) {
@@ -38,13 +39,15 @@ class FamilyDashboardTest extends TestCase
         foreach (['2028-02' => 29, '2028-03' => 31] as $month => $days) {
             $response = $this->actingAs($teacher)->get(route('students.family.show', [$child, 'tab' => 'attendance', 'month' => $month]))
                 ->assertOk()->assertSee(['Attendance report', 'Show data', 'English', 'Khmer', 'Not recorded']);
-            $table = str($response->getContent())->after('aria-labelledby="family-attendance-report"')->before('</table>')->toString();
-            $this->assertSame($days, substr_count($table, '<time datetime='));
-            if ($days === 29) {
-                $rows = explode('</tr>', $table);
-                foreach (['2028-02-01' => ['present', 'late'], '2028-02-29' => ['absent', 'excused']] as $date => $statuses) {
-                    foreach ($statuses as $index => $status) {
-                        $this->assertMatchesRegularExpression('/data-date="'.$date.'"[^>]*>\s*<span[^>]*data-tone="'.$status.'"/', $rows[$index + 1]);
+            $response->assertDontSee('id="family-month-heading-daily"', false);
+            foreach ([$english, $khmer] as $index => $class) {
+                $label = 'aria-labelledby="family-month-heading-'.$class->id.'"';
+                $response->assertSee($label, false);
+                $table = str($response->getContent())->after($label)->before('</table>')->toString();
+                $this->assertSame($days, substr_count($table, '<time datetime='));
+                if ($days === 29) {
+                    foreach (['2028-02-01' => ['present', 'late'], '2028-02-02' => ['present', 'present'], '2028-02-29' => ['absent', 'excused']] as $date => $statuses) {
+                        $this->assertMatchesRegularExpression('/data-date="'.$date.'"[^>]*>\s*<span[^>]*data-tone="'.$statuses[$index].'"/', $table);
                     }
                 }
             }
