@@ -30,7 +30,7 @@ class DashboardController extends Controller
     {
         $data = $request->validate([
             'attendance_date' => ['required', 'date_format:Y-m-d', 'before_or_equal:'.today()->toDateString()],
-            'status' => ['present', 'nullable', 'in:'.implode(',', TeachingAttendance::STATUSES)],
+            'status' => ['required', 'in:'.implode(',', TeachingAttendance::STATUSES)],
         ]);
         $date = Carbon::parse($data['attendance_date']);
         app(SchoolHolidayClosure::class)->ensureOpen($date);

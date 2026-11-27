@@ -14,7 +14,7 @@ use Illuminate\Validation\ValidationException;
 
 class TeachingAttendance
 {
-    public const STATUSES = ['present', 'absent', 'late', 'excused'];
+    public const STATUSES = ['present', 'late', 'absent', 'excused'];
 
     public function periods(User $teacher, Carbon $date)
     {
@@ -49,7 +49,7 @@ class TeachingAttendance
         return StudentExcuse::where('session', $class?->session)->overlapping($date, $date);
     }
 
-    public function save(User $teacher, Schedule $period, Student $student, string $date, ?string $status): void
+    public function save(User $teacher, Schedule $period, Student $student, string $date, string $status): void
     {
         $class = $period->schoolClass ?? $period->subject?->schoolClass;
         abort_unless($class && $this->roster($period)->whereKey($student)->exists(), 403);
@@ -61,11 +61,7 @@ class TeachingAttendance
             }
 
             $key = ['school_class_id' => $class->id, 'student_id' => $student->id, 'date' => $date];
-            if ($status === null) {
-                ClassAttendance::where($key)->delete();
-            } else {
-                ClassAttendance::updateOrCreate($key, ['status' => $status, 'recorded_by' => $teacher->id]);
-            }
+            ClassAttendance::updateOrCreate($key, ['status' => $status, 'recorded_by' => $teacher->id]);
         });
     }
 }

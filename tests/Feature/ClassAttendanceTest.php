@@ -89,7 +89,10 @@ class ClassAttendanceTest extends TestCase
         \App\Models\Attendance::create(['student_id' => $student->id, 'date' => '2026-11-16', 'status' => 'absent']);
 
         $this->actingAs($teacher)->get('/dashboard')->assertOk()
-            ->assertSee('Daily attendance · Absent')
+            ->assertSee('value="absent" selected>Absent', false)
+            ->assertDontSee('Daily attendance · Absent')
+            ->assertSee(route('students.show', $student))
+            ->assertSee($student->student_number)
             ->assertViewHas('classAttendancePeriod', fn ($period) => $period->id === $morning)
             ->assertViewHas('classAttendanceStudents', fn ($students) => $students->modelKeys() === [$student->id]);
         $this->putJson($url, $payload)->assertNoContent();
