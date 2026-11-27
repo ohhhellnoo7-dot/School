@@ -8,10 +8,6 @@
     advancesModal?.addEventListener('show.bs.modal', () => update(true));
     const printButton = document.querySelector('[data-print-teacher-reports]');
     printButton.addEventListener('click', () => window.print());
-    const ratesDialog = document.getElementById('salary-rates-dialog');
-    document.querySelector('[data-edit-salary-rates]').addEventListener('click', () => ratesDialog.showModal());
-    ratesDialog.querySelector('[data-cancel-salary-rates]').addEventListener('click', () => ratesDialog.close());
-    if (ratesDialog.hasAttribute('data-reopen')) ratesDialog.showModal();
     const bonusDialog = document.getElementById('leave-bonus-dialog');
     const bonusForm = bonusDialog.querySelector('form');
     function openBonusEditor(button) {
@@ -37,7 +33,7 @@
     }
 
     async function update(background = false, manual = false) {
-        if (background && (pending || timer || ratesDialog.open || bonusDialog.open)) return;
+        if (background && (pending || timer || bonusDialog.open)) return;
         if (!background) {
             clearTimeout(timer);
             timer = null;
@@ -77,7 +73,7 @@
             lastRefresh = Date.now();
             if (background) {
                 const changed = current.innerHTML !== updated.innerHTML;
-                const canReplace = !current.contains(document.activeElement) && !ratesDialog.open && !bonusDialog.open;
+                const canReplace = !current.contains(document.activeElement) && !bonusDialog.open;
                 if (changed && canReplace) {
                     current.replaceWith(updated);
                 }

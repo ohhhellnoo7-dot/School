@@ -141,7 +141,6 @@ class EmployeeSalaryController extends Controller
         $withdrawalTotals = $withdrawal ? $this->withdrawalTotals($month, $rows) : null;
 
         return view('school.salaries.index', compact('month', 'teachers', 'rows', 'asOf', 'teacherCount', 'recorded', 'payday', 'withdrawalTotals') + [
-            'salaryHourlyCents' => $calculator->baseCents(60),
             'salaryRates' => collect([5, 10, 20, 40, 50])->mapWithKeys(fn ($hours) => [$hours => $calculator->baseCents($hours * 60)]),
         ]);
     }

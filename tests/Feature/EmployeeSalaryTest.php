@@ -365,10 +365,14 @@ class EmployeeSalaryTest extends TestCase
         $rates = ['morning' => '135.00', 'afternoon' => '125', 'evening' => '55', 'late' => '2', 'excused' => '7', 'absence_one' => '12', 'absence_two' => '20', 'absence_single_session' => '8'];
 
         $this->actingAs($teacher)->put($update, ['rates' => $rates])->assertForbidden();
-        $this->actingAs($admin)->get($reports)->assertOk()->assertSee('Edit salary')->assertSee('125.00');
-        $this->from($reports)->put($update, ['rates' => array_replace($rates, ['late' => '-1'])])
-            ->assertRedirect($reports)->assertSessionHasErrorsIn('salaryRates', 'rates.late');
-        $this->from($reports)->put($update, ['rates' => $rates])->assertRedirect($reports)->assertSessionHasNoErrors();
+        $payroll = route('employee-salaries.index', ['month' => '2026-11']);
+        $this->actingAs($admin)->get($payroll)->assertOk()->assertSee('Edit salary')->assertSee('125.00');
+        $this->get($reports)->assertOk()->assertDontSee('data-edit-salary-rates', false);
+        $this->from($payroll)->put($update, ['rates' => array_replace($rates, ['late' => '-1'])])
+            ->assertRedirect($payroll)->assertSessionHasErrorsIn('salaryRates', 'rates.late');
+        $this->get($payroll)->assertOk()->assertSee('data-reopen', false);
+        $this->from($payroll)->put($update, ['rates' => $rates])->assertRedirect($payroll)->assertSessionHasNoErrors();
+        $this->get($payroll)->assertOk()->assertSee('data-monthly-cents="13500"', false);
         $this->get($reports)->assertOk()->assertSee(['$315.00 USD', '$280.00 USD', '$251.00 USD']);
 
         $this->post(route('employee-salaries.pay', $teacher), [

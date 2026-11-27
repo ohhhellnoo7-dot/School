@@ -40,19 +40,42 @@ document.querySelectorAll('[data-salary-search]').forEach((form) => {
     form.querySelectorAll('input[type="month"], input[type="date"]').forEach((input) => input.addEventListener('change', update));
 });
 
+document.querySelectorAll('#salary-rates-dialog').forEach((dialog) => {
+    const rateCurrency = new Intl.NumberFormat('en-US', {
+        style: 'currency', currency: 'USD', maximumFractionDigits: 4,
+    });
+    dialog.querySelectorAll('[data-session-hours]').forEach((input) => {
+        const preview = dialog.querySelector(`output[for="${input.id}"]`);
+        const { sessionHours, estimateDays } = input.dataset;
+        const updatePreview = () => {
+            if (!input.validity.valid) {
+                preview.value = '';
+                return;
+            }
+            const weeklyHourValue = input.valueAsNumber / sessionHours;
+            const hourlyRate = weeklyHourValue / estimateDays;
+            preview.value = `${rateCurrency.format(input.valueAsNumber)} ÷ ${sessionHours} = ${rateCurrency.format(weeklyHourValue)}. Then ÷ ${estimateDays} = ${rateCurrency.format(hourlyRate)}/h.`;
+        };
+        input.addEventListener('input', updatePreview);
+        updatePreview();
+    });
+    document.querySelector('[data-edit-salary-rates]').addEventListener('click', () => dialog.showModal());
+    dialog.querySelector('[data-cancel-salary-rates]').addEventListener('click', () => dialog.close());
+    if (dialog.hasAttribute('data-reopen')) dialog.showModal();
+});
+
 document.querySelectorAll('#salary-calculator').forEach((dialog) => {
     const form = dialog.querySelector('form');
     const sliders = [...form.querySelectorAll('input[type="range"]')];
     const estimates = Object.fromEntries(
         [...dialog.querySelectorAll('[data-estimate]')].map((element) => [element.dataset.estimate, element])
     );
-    const rateCents = Number(dialog.dataset.hourlyCents);
+    const defaultDays = Number(dialog.dataset.defaultDays);
     const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
-    const formatSalary = (hours, days) => usd.format(hours * days * rateCents / 100);
     const formatDays = (days) => days === 1 ? '1 day' : `${days} days`;
 
     const update = () => {
-        const { daytime, evening, days } = Object.fromEntries(sliders.map((slider) => {
+        const { morning, afternoon, evening, days } = Object.fromEntries(sliders.map((slider) => {
             const selected = slider.valueAsNumber;
             const min = Number(slider.min);
             const progress = 100 * (selected - min) / (Number(slider.max) - min);
@@ -60,14 +83,17 @@ document.querySelectorAll('#salary-calculator').forEach((dialog) => {
             dialog.querySelector(`[data-hours="${slider.name}"]`).textContent = slider.name === 'days' ? formatDays(selected) : `${selected} h/week`;
             return [slider.name, selected];
         }));
-        const totalHours = daytime + evening;
-        const weeklyHours = `${totalHours} h/week`;
-        estimates.daytime.textContent = formatSalary(daytime, days);
-        estimates.evening.textContent = formatSalary(evening, days);
-        estimates.hours.textContent = weeklyHours;
-        estimates['formula-hours'].textContent = weeklyHours;
+        const pay = (name, hours) => {
+            const { monthlyCents, sessionHours } = form.elements[name].dataset;
+            return hours * monthlyCents * days / (sessionHours * defaultDays * 100);
+        };
+        const daytimePay = pay('morning', morning) + pay('afternoon', afternoon);
+        const eveningPay = pay('evening', evening);
+        estimates.daytime.textContent = usd.format(daytimePay);
+        estimates.evening.textContent = usd.format(eveningPay);
+        estimates.hours.textContent = `${morning + afternoon + evening} h/week`;
         estimates['formula-days'].textContent = formatDays(days);
-        estimates.total.value = formatSalary(totalHours, days);
+        estimates.total.value = usd.format(daytimePay + eveningPay);
     };
 
     document.querySelector('[data-open-salary-calculator]').addEventListener('click', () => {

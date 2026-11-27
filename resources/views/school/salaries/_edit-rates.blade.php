@@ -1,6 +1,8 @@
 @php
     $rates = app(\App\Services\EmployeeSalaryRates::class)->amounts();
     $rateErrors = $errors->getBag('salaryRates');
+    $sessionHours = \App\Services\EmployeeSalaryRates::SESSION_WEEKLY_HOURS;
+    $estimateDays = \App\Services\EmployeeSalaryRates::ESTIMATE_DAYS;
 @endphp
 <dialog id="salary-rates-dialog" class="salary-calculator d-print-none" aria-labelledby="salary-rates-title" @if($rateErrors->any()) data-reopen @endif>
     <form method="post" action="{{ route('employee-salaries.salary-rates.update') }}" class="salary-calculator-form">
@@ -24,11 +26,16 @@
                                     class="form-control @if($rateErrors->has('rates.'.$key)) is-invalid @endif"
                                     type="number" min="0" max="100000" step="0.01" required
                                     value="{{ old('rates.'.$key, \App\Support\Money::decimal($rates[$key])) }}"
-                                    @if($rateErrors->has('rates.'.$key)) aria-invalid="true" aria-describedby="salary-rate-error-{{ $key }}" @endif>
+                                    @if(isset($sessionHours[$key])) data-session-hours="{{ $sessionHours[$key] }}" data-estimate-days="{{ $estimateDays }}" @endif
+                                    @if($rateErrors->has('rates.'.$key)) aria-invalid="true" @endif
+                                    aria-describedby="{{ trim((isset($sessionHours[$key]) ? 'salary-rate-preview-'.$key.' ' : '').($rateErrors->has('rates.'.$key) ? 'salary-rate-error-'.$key : '')) }}">
                                 @if($rateErrors->has('rates.'.$key))
                                     <div class="invalid-feedback" id="salary-rate-error-{{ $key }}">{{ $rateErrors->first('rates.'.$key) }}</div>
                                 @endif
                             </div>
+                            @if(isset($sessionHours[$key]))
+                                <output class="form-text d-block" id="salary-rate-preview-{{ $key }}" for="salary-rate-{{ $key }}"></output>
+                            @endif
                         </div>
                     @endforeach
                 </div>

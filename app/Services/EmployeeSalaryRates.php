@@ -6,6 +6,10 @@ use Illuminate\Support\Facades\DB;
 
 class EmployeeSalaryRates
 {
+    public const SESSION_WEEKLY_HOURS = ['morning' => 20, 'afternoon' => 20, 'evening' => 5];
+
+    public const ESTIMATE_DAYS = 5;
+
     public const DEFAULTS = [
         'morning' => 12500,
         'afternoon' => 12500,

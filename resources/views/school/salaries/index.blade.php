@@ -19,11 +19,13 @@
         <div class="payroll-actions">
             <button class="payroll-action payroll-action-primary" type="button" data-open-salary-calculator aria-haspopup="dialog" aria-controls="salary-calculator"><i class="bi bi-calculator" aria-hidden="true"></i> Salary Calculator</button>
             <a class="payroll-action" id="salary-monthly-attendance" href="{{ route('teacher-attendance.monthly', ['month' => $month->format('Y-m')]) }}"><i class="bi bi-calendar-check" aria-hidden="true"></i> Monthly Attendance</a>
+            <button type="button" class="payroll-action" data-edit-salary-rates aria-haspopup="dialog"><i class="bi bi-pencil" aria-hidden="true"></i> {{ __('Edit salary') }}</button>
         </div>
     </div>
     <img class="payroll-hero-art" src="{{ asset('images/payroll-calendar.png') }}" width="860" height="358" alt="" decoding="async">
 </header>
 @include('school.salaries._calculator')
+@include('school.salaries._edit-rates')
 <section class="payroll-surface payroll-rates" aria-labelledby="payroll-rates-heading">
     <div class="payroll-heading-group">
         <i class="bi bi-stack payroll-icon" aria-hidden="true"></i>

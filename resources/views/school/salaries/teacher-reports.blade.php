@@ -14,9 +14,6 @@
             <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#outstanding-advances-modal" aria-haspopup="dialog">
                 <i class="bi bi-wallet2 me-1" aria-hidden="true"></i>{{ __('Outstanding advances') }}
             </button>
-            <button type="button" class="btn btn-outline-primary" data-edit-salary-rates>
-                <i class="bi bi-pencil me-1" aria-hidden="true"></i>{{ __('Edit salary') }}
-            </button>
         </nav>
     </div>
     <div class="d-flex flex-wrap gap-2">
@@ -109,7 +106,6 @@
 @isset($outstandingAdvances)
     @include('school.salaries._outstanding-advances')
 @endisset
-@include('school.salaries._edit-rates')
 <dialog id="leave-bonus-dialog" class="salary-calculator leave-bonus-dialog d-print-none" aria-labelledby="leave-bonus-title">
     <form method="post" action="{{ route('employee-salaries.leave-bonus-eligibility.update') }}" class="salary-calculator-form">
         @csrf
