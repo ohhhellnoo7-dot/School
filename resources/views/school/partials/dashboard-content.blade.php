@@ -28,7 +28,9 @@
     <div>
         <h1>Good {{ now('Asia/Phnom_Penh')->hour < 12 ? 'morning' : (now('Asia/Phnom_Penh')->hour < 18 ? 'afternoon' : 'evening') }}, {{ auth()->user()->name }} <span aria-hidden="true">&#128075;</span></h1>
         <a class="btn btn-outline-secondary mt-2" href="{{ route('modules.index', 'assignments') }}">{{ __('View assignments') }}</a>
-        <a class="btn btn-outline-secondary mt-2" href="{{ route('students.index', ['my_children' => 1]) }}"><i class="bi bi-person-heart me-2" aria-hidden="true"></i>{{ __('My children') }}</a>
+        @if($staffChildCount > 0)
+            <a class="btn btn-outline-secondary mt-2" href="{{ route('students.index', ['my_children' => 1]) }}"><i class="bi bi-person-heart me-2" aria-hidden="true"></i>{{ __('My children') }}</a>
+        @endif
         @include('school.partials.request-money-button', ['buttonClass' => 'btn-outline-secondary mt-2'])
         @include('school.partials.teacher-excuse-button', ['buttonClass' => 'btn-outline-secondary mt-2'])
     </div>
@@ -48,7 +50,9 @@
     <div class="teacher-dashboard-actions d-flex flex-wrap gap-2">
         <a class="btn btn-light" href="{{ route('modules.index', 'assignments') }}"><i class="bi bi-journal-bookmark me-2" aria-hidden="true"></i>{{ __('View assignments') }}</a>
         <a class="btn btn-light" href="{{ route('teachers.schedule', auth()->id()) }}"><i class="bi bi-calendar-week me-2" aria-hidden="true"></i>{{ __('My teaching schedule') }}</a>
-        <a class="btn btn-light" href="{{ route('students.index', ['my_children' => 1]) }}"><i class="bi bi-person-heart me-2" aria-hidden="true"></i>{{ __('My children') }}</a>
+        @if($staffChildCount > 0)
+            <a class="btn btn-light" href="{{ route('students.index', ['my_children' => 1]) }}"><i class="bi bi-person-heart me-2" aria-hidden="true"></i>{{ __('My children') }}</a>
+        @endif
         @include('school.partials.request-money-button', ['buttonClass' => 'btn-light'])
         @include('school.partials.teacher-excuse-button', ['buttonClass' => 'btn-light'])
     </div>

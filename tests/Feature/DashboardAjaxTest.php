@@ -20,6 +20,19 @@ class DashboardAjaxTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_teacher_dashboard_shows_my_children_shortcut_only_for_linked_children(): void
+    {
+        $teacher = User::factory()->create(['role' => 'teacher']);
+        $link = route('students.index', ['my_children' => 1]);
+
+        $this->actingAs($teacher)->get('/dashboard')->assertOk()
+            ->assertDontSee('href="'.$link.'"', false);
+        Student::factory()->create(['parent_id' => $teacher->id]);
+        $this->get('/dashboard')->assertOk()->assertSee('href="'.$link.'"', false);
+        $this->getJson('/dashboard/data')->assertOk()
+            ->assertJsonPath('html', fn ($html) => str_contains($html, 'href="'.$link.'"'));
+    }
+
     public function test_monthly_attendance_reports_real_totals_gaps_and_matching_enrollments(): void
     {
         $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-18 09:00'));
