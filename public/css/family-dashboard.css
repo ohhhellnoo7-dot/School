@@ -351,6 +351,7 @@
     border-color: var(--family-primary);
     background: var(--family-mist);
 }
+.family-tab-panel { min-width: 0; }
 .family-tab-panel h2 { margin-bottom: 1.3rem; }
 .family-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); gap: .65rem; margin: 0 0 1.25rem; }
 .family-facts > div { background: var(--family-mist); border-radius: .85rem; padding: .75rem; }
@@ -361,6 +362,34 @@
 .family-records p { margin: .25rem 0 0; }
 .family-filter { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; margin-bottom: 1rem; }
 .family-filter .form-label { display: block; }
+.family-mark-legend { display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin: 0 0 .75rem; padding: 0; list-style: none; }
+.family-mark-legend li { display: flex; align-items: center; gap: .35rem; }
+.family-month-scroll { overflow-x: auto; }
+.family-month-grid { width: 100%; border-collapse: separate; border-spacing: 0; text-align: center; font-size: .875rem; }
+.family-month-grid :is(th, td) {
+    padding: .45rem;
+    border-inline-end: 1px solid var(--family-border, var(--border-color, #cbd5e1));
+    border-bottom: 1px solid var(--family-border, var(--border-color, #cbd5e1));
+    white-space: nowrap;
+}
+.family-month-grid thead th { background: #007b87; color: #fff; }
+.family-month-grid thead .is-weekend { background: #c9232b; }
+.family-month-grid thead .is-holiday, .family-month-grid tbody .is-holiday { background: #e8dfd0; color: #183549; }
+.family-month-grid thead th time { color: inherit; }
+.family-month-grid tr > :nth-child(n+3) { min-width: 2rem; padding-inline: .2rem; }
+.family-month-grid tr > :first-child { position: sticky; inset-inline-start: 0; text-align: start; }
+.family-month-grid tbody th { background: var(--surface-raised, #fff); }
+.family-day-mark {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.4rem;
+    min-height: 1.4rem;
+    border-radius: .25rem;
+}
+.family-day-mark[data-tone="present"] { background: #deeee6; color: #166044; }
+.family-day-mark[data-tone="late"] { background: #fff0cf; color: #704902; }
+.family-day-mark[data-tone="absent"] { background: #f8e0e3; color: #a01636; }
+.family-day-mark[data-tone="excused"] { background: #ece3fa; color: #592b91; }
 .family-attendance-grid { display: grid; grid-template-columns: 1fr minmax(14rem, 24rem); gap: 1.3rem; align-items: start; }
 .family-attendance-total { display: flex; align-items: center; gap: .6rem; font-weight: 700; }
 .family-attendance-total > strong { font-size: clamp(1.8rem, 4vw, 2.8rem); }

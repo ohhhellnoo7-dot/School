@@ -41,8 +41,12 @@ class FamilyDashboardTest extends TestCase
             $table = str($response->getContent())->after('aria-labelledby="family-attendance-report"')->before('</table>')->toString();
             $this->assertSame($days, substr_count($table, '<time datetime='));
             if ($days === 29) {
-                $this->assertMatchesRegularExpression('/2028-02-01[^<]*<\/time>.*?data-tone="present".*?data-tone="late".*?<\/tr>/s', $table);
-                $this->assertMatchesRegularExpression('/2028-02-29[^<]*<\/time>.*?data-tone="absent".*?data-tone="excused".*?<\/tr>/s', $table);
+                $rows = explode('</tr>', $table);
+                foreach (['2028-02-01' => ['present', 'late'], '2028-02-29' => ['absent', 'excused']] as $date => $statuses) {
+                    foreach ($statuses as $index => $status) {
+                        $this->assertMatchesRegularExpression('/data-date="'.$date.'"[^>]*>\s*<span[^>]*data-tone="'.$status.'"/', $rows[$index + 1]);
+                    }
+                }
             }
         }
     }
