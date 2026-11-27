@@ -1,4 +1,4 @@
-<section class="panel {{ $attendanceMargin ?? 'my-3' }}" id="class-attendance-roster" aria-labelledby="class-attendance-title"
+<section class="panel my-3" id="class-attendance-roster" aria-labelledby="class-attendance-title"
     data-save-success="{{ __('Saved') }}" data-save-error="{{ __('Could not save attendance. Try again.') }}">
     <div class="panel-header flex-wrap gap-3">
         <div>

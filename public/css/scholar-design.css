@@ -477,18 +477,6 @@
 .khmer-calendar-grid button[aria-current="date"] { border-color: var(--action); font-weight: 700; }
 .khmer-calendar-grid button.is-holiday { background: var(--calendar-holiday-bg); color: var(--calendar-holiday); }
 .khmer-calendar-grid button[aria-pressed="true"] { background: var(--action); color: var(--on-action); }
-
-.khmer-calendar-expanded .khmer-calendar-layout:not([hidden]) {
-    gap: 1rem;
-    margin-top: 1rem;
-}
-.khmer-calendar-expanded .khmer-calendar-month { flex: 3 1 30rem; }
-.khmer-calendar-expanded .khmer-calendar-sidebar { flex: 1 1 16rem; }
-.khmer-calendar-expanded .khmer-calendar-grid th { font-size: clamp(.68rem, 1vw, .9rem); }
-.khmer-calendar-expanded .khmer-calendar-grid button {
-    min-height: clamp(2.6rem, 5vw, 4.5rem);
-    font-size: clamp(.9rem, 1.3vw, 1.2rem);
-}
 .khmer-calendar-legend { flex-wrap: wrap; margin-top: .35rem; color: var(--muted); font-size: .72rem; }
 .khmer-calendar-legend i { color: var(--action); }
 .khmer-calendar-holiday-key, .khmer-calendar-legend .khmer-calendar-holiday-key i { color: var(--calendar-holiday); }
