@@ -8,10 +8,12 @@ use App\Models\Schedule;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\User;
+use App\Services\ClassAttendanceReportService;
 use App\Services\MonthlyStudentAttendance;
 use App\Services\TuitionPaymentCoverage;
 use App\Support\AcademicYear;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Collection as ModelCollection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -121,7 +123,7 @@ class FamilyDashboardController extends Controller
         $siblings = $guardian->children()->orderBy('name')->get(['students.id', 'students.name']);
 
         $details = match ($tab) {
-            'attendance' => $this->attendance($student, $filters['month'] ?? now()->format('Y-m'), $parentAttendance),
+            'attendance' => $this->attendance($student, $classes, $filters['month'] ?? now()->format('Y-m'), $parentAttendance),
             'timetable' => [
                 'days' => TimetableController::DAYS,
                 'day' => $day,
@@ -179,12 +181,12 @@ class FamilyDashboardController extends Controller
         return redirect()->route('students.family.show', $student)->with('success', __('Child profile updated.'));
     }
 
-    private function classes(Student $student): Collection
+    private function classes(Student $student): ModelCollection
     {
-        return collect([$student->schoolClass])->filter()->concat($student->studyClasses)->unique('id');
+        return new ModelCollection(collect([$student->schoolClass])->filter()->concat($student->studyClasses)->unique('id')->all());
     }
 
-    private function attendance(Student $student, string $month, bool $withTrend = false): array
+    private function attendance(Student $student, ModelCollection $classes, string $month, bool $withTrend): array
     {
         $start = CarbonImmutable::createFromFormat('!Y-m', $month);
         $history = $student->attendances()->whereDate('date', '>=', $withTrend ? $start->subMonths(4) : $start)
@@ -211,6 +213,8 @@ class FamilyDashboardController extends Controller
             'month' => $start, 'records' => $records->keyBy(fn ($record) => $record->date->toDateString()),
             'counts' => $counts, 'rate' => $recorded ? round(100 * ($counts->get('present', 0) + $counts->get('late', 0)) / $recorded, $withTrend ? 1 : 0) : null,
             'trend' => $trend,
+            'classRecords' => $classes->isEmpty() ? collect() : app(ClassAttendanceReportService::class)
+                ->forMonth($classes, $student->newCollection([$student]), $start),
         ];
     }
 

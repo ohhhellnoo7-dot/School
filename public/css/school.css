@@ -23,36 +23,66 @@
 .attendance-gender--male { color: #154d99; background-color: #e0edff; }
 .attendance-gender--female { color: #9e235f; background-color: #fce4f0; }
 #class-attendance-roster .roster-status[data-status] {
-    background-image: var(--bs-form-select-bg-img), var(--roster-status-gradient, none);
-    background-position: right .75rem center, center;
-    background-size: 16px 12px, 100% 100%;
+    background-image: var(--bs-form-select-bg-img);
+    background-position: right .75rem center;
+    background-size: 16px 12px;
     background-repeat: no-repeat;
 }
 
-#class-attendance-roster .roster-status[data-status="present"] {
-    --roster-status-gradient: linear-gradient(125deg, var(--bs-body-bg), var(--bs-success-bg-subtle) 72%, var(--bs-success-border-subtle));
-    background-color: var(--bs-success-bg-subtle);
-    color: var(--bs-success-text-emphasis);
-    border-color: var(--bs-success-border-subtle);
+:is(.roster-status, .teacher-attendance-summary-row)[data-status="present"] {
+    --status-light: #4bcc67;
+    --status-accent: #107b36;
 }
 
-#class-attendance-roster .roster-status[data-status="absent"] {
-    --roster-status-gradient: linear-gradient(125deg, var(--bs-body-bg), var(--bs-danger-bg-subtle) 72%, var(--bs-danger-border-subtle));
-    background-color: var(--bs-danger-bg-subtle);
-    color: var(--bs-danger-text-emphasis);
-    border-color: var(--bs-danger-border-subtle);
+:is(.roster-status, .teacher-attendance-summary-row)[data-status="absent"] {
+    --status-light: #ff7180;
+    --status-accent: #e83549;
 }
 
-#class-attendance-roster .roster-status[data-status="late"] {
-    --roster-status-gradient: linear-gradient(125deg, var(--bs-body-bg), var(--bs-warning-bg-subtle) 72%, var(--bs-warning-border-subtle));
-    background-color: var(--bs-warning-bg-subtle);
-    color: var(--bs-warning-text-emphasis);
-    border-color: var(--bs-warning-border-subtle);
+:is(.roster-status, .teacher-attendance-summary-row)[data-status="late"] {
+    --status-light: #ffd35b;
+    --status-accent: #a56900;
 }
 
-#class-attendance-roster .roster-status[data-status="excused"] {
-    --roster-status-gradient: linear-gradient(125deg, var(--bs-body-bg), var(--bs-info-bg-subtle) 72%, var(--bs-info-border-subtle));
-    background-color: var(--bs-info-bg-subtle);
-    color: var(--bs-info-text-emphasis);
-    border-color: var(--bs-info-border-subtle);
+:is(.roster-status, .teacher-attendance-summary-row)[data-status="excused"] {
+    --status-light: #7bc5fa;
+    --status-accent: #2384cd;
 }
+
+#class-attendance-roster .roster-status-control {
+    display: inline-grid;
+    align-items: center;
+    position: relative;
+    color: var(--bs-body-color);
+}
+
+#class-attendance-roster .roster-status-control .roster-status {
+    width: 4.7rem;
+    color: transparent;
+}
+
+#class-attendance-roster .roster-status option {
+    color: var(--bs-body-color);
+    background: var(--bs-body-bg);
+}
+
+#class-attendance-roster .roster-status-icons {
+    position: absolute;
+    inset-inline-start: .85rem;
+    pointer-events: none;
+    font-size: 1.25rem;
+}
+
+#class-attendance-roster .roster-status-icons i { display: none; }
+#class-attendance-roster .roster-status[data-status=""] ~ .roster-status-icons [data-roster-icon=""],
+#class-attendance-roster .roster-status[data-status="present"] ~ .roster-status-icons [data-roster-icon="present"],
+#class-attendance-roster .roster-status[data-status="late"] ~ .roster-status-icons [data-roster-icon="late"],
+#class-attendance-roster .roster-status[data-status="absent"] ~ .roster-status-icons [data-roster-icon="absent"],
+#class-attendance-roster .roster-status[data-status="excused"] ~ .roster-status-icons [data-roster-icon="excused"] {
+    display: inline-block;
+}
+
+#class-attendance-roster .roster-status-icons [data-roster-icon="present"] { color: var(--bs-success-text-emphasis); }
+#class-attendance-roster .roster-status-icons [data-roster-icon="late"] { color: var(--bs-warning-text-emphasis); }
+#class-attendance-roster .roster-status-icons [data-roster-icon="absent"] { color: var(--bs-danger-text-emphasis); }
+#class-attendance-roster .roster-status-icons [data-roster-icon="excused"] { color: var(--bs-primary-text-emphasis); }

@@ -117,29 +117,14 @@
 
         <section class="pa-panel pa-records" id="parent-attendance-records">
             <header>
-                <h2><i class="bi bi-clipboard-data-fill" aria-hidden="true"></i> {{ __('Attendance Records') }}</h2>
-                <form action="{{ route('students.family.show', $student) }}#parent-attendance-records" method="get" data-parent-attendance-filter>
+                <h2 id="family-attendance-report"><i class="bi bi-clipboard-data-fill" aria-hidden="true"></i> {{ __('Attendance Records') }}</h2>
+                <form action="{{ route('students.family.show', $student) }}#parent-attendance-records" method="get">
                     <input type="hidden" name="tab" value="attendance">
                     <input class="form-control" type="month" name="month" value="{{ $month->format('Y-m') }}" aria-label="{{ __('Attendance month') }}" required>
-                    <noscript><button type="submit" class="btn btn-outline-secondary">{{ __('Show month') }}</button></noscript>
+                    <button type="submit" class="btn btn-outline-secondary">{{ __('Show data') }}</button>
                 </form>
             </header>
-            <div class="table-responsive">
-                <table class="table">
-                    <thead><tr><th scope="col">{{ __('Date') }}</th><th scope="col">{{ __('Status') }}</th><th scope="col">{{ __('Remark') }}</th></tr></thead>
-                    <tbody>
-                        @forelse($records as $record)
-                            <tr>
-                                <td><i class="bi bi-calendar3" aria-hidden="true"></i> <time datetime="{{ $record->date->toDateString() }}">{{ $record->date->translatedFormat('M j, Y') }}</time></td>
-                                <td><span class="pa-record-status" data-attendance-status="{{ $record->status }}"><i class="bi bi-{{ $statuses[$record->status][1] ?? 'info-circle' }}" aria-hidden="true"></i> {{ __(ucfirst($record->status)) }}</span></td>
-                                <td>{{ $record->notes ?: '—' }}</td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="3">{{ __('No attendance recorded this month.') }}</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+            @include('school.family.tabs.attendance-report')
         </section>
     @else
         <section class="pa-panel"><h2>{{ __('No children linked yet') }}</h2><p class="mb-0">{{ __('Contact the school office to link a student to your account.') }}</p></section>

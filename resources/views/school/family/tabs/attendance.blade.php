@@ -1,27 +1,19 @@
 <form class="family-filter" action="{{ $profile }}" method="get" data-family-navigation>
     <input type="hidden" name="tab" value="attendance">
     <div><label class="form-label" for="family-month">{{ __('Attendance month') }}</label><input class="form-control" id="family-month" type="month" name="month" value="{{ $month->format('Y-m') }}" required></div>
-    <button class="btn family-button" type="submit">{{ __('Show month') }}</button>
+    <button class="btn family-button" type="submit">{{ __('Show data') }}</button>
 </form>
 <div class="family-attendance-grid">
     <div>
         <div class="family-attendance-total">
             <strong>{{ $rate === null ? '—' : $rate.'%' }}</strong>
-            <div>{{ __('Attendance rate') }}<small>{{ __('Present and late days as a share of recorded days') }}</small></div>
+            <div>{{ __('Daily attendance rate') }}<small>{{ __('Present and late days as a share of recorded days') }}</small></div>
         </div>
         @if($rate !== null)<progress class="family-progress" value="{{ $rate }}" max="100" aria-label="{{ __('Attendance rate') }}"></progress>@endif
         <ul class="family-attendance-legend">
             @foreach(['present', 'absent', 'late', 'excused'] as $status)
                 <li class="family-pill" data-tone="{{ $status }}">{{ __(ucfirst($status)) }} <strong>{{ $counts->get($status, 0) }}</strong></li>
             @endforeach
-        </ul>
-        <h3>{{ __('Recent records') }}</h3>
-        <ul class="family-records">
-            @forelse($records->take(6) as $record)
-                <li><time datetime="{{ $record->date->toDateString() }}">{{ $record->date->translatedFormat('D, M j') }}</time><span class="family-pill" data-tone="{{ $record->status }}">{{ __(ucfirst($record->status)) }}</span></li>
-            @empty
-                <li>{{ __('No attendance recorded this month.') }}</li>
-            @endforelse
         </ul>
     </div>
     <div class="family-calendar">
@@ -44,3 +36,7 @@
         </div>
     </div>
 </div>
+<section class="mt-4">
+    <h3 id="family-attendance-report">{{ __('Attendance report') }} ? {{ $month->translatedFormat('F Y') }}</h3>
+    @include('school.family.tabs.attendance-report')
+</section>

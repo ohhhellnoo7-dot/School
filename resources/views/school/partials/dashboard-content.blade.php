@@ -277,7 +277,58 @@
         <div class="col-12 col-lg-6">@include('school.partials.dashboard-payment-coverage')</div>
         <div class="col-12 col-lg-6">@include('school.partials.family-announcements')</div>
     @else
-    <div class="{{ $isTeacher ? 'col-12 col-lg-6' : 'col-lg-4' }}"><section class="panel h-100"><div class="panel-header"><div><h2>Student attendance report</h2><p>{{ $reportDate->format('l, M d, Y') }} &middot; {{ $attendanceSession ?: 'All sessions' }}</p></div><span class="stat-icon tint-green"><i class="bi bi-check2-circle"></i></span></div><div class="chart-wrap small attendance-donut"><div class="donut-label"><strong>{{ $attendanceCount ? round($presentCount / $attendanceCount * 100) : 0 }}%</strong><span>Present</span></div><canvas id="attendanceChart" role="img" aria-label="Attendance by status for {{ $reportDate->format('M d, Y') }}"></canvas></div><div class="chart-legend">@foreach(['present' => 'Present', 'absent' => 'Absent', 'late' => 'Late', 'excused' => 'Excused'] as $status => $label)<a class="text-reset" href="{{ route('attendance.people', array_filter(['kind' => 'students', 'status' => $status, 'date' => $reportDate->toDateString(), 'session' => $attendanceSession])) }}"><span><b>{{ $charts['attendance'][array_search($status, ['present', 'absent', 'late', 'excused'])] }}</b> {{ $label }}</span></a>@endforeach</div>@if($attendanceCount === 0)<p class="text-secondary text-center small mt-2">{{ ($studentReportHoliday = app(\App\Services\SchoolHolidayClosure::class)->holiday($reportDate)) ? __('School holiday. No attendance required.') : __('No attendance recorded for this date.') }}</p>@endif</section></div>
+    <div class="{{ $isTeacher ? 'col-12 col-lg-6' : 'col-lg-4' }}">
+        <section @class(['panel', 'h-100', 'teacher-attendance-report' => $isTeacher])>
+            <div class="panel-header">
+                @if($isTeacher)
+                    <span class="teacher-report-emblem" aria-hidden="true"><i class="bi bi-people-fill"></i></span>
+                @endif
+                <div>
+                    <h2>Student attendance report</h2>
+                    <p>{{ $reportDate->format('l, M d, Y') }} &middot; {{ $attendanceSession ?: 'All sessions' }}</p>
+                </div>
+                <span class="stat-icon tint-green"><i class="bi {{ $isTeacher ? 'bi-calendar-check' : 'bi-check2-circle' }}" aria-hidden="true"></i></span>
+            </div>
+            <div @class(['teacher-attendance-overview' => $isTeacher])>
+            <div @class(['chart-wrap', 'attendance-donut', 'small' => !$isTeacher])>
+                <div class="donut-label">
+                    @if($isTeacher)<i class="bi bi-people-fill" aria-hidden="true"></i>@endif
+                    <strong>{{ $attendanceCount ? round($presentCount / $attendanceCount * 100) : 0 }}%</strong>
+                    <span>{{ __('Present') }}</span>
+                </div>
+                <canvas id="attendanceChart" role="img" aria-label="Attendance by status for {{ $reportDate->format('M d, Y') }}"></canvas>
+            </div>
+            <div class="{{ $isTeacher ? 'teacher-attendance-breakdown' : 'chart-legend' }}">
+                @foreach(['present' => ['Present', 'check-circle'], 'absent' => ['Absent', 'x-circle'], 'late' => ['Late', 'clock'], 'excused' => ['Excused', 'shield-check']] as $status => [$label, $icon])
+                    @php($count = $charts['attendance'][$loop->index])
+                    @php($share = $attendanceCount ? round($count / $attendanceCount * 100) : 0)
+                    <a class="{{ $isTeacher ? 'teacher-attendance-summary-row' : 'text-reset' }}" data-status="{{ $status }}" href="{{ route('attendance.people', array_filter(['kind' => 'students', 'status' => $status, 'date' => $reportDate->toDateString(), 'session' => $attendanceSession])) }}">
+                        @if($isTeacher)
+                            <span><i class="bi bi-{{ $icon }}" aria-hidden="true"></i>{{ __($label) }}</span>
+                            <strong>{{ $count }}</strong>
+                            <small>{{ $share }}%</small>
+                            <span class="teacher-attendance-track" aria-hidden="true"><span style="width: {{ $share }}%"></span></span>
+                        @else
+                            <span><b>{{ $count }}</b> {{ $label }}</span>
+                        @endif
+                    </a>
+                @endforeach
+            </div>
+            </div>
+            @if($attendanceCount === 0)
+                <p class="text-secondary text-center small mt-2">{{ app(\App\Services\SchoolHolidayClosure::class)->holiday($reportDate) ? __('School holiday. No attendance required.') : __('No attendance recorded for this date.') }}</p>
+            @elseif($isTeacher)
+                <div class="teacher-report-total">
+                    <span><i class="bi bi-people-fill" aria-hidden="true"></i> {{ trans_choice(':count attendance record|:count attendance records', $attendanceCount) }}</span>
+                </div>
+            @endif
+            @if($isTeacher)
+                <div class="teacher-report-landscape" aria-hidden="true">
+                    <i class="bi bi-fan"></i><i class="bi bi-fan"></i>
+                </div>
+            @endif
+        </section>
+    </div>
     @endif
 @unless($isTeacher)
 </div>

@@ -115,8 +115,18 @@
                 control.setAttribute('aria-pressed', String(control.dataset.attendanceMode === attendanceMode));
             });
         }
-        const doughnut = (id, labels, values, colors) => create(id, {type: 'doughnut', data: {labels, datasets: [{data: values, backgroundColor: colors, borderWidth: 0, borderRadius: 5}]}, options: {...options, cutout: '77%'}});
-        doughnut('attendanceChart', ['Present', 'Absent', 'Late', 'Excused'], data.attendance, [color('present', '#13ca78'), color('absent', '#ff707d'), color('late', '#ffcb45'), color('excused', '#aeb9cd')]);
+        const doughnut = (id, labels, values, colors, cutout = '77%') => create(id, {type: 'doughnut', data: {labels, datasets: [{data: values, backgroundColor: colors, borderWidth: 0, borderRadius: 5}]}, options: {...options, cutout}});
+        const teacherReport = content.querySelector('.teacher-attendance-report');
+        const attendanceColors = ({chart, dataIndex}) => {
+            const tones = [['#4bcc67', '#107b36'], ['#ff7180', '#e83549'], ['#ffe083', '#efa800'], ['#7bc5fa', '#2384cd']];
+            const [light, dark] = tones[dataIndex] ?? tones[0];
+            if (!chart.chartArea) return dark;
+            const fill = chart.ctx.createLinearGradient(0, chart.chartArea.top, 0, chart.chartArea.bottom);
+            fill.addColorStop(0, light);
+            fill.addColorStop(1, dark);
+            return fill;
+        };
+        doughnut('attendanceChart', ['Present', 'Absent', 'Late', 'Excused'], data.attendance, teacherReport ? attendanceColors : [color('present', '#13ca78'), color('absent', '#ff707d'), color('late', '#ffcb45'), color('excused', '#aeb9cd')], teacherReport ? '75%' : '77%');
         const teacherValues = data.teacherAttendance || [0, 0, 0, 0];
         const teacherTotal = teacherValues.reduce((sum, value) => sum + value, 0);
         create('teacherAttendanceChart', {type: 'doughnut', data: {labels: teacherTotal ? ['Present', 'Absent', 'Late', 'Excused'] : ['No records'], datasets: [{data: teacherTotal ? teacherValues : [1], backgroundColor: teacherTotal ? ['#329c7c', '#d45669', '#c68b25', '#8d96af'] : ['#dce5e2'], borderWidth: 0}]}, options: {...options, cutout: '77%', plugins: {legend: {display: false}, tooltip: {enabled: teacherTotal > 0}}}});

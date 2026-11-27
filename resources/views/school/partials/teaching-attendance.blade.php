@@ -83,7 +83,8 @@
                                     @csrf
                                     @method('PUT')
                                     <input type="hidden" name="attendance_date" value="{{ $classAttendanceDate }}">
-                                    <select class="form-select w-auto roster-status" name="status" data-status="{{ $record?->status }}" aria-label="{{ __('Attendance status for :student', ['student' => $student->name]) }}" required>
+                                    <span class="roster-status-control">
+                                    <select class="form-select roster-status" name="status" data-status="{{ $record?->status }}" aria-label="{{ __('Attendance status for :student', ['student' => $student->name]) }}" required>
                                         @unless(in_array($record?->status, $classAttendanceStatuses, true))
                                             <option value="" selected disabled hidden>{{ __('Choose status') }}</option>
                                         @endunless
@@ -91,6 +92,14 @@
                                             <option value="{{ $status }}" @selected($record?->status === $status)>{{ __(ucfirst($status)) }}</option>
                                         @endforeach
                                     </select>
+                                    <span class="roster-status-icons" aria-hidden="true">
+                                        <i class="bi bi-dash-circle" data-roster-icon=""></i>
+                                        <i class="bi bi-check-circle-fill" data-roster-icon="present"></i>
+                                        <i class="bi bi-clock-fill" data-roster-icon="late"></i>
+                                        <i class="bi bi-x-circle-fill" data-roster-icon="absent"></i>
+                                        <i class="bi bi-shield-fill-check" data-roster-icon="excused"></i>
+                                    </span>
+                                    </span>
                                     <button class="btn btn-outline-primary">{{ __('Save') }}</button>
                                     <small data-attendance-result role="status"></small>
                                 </form>

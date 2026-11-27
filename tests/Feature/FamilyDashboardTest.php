@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Announcement;
 use App\Models\Attendance;
+use App\Models\ClassAttendance;
 use App\Models\Examination;
 use App\Models\Grade;
 use App\Models\Schedule;
@@ -19,6 +20,32 @@ use Tests\TestCase;
 class FamilyDashboardTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_teacher_can_view_every_day_and_compare_program_attendance_for_a_linked_child(): void
+    {
+        $teacher = User::factory()->create(['role' => 'teacher']);
+        $english = SchoolClass::create(['name' => 'Grade 8', 'section' => 'A', 'program' => 'English', 'session' => 'Afternoon']);
+        $khmer = SchoolClass::create(['name' => 'Grade 8', 'section' => 'B', 'program' => 'Khmer', 'session' => 'Morning']);
+        $child = Student::factory()->create(['parent_id' => $teacher->id, 'school_class_id' => $english->id]);
+        $child->studyClasses()->attach($khmer);
+
+        foreach (['2028-02-01' => ['present', 'late'], '2028-02-29' => ['absent', 'excused']] as $date => $statuses) {
+            foreach ([$english, $khmer] as $index => $class) {
+                ClassAttendance::create(['student_id' => $child->id, 'school_class_id' => $class->id, 'date' => $date, 'status' => $statuses[$index]]);
+            }
+        }
+
+        foreach (['2028-02' => 29, '2028-03' => 31] as $month => $days) {
+            $response = $this->actingAs($teacher)->get(route('students.family.show', [$child, 'tab' => 'attendance', 'month' => $month]))
+                ->assertOk()->assertSee(['Attendance report', 'Show data', 'English', 'Khmer', 'Not recorded']);
+            $table = str($response->getContent())->after('aria-labelledby="family-attendance-report"')->before('</table>')->toString();
+            $this->assertSame($days, substr_count($table, '<time datetime='));
+            if ($days === 29) {
+                $this->assertMatchesRegularExpression('/2028-02-01[^<]*<\/time>.*?data-tone="present".*?data-tone="late".*?<\/tr>/s', $table);
+                $this->assertMatchesRegularExpression('/2028-02-29[^<]*<\/time>.*?data-tone="absent".*?data-tone="excused".*?<\/tr>/s', $table);
+            }
+        }
+    }
 
     public function test_teacher_my_children_shows_tuition_coverage_only_for_linked_children(): void
     {
