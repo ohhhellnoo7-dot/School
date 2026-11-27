@@ -176,7 +176,7 @@
 @endif
 @if($isTeacher)
     <div class="row g-3 dashboard-feature-row">
-        <div class="col-xl-6 teaching-holiday-slot" data-calendar-holiday-slot>
+        <div class="col-12 teaching-holiday-slot" data-calendar-holiday-slot>
             <div class="h-100" data-calendar-holiday-default data-date="{{ today()->toDateString() }}">
                 @if($teachingHoliday)
                     <section @class(['panel teaching-holiday h-100', 'teaching-holiday--water-festival' => $teachingHoliday === 'water_festival']) aria-labelledby="teaching-holiday-title">
@@ -214,15 +214,15 @@
                 </section>
             </template>
         </div>
-        <div class="col-xl-6">
-            <div class="panel h-100">
-                @include('school.partials.khmer-calendar', ['calendarLocale' => 'km'])
+        <div class="col-12">
+            @include('school.partials.teaching-attendance', ['attendanceMargin' => ''])
+        </div>
+        <div class="col-12 mb-3">
+            <div class="panel">
+                @include('school.partials.khmer-calendar', ['calendarLocale' => 'km', 'calendarClass' => 'khmer-calendar-expanded p-3'])
             </div>
         </div>
     </div>
-@endif
-@if($role === 'teacher')
-    @include('school.partials.teaching-attendance')
 @endif
 @if($isParent && $dashboardChildren->isNotEmpty())
     @include('school.partials.dashboard-children')
