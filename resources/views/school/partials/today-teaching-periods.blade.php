@@ -1,4 +1,6 @@
-@php($isSchedulePreview = isset($teachingScheduleDate))
+@php
+    $isSchedulePreview = isset($teachingScheduleDate);
+@endphp
 <section class="panel h-100 teacher-schedule-panel" aria-labelledby="today-teaching-periods-title">
     <div class="panel-header">
         <div class="teacher-schedule-heading">
@@ -96,7 +98,12 @@
                             </th>
                             <td>
                                 <strong>{{ $class ? trim($class->name.' '.$class->section) : __('Class not assigned') }}</strong>
-                                <small class="d-block text-secondary">{{ $period->subject?->name }}</small>
+                                @if($period->subject)
+                                    <small class="d-flex align-items-center gap-2 text-secondary">
+                                        <span class="text-primary">@include('school.partials.subject-icon', ['name' => $period->subject->name])</span>
+                                        <span>{{ $period->subject->name }}</span>
+                                    </small>
+                                @endif
                                 @if($class && !$isSchedulePreview)
                                     <a class="text-link" href="{{ route('dashboard', array_merge(request()->only(['date', 'session', 'attendance_scope']), ['class_attendance_date' => today()->toDateString(), 'class_attendance_period' => $period->id])) }}#class-attendance-roster">{{ __('Attendance') }}</a>
                                 @endif

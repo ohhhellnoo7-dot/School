@@ -226,6 +226,19 @@ class SchoolFinanceController extends Controller
         return SchoolModules::query('fees', $request->user())->with(['student', 'items', 'adjustments', 'payments']);
     }
 
+    private function documentQuery(Request $request)
+    {
+        if (! $request->boolean('family')) {
+            return $this->visible($request);
+        }
+
+        $guardian = $request->user();
+        abort_unless(in_array($guardian->role, User::GUARDIAN_ROLES, true), 403);
+
+        return Fee::whereIn('student_id', $guardian->children()->select('students.id')->getQuery())
+            ->with(['student', 'items', 'adjustments', 'payments']);
+    }
+
     public function archive(Request $request, SchoolFinanceService $service)
     {
         abort_unless($request->user()->role === 'administrator', 403);
@@ -320,8 +333,9 @@ class SchoolFinanceController extends Controller
 
     public function invoice(Request $request, int $fee)
     {
-        $query = $this->visible($request);
-        if ($request->user()->role === 'administrator') {
+        $query = $this->documentQuery($request);
+        $documentContext = $request->boolean('family') ? ['family' => 1] : [];
+        if (! $documentContext && $request->user()->role === 'administrator') {
             $query->withTrashed();
         }
         $fee = $query->findOrFail($fee);
@@ -338,14 +352,16 @@ class SchoolFinanceController extends Controller
                 ->header('Cache-Control', 'private, no-store');
         }
 
-        return view('school.finance.invoice', compact('fee', 'structures', 'nextPaymentDate'));
+        return response()->view('school.finance.invoice', compact('fee', 'structures', 'nextPaymentDate', 'documentContext'))
+            ->header('Cache-Control', 'private, no-store');
     }
 
     public function receipt(Request $request, int $payment)
     {
         $payment = FeePayment::findOrFail($payment);
-        $query = $this->visible($request);
-        if ($request->user()->role === 'administrator') {
+        $query = $this->documentQuery($request);
+        $documentContext = $request->boolean('family') ? ['family' => 1] : [];
+        if (! $documentContext && $request->user()->role === 'administrator') {
             $query->withTrashed();
         }
         $fee = (clone $query)->findOrFail($payment->fee_id);
@@ -356,13 +372,14 @@ class SchoolFinanceController extends Controller
             $groupFees = $query->where('student_id', $fee->student_id)->whereKey($group->pluck('fee_id')->unique()->all())->get()->keyBy('id');
             if ($group->count() > 1 && $groupFees->count() === $group->pluck('fee_id')->unique()->count()) {
                 if ($group->first()->id !== $payment->id) {
-                    return redirect()->route('finance.receipt', $group->first());
+                    return redirect()->route('finance.receipt', ['payment' => $group->first()] + $documentContext);
                 }
                 $allocations = $group->map(fn ($entry) => ['payment' => $entry, 'fee' => $groupFees->get($entry->fee_id)]);
             }
         }
 
-        return view('school.finance.receipt', compact('fee', 'payment', 'allocations'));
+        return response()->view('school.finance.receipt', compact('fee', 'payment', 'allocations', 'documentContext'))
+            ->header('Cache-Control', 'private, no-store');
     }
 
     public function settings(Request $request)

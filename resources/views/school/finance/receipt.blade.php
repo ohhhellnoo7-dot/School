@@ -1,6 +1,7 @@
 @extends('school.layout')
 @section('title', __('Payment Receipt'))
 @section('content')
+@include('school.finance._family-fees-back')
 @php
     $combined = $allocations->isNotEmpty();
     $entries = ($combined ? $allocations : collect([['payment' => $payment, 'fee' => $fee]]))
@@ -75,7 +76,7 @@
             </div>
             <div>
                 <i class="bi bi-file-earmark-text scholar-receipt-identity-icon" aria-hidden="true"></i>
-                <div><strong class="d-block">{{ __('Invoice No.') }}</strong><a class="scholar-receipt-tag" href="{{ route('finance.invoice', $fee) }}">{{ $fee->display_number }}</a></div>
+                <div><strong class="d-block">{{ __('Invoice No.') }}</strong><a class="scholar-receipt-tag" href="{{ route('finance.invoice', ['fee' => $fee] + $documentContext) }}">{{ $fee->display_number }}</a></div>
             </div>
             @endif
         </div>
@@ -92,7 +93,7 @@
                             @foreach($entries as $entry)
                                 <tr>
                                     <td>{{ $entry['fee']->description }}</td>
-                                    <td><a href="{{ route('finance.invoice', ['fee' => $entry['fee'], 'receipt' => $entry['payment']->id]) }}#invoice-document">{{ $entry['fee']->display_number }}</a></td>
+                                    <td><a href="{{ route('finance.invoice', ['fee' => $entry['fee'], 'receipt' => $entry['payment']->id] + $documentContext) }}#invoice-document">{{ $entry['fee']->display_number }}</a></td>
                                     <td class="text-nowrap"><time datetime="{{ $entry['fee']->due_date->toDateString() }}">{{ $entry['fee']->due_date->translatedFormat('d M Y') }}</time></td>
                                     <td class="text-end text-nowrap">{{ \App\Support\Money::display(\App\Support\Money::cents($entry['payment']->amount)) }} {{ $entry['payment']->currency }}</td>
                                 </tr>

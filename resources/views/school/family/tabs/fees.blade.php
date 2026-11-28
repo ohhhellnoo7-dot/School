@@ -22,7 +22,13 @@
 <h3>{{ __('Invoice history') }}</h3>
 <ul class="family-records">
     @forelse($fees as $fee)
-        <li><div><strong>{{ $fee->description }}</strong><small>{{ $fee->display_number }} · {{ __('Due') }} {{ $fee->due_date->translatedFormat('M j, Y') }}</small></div><span class="family-pill">{{ $fee->balance }} {{ $fee->currency }} {{ __('due') }}</span></li>
+        <li>
+            <div><strong>{{ $fee->description }}</strong><small>{{ $fee->display_number }} · {{ __('Due') }} {{ $fee->due_date->translatedFormat('M j, Y') }}</small></div>
+            <span class="family-pill">{{ $fee->balance }} {{ $fee->currency }} {{ __('due') }}</span>
+            <a class="btn btn-sm btn-outline-primary rounded-pill" href="{{ route('finance.invoice', ['fee' => $fee, 'family' => 1]) }}">
+                <i class="bi bi-file-earmark-text me-1" aria-hidden="true"></i>{{ __('Invoice') }}
+            </a>
+        </li>
     @empty
         <li>{{ __('No invoices yet.') }}</li>
     @endforelse
@@ -30,7 +36,13 @@
 <h3 class="mt-4">{{ __('Recent payments') }}</h3>
 <ul class="family-records">
     @forelse($payments as $payment)
-        <li><div><strong>{{ $payment->receipt_number }}</strong><small>{{ $payment->paid_on->translatedFormat('M j, Y') }} · {{ __(\Illuminate\Support\Str::headline($payment->method)) }}</small></div><span class="family-pill">{{ $payment->amount }} {{ $payment->currency }}</span></li>
+        <li>
+            <div class="text-break"><strong>{{ $payment->receipt_number }}</strong><small>{{ $payment->paid_on->translatedFormat('M j, Y') }} · {{ __(\Illuminate\Support\Str::headline($payment->method)) }}</small></div>
+            <span class="family-pill">{{ $payment->amount }} {{ $payment->currency }}</span>
+            <a class="btn btn-sm btn-outline-primary rounded-pill" href="{{ route('finance.receipt', ['payment' => $payment, 'family' => 1]) }}">
+                <i class="bi bi-receipt me-1" aria-hidden="true"></i>{{ __('Receipt') }}
+            </a>
+        </li>
     @empty
         <li>{{ __('No payments recorded.') }}</li>
     @endforelse

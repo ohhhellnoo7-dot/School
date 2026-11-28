@@ -81,6 +81,34 @@ class FamilyDashboardTest extends TestCase
             ->get(route('students.index', ['my_children' => 1]))->assertOk()->assertDontSee('Tuition Payment Coverage');
     }
 
+    public function test_teacher_guardian_can_open_only_linked_child_fee_documents(): void
+    {
+        $teacher = User::factory()->create(['role' => 'teacher']);
+        $child = Student::factory()->create(['parent_id' => $teacher->id]);
+        $other = Student::factory()->create();
+        $makeFee = fn (Student $student) => $student->fees()->create([
+            'description' => 'Tuition', 'amount' => '35.00', 'paid' => '10.00', 'currency' => 'USD', 'due_date' => today(),
+        ]);
+        $makePayment = fn ($fee, $number) => $fee->payments()->create([
+            'receipt_number' => $number, 'request_key' => $number, 'amount' => '10.00', 'currency' => 'USD',
+            'paid_on' => today(), 'method' => 'cash', 'recorded_by' => $teacher->id,
+        ]);
+        $fee = $makeFee($child);
+        $payment = $makePayment($fee, 'RCT-LINKED');
+        $otherFee = $makeFee($other);
+        $otherPayment = $makePayment($otherFee, 'RCT-UNLINKED');
+        $feesUrl = route('students.family.show', ['child' => $child, 'tab' => 'fees']);
+        $invoiceUrl = route('finance.invoice', ['fee' => $fee, 'family' => 1]);
+        $receiptUrl = route('finance.receipt', ['payment' => $payment, 'family' => 1]);
+
+        $this->actingAs($teacher)->get($feesUrl)->assertOk()->assertSee($invoiceUrl, false)->assertSee($receiptUrl, false);
+        $this->get($invoiceUrl)->assertOk()->assertSee($feesUrl, false)->assertSee($receiptUrl, false);
+        $this->get($receiptUrl)->assertOk()->assertSee($feesUrl, false)->assertSee('RCT-LINKED')->assertSee('Save as PDF');
+        $this->get(route('finance.invoice', ['fee' => $otherFee, 'family' => 1]))->assertNotFound();
+        $this->get(route('finance.receipt', ['payment' => $otherPayment, 'family' => 1]))->assertNotFound();
+        $this->get(route('finance.index', ['family' => 1]))->assertForbidden();
+    }
+
     public function test_linked_guardian_can_edit_only_their_childs_profile_fields(): void
     {
         Storage::fake('public');
