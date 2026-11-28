@@ -131,7 +131,7 @@ class FamilyDashboardController extends Controller
                     ->whereIn('day', TimetableController::DAYS)->orderBy('starts_at')->get()->groupBy(['school_class_id', 'day']),
             ],
             'results' => $this->results($student, $filters['period'] ?? ''),
-            'fees' => ['fees' => $student->fees()->with(['adjustments', 'payments'])->latest('due_date')->get()],
+            'fees' => ['fees' => $student->fees()->with(['items', 'adjustments', 'payments'])->latest('due_date')->get()],
             default => ['academicYear' => AcademicYear::current()],
         };
 

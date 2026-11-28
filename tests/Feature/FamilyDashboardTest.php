@@ -101,7 +101,9 @@ class FamilyDashboardTest extends TestCase
         $invoiceUrl = route('finance.invoice', ['fee' => $fee, 'family' => 1]);
         $receiptUrl = route('finance.receipt', ['payment' => $payment, 'family' => 1]);
 
-        $this->actingAs($teacher)->get($feesUrl)->assertOk()->assertSee($invoiceUrl, false)->assertSee($receiptUrl, false);
+        $this->actingAs($teacher)->get($feesUrl)->assertOk()
+            ->assertSeeInOrder(['Edit Profile', 'Latest Invoice', 'Latest Receipt', 'Invoice history'])
+            ->assertSee($invoiceUrl, false)->assertSee($receiptUrl, false);
         $this->get($invoiceUrl)->assertOk()->assertSee($feesUrl, false)->assertSee($receiptUrl, false);
         $this->get($receiptUrl)->assertOk()->assertSee($feesUrl, false)->assertSee('RCT-LINKED')->assertSee('Save as PDF');
         $this->get(route('finance.invoice', ['fee' => $otherFee, 'family' => 1]))->assertNotFound();
@@ -187,7 +189,8 @@ class FamilyDashboardTest extends TestCase
                 && $lessons[$otherClass->id]['Thursday']->first()->subject->is($khmerSubject));
         $this->get(route('students.family.show', [$child, 'tab' => 'results', 'period' => '2026-2']))->assertOk()->assertSee('Good comprehension');
         $this->get(route('students.family.show', [$child, 'tab' => 'results', 'period' => '2026-1']))->assertOk()->assertDontSee('Good comprehension');
-        $this->get(route('students.family.show', [$child, 'tab' => 'fees']))->assertOk()->assertSee(['25.00 USD', '90000.00 KHR']);
+        $this->get(route('students.family.show', [$child, 'tab' => 'fees']))->assertOk()
+            ->assertSee(['Payment Status', '25.00 USD', '90,000.00 KHR']);
         foreach (['overview', 'attendance', 'timetable', 'results', 'fees'] as $tab) {
             $this->get(route('students.family.show', [$other, 'tab' => $tab]))->assertNotFound();
         }

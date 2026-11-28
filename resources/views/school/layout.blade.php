@@ -189,7 +189,6 @@ a.attendance-status-tile:hover, a.attendance-status-tile:focus-visible { outline
     <main class="main-content" id="main-content" tabindex="-1">
         @if(session('success'))<div class="alert alert-success alert-dismissible fade show" role="status">{{ session('success') }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ __('Close') }}"></button></div>@endif
         @if($errors->any())<div class="alert alert-danger" role="alert"><strong>{{ __('Please check the following:') }}</strong><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
-        @if(auth()->user()->role === 'teacher' && !($myChildren ?? false))<div class="mb-3 {{ request()->routeIs('dashboard') ? 'windy-original' : '' }}"><a class="btn btn-outline-secondary" href="{{ route('teachers.schedule', auth()->id()) }}">{{ __('My teaching schedule') }}</a></div>@endif
         @include('school.students.enrollment-accounts')
         @yield('content')
         <footer class="page-footer"><span>© {{ now()->year }} Scholar. Made for better school days.</span><span>Greenfield Academy <i class="bi bi-heart-fill text-success ms-1"></i></span></footer>

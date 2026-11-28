@@ -100,7 +100,7 @@ class DashboardAjaxTest extends TestCase
         Schedule::where('teacher_id', $teacher->id)->where('starts_at', 'like', '10:00%')->update(['starts_at' => '17:00', 'ends_at' => '18:00']);
         $otherTeacher = User::where('email', 'james@school.test')->firstOrFail();
         Schedule::where('teacher_id', $otherTeacher->id)->update(['room' => 'Another teacher’s room']);
-        $this->actingAs($teacher)->get('/dashboard')->assertOk()->assertSee('My teaching schedule');
+        $this->actingAs($teacher)->get('/dashboard')->assertOk()->assertSee('Full schedule');
 
         $pages = [
             $this->get('/dashboard')->assertOk()->getContent(),
