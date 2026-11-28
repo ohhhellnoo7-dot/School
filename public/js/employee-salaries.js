@@ -19,11 +19,12 @@ document.querySelectorAll('[data-salary-search]').forEach((form) => {
             if (signal.aborted) return;
             results.innerHTML = replacement.innerHTML;
             document.getElementById('payday-withdrawal')?.remove();
-            for (const id of ['salary-teacher-count', 'salary-payroll-month', 'salary-payroll-metrics', 'salary-payroll-overview', 'salary-monthly-attendance', 'salary-export']) {
+            for (const id of ['salary-teacher-count', 'salary-payroll-month', 'salary-payroll-metrics', 'salary-payroll-overview', 'salary-monthly-attendance', 'salary-export', 'salary-weekend-calendar']) {
                 const current = document.getElementById(id);
                 const updated = documentResult.getElementById(id);
                 if (current && updated) current.replaceWith(updated);
             }
+            document.getElementById('salary-rate-weekend')?.dispatchEvent(new Event('input'));
             window.history.replaceState({}, '', url);
         } catch (error) {
             if (error.name !== 'AbortError') window.location.assign(url);
@@ -57,10 +58,9 @@ document.querySelectorAll('#salary-rates-dialog').forEach((dialog) => {
         if (panel?.hidden) switchView(views.find((button) => button.getAttribute('aria-controls') === panel.id));
     }, true);
     const weekendRate = dialog.querySelector('#salary-rate-weekend');
-    const weekendAmounts = dialog.querySelectorAll('[data-weekend-pay-hours]');
     const weekendCurrency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
     const updateWeekendPreview = () => {
-        weekendAmounts.forEach((cell) => {
+        dialog.querySelectorAll('[data-weekend-pay-hours]').forEach((cell) => {
             cell.textContent = weekendRate.validity.valid
                 ? weekendCurrency.format(weekendRate.valueAsNumber * Number(cell.dataset.weekendPayHours))
                 : '—';

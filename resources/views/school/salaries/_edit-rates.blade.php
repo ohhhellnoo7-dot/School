@@ -70,9 +70,10 @@
                 @endif
             </div>
             <p class="text-secondary">{{ __('Example for a 3-hour session on both days. Teacher pay uses their scheduled weekend hours.') }}</p>
+            <div id="salary-weekend-calendar">
             <div class="table-responsive">
                 <table class="table table-sm">
-                    <caption class="caption-top">{{ $month->format('F Y') }} · {{ trans_choice('{1} :count Saturday|[2,*] :count Saturdays', $saturdays) }} · {{ trans_choice('{1} :count Sunday|[2,*] :count Sundays', $sundays) }}</caption>
+                    <caption class="caption-top">{{ $month->format('F Y') }} · <strong>{{ __(':count weekend days', ['count' => $saturdays + $sundays]) }}</strong> ({{ trans_choice('{1} :count Saturday|[2,*] :count Saturdays', $saturdays) }} + {{ trans_choice('{1} :count Sunday|[2,*] :count Sundays', $sundays) }})</caption>
                     <thead><tr><th scope="col">{{ __('Session') }}</th><th scope="col">{{ __('Saturday') }}</th><th scope="col">{{ __('Sunday') }}</th><th scope="col">{{ __('Per weekend') }}</th><th scope="col">{{ __('This month') }}</th></tr></thead>
                     <tbody>
                         @foreach(['Morning', 'Afternoon', 'Evening'] as $session)
@@ -90,6 +91,27 @@
                     </tr></tfoot>
                 </table>
             </div>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <caption class="caption-top">{{ __('Weekend pay by month in :year for one 3-hour session per weekend day', ['year' => $month->year]) }}</caption>
+                    <thead><tr><th scope="col">{{ __('Month') }}</th><th scope="col">{{ __('Weekend days') }}</th><th scope="col">{{ __('Working hours') }}</th><th scope="col">{{ __('Monthly salary') }}</th></tr></thead>
+                    <tbody>
+                        @for($number = 1; $number <= 12; $number++)
+                            @php
+                                $calendarMonth = $month->copy()->startOfYear()->month($number);
+                                $weekendDays = $calendarMonth->diffInWeekendDays($calendarMonth->copy()->addMonth());
+                                $hours = 3 * $weekendDays;
+                            @endphp
+                            <tr>
+                                <th scope="row">{{ $calendarMonth->translatedFormat('F') }}</th>
+                                <td>{{ $weekendDays }}</td>
+                                <td>{{ $hours }}</td>
+                                <td data-weekend-pay-hours="{{ $hours }}">{{ $money($hours * $hourlyCents) }}</td>
+                            </tr>
+                        @endfor
+                    </tbody>
+                </table>
+            </div>
             <h4 class="h6">{{ __('Weekend working hours') }}</h4>
             @forelse($rows->where('weekend_work_hours', '>', 0) as $row)
                 <div class="d-flex flex-wrap justify-content-between gap-2 border-top py-2">
@@ -102,6 +124,7 @@
             @empty
                 <p class="text-secondary mb-0">{{ __('No weekend hours to show for this payroll view.') }}</p>
             @endforelse
+            </div>
         </section>
         <div class="salary-calculator-actions">
             <button class="btn btn-outline-secondary" type="button" data-cancel-salary-rates>{{ __('Cancel') }}</button>
