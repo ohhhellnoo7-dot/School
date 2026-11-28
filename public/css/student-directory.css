@@ -8,7 +8,13 @@
 }
 .students-page .student-hero > img { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: right center; }
 .students-page .student-hero::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(90deg, var(--hero-veil) 0%, color-mix(in srgb, var(--hero-veil) 96%, transparent) 30%, color-mix(in srgb, var(--hero-veil) 55%, transparent) 54%, transparent 78%); }
-:root:root:root:root .students-page .student-hero-copy { max-width: 58%; }
+.students-page .student-hero-intro {
+    display: flex;
+    align-items: center;
+    gap: clamp(.85rem, 2vw, 1.75rem);
+    max-width: 58%;
+}
+.students-page .student-hero-copy { min-width: 0; }
 .students-page .student-hero .eyebrow { color: var(--primary); font-size: 10px; letter-spacing: 2.2px; font-weight: 800; }
 :root:root:root:root .students-page .student-hero h1 { position: relative; width: fit-content; margin: 10px 0 24px; color: var(--text-primary); font-size: clamp(32px, 3.5vw, 52px); font-weight: 800; letter-spacing: -1.8px; }
 .students-page .student-hero h1::after { content: ""; position: absolute; right: -8px; bottom: -9px; width: 55%; height: 5px; background: var(--primary); border-radius: 100%; transform: rotate(-4deg); }
@@ -57,7 +63,7 @@
 @media (max-width: 767px) {
     :root:root:root:root .students-page .main-content { padding-top: 18px; }
     :root:root:root:root .students-page .student-hero { padding: 24px 22px 86px; min-height: 270px; align-items: start; }
-    :root:root:root:root .students-page .student-hero-copy { max-width: 100%; }
+    .students-page .student-hero-intro { max-width: 100%; }
     .students-page .student-hero::before { background: linear-gradient(90deg, var(--hero-veil), color-mix(in srgb, var(--hero-veil) 86%, transparent) 65%, color-mix(in srgb, var(--hero-veil) 60%, transparent)); }
     :root:root:root:root .students-page .hero-enroll { left: 22px; right: auto; bottom: 20px; }
     .students-page .student-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }

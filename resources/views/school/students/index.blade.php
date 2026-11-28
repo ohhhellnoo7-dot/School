@@ -3,11 +3,13 @@
 @section('content')
 <x-scholar-hero tag="section" class="student-hero school-hero" aria-labelledby="student-page-title">
     <img src="{{ asset('images/student-community.png') }}" alt="" width="2048" height="768" fetchpriority="high">
-    <i class="bi bi-people-fill student-hero-icon" aria-hidden="true"></i>
-    <div class="student-hero-copy">
-        <div class="eyebrow">{{ __('OUR SCHOOL COMMUNITY') }}</div>
-        <h1 id="student-page-title">{{ __('Students') }}</h1>
-        <p>{{ __('Manage student information, enrollment, and attendance.') }}</p>
+    <div class="student-hero-intro">
+        <i class="bi bi-people-fill student-hero-icon" aria-hidden="true"></i>
+        <div class="student-hero-copy">
+            <div class="eyebrow">{{ __('OUR SCHOOL COMMUNITY') }}</div>
+            <h1 id="student-page-title">{{ __('Students') }}</h1>
+            <p>{{ __('Manage student information, enrollment, and attendance.') }}</p>
+        </div>
     </div>
     @can('create', \App\Models\Student::class)<a href="{{ route('students.create') }}" class="btn btn-primary hero-enroll"><i class="bi bi-plus-lg me-2" aria-hidden="true"></i>{{ __('Enroll student') }}</a>@endcan
 </x-scholar-hero>
