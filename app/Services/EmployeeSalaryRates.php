@@ -14,6 +14,7 @@ class EmployeeSalaryRates
         'morning' => 12500,
         'afternoon' => 12500,
         'evening' => 3125,
+        'weekend_hourly' => 125,
         'late' => 100,
         'excused' => 500,
         'absence_one' => 1000,

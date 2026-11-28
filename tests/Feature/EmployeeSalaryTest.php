@@ -576,6 +576,23 @@ class EmployeeSalaryTest extends TestCase
         }
     }
 
+    public function test_weekend_session_pay_counts_each_saturday_and_sunday_in_the_salary_month(): void
+    {
+        $calculator = new EmployeeSalaryCalculator;
+        $profile = new EmployeeSalaryProfile(['day_sessions' => 2, 'evening_sessions' => 1, 'service_started_on' => '2026-01-01']);
+        $periods = collect(['Saturday', 'Sunday'])->flatMap(fn ($day) => collect([
+            ['07:00', '10:00'], ['13:00', '16:00'], ['17:00', '20:00'],
+        ])->map(fn ($times) => (object) [
+            'weekday' => $day, 'start_time' => $times[0], 'end_time' => $times[1], 'unavailable' => false,
+        ]));
+
+        foreach (['2026-02-01' => 9000, '2026-05-01' => 11250] as $month => $expected) {
+            $salary = $calculator->calculate($profile, Carbon::parse($month), 45 * 60, $periods);
+            $this->assertSame($expected, $salary['weekend_cents']);
+            $this->assertSame(28125 + $expected, $salary['base_cents']);
+        }
+    }
+
     public function test_increase_is_five_dollars_per_completed_three_months_for_total_salary(): void
     {
         $calculator = new EmployeeSalaryCalculator;

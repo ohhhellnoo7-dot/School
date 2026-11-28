@@ -42,7 +42,6 @@ document.querySelectorAll('[data-salary-search]').forEach((form) => {
 
 document.querySelectorAll('#salary-rates-dialog').forEach((dialog) => {
     const views = [...dialog.querySelectorAll('[data-salary-view]')];
-    const save = dialog.querySelector('[data-save-salary-rates]');
     const switchView = (active) => {
         views.forEach((button) => {
             const selected = button === active;
@@ -51,9 +50,27 @@ document.querySelectorAll('#salary-rates-dialog').forEach((dialog) => {
             button.classList.toggle('btn-outline-primary', !selected);
             document.getElementById(button.getAttribute('aria-controls')).hidden = !selected;
         });
-        save.hidden = save.disabled = active.dataset.salaryView === 'weekend';
     };
     views.forEach((button) => button.addEventListener('click', () => switchView(button)));
+    dialog.addEventListener('invalid', (event) => {
+        const panel = event.target.closest('#salary-weekday, #salary-weekend');
+        if (panel?.hidden) switchView(views.find((button) => button.getAttribute('aria-controls') === panel.id));
+    }, true);
+    const weekendRate = dialog.querySelector('#salary-rate-weekend');
+    const weekendAmounts = dialog.querySelectorAll('[data-weekend-pay-hours]');
+    const weekendCurrency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+    const updateWeekendPreview = () => {
+        weekendAmounts.forEach((cell) => {
+            cell.textContent = weekendRate.validity.valid
+                ? weekendCurrency.format(weekendRate.valueAsNumber * Number(cell.dataset.weekendPayHours))
+                : '—';
+        });
+    };
+    weekendRate.addEventListener('input', updateWeekendPreview);
+    updateWeekendPreview();
+    if (weekendRate.classList.contains('is-invalid')) {
+        switchView(views.find((button) => button.dataset.salaryView === 'weekend'));
+    }
     const rateCurrency = new Intl.NumberFormat('en-US', {
         style: 'currency', currency: 'USD', maximumFractionDigits: 4,
     });

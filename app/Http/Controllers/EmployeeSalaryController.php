@@ -194,16 +194,17 @@ class EmployeeSalaryController extends Controller
             $periods = $workPeriods->get($teacher->id, collect());
             $weekendHours = $payment ? 0 : $teaching::workingMinutes($periods->whereIn('weekday', ['Saturday', 'Sunday'])) / 60;
             if ($weekendHours > 0) $weeklyHours = $teaching::workingMinutes($periods) / 60;
+            $calculation = ! $payment && $profile ? $calculator->calculate($profile, $asOf, $assignedMinutes, $periods) : null;
 
             return ['teacher' => $teacher, 'profile' => $profile, 'payment' => $payment,
                 'paid_early' => $earlyPayments->has($teacher->id),
                 'weekly_hours' => $assignedMinutes / 60,
                 'weekly_work_hours' => $weeklyHours,
                 'weekend_work_hours' => $weekendHours,
-                'full_salary_cents' => $workSessions ? $calculator->fullSalaryCents($workSessions) : null,
+                'full_salary_cents' => $payment ? $calculator->fullSalaryCents($payment) : ($calculation['full_salary_cents'] ?? null),
                 'weekly_limit' => $weeklyHours ?? ($weeklyLimits->get($teacher->id) ?? $teaching->defaultLimit($teacher->program)) / 60,
                 'salary' => $payment ? $payment->only(['base_cents', 'raise_cents', 'total_cents', 'deduction_cents', 'combined_class_cents']) : ($profile ? $advanceService->apply($deductions->payroll(
-                    $calculator->calculate($profile, $asOf, $assignedMinutes), $attendanceProfile, $attendance->get($teacher->id, collect()),
+                    $calculation, $attendanceProfile, $attendance->get($teacher->id, collect()),
                     $scans->get($teacher->id, collect()), $overrides->get($teacher->id, collect()), $month, $asOf, isset($legacy[$teacher->id]),
                     $coverage->get($teacher->id, 0),
                 ), $advances->get($teacher->id, collect())) : null),
@@ -432,10 +433,11 @@ class EmployeeSalaryController extends Controller
         $rules = collect(EmployeeSalaryRates::DEFAULTS)->mapWithKeys(
             fn ($amount, $key) => ["rates.$key" => ['required', 'numeric', 'decimal:0,2', 'min:0', 'max:100000']]
         )->all();
+        $rules['rates.weekend_hourly'][0] = 'sometimes';
         $data = $request->validateWithBag('salaryRates', $rules + [
             'rates' => 'required|array:'.implode(',', array_keys(EmployeeSalaryRates::DEFAULTS)),
         ]);
-        $rates->save(array_map(Money::cents(...), $data['rates']));
+        $rates->save(array_map(Money::cents(...), $data['rates']) + ['weekend_hourly' => $rates->amounts()['weekend_hourly']]);
 
         return back()->with('success', __('Salary rates saved.'));
     }
