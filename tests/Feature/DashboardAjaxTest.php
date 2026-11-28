@@ -160,6 +160,23 @@ class DashboardAjaxTest extends TestCase
         $this->assertStringNotContainsString('src="'.asset('images/teacher-weekend.png').'"', $html);
     }
 
+    public function test_selected_weekday_shows_the_signed_in_teachers_periods_and_excludes_holidays(): void
+    {
+        $this->seed(SchoolSeeder::class);
+        $teacher = User::where('email', 'teacher@school.test')->firstOrFail();
+        $periods = Schedule::where('teacher_id', $teacher->id);
+        $periods->update(['day' => 'Monday']);
+        $periods->firstOrFail()->update(['day' => 'Tuesday', 'room' => 'Tuesday preview room']);
+        Schedule::where('teacher_id', '!=', $teacher->id)->update(['day' => 'Tuesday', 'room' => 'Other teacher room']);
+
+        $this->actingAs($teacher)->get('/dashboard/teaching-schedule?date=2026-11-03')
+            ->assertOk()->assertSee('Tuesday, November 3, 2026')->assertSee('Period 1')
+            ->assertSee('Tuesday preview room')->assertDontSee('Other teacher room');
+        $this->get('/dashboard/teaching-schedule?date=2026-11-04')
+            ->assertOk()->assertSee('You have no teaching periods scheduled for this date.');
+        $this->get('/dashboard/teaching-schedule?date=2026-11-24')->assertNotFound();
+    }
+
     public function test_teacher_dashboard_replaces_scheduled_periods_with_the_calendar_holiday(): void
     {
         $this->seed(SchoolSeeder::class);

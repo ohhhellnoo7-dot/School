@@ -90,6 +90,7 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent', \App\Htt
     Route::post('/classrooms/{classroom}/study-with', [ClassroomController::class, 'studyWith'])->middleware('role:administrator,teacher')->name('classrooms.study-with');
     Route::get('/classrooms/{classroom}/matching-class', [ClassroomController::class, 'matchingClass'])->middleware('role:administrator,teacher')->name('classrooms.matching-class');
     Route::get('/dashboard/data', [DashboardController::class, 'data'])->name('dashboard.data');
+    Route::get('/dashboard/teaching-schedule', [DashboardController::class, 'teachingSchedule'])->middleware('role:teacher')->name('dashboard.teaching-schedule');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::put('/dashboard/class-attendance/{schedule}/{student}', [DashboardController::class, 'saveTeachingAttendance'])->whereNumber('schedule')->middleware('role:teacher')->name('dashboard.class-attendance.update');
     Route::post('/dashboard/salary-advance-requests', [\App\Http\Controllers\SchoolExpenseController::class, 'requestAdvance'])->middleware('role:teacher')->name('dashboard.advance-requests.store');

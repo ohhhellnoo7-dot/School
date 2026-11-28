@@ -26,6 +26,19 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
+    public function teachingSchedule(Request $request, TeachingAttendance $attendance, SchoolHolidayClosure $holidays)
+    {
+        $data = $request->validate(['date' => ['required', 'date_format:Y-m-d']]);
+        $date = Carbon::parse($data['date']);
+        abort_if($date->isWeekend() || $holidays->calendarHolidayKey($date), 404);
+
+        return response()->view('school.partials.today-teaching-periods', [
+            'teachingScheduleDate' => $date,
+            'todayTeachingPeriods' => $attendance->periods($request->user(), $date)->get(),
+            'todayTeacherExcuse' => null,
+        ])->header('Cache-Control', 'private, no-store');
+    }
+
     public function saveTeachingAttendance(Request $request, int $schedule, Student $student, TeachingAttendance $attendance)
     {
         $data = $request->validate([

@@ -217,7 +217,7 @@
                     <div class="teaching-holiday-art"></div>
                 </section>
             </template>
-            <template data-calendar-weekend-template data-schedule-label="{{ __('Teaching schedule') }}" data-saturday-art="{{ asset('images/teacher-weekend.png') }}" data-sunday-art="{{ asset('images/teacher-weekend-sunday.png') }}">
+            <template data-calendar-weekend-template data-schedule-label="{{ __('Teaching schedule') }}" data-schedule-url="{{ route('dashboard.teaching-schedule') }}" data-schedule-loading="{{ __('Loading teaching schedule…') }}" data-schedule-error="{{ __('The teaching schedule could not load.') }}" data-saturday-art="{{ asset('images/teacher-weekend.png') }}" data-sunday-art="{{ asset('images/teacher-weekend-sunday.png') }}">
                 <section class="panel h-100 teacher-schedule-panel" aria-labelledby="calendar-weekend-preview-title">
                     <div class="panel-header">
                         <div class="teacher-schedule-heading">

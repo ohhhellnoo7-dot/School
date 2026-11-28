@@ -1,10 +1,11 @@
+@php($isSchedulePreview = isset($teachingScheduleDate))
 <section class="panel h-100 teacher-schedule-panel" aria-labelledby="today-teaching-periods-title">
     <div class="panel-header">
         <div class="teacher-schedule-heading">
             <span class="teacher-schedule-icon" aria-hidden="true"><i class="bi bi-calendar2-check"></i></span>
             <div>
-                <h2 id="today-teaching-periods-title">{{ __('Today’s teaching schedule') }}</h2>
-                <p>{{ today()->translatedFormat('l, F j, Y') }}</p>
+                <h2 id="today-teaching-periods-title">{{ $isSchedulePreview ? __('Teaching schedule') : __('Today’s teaching schedule') }}</h2>
+                <p>{{ ($teachingScheduleDate ?? today())->translatedFormat('l, F j, Y') }}</p>
             </div>
         </div>
         <a class="text-link" href="{{ route('teachers.schedule', auth()->id()) }}">{{ __('Full schedule') }} <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i></a>
@@ -15,19 +16,19 @@
             @if($todayTeacherExcuse->notes)<span>· {{ $todayTeacherExcuse->notes }}</span>@endif
         </div>
     @endif
-    @if($todayTeachingPeriods->isEmpty() && !$todayTeacherExcuse && today()->isWeekend())
+    @if(!$isSchedulePreview && $todayTeachingPeriods->isEmpty() && !$todayTeacherExcuse && today()->isWeekend())
         @include('school.partials.teaching-weekend', ['sunday' => today()->isSunday()])
     @elseif($todayTeachingPeriods->isEmpty())
-        <p class="empty-state p-3 mb-0">{{ __('You have no teaching periods scheduled today.') }}</p>
+        <p class="empty-state p-3 mb-0">{{ $isSchedulePreview ? __('You have no teaching periods scheduled for this date.') : __('You have no teaching periods scheduled today.') }}</p>
     @else
         @php
             $schoolTime = now()->format('H:i:s');
             $withSeconds = fn ($time) => strlen($time) === 5 ? $time.':00' : $time;
-            $currentPeriods = $todayTeacherExcuse ? collect() : $todayTeachingPeriods->filter(fn ($period) => $withSeconds($period->starts_at) <= $schoolTime && $schoolTime < $withSeconds($period->ends_at));
-            $nextPeriod = $todayTeacherExcuse ? null : $todayTeachingPeriods->first(fn ($period) => $withSeconds($period->starts_at) > $schoolTime);
+            $currentPeriods = $isSchedulePreview || $todayTeacherExcuse ? collect() : $todayTeachingPeriods->filter(fn ($period) => $withSeconds($period->starts_at) <= $schoolTime && $schoolTime < $withSeconds($period->ends_at));
+            $nextPeriod = $isSchedulePreview || $todayTeacherExcuse ? null : $todayTeachingPeriods->first(fn ($period) => $withSeconds($period->starts_at) > $schoolTime);
             $featuredPeriods = $currentPeriods->isNotEmpty() ? $currentPeriods : collect([$nextPeriod])->filter();
         @endphp
-        @unless($todayTeacherExcuse)
+        @unless($isSchedulePreview || $todayTeacherExcuse)
         <div class="teaching-schedule-note" aria-live="polite">
             @forelse($featuredPeriods as $featured)
                 @php
@@ -96,7 +97,7 @@
                             <td>
                                 <strong>{{ $class ? trim($class->name.' '.$class->section) : __('Class not assigned') }}</strong>
                                 <small class="d-block text-secondary">{{ $period->subject?->name }}</small>
-                                @if($class)
+                                @if($class && !$isSchedulePreview)
                                     <a class="text-link" href="{{ route('dashboard', array_merge(request()->only(['date', 'session', 'attendance_scope']), ['class_attendance_date' => today()->toDateString(), 'class_attendance_period' => $period->id])) }}#class-attendance-roster">{{ __('Attendance') }}</a>
                                 @endif
                             </td>

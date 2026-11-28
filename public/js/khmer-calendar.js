@@ -30,6 +30,34 @@
     }
 
     let selected = today();
+    let scheduleRequest;
+
+    async function loadTeachingSchedule(template, preview, dateKey) {
+        const request = new AbortController();
+        scheduleRequest = request;
+        const url = new URL(template.dataset.scheduleUrl, window.location.href);
+        url.searchParams.set('date', dateKey);
+        const status = document.createElement('p');
+        status.className = 'empty-state p-3 mb-0';
+        status.setAttribute('role', 'status');
+        status.textContent = template.dataset.scheduleLoading;
+        preview.append(status);
+
+        try {
+            const response = await fetch(url, {signal: request.signal});
+            if (!response.ok || response.redirected) throw new Error('Schedule request failed');
+            const html = await response.text();
+            if (!preview.isConnected || request.signal.aborted) return;
+            const fragment = document.createElement('template');
+            fragment.innerHTML = html;
+            const schedule = fragment.content.querySelector('.teacher-schedule-panel');
+            if (!schedule) throw new Error('Schedule panel missing');
+            schedule.dataset.calendarDayPreview = '';
+            preview.replaceWith(schedule);
+        } catch {
+            if (!request.signal.aborted) status.textContent = template.dataset.scheduleError;
+        }
+    }
 
     function renderDayPreview(key, label, date, weekend) {
         const row = calendar.closest('.dashboard-feature-row');
@@ -38,8 +66,8 @@
 
         const defaultCard = slot.querySelector('[data-calendar-holiday-default]');
         const dateKey = date.toISOString().slice(0, 10);
-        const defaultShowsWeekend = Boolean(defaultCard.querySelector('.teacher-weekend'));
-        const showPreview = dateKey !== defaultCard.dataset.date && (Boolean(label) || weekend || defaultShowsWeekend);
+        const showPreview = dateKey !== defaultCard.dataset.date;
+        scheduleRequest?.abort();
         defaultCard.hidden = showPreview;
         slot.querySelector('[data-calendar-day-preview]')?.remove();
         if (!showPreview) return;
@@ -51,13 +79,14 @@
         time.dateTime = dateKey;
         time.textContent = fullDateLabel.format(date);
         if (!label) {
+            slot.append(preview);
             if (weekend) {
                 preview.querySelector('img').src = date.getUTCDay() === 0 ? template.dataset.sundayArt : template.dataset.saturdayArt;
             } else {
                 preview.querySelector('h2').textContent = template.dataset.scheduleLabel;
                 preview.querySelector('.teacher-weekend').remove();
+                loadTeachingSchedule(template, preview, dateKey);
             }
-            slot.append(preview);
             return;
         }
 
