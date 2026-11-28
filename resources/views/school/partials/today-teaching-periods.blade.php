@@ -1,10 +1,13 @@
-<section class="panel h-100" aria-labelledby="today-teaching-periods-title">
+<section class="panel h-100 teacher-schedule-panel" aria-labelledby="today-teaching-periods-title">
     <div class="panel-header">
-        <div>
+        <div class="teacher-schedule-heading">
+            <span class="teacher-schedule-icon" aria-hidden="true"><i class="bi bi-calendar2-check"></i></span>
+            <div>
             <h2 id="today-teaching-periods-title">{{ __('Today’s teaching schedule') }}</h2>
             <p>{{ today()->translatedFormat('l, F j, Y') }}</p>
+            </div>
         </div>
-        <a class="text-link" href="{{ route('teachers.schedule', auth()->id()) }}">{{ __('Full schedule') }}</a>
+        <a class="text-link" href="{{ route('teachers.schedule', auth()->id()) }}">{{ __('Full schedule') }} <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i></a>
     </div>
     @if($todayTeacherExcuse)
         <div class="teaching-schedule-note" role="status">
@@ -12,7 +15,14 @@
             @if($todayTeacherExcuse->notes)<span>· {{ $todayTeacherExcuse->notes }}</span>@endif
         </div>
     @endif
-    @if($todayTeachingPeriods->isEmpty())
+    @if($todayTeachingPeriods->isEmpty() && !$todayTeacherExcuse && today()->isWeekend())
+        <div class="teacher-weekend">
+            <img src="{{ asset('images/teacher-weekend.png') }}" alt="" decoding="async">
+            <h3>{{ __("It's the Weekend!") }}</h3>
+            <p>{{ __('You have no teaching periods scheduled today.') }}</p>
+            <span class="teacher-weekend-label"><i class="bi bi-calendar2-check" aria-hidden="true"></i> {{ __('Weekend Day') }}</span>
+        </div>
+    @elseif($todayTeachingPeriods->isEmpty())
         <p class="empty-state p-3 mb-0">{{ __('You have no teaching periods scheduled today.') }}</p>
     @else
         @php

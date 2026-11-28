@@ -179,7 +179,7 @@
 @endif
 @endif
 @if($isTeacher)
-    <div class="row g-3 dashboard-feature-row">
+    <div class="row g-3 dashboard-feature-row teacher-dashboard-features">
         <div class="col-xl-6 teaching-holiday-slot" data-calendar-holiday-slot>
             <div class="h-100" data-calendar-holiday-default data-date="{{ today()->toDateString() }}">
                 @if($teachingHoliday)
@@ -219,8 +219,8 @@
             </template>
         </div>
         <div class="col-xl-6">
-            <div class="panel h-100">
-                @include('school.partials.khmer-calendar', ['calendarLocale' => 'km', 'calendarClass' => 'border-top p-3 khmer-calendar-stacked'])
+            <div class="panel h-100 teacher-calendar-panel">
+                @include('school.partials.khmer-calendar', ['calendarLocale' => 'km', 'calendarClass' => 'khmer-calendar-stacked'])
             </div>
         </div>
     </div>

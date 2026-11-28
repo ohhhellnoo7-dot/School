@@ -53,6 +53,9 @@
 @if($teacherWorkspaceDesign || $studentAttendancePage || request()->routeIs('dashboard'))
     <link href="{{ asset('css/student-attendance.css') }}?v={{ filemtime(public_path('css/student-attendance.css')) }}" rel="stylesheet">
 @endif
+@if($teacherWorkspaceDesign && request()->routeIs('dashboard'))
+    <link href="{{ asset('css/teacher-dashboard.css') }}?v={{ filemtime(public_path('css/teacher-dashboard.css')) }}" rel="stylesheet">
+@endif
 <script src="{{ asset('js/hover-menus.js') }}?v={{ filemtime(public_path('js/hover-menus.js')) }}"></script>
 <style>
 html[data-hover-menus=off] .stat-breakdown:not(.is-open) .stat-breakdown-menu,
