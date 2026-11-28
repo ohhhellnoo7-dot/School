@@ -301,6 +301,38 @@ class TeacherManagementTest extends TestCase
         $this->assertDatabaseMissing('users', ['email' => 'other@example.test']);
     }
 
+    public function test_weekend_work_adds_to_weekday_hours_and_payroll_work_total(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'administrator']));
+        $class = SchoolClass::create(['name' => 'English 7', 'section' => '', 'program' => 'English', 'session' => 'Morning']);
+        Subject::create(['name' => 'English Reading', 'code' => 'ER7', 'school_class_id' => $class->id]);
+        $data = [
+            'name' => 'Weekend Teacher', 'gender' => 'female', 'email' => 'weekend@example.test', 'program' => 'English',
+            'additional_subjects' => ['English Reading'], 'working_sessions' => 'EnglishFullTime', 'status' => 'active',
+            'update_weekend_periods' => 1,
+            'weekend_periods' => [
+                'saturday0' => ['weekday' => 'Saturday', 'start_time' => '07:00', 'end_time' => '10:00', 'unavailable' => 0],
+                'sunday0' => ['weekday' => 'Sunday', 'start_time' => '07:00', 'end_time' => '10:00', 'unavailable' => 0],
+            ],
+        ];
+        $this->post(route('teacher-management.store'), $data)->assertSessionHasNoErrors()->assertRedirect();
+        $teacher = User::where('email', $data['email'])->sole();
+        $rules = app(TeacherManagementService::class);
+        $this->assertSame(46 * 60, $rules->limit($teacher));
+        $this->assertTrue($rules->onDuty($teacher, 'Sunday', '09:00', '10:00'));
+        $this->assertFalse($rules->onDuty($teacher, 'Sunday', '10:00', '11:00'));
+        $this->get(route('employee-salaries.index'))->assertOk()
+            ->assertSee('data-salary-view="weekday"', false)->assertSee('data-salary-view="weekend"', false)
+            ->assertSee('6 h weekend · 46 h total/week')->assertSee('40 h weekday + 6 h weekend');
+
+        $data['weekend_periods']['saturday1'] = ['weekday' => 'Saturday', 'start_time' => '13:00', 'end_time' => '17:00', 'unavailable' => 0];
+        $data['weekend_periods']['saturday2'] = ['weekday' => 'Saturday', 'start_time' => '17:30', 'end_time' => '18:30', 'unavailable' => 0];
+        $this->put(route('teacher-management.update', $teacher), $data)->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertSame(51 * 60, $rules->limit($teacher));
+        $this->get(route('teacher-management.edit', $teacher))->assertOk()->assertSee('Weekend working hours');
+        $this->get(route('employee-salaries.index'))->assertOk()->assertSee('40 h weekday + 11 h weekend');
+    }
+
     public function test_teacher_subjects_must_belong_to_selected_program(): void
     {
         $this->fixture();

@@ -46,6 +46,7 @@ class ClassGroupController extends Controller
             'program' => ['nullable', Rule::in(array_keys($this->programSessions()))],
             'grade' => ['nullable', 'integer', 'between:1,12'],
             'session' => ['nullable', Rule::in(['Morning', 'Afternoon', 'Evening'])],
+            'class_days' => ['nullable', Rule::in(['weekday', 'weekend'])],
             'status' => ['nullable', Rule::in(['active', 'inactive'])],
         ]);
 
@@ -66,6 +67,7 @@ class ClassGroupController extends Controller
             })
             ->when($filters['program'] ?? null, fn ($query, string $program) => $query->where('program', $program))
             ->when($filters['grade'] ?? null, fn ($query, int|string $grade) => $query->where('grade', (int) $grade))
+            ->when($filters['class_days'] ?? null, fn ($query, string $days) => $query->whereRaw("COALESCE(class_days, 'weekday') = ?", [$days]))
             ->when($filters['session'] ?? null, fn ($query, string $session) => $query->whereHas('sessions', fn ($sessions) => $sessions->where('session', $session)))
             ->when($filters['status'] ?? null, fn ($query, string $status) => $query->where('status', $status))
             ->orderByRaw("CASE program WHEN 'Khmer' THEN 1 WHEN 'English' THEN 2 WHEN 'Chinese' THEN 3 ELSE 4 END")
@@ -119,6 +121,7 @@ class ClassGroupController extends Controller
     public function store(Request $request): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $attributes = $this->validated($request);
+        $attributes['class_days'] ??= 'weekday';
         $curriculum = $request->validate(['curriculum' => 'nullable|string|max:5000']);
         $classGroup = \Illuminate\Support\Facades\DB::transaction(function () use ($attributes, $curriculum) {
             $classGroup = ClassGroup::create($attributes);
@@ -237,6 +240,7 @@ class ClassGroupController extends Controller
             'stream' => ['nullable', Rule::in(['science', 'social_science'])],
             'section' => ['nullable', 'string', 'max:5'],
             'program' => ['required', Rule::in(array_keys($this->programSessions()))],
+            'class_days' => ['sometimes', 'required', Rule::in(['weekday', 'weekend']), Rule::prohibitedIf($classGroup !== null)],
             'teacher_id' => [
                 'nullable',
                 Rule::exists('users', 'id')->where(fn ($query) => $query->where('role', 'teacher')->where('program', $request->input('program'))),
@@ -254,7 +258,11 @@ class ClassGroupController extends Controller
             ? strtoupper(trim($attributes['section']))
             : null;
 
+        $classDays = $attributes['class_days'] ?? $classGroup?->class_days ?? 'weekday';
         if ($attributes['program'] === 'Khmer') {
+            if ($classDays === 'weekend') {
+                throw ValidationException::withMessages(['class_days' => 'Khmer classes run Monday to Friday only.']);
+            }
             if ($attributes['grade'] < 7 || ! in_array($attributes['section'], range('A', 'Z'), true)) {
                 throw ValidationException::withMessages([
                     'section' => 'Khmer class groups must use Grades 7–12 and a section from A to Z.',
@@ -268,6 +276,7 @@ class ClassGroupController extends Controller
 
         $duplicate = ClassGroup::query()
             ->where('program', $attributes['program'])
+            ->whereRaw("COALESCE(class_days, 'weekday') = ?", [$classDays])
             ->where('grade', $attributes['grade'])
             ->where(function ($query) use ($attributes) {
                 $attributes['section'] === null

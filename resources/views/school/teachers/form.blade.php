@@ -16,7 +16,9 @@
         <h2 id="assigned-sessions-heading" class="h5">{{ __('Assigned sessions') }}</h2>
         <p class="text-secondary">{{ __('A scheduled stop takes effect on the first day of next month.') }}</p>
         @forelse($assignedSessions as $session)
-            @php($pendingStop = $pendingStops->get($session))
+            @php
+                $pendingStop = $pendingStops->get($session);
+            @endphp
             <form class="d-flex align-items-center flex-wrap gap-3 border-top py-2" method="post" action="{{ route($pendingStop ? 'teacher-management.sessions.cancel' : 'teacher-management.sessions.stop', $teacher) }}">
                 @csrf
                 @if($pendingStop) @method('delete') @endif
@@ -58,10 +60,56 @@
 <div class="col-md-6"><label for="status" class="form-label">{{ __('Status') }}</label><select id="status" name="status" class="form-select">@foreach(['active', 'inactive'] as $status)<option @selected(old('status', $teacher->status) === $status)>{{ $status }}</option>@endforeach</select></div>
 </div>
 <details class="my-4" @if($periods->isNotEmpty()) open @endif><summary>Custom working hours and unavailable periods</summary><p class="small text-secondary mt-2">Select Custom weekly hours above to use these windows. Each checked row records duty hours or an unavailable period.</p>
-@php($custom = collect(old('periods', $periods->map(fn ($p) => (array)$p)->all())))
-@foreach(range(0, max(9, $custom->count() - 1)) as $index) @php($p = $custom[$index] ?? null)
-<div class="teacher-period-row"><label><input type="checkbox" class="form-check-input" data-period="period-{{ $index }}" @checked($p)> Use</label><fieldset id="period-{{ $index }}" class="teacher-period-fields" @disabled(!$p)><legend class="visually-hidden">Working period {{ $index + 1 }}</legend><select name="periods[{{ $index }}][weekday]" class="form-select" aria-label="Weekday">@foreach(\App\Services\TeacherManagementService::ALL_DAYS as $day)<option @selected(($p['weekday'] ?? '') === $day)>{{ $day }}</option>@endforeach</select><input class="form-control" type="time" aria-label="Start time" name="periods[{{ $index }}][start_time]" value="{{ substr($p['start_time'] ?? '07:00', 0, 5) }}"><input class="form-control" type="time" aria-label="End time" name="periods[{{ $index }}][end_time]" value="{{ substr($p['end_time'] ?? '11:00', 0, 5) }}"><select name="periods[{{ $index }}][unavailable]" class="form-select" aria-label="Working or unavailable"><option value="0" @selected(!($p['unavailable'] ?? false))>On duty</option><option value="1" @selected($p['unavailable'] ?? false)>Unavailable</option></select></fieldset></div>
+@php
+    $custom = collect(old('periods', $periods->whereIn('weekday', \App\Services\TeacherManagementService::DAYS)->map(fn ($p) => (array) $p)->all()))->values();
+@endphp
+@foreach(range(0, max(9, $custom->count() - 1)) as $index)
+@php
+    $p = $custom[$index] ?? null;
+@endphp
+<div class="teacher-period-row"><label><input type="checkbox" class="form-check-input" data-period="period-{{ $index }}" @checked($p)> Use</label><fieldset id="period-{{ $index }}" class="teacher-period-fields" @disabled(!$p)><legend class="visually-hidden">Working period {{ $index + 1 }}</legend><select name="periods[{{ $index }}][weekday]" class="form-select" aria-label="Weekday">@foreach(\App\Services\TeacherManagementService::DAYS as $day)<option @selected(($p['weekday'] ?? '') === $day)>{{ $day }}</option>@endforeach</select><input class="form-control" type="time" aria-label="Start time" name="periods[{{ $index }}][start_time]" value="{{ substr($p['start_time'] ?? '07:00', 0, 5) }}"><input class="form-control" type="time" aria-label="End time" name="periods[{{ $index }}][end_time]" value="{{ substr($p['end_time'] ?? '11:00', 0, 5) }}"><select name="periods[{{ $index }}][unavailable]" class="form-select" aria-label="Working or unavailable"><option value="0" @selected(!($p['unavailable'] ?? false))>On duty</option><option value="1" @selected($p['unavailable'] ?? false)>Unavailable</option></select></fieldset></div>
 @endforeach</details>
+@php
+    $weekend = collect(old('weekend_periods', old('update_weekend_periods') ? [] : $periods->whereIn('weekday', ['Saturday', 'Sunday'])->map(fn ($p) => (array) $p)->all()));
+@endphp
+<fieldset id="teacher-weekend-hours" data-teacher-weekend class="my-4">
+    <legend class="h5">Weekend working hours</legend>
+    <input type="hidden" name="update_weekend_periods" value="1">
+    <div class="row g-3">
+        @foreach(['Saturday', 'Sunday'] as $day)
+            @php
+                $saved = $weekend->where('weekday', $day)->values();
+            @endphp
+            <div class="col-lg-6">
+                <h3 class="h6">{{ $day }}</h3>
+                @for($index = 0; $index < max(3, $saved->count()); $index++)
+                    @php
+                        $p = $saved[$index] ?? null;
+                        $preset = array_values(config('classrooms.sessions'))[$index % 3];
+                        $key = strtolower($day).$index;
+                    @endphp
+                    <div class="border rounded p-2 mb-2" data-weekend-work-row>
+                        <label for="enable-{{ $key }}" class="form-check-label mb-2"><input id="enable-{{ $key }}" type="checkbox" class="form-check-input" data-period="{{ $key }}" @checked($p)> {{ $p ? 'Work block '.($index + 1) : ['Morning', 'Afternoon', 'Evening'][$index % 3] }}</label>
+                        <fieldset id="{{ $key }}" data-weekend-work-fields @disabled(!$p)>
+                            <input type="hidden" name="weekend_periods[{{ $key }}][weekday]" value="{{ $day }}">
+                            <div class="row g-2">
+                                <div class="col"><label class="form-label" for="start-{{ $key }}">Start</label><input class="form-control" id="start-{{ $key }}" type="time" name="weekend_periods[{{ $key }}][start_time]" value="{{ substr($p['start_time'] ?? $preset['starts_at'], 0, 5) }}" required></div>
+                                <div class="col"><label class="form-label" for="hours-{{ $key }}">Hours</label><input class="form-control" id="hours-{{ $key }}" type="number" min="0.01" max="24" step="any" data-work-duration required></div>
+                                <div class="col"><label class="form-label" for="end-{{ $key }}">End</label><input class="form-control" id="end-{{ $key }}" type="time" name="weekend_periods[{{ $key }}][end_time]" value="{{ substr($p['end_time'] ?? $preset['ends_at'], 0, 5) }}" required></div>
+                            </div>
+                            <label class="visually-hidden" for="status-{{ $key }}">Availability</label>
+                            <select id="status-{{ $key }}" class="form-select mt-2" name="weekend_periods[{{ $key }}][unavailable]">
+                                <option value="0" @selected(!($p['unavailable'] ?? false))>On duty</option>
+                                <option value="1" @selected($p['unavailable'] ?? false)>Unavailable</option>
+                            </select>
+                        </fieldset>
+                    </div>
+                @endfor
+            </div>
+        @endforeach
+    </div>
+    <output class="fw-semibold" data-teacher-work-total aria-live="polite"></output>
+</fieldset>
 <p class="small text-secondary">Saving verified qualifications does not remove historical teaching assignments. Review any existing subject-limit or timetable warnings in the profile.</p>
 <button class="btn btn-primary">Save Teacher</button></form>
 @endsection

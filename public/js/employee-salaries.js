@@ -41,6 +41,19 @@ document.querySelectorAll('[data-salary-search]').forEach((form) => {
 });
 
 document.querySelectorAll('#salary-rates-dialog').forEach((dialog) => {
+    const views = [...dialog.querySelectorAll('[data-salary-view]')];
+    const save = dialog.querySelector('[data-save-salary-rates]');
+    const switchView = (active) => {
+        views.forEach((button) => {
+            const selected = button === active;
+            button.setAttribute('aria-pressed', String(selected));
+            button.classList.toggle('btn-primary', selected);
+            button.classList.toggle('btn-outline-primary', !selected);
+            document.getElementById(button.getAttribute('aria-controls')).hidden = !selected;
+        });
+        save.hidden = save.disabled = active.dataset.salaryView === 'weekend';
+    };
+    views.forEach((button) => button.addEventListener('click', () => switchView(button)));
     const rateCurrency = new Intl.NumberFormat('en-US', {
         style: 'currency', currency: 'USD', maximumFractionDigits: 4,
     });

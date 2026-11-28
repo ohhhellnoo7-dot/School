@@ -125,7 +125,8 @@ class ClassroomController extends Controller
             ? $filters['session'] : $sessionOptions[0];
         $eveningPeriods = $selectedSession === 'Evening' ? \App\Models\EveningStudyPeriod::options($selectedProgram) : [];
         if (isset($filters['evening_period']) && ! isset($eveningPeriods[$filters['evening_period']])) throw ValidationException::withMessages(['evening_period' => 'Choose an evening period for this program.']);
-        $selectedEveningPeriod = $eveningPeriods ? (int) ($filters['evening_period'] ?? array_key_first($eveningPeriods)) : null;
+        $defaultEveningPeriod = $moment->isWeekend() ? null : array_key_first($eveningPeriods);
+        $selectedEveningPeriod = isset($filters['evening_period']) ? (int) $filters['evening_period'] : $defaultEveningPeriod;
         $eveningPeriod = $eveningPeriods[$selectedEveningPeriod] ?? null;
         $snapshot = $availabilityService->forMoment($moment, [
             'search' => $classroom->room_number, 'academic_year' => $academicYear,

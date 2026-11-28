@@ -53,6 +53,21 @@ class TeacherManagementService
     public static function minute(string $time): int { return (int) substr($time, 0, 2) * 60 + (int) substr($time, 3, 2); }
     public static function duration(string $start, string $end): int { return max(0, self::minute($end) - self::minute($start)); }
     public static function overlaps(string $start, string $end, string $otherStart, string $otherEnd): bool { return self::minute($start) < self::minute($otherEnd) && self::minute($end) > self::minute($otherStart); }
+
+    public static function workingMinutes(iterable $periods): int
+    {
+        $minutes = 0;
+        foreach (collect($periods)->map(fn ($period) => (object) $period)->groupBy('weekday') as $day) {
+            $boundaries = $day->flatMap(fn ($period) => [self::minute($period->start_time), self::minute($period->end_time)])
+                ->unique()->sort()->values();
+            foreach ($boundaries->slice(0, -1) as $index => $start) {
+                $end = $boundaries[$index + 1];
+                $covering = $day->filter(fn ($period) => self::minute($period->start_time) <= $start && self::minute($period->end_time) >= $end);
+                if ($covering->isNotEmpty() && ! $covering->contains(fn ($period) => $period->unavailable)) $minutes += $end - $start;
+            }
+        }
+        return $minutes;
+    }
     public function managed(int $id): bool { return DB::table('teacher_profiles')->where('teacher_id', $id)->exists(); }
     public function subjectLimit(User $teacher): int { return blank($teacher->program) || $teacher->program === 'Khmer' ? 2 : PHP_INT_MAX; }
     public function qualifications(User $teacher) { return DB::table('teacher_qualifications')->where('teacher_id', $teacher->id)->orderBy('slot')->pluck('subject_name'); }
@@ -77,7 +92,10 @@ class TeacherManagementService
         $classes = $subjects->pluck('schoolClass')->concat($lessons->pluck('schoolClass'))->filter()
             ->unique(fn ($c) => $c->class_group_id ?: $c->program.'|'.$c->name.'|'.$c->section);
         $limit = $this->limit($teacher);
+        $hours = $this->periods($teacher);
+        $weekendHours = self::workingMinutes($hours->whereIn('weekday', ['Saturday', 'Sunday'])) / 60;
         return ['subjects' => $subjects->pluck('name')->unique()->values(), 'classes' => $classes,
+            'weekend_hours' => $weekendHours, 'work_hours' => self::workingMinutes($hours) / 60,
             'weekly' => $minutes / 60, 'limit' => $limit / 60, 'breaks' => $this->breaks($teacher)->sum('duration_minutes') / 60,
             'remaining' => max(0, $limit - $minutes) / 60,
             'status' => $lessons->isEmpty() ? 'UNASSIGNED' : ($minutes > $limit ? 'OVERLOADED' : ($minutes === $limit ? 'FULL' : 'AVAILABLE'))];

@@ -25,6 +25,9 @@
             </select>
             @error('program')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
+        @unless($classGroup->exists)
+            @include('school.class-groups._class-days', ['prefix' => 'class-days'])
+        @endunless
         <div>
             <label class="form-label" for="grade">Grade / Level <span aria-hidden="true">*</span></label>
             <select class="form-select @error('grade') is-invalid @enderror" id="grade" name="grade" required>
@@ -180,6 +183,16 @@ const syncSwapTeacher = () => {
 swapClass?.addEventListener('change', syncSwapTeacher);
 syncSwapTeacher();
 const programSelect = document.querySelector('[data-program-select]');
+const daysPicker = document.querySelector('[data-class-day-picker]');
+if (daysPicker) {
+    const syncDays = () => {
+        const weekend = daysPicker.querySelector('[value="weekend"]');
+        weekend.disabled = programSelect.value === 'Khmer';
+        if (weekend.disabled) daysPicker.querySelector('[value="weekday"]').checked = true;
+    };
+    programSelect.addEventListener('change', syncDays);
+    syncDays();
+}
 const classTeacher = document.querySelector('#teacher_id');
 const teacherOptions = [...classTeacher.options].filter(option => option.value).map(option => ({value: option.value, text: option.textContent, program: option.dataset.program}));
 const filterTeachers = () => {

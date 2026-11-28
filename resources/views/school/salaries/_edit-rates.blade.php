@@ -10,6 +10,12 @@
         @method('put')
         <h2 class="h5 mb-0" id="salary-rates-title">{{ __('Edit salary') }}</h2>
         <p class="text-secondary mb-0">{{ __('These USD rates apply to all teachers with unpaid salary calculations. Session pay is prorated by scheduled teaching hours.') }}</p>
+        <div class="btn-group" role="group" aria-label="{{ __('Salary schedule') }}">
+            <button class="btn btn-primary" type="button" data-salary-view="weekday" aria-controls="salary-weekday" aria-pressed="true">{{ __('Weekday') }}</button>
+            <button class="btn btn-outline-primary" type="button" data-salary-view="weekend" aria-controls="salary-weekend" aria-pressed="false">{{ __('Weekend') }}</button>
+        </div>
+        <section id="salary-weekday">
+        <div class="d-grid gap-3">
         @foreach([
             __('Monthly session pay') => ['morning' => 'Morning', 'afternoon' => 'Afternoon', 'evening' => 'Evening (when assigned)'],
             __('Attendance deductions') => ['late' => 'Late per day', 'excused' => 'Excused per day after the first free excuse', 'absence_one' => 'One daytime session missed (two assigned)', 'absence_two' => 'Both daytime sessions missed', 'absence_single_session' => 'Only assigned session missed'],
@@ -42,9 +48,23 @@
             </fieldset>
         @endforeach
         <p class="small text-secondary mb-0">{{ __('The single-session charge applies to teachers who work only Morning, Afternoon, or Evening.') }}</p>
+        </div>
+        </section>
+        <section id="salary-weekend" hidden>
+            <h3 class="h6">{{ __('Weekend working hours') }}</h3>
+            <p class="text-secondary">{{ __('Scheduled weekend lessons use the shared salary rates. Select a teacher to edit their Saturday and Sunday hours.') }}</p>
+            @forelse($rows->where('weekend_work_hours', '>', 0) as $row)
+                <div class="d-flex flex-wrap justify-content-between gap-2 border-top py-2">
+                    <a href="{{ route('teacher-management.edit', $row['teacher']) }}#teacher-weekend-hours">{{ $row['teacher']->name }}</a>
+                    <span>{{ round($row['weekend_work_hours'], 2) }} h weekend · {{ round($row['weekly_work_hours'], 2) }} h total/week</span>
+                </div>
+            @empty
+                <p class="text-secondary mb-0">{{ __('No weekend hours to show for this payroll view.') }}</p>
+            @endforelse
+        </section>
         <div class="salary-calculator-actions">
             <button class="btn btn-outline-secondary" type="button" data-cancel-salary-rates>{{ __('Cancel') }}</button>
-            <button class="btn btn-primary" type="submit">{{ __('Save rates') }}</button>
+            <button class="btn btn-primary" type="submit" data-save-salary-rates>{{ __('Save rates') }}</button>
         </div>
     </form>
 </dialog>

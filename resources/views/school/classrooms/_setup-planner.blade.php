@@ -9,7 +9,7 @@
         <fieldset data-plan-fields>
             <div class="room-planner-context form-section-grid">
                 <div><label class="form-label" for="setup-program">Program</label><select class="form-select" name="program" id="setup-program" required>@foreach(array_keys($programSessions) as $program)<option value="{{ $program }}" @selected(old('program', 'Khmer') === $program)>{{ $program }}</option>@endforeach</select><button type="button" class="btn btn-link p-0 small" data-open-create-program>+ Create new program</button> <button type="button" class="btn btn-link p-0 small ms-3" data-open-edit-program>Edit program</button></div>
-                <div><label class="form-label" for="setup-session">Session</label><select class="form-select" name="session" id="setup-session" required></select></div>
+                <div><label class="form-label" for="setup-session" data-setup-session-label>Session</label><select class="form-select" name="session" id="setup-session" required></select></div>
                 <div data-evening-period-field hidden>
                     <label class="form-label" for="setup-evening-period">Evening study time</label>
                     <select class="form-select" name="evening_period" id="setup-evening-period" disabled></select>
@@ -28,20 +28,45 @@
                     <select class="form-select" id="availability-classroom" data-availability-classroom></select>
                     <small class="d-block text-muted" data-room-availability-context></small>
                 </div>
-                <div><label class="form-label" for="setup-class">Student class</label><select class="form-select" name="school_class_id" id="setup-class" required></select><small class="text-muted">All active student classes for the selected program and session appear here. Students can enroll later.</small><br><button type="button" class="btn btn-link p-0 small" data-open-create-class>+ Create student class</button></div>
+                <div><label class="form-label" for="setup-class">Student class</label><select class="form-select" name="school_class_id" id="setup-class" required></select><small class="text-muted">Shows active classes for the selected program, session, and class days.</small><br><button type="button" class="btn btn-link p-0 small" data-open-create-class>+ Create student class</button></div>
                 <div><label class="form-label" for="setup-class-days">Class days</label><select class="form-select" id="setup-class-days" name="class_days"><option value="weekday" @selected(old('class_days', 'weekday') === 'weekday')>Weekday (Monday to Friday)</option><option value="weekend" @selected(old('class_days') === 'weekend')>Weekend (Saturday to Sunday)</option></select></div>
 
                 <div><label class="form-label" for="setup-year">Academic year</label><input class="form-control" name="academic_year" id="setup-year" value="{{ old('academic_year', now()->year.'-'.(now()->year + 1)) }}" pattern="[0-9]{4}-[0-9]{4}" required></div>
                 <div><label class="form-label" for="room-change-reason">Room change reason <small class="text-muted">(if needed)</small></label><input class="form-control" id="room-change-reason" name="room_change_reason" maxlength="500" value="{{ old('room_change_reason') }}" placeholder="Reason for using a different reserved room"></div>
             </div>
+            <fieldset data-weekend-hours hidden disabled class="mt-3">
+                <legend class="h5">Weekend study times</legend>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="weekend-link-hours" data-weekend-link checked>
+                    <label class="form-check-label" for="weekend-link-hours">Use the same hours on Saturday and Sunday</label>
+                </div>
+                <div class="form-section-grid">
+                @foreach(['Saturday', 'Sunday'] as $weekday)
+                    <div data-weekend-day="{{ $weekday }}">
+                        <label class="form-label" for="weekend-{{ $weekday }}-preset">{{ $weekday }} study time</label>
+                        <select class="form-select mb-2" id="weekend-{{ $weekday }}-preset" data-weekend-preset>
+                            @foreach(array_keys($plannerSessionHours) as $studySession)
+                                <option value="{{ $studySession }}">{{ $studySession }} study</option>
+                            @endforeach
+                            <option value="custom">Custom start time</option>
+                        </select>
+                        <label class="form-label" for="weekend-{{ $weekday }}-start">Start time</label>
+                        <input class="form-control mb-2" type="time" id="weekend-{{ $weekday }}-start" name="weekend_hours[{{ $weekday }}][starts_at]" data-weekend-start required>
+                        <label class="form-label" for="weekend-{{ $weekday }}-duration">Study hours (0 for a day off)</label>
+                        <input class="form-control" type="number" id="weekend-{{ $weekday }}-duration" name="weekend_hours[{{ $weekday }}][hours]" data-weekend-duration min="0" max="10" step="1" required>
+                        <output class="d-block text-muted mt-2" data-weekend-end aria-live="polite"></output>
+                    </div>
+                @endforeach
+                </div>
+            </fieldset>
             <div class="room-schedule-heading"><div><h3>Study periods</h3><p>Choose a subject first, then select a free teacher.</p></div><span class="room-section-tag"><i class="bi bi-clock" aria-hidden="true"></i> Hour by hour</span></div>
             <div data-class-teacher-field hidden>
-                <label class="form-label" for="setup-class-teacher">Japanese class teacher — Monday to Friday</label>
+                <label class="form-label" for="setup-class-teacher">Japanese class teacher</label>
                 <select class="form-select" id="setup-class-teacher" name="class_teacher_id" disabled>
                     <option value="">Choose one Japanese teacher for this class</option>
                     @foreach($japaneseTeachers as $teacher)<option value="{{ $teacher->id }}">{{ $teacher->name }} — {{ $teacher->assignments->isEmpty() ? 'No classroom yet' : 'Busy — assigned to a class' }}</option>@endforeach
                 </select>
-                <p class="text-muted">The same teacher teaches all subjects in this class throughout the week. @if($japaneseTeachers->isEmpty())No active Japanese teachers are registered yet. Add or assign a Japanese teacher in Teachers first.@endif</p>
+                <p class="text-muted">The same teacher teaches all subjects in this plan. @if($japaneseTeachers->isEmpty())No active Japanese teachers are registered yet. Add or assign a Japanese teacher in Teachers first.@endif</p>
             </div>
             <div class="room-schedule-hint"><i class="bi bi-info-circle" aria-hidden="true"></i> Choose subjects and teachers for each day. Switching days keeps your choices; saving includes all planned days. Leave unused periods empty. Khmer Mathematics and Khmer Literature take two consecutive hours.</div>
             <p data-planner-message role="status" aria-live="polite"></p>
@@ -55,7 +80,7 @@
                 <div><h4 data-active-weekday>Monday subjects</h4><div data-lesson-periods class="lesson-periods"></div></div>
             </div>
             @foreach($errors->getMessages() as $key => $messages)
-                @if(str_starts_with($key, 'slots') || in_array($key, ['program','session','school_class_id','day','class_days','academic_year']))
+                @if(str_starts_with($key, 'slots') || str_starts_with($key, 'weekend_hours') || in_array($key, ['program','session','school_class_id','day','class_days','academic_year']))
                     @foreach($messages as $message)<p class="text-danger">{{ $message }}</p>@endforeach
                 @endif
             @endforeach

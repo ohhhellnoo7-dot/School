@@ -4,8 +4,8 @@
 <link href="{{ asset('css/unified-timetable.css') }}?v={{ filemtime(public_path('css/unified-timetable.css')) }}" rel="stylesheet">
 <h1>{{ $lesson ? 'Edit lesson' : 'Set up class schedule' }}</h1><p>Choose a class, subject, day and time. Then select a teacher from the same program who is qualified and free for that lesson. Saved lessons appear in the student, teacher and classroom schedules.</p>
 <form class="panel p-4 timetable-form" method="post" action="{{ $lesson ? route('timetables.lessons.update',$lesson) : route('timetables.lessons.store') }}">@csrf @if($lesson)@method('PUT')<input type="hidden" name="version" value="{{ app(\App\Services\LessonManagementService::class)->version($lesson) }}">@endif
-@foreach(['school_class_id'=>['Class and cohort',$classes,'label'],'subject_id'=>['Subject',$subjects,'name']] as $field=>[$label,$items,$display])<label>{{ $label }}<select class="form-select" name="{{ $field }}" required>@foreach($items as $item)<option value="{{ $item->id }}" @if($field === 'subject_id') data-class="{{ $item->school_class_id }}" data-duration="{{ $item->lesson_minutes }}" @else @php($classSession = $item->classGroup?->sessions->firstWhere('session', $item->session)) data-start="{{ substr($classSession?->starts_at ?? '07:00',0,5) }}" @endif @selected(old($field,$lesson?->$field ?? request($field)) == $item->id)>{{ $item->$display }}</option>@endforeach</select></label>@endforeach
-<label>Weekday<select class="form-select" name="day">@foreach(\App\Services\TeacherManagementService::DAYS as $day)<option @selected(old('day',$lesson?->day)===$day)>{{ $day }}</option>@endforeach</select></label><label>Start <input class="form-control" type="time" name="starts_at" value="{{ old('starts_at',substr($lesson?->starts_at ?? '07:00',0,5)) }}" required></label><label>End <input class="form-control" type="time" name="ends_at" value="{{ old('ends_at',substr($lesson?->ends_at ?? '08:00',0,5)) }}" required></label><label>{{ __('Academic year') }}<input class="form-control" name="academic_year" value="{{ old('academic_year',$lesson?->academic_year ?? now()->year.'-'.(now()->year+1)) }}" required></label><label>Special-purpose room change reason (if applicable)<input class="form-control" name="room_change_reason" value="{{ old('room_change_reason',$lesson?->room_change_reason) }}"></label>
+@foreach(['school_class_id'=>['Class and cohort',$classes,'label'],'subject_id'=>['Subject',$subjects,'name']] as $field=>[$label,$items,$display])<label>{{ $label }}<select class="form-select" name="{{ $field }}" required>@foreach($items as $item)<option value="{{ $item->id }}" @if($field === 'subject_id') data-class="{{ $item->school_class_id }}" data-duration="{{ $item->lesson_minutes }}" @else @php($classSession = $item->classGroup?->sessions->firstWhere('session', $item->session)) data-start="{{ substr($classSession?->starts_at ?? '07:00',0,5) }}" data-class-days="{{ $item->program === 'Khmer' ? 'weekday' : $item->classGroup?->class_days }}" @endif @selected(old($field,$lesson?->$field ?? request($field)) == $item->id)>{{ $item->$display }}</option>@endforeach</select></label>@endforeach
+<label>Day<select class="form-select" name="day">@foreach(\App\Services\TeacherManagementService::ALL_DAYS as $day)<option data-day-type="{{ in_array($day, ['Saturday', 'Sunday'], true) ? 'weekend' : 'weekday' }}" @selected(old('day',$lesson?->day)===$day)>{{ $day }}</option>@endforeach</select></label><label>Start <input class="form-control" type="time" name="starts_at" value="{{ old('starts_at',substr($lesson?->starts_at ?? '07:00',0,5)) }}" required></label><label>End <input class="form-control" type="time" name="ends_at" value="{{ old('ends_at',substr($lesson?->ends_at ?? '08:00',0,5)) }}" required></label><label>{{ __('Academic year') }}<input class="form-control" name="academic_year" value="{{ old('academic_year',$lesson?->academic_year ?? now()->year.'-'.(now()->year+1)) }}" required></label><label>Special-purpose room change reason (if applicable)<input class="form-control" name="room_change_reason" value="{{ old('room_change_reason',$lesson?->room_change_reason) }}"></label>
 <label>Physical classroom<select class="form-select" name="classroom_id" required><option value="">Checking available classrooms…</option>@foreach($rooms as $room)<option value="{{ $room->id }}" @selected(old('classroom_id', $lesson?->classroom_id ?? request('classroom_id')) == $room->id)>{{ $room->room_number }}</option>@endforeach</select></label>
 <label>Available Qualified Teacher<select class="form-select" name="teacher_id" required><option value="">Choose the subject and time first</option>@foreach($teachers as $teacher)@if(old('teacher_id', $lesson?->teacher_id) == $teacher->id)<option value="{{ $teacher->id }}" selected>{{ $teacher->name }}</option>@endif @endforeach</select></label>
 <p role="status" aria-live="polite" data-availability-notice></p>
@@ -29,6 +29,13 @@
         const previous = subject.value;
         subject.replaceChildren(...subjects.filter(option => option.dataset.class === classInput.value).map(option => option.cloneNode(true)));
         if ([...subject.options].some(option => option.value === previous)) subject.value = previous;
+    }
+    function filterDays() {
+        const day = form.elements.day;
+        const type = classInput.selectedOptions[0]?.dataset.classDays;
+        const options = [...day.options];
+        options.forEach(option => { option.hidden = option.disabled = !!type && option.dataset.dayType !== type; });
+        if (day.selectedOptions[0]?.disabled) day.value = options.find(option => !option.disabled).value;
     }
     function options(select, items, label) {
         const previous = select.value;
@@ -80,12 +87,13 @@
             notice.textContent = result.teachers.length && result.rooms.length ? 'Availability checked. Saving validates all constraints again.' : 'No qualified available teacher or physical classroom fits this selection.';
         } catch { if (currentRevision === revision) notice.textContent = 'Availability could not be loaded. Change the time to retry before saving.'; }
     }
-    classInput.addEventListener('change', () => { filterSubjects(); defaultTime(); refresh(); });
+    classInput.addEventListener('change', () => { filterSubjects(); filterDays(); defaultTime(); refresh(); });
     room.addEventListener('change', filterTeachers);
     teacher.addEventListener('change', () => { save.disabled = !teacher.value || !room.value; });
     ['subject_id','starts_at'].forEach(name => form.elements[name].addEventListener('change', () => { updateEndTime(); refresh(); }));
     ['day','ends_at','academic_year'].forEach(name => form.elements[name].addEventListener('change', refresh));
     filterSubjects();
+    filterDays();
     @if(!$lesson && !old('starts_at')) defaultTime(); @endif
     refresh();
 })();

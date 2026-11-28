@@ -1,8 +1,8 @@
 @php($workPlan = $workPlan ?? $service->weeklyWorkPlan($teacher ?? null))
 <section class="border rounded p-3 my-3" aria-label="School weekly teacher work plan">
     <h2 class="h6">School weekly teacher work plan</h2>
-    <p class="small text-secondary">Monday–Friday. Teaching hours are scheduled in the timetable. Preparation, marking, and other duties are planning allowances.</p>
-    @if($workPlan['teaching'] >= 40)<p class="small">Teaching limit: 8 classroom hours per day, 40 per week. Preparation, marking, and other duties are additional to these teaching hours.</p>@endif
+    <p class="small text-secondary">{{ ($workload['weekend_hours'] ?? 0) > 0 ? 'Weekday and weekend teaching hours are scheduled in the timetable.' : 'Monday–Friday. Teaching hours are scheduled in the timetable.' }} Preparation, marking, and other duties are planning allowances.</p>
+    @if($workPlan['teaching'] >= 40 && ($workload['weekend_hours'] ?? 0) == 0)<p class="small">Teaching limit: 8 classroom hours per day, 40 per week. Preparation, marking, and other duties are additional to these teaching hours.</p>@endif
     <div class="table-responsive"><table class="table table-sm mb-0">
         <thead><tr><th scope="col">Work</th><th scope="col">Hours per week</th></tr></thead>
         <tbody>

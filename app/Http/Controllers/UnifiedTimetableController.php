@@ -291,7 +291,7 @@ class UnifiedTimetableController extends Controller
 
     public function options(Request $request, LessonManagementService $service)
     {
-        $request->validate(['school_class_id' => 'required|integer|exists:school_classes,id', 'subject_id' => 'required|integer|exists:subjects,id', 'day' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday', 'starts_at' => 'required|date_format:H:i', 'ends_at' => 'required|date_format:H:i', 'ignore_lesson' => 'nullable|integer|exists:schedules,id','academic_year'=>['nullable','regex:/^\d{4}-\d{4}$/']]);
+        $request->validate(['school_class_id' => 'required|integer|exists:school_classes,id', 'subject_id' => 'required|integer|exists:subjects,id', 'day' => ['required', \Illuminate\Validation\Rule::in(TeacherManagementService::ALL_DAYS)], 'starts_at' => 'required|date_format:H:i', 'ends_at' => 'required|date_format:H:i', 'ignore_lesson' => 'nullable|integer|exists:schedules,id','academic_year'=>['nullable','regex:/^\d{4}-\d{4}$/']]);
         $data = $request->all();
         $lesson = $request->filled('ignore_lesson') ? Schedule::findOrFail($request->integer('ignore_lesson')) : new Schedule;
         $subject = Subject::findOrFail($request->integer('subject_id'));

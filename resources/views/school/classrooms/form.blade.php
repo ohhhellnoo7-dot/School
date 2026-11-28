@@ -77,6 +77,7 @@
         <h2>Create student class</h2>
         <p>Program: <strong data-inline-class-program></strong>. Students can enroll later. Room details are kept in the classroom form; save them with Create classroom or Save changes after setting up the class.</p>
         <input type="hidden" name="program"><input type="hidden" name="status" value="active">
+        @include('school.class-groups._class-days', ['prefix' => 'inline-class-days'])
         <label class="form-label" for="inline-class-name">Class name</label><input class="form-control mb-3" id="inline-class-name" name="name" maxlength="100" required>
         <fieldset class="section-picker mb-3" data-grade-picker>
             <legend class="form-label">Grade / Level <small class="text-muted">Required</small></legend>

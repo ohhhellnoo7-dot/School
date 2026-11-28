@@ -178,10 +178,11 @@ class EmployeeSalaryController extends Controller
         $stops = app(TeacherSessionStops::class);
         $stopHistory = $stops->history($teachers->modelKeys());
         $weeklyLimits = DB::table('teacher_profiles')->whereIn('teacher_id', $teachers->modelKeys())->pluck('weekly_minutes', 'teacher_id');
+        $workPeriods = DB::table('teacher_working_periods')->whereIn('teacher_id', $teachers->modelKeys())->get()->groupBy('teacher_id');
         $advanceService = app(EmployeeSalaryAdvances::class);
         $advances = $advanceService->outstanding($teachers->modelKeys(), $asOf->min(today()), $month);
         $coverage = app(CombinedClassPay::class)->totals($teachers->modelKeys(), $month);
-        return $teachers->map(function ($teacher) use ($profiles, $payments, $attendance, $calculator, $asOf, $scans, $overrides, $teaching, $teachingMinutes, $weeklyLimits, $stops, $stopHistory, $month, $advanceService, $advances, $deductions, $legacy, $earlyPayments, $coverage) {
+        return $teachers->map(function ($teacher) use ($profiles, $payments, $attendance, $calculator, $asOf, $scans, $overrides, $teaching, $teachingMinutes, $weeklyLimits, $workPeriods, $stops, $stopHistory, $month, $advanceService, $advances, $deductions, $legacy, $earlyPayments, $coverage) {
             $profile = $profiles->get($teacher->id);
             $payment = $payments->get($teacher->id);
             [$attendanceProfile] = $stops->payrollAt($stopHistory->get($teacher->id, collect()), $deductions->attendanceMonth($month), $profile, 0);
@@ -190,11 +191,15 @@ class EmployeeSalaryController extends Controller
             $weeklyHours = $workSessions
                 ? $calculator->weeklyWorkHours($workSessions->day_sessions, $workSessions->evening_sessions)
                 : null;
+            $periods = $workPeriods->get($teacher->id, collect());
+            $weekendHours = $payment ? 0 : $teaching::workingMinutes($periods->whereIn('weekday', ['Saturday', 'Sunday'])) / 60;
+            if ($weekendHours > 0) $weeklyHours = $teaching::workingMinutes($periods) / 60;
 
             return ['teacher' => $teacher, 'profile' => $profile, 'payment' => $payment,
                 'paid_early' => $earlyPayments->has($teacher->id),
                 'weekly_hours' => $assignedMinutes / 60,
                 'weekly_work_hours' => $weeklyHours,
+                'weekend_work_hours' => $weekendHours,
                 'full_salary_cents' => $workSessions ? $calculator->fullSalaryCents($workSessions) : null,
                 'weekly_limit' => $weeklyHours ?? ($weeklyLimits->get($teacher->id) ?? $teaching->defaultLimit($teacher->program)) / 60,
                 'salary' => $payment ? $payment->only(['base_cents', 'raise_cents', 'total_cents', 'deduction_cents', 'combined_class_cents']) : ($profile ? $advanceService->apply($deductions->payroll(

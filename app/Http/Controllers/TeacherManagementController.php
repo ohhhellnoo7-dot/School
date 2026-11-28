@@ -119,12 +119,21 @@ class TeacherManagementController extends Controller
             'program' => ['required', Rule::in(\App\Models\Program::names())], 'subject1' => ['required_if:program,Khmer', 'nullable', Rule::exists('subjects', 'name')], 'subject2' => ['nullable', 'different:subject1', Rule::exists('subjects', 'name')],
             'additional_subjects' => 'nullable|array', 'additional_subjects.*' => ['required','distinct',Rule::exists('subjects','name')],
             'weekly_hours' => 'nullable|numeric|min:1|max:40', 'working_sessions' => 'required|in:Morning,Afternoon,Both,Evening,EnglishFullTime,EnglishPartTime,Custom', 'part_time_start' => 'nullable|date_format:H:i', 'status' => 'required|in:active,inactive',
-            'periods' => 'nullable|array|max:25', 'periods.*.weekday' => ['required', Rule::in(TeacherManagementService::DAYS)], 'periods.*.start_time' => 'required|date_format:H:i', 'periods.*.end_time' => 'required|date_format:H:i|after:periods.*.start_time', 'periods.*.unavailable' => 'required|boolean']);
+            'periods' => 'nullable|array|max:25', 'periods.*.weekday' => ['required', Rule::in(TeacherManagementService::DAYS)], 'periods.*.start_time' => 'required|date_format:H:i', 'periods.*.end_time' => 'required|date_format:H:i|after:periods.*.start_time', 'periods.*.unavailable' => 'required|boolean',
+            'update_weekend_periods' => 'sometimes|boolean',
+            'weekend_periods' => 'nullable|array|max:25',
+            'weekend_periods.*.weekday' => 'required|in:Saturday,Sunday',
+            'weekend_periods.*.start_time' => 'required|date_format:H:i',
+            'weekend_periods.*.end_time' => 'required|date_format:H:i|after:weekend_periods.*.start_time',
+            'weekend_periods.*.unavailable' => 'required|boolean',
+        ]);
+        if ($data['program'] === 'Khmer' && ! empty($data['weekend_periods'])) {
+            throw ValidationException::withMessages(['weekend_periods' => 'Khmer teachers work Monday to Friday.']);
+        }
         if ($data['program'] === 'Khmer' && ! empty($data['additional_subjects'])) {
             throw ValidationException::withMessages(['additional_subjects' => 'Khmer teachers must have exactly two distinct subjects.']);
         }
         $programOptions = $service->programFormOptions()[$data['program']];
-        if ($data['working_sessions'] === 'Custom' && ! in_array($data['program'], ['Khmer', 'English'], true)) throw ValidationException::withMessages(['working_sessions' => 'Choose a working session offered by this program.']);
         if ($data['working_sessions'] !== 'Custom' && ! in_array($data['working_sessions'], ['EnglishFullTime', 'EnglishPartTime'], true)) {
             $sessions = $data['working_sessions'] === 'Both' ? ['Morning', 'Afternoon'] : [$data['working_sessions']];
             foreach ($sessions as $session) if (! isset($programOptions['sessions'][$session])) throw ValidationException::withMessages(['working_sessions' => 'Choose a working session offered by this program.']);
@@ -141,10 +150,6 @@ class TeacherManagementController extends Controller
                 if ($t->program !== 'English') $service->fail('English working arrangements require the English program.');
                 $partTime = $data['working_sessions'] === 'EnglishPartTime';
                 $periods = \App\Services\EnglishProgramSetup::workingPeriods($partTime, $data['part_time_start'] ?? '07:00');
-                $data['weekly_hours'] = $partTime ? 10 : 40;
-                foreach ($service->lessons($t) as $lesson) {
-                    if (! collect($periods)->contains(fn ($p) => $p['weekday'] === $lesson->day && $p['start_time'] <= substr($lesson->starts_at, 0, 5) && $p['end_time'] >= substr($lesson->ends_at, 0, 5))) $service->fail('Move existing lessons into the selected working hours before changing this arrangement.');
-                }
             } elseif ($data['working_sessions'] !== 'Custom') {
                 $periods = [];
                 if ($data['program'] === 'Khmer' && $data['working_sessions'] === 'Evening') $service->fail('Khmer teachers work morning or afternoon sessions.');
@@ -154,9 +159,23 @@ class TeacherManagementController extends Controller
                     $periods[] = ['weekday' => $day, 'start_time' => $start, 'end_time' => $end, 'unavailable' => false];
                 }
             }
+            if ($t->program !== 'Khmer') {
+                $weekend = $data['weekend_periods'] ?? [];
+                if (! isset($data['weekend_periods']) && empty($data['update_weekend_periods'])) {
+                    $weekend = $service->periods($t)->whereIn('weekday', ['Saturday', 'Sunday'])->map(fn ($period) => (array) $period)->all();
+                    $weekend = array_map(fn ($period) => array_intersect_key($period, array_flip(['weekday', 'start_time', 'end_time', 'unavailable'])), $weekend);
+                }
+                $periods = array_merge($periods, $weekend);
+            }
             if (! collect($periods)->contains(fn ($p) => ! $p['unavailable'])) $service->fail('Confirm at least one on-duty working period.');
-            if ($data['program'] !== 'Khmer') $data['weekly_hours'] = collect($periods)->where('unavailable', false)->sum(fn ($p) => $service::duration($p['start_time'], $p['end_time'])) / 60;
-            $service->saveProfile($t, $names, isset($data['weekly_hours']) ? (int) round($data['weekly_hours'] * 60) : null, $periods);
+            $limit = $t->program === 'Khmer'
+                ? (isset($data['weekly_hours']) ? (int) round($data['weekly_hours'] * 60) : null)
+                : $service::workingMinutes($periods);
+            $service->saveProfile($t, $names, $limit, $periods);
+            foreach ($service->lessons($t) as $lesson) {
+                if (! in_array($lesson->day, ['Saturday', 'Sunday'], true) && ! in_array($data['working_sessions'], ['EnglishFullTime', 'EnglishPartTime'], true)) continue;
+                if (! $service->onDuty($t, $lesson->day, $lesson->starts_at, $lesson->ends_at)) $service->fail('Move existing lessons into the selected working hours before changing this arrangement.');
+            }
             return $t;
         });
         $assignments=app(\App\Services\KhmerTeacherEnrollmentAssignment::class)->assign($teacher);

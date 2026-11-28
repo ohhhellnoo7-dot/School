@@ -55,7 +55,13 @@
     <div class="panel-header">
         <div><h2>Class directory <span class="badge text-bg-light">{{ $classGroups->total() }}</span></h2><p>Counts are class identities, not program/session entries.</p></div>
     </div>
+    <nav class="d-flex gap-2 px-3 py-2" aria-label="Filter class groups by study days">
+        @foreach(['' => 'All days', 'weekday' => 'Weekday', 'weekend' => 'Weekend'] as $value => $label)
+            <a class="btn {{ request('class_days', '') === $value ? 'btn-primary' : 'btn-outline-secondary' }}" @if(request('class_days', '') === $value) aria-current="page" @endif href="{{ route('class-groups.index', array_merge(request()->only('search', 'program', 'grade', 'session', 'status'), ['class_days' => $value ?: null])) }}">{{ $label }}</a>
+        @endforeach
+    </nav>
     <form class="class-group-filters" method="get" action="{{ route('class-groups.index') }}">
+        <input type="hidden" name="class_days" value="{{ request('class_days') }}">
         <div class="filter-search">
             <label class="form-label" for="class-search">Search</label>
             <div class="class-search-input"><i class="bi bi-search" aria-hidden="true"></i><input class="form-control" id="class-search" name="search" type="search" value="{{ request('search') }}" placeholder="Class or teacher name..."></div>
@@ -105,7 +111,7 @@
                 @php($rooms = $classGroup->bookings->pluck('classroom')->filter()->unique('id')->sortBy('room_number'))
                 <tr>
                     <td><span class="class-avatar">{{ $classGroups->firstItem() + $loop->index }}</span></td>
-                    <td><a class="class-name-link" href="{{ route('class-groups.show', $classGroup) }}"><i class="bi bi-mortarboard class-row-icon" aria-hidden="true"></i><strong>{{ $classGroup->display_name }}</strong></a></td>
+                    <td><a class="class-name-link" href="{{ route('class-groups.show', $classGroup) }}"><i class="bi bi-mortarboard class-row-icon" aria-hidden="true"></i><strong>{{ $classGroup->display_name }}</strong></a>@if($classGroup->class_days)<small class="d-block text-secondary">{{ ucfirst($classGroup->class_days) }}</small>@endif</td>
                     <td>Grade {{ $classGroup->grade }}</td>
                     <td>{{ $classGroup->section ?: '—' }}</td>
                     <td><span class="program-badge program-{{ strtolower($classGroup->program) }}">{{ $classGroup->program }}</span></td>

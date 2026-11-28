@@ -45,7 +45,7 @@ class ClassroomSetupController extends Controller
             if ($otherLessons->sum(fn ($s) => $rules::duration($s->starts_at, $s->ends_at)) + $rules::duration($data['starts_at'], $data['ends_at']) > $rules->limit($teacher)) $reasons[] = 'Weekly teaching limit reached';
             if (Subject::where('teacher_id', $teacher->id)->pluck('name')->concat($lessons->pluck('subject.name'))->push($subject->name)->filter()->unique()->count() > $rules->subjectLimit($teacher)) $reasons[] = 'Subject limit exceeded';
             try {
-                $rules->validateEnglishSession($teacher, new Schedule(['id' => $existing?->id, 'day' => $data['day'], 'starts_at' => $data['starts_at'], 'ends_at' => $data['ends_at'], 'academic_year' => $data['academic_year']]), $class);
+                $rules->validateEnglishSession($teacher, new Schedule(['id' => $existing?->id, 'classroom_id' => $data['classroom_id'] ?? null, 'day' => $data['day'], 'starts_at' => $data['starts_at'], 'ends_at' => $data['ends_at'], 'academic_year' => $data['academic_year']]), $class);
             } catch (\Illuminate\Validation\ValidationException $e) { $reasons[] = 'Already assigned in this English session'; }
 
             return ['id' => $teacher->id, 'name' => $teacher->name, 'program' => $teacher->program,

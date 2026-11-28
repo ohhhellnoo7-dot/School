@@ -286,6 +286,66 @@ class ClassroomSetupTest extends TestCase
         $this->assertDatabaseHas('schedules', ['school_class_id' => $f['class']->id, 'day' => 'Saturday']);
     }
 
+    public function test_evening_class_can_save_independent_weekend_study_hours(): void
+    {
+        $f = $this->fixture('English', 'Evening');
+        $subjects = collect([$f['subject']]);
+        foreach (['English Reading', 'English Writing', 'English Listening'] as $name) {
+            $subjects->push($f['class']->subjects()->create(['name' => $name, 'code' => uniqid('SUB'), 'lesson_minutes' => 60]));
+        }
+        app(TeacherManagementService::class)->saveProfile($f['teacher'], $subjects->pluck('name')->all(), 1200, [
+            ['weekday' => 'Saturday', 'start_time' => '13:30', 'end_time' => '14:30', 'unavailable' => false],
+            ['weekday' => 'Sunday', 'start_time' => '07:00', 'end_time' => '10:00', 'unavailable' => false],
+        ]);
+        $data = $this->data($f);
+        $data['day'] = 'Sunday';
+        $data['class_days'] = 'weekend';
+        $data['weekend_hours'] = [
+            'Saturday' => ['starts_at' => '13:30', 'hours' => 1],
+            'Sunday' => ['starts_at' => '07:00', 'hours' => 3],
+        ];
+        $expected = [['Saturday', '13:30', '14:30'], ['Sunday', '07:00', '08:00'], ['Sunday', '08:00', '09:00'], ['Sunday', '09:00', '10:00']];
+        $data['slots'] = $subjects->map(fn ($subject, $index) => [
+            'day' => $expected[$index][0], 'starts_at' => $expected[$index][1],
+            'subject_id' => $subject->id, 'teacher_id' => $f['teacher']->id,
+        ])->all();
+
+        $invalid = $data;
+        $invalid['slots'][3]['starts_at'] = '09:30';
+        $this->post(route('classrooms.store'), $invalid)->assertSessionHasErrors('slots');
+        $this->assertDatabaseMissing('classrooms', ['room_number' => 'NEW1']);
+        $this->assertDatabaseCount('schedules', 0);
+
+        $this->post(route('classrooms.store'), $data)->assertSessionHasNoErrors()->assertRedirect();
+        foreach ($expected as $index => [$day, $start, $end]) {
+            $this->assertDatabaseHas('schedules', [
+                'subject_id' => $subjects[$index]->id, 'day' => $day, 'starts_at' => $start, 'ends_at' => $end,
+            ]);
+        }
+        $room = Classroom::where('room_number', 'NEW1')->sole();
+        $this->get(route('classrooms.show', [
+            'classroom' => $room, 'program' => 'English', 'session' => 'Evening', 'date' => '2026-11-29', 'time' => '09:15',
+        ]))->assertOk()->assertSee('English Listening');
+        $this->get(route('timetables.index', ['class' => $f['class']->id, 'academic_year' => '2026-2027']))
+            ->assertOk()->assertSee('Weekend lessons')->assertSee('English Listening');
+    }
+
+    public function test_weekday_and_weekend_classes_can_share_a_grade_and_are_filtered_separately(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'administrator']));
+        $this->get(route('class-groups.create'))->assertOk()->assertSee('class-days-weekend', false);
+        $data = ['program' => 'English', 'grade' => 7, 'capacity' => 30, 'status' => 'active', 'curriculum' => 'English Reading'];
+        foreach (['weekday', 'weekend'] as $days) {
+            $response = $this->postJson(route('class-groups.store'), $data + ['name' => 'Grade 7 '.$days, 'class_days' => $days]);
+            $response->assertCreated()->assertJsonPath('classes.0.class_days', $days);
+        }
+        $this->get(route('class-groups.index', ['class_days' => 'weekend']))
+            ->assertOk()->assertViewHas('classGroups', fn ($groups) => $groups->pluck('name')->all() === ['Grade 7 weekend']);
+        $this->postJson(route('class-groups.store'), array_replace($data, [
+            'program' => 'Khmer', 'section' => 'A', 'name' => 'Khmer weekend', 'class_days' => 'weekend',
+        ]))->assertUnprocessable()->assertJsonValidationErrors('class_days');
+    }
+
     public function test_khmer_rejects_weekend_plans_and_weekend_slots(): void
     {
         $f = $this->fixture();

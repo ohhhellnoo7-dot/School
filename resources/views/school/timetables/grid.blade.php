@@ -14,7 +14,10 @@
         return $minute < 12 * 60 ? 'Morning' : ($minute < 17 * 60 ? 'Afternoon' : 'Evening');
     }, true);
     $sessionIcons = ['Morning'=>'sunrise', 'Afternoon'=>'sun', 'Evening'=>'moon-stars'];
+    $weekendCohort = $studentSession && $classes->firstWhere('id', $selected)?->classGroup?->class_days === 'weekend';
+    [$weekendLessons, $outsideWeekdayLessons] = $outside->partition(fn ($lesson) => in_array($lesson->day, ['Saturday', 'Sunday'], true));
 @endphp
+@unless($weekendCohort)
 <div class="panel timetable-scroll"><table class="shared-timetable"><caption>{{ __('Weekly schedule — Monday–Friday') }}</caption><thead><tr><th scope="col"><i class="bi bi-clock" aria-hidden="true"></i> {{ __('Time') }}</th>@foreach(\App\Services\TeacherManagementService::DAYS as $day)<th scope="col"><i class="bi bi-calendar2" aria-hidden="true"></i>
     @if($parentSchedule ?? null)
         <span class="parent-timetable-day">
@@ -53,4 +56,22 @@
 </tbody>
 @endforeach
 </table></div>
-@if($outside->isNotEmpty())<section class="panel p-3 mt-3"><h2 class="h5">Lessons outside the configured grid</h2><p>These records need review and are shown in full.</p>@foreach($outside as $entry)@include('school.timetables.lesson')@endforeach</section>@endif
+@endunless
+@if($weekendCohort || $weekendLessons->isNotEmpty())
+    <section class="panel p-3 mt-3">
+        <h2 class="h5">Weekend lessons</h2>
+        <div class="row g-3">
+            @foreach(['Saturday', 'Sunday'] as $day)
+                <div class="col-md-6">
+                    <h3 class="h6">{{ $day }}</h3>
+                    @forelse($weekendLessons->where('day', $day)->sortBy('starts_at') as $entry)
+                        @include('school.timetables.lesson')
+                    @empty
+                        <p class="text-secondary">No lessons scheduled</p>
+                    @endforelse
+                </div>
+            @endforeach
+        </div>
+    </section>
+@endif
+@if($outsideWeekdayLessons->isNotEmpty())<section class="panel p-3 mt-3"><h2 class="h5">Lessons outside the configured grid</h2><p>These records need review and are shown in full.</p>@foreach($outsideWeekdayLessons as $entry)@include('school.timetables.lesson')@endforeach</section>@endif

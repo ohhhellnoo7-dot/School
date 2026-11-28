@@ -43,14 +43,22 @@
     const session = form.elements.session;
     const eveningPeriod = form.elements.evening_period;
     let periodProgram = '';
-    const studyHours = cls => {
+    const studyHours = (cls, weekday = day.value) => {
+        if (isWeekend()) {
+            const {start, end} = weekendTimes[weekday];
+            return [start, end];
+        }
         const period = session.value === 'Evening' ? config.eveningPeriods?.[program.value]?.[eveningPeriod.value] : null;
-        return period ? [period.starts_at, period.ends_at] : cls.hours;
+        const fallback = config.programHours?.[program.value]?.[session.value] || config.sessionHours[session.value];
+        return period ? [period.starts_at, period.ends_at] : cls?.hours || [fallback.starts_at, fallback.ends_at];
     };
     const cohort = form.elements.school_class_id;
     const classTeacher = form.elements.class_teacher_id;
     const day = form.elements.day;
     const classDays = form.elements.class_days;
+    const isWeekend = () => program.value !== 'Khmer' && classDays.value === 'weekend';
+    const weekendFields = root.querySelector('[data-weekend-hours]');
+    const weekendTimes = {};
     const availableDays = () => classDays.value === 'weekend' ? ['Saturday', 'Sunday'] : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
     const syncDays = () => {
         const weekend = classDays.querySelector('option[value="weekend"]');
@@ -63,7 +71,6 @@
         root.querySelectorAll('[data-weekday]').forEach(button => { button.hidden = !days.includes(button.dataset.weekday); });
         root.querySelector('[data-autofill-week]').textContent = classDays.value === 'weekend' ? 'Auto-fill Saturday to Sunday' : 'Auto-fill Monday to Friday';
     };
-    syncDays();
     const year = form.elements.academic_year;
     const periods = root.querySelector('[data-lesson-periods]');
     const message = root.querySelector('[data-planner-message]');
@@ -89,11 +96,66 @@
     };
     const time = minutes => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
     const minute = value => Number(value.slice(0, 2)) * 60 + Number(value.slice(3, 5));
+    const weekendControls = [...weekendFields.querySelectorAll('[data-weekend-day]')];
+    const linkWeekendHours = weekendFields.querySelector('[data-weekend-link]');
+    const syncWeekendPreset = group => {
+        const start = group.querySelector('[data-weekend-start]').value;
+        group.querySelector('[data-weekend-preset]').value = Object.keys(config.sessionHours)
+            .find(key => config.sessionHours[key].starts_at === start) || 'custom';
+    };
+    const updateWeekendHours = (group, moveChoices = false) => {
+        const weekday = group.dataset.weekendDay;
+        const startInput = group.querySelector('[data-weekend-start]');
+        const duration = group.querySelector('[data-weekend-duration]');
+        const output = group.querySelector('[data-weekend-end]');
+        const start = startInput.value;
+        const hours = Number(duration.value);
+        const finish = minute(start) + hours * 60;
+        const valid = start && duration.value !== '' && Number.isInteger(hours) && hours >= 0 && hours <= 10 && finish < 1440;
+        duration.setCustomValidity(finish >= 1440 ? 'Study must end before midnight.' : '');
+        output.textContent = valid ? (hours ? `End time ${time(finish)}` : 'No study planned') : 'Enter a start time and valid study hours.';
+        if (!valid) return;
+        const previous = weekendTimes[weekday];
+        weekendTimes[weekday] = {start, end: time(finish)};
+        if (moveChoices && previous) {
+            const slots = {};
+            Object.values(weeklyChoices[weekday] || {}).forEach(slot => {
+                const shifted = minute(start) + minute(slot.starts_at) - minute(previous.start);
+                if (shifted < minute(start) || shifted + 60 > finish) return;
+                const starts_at = time(shifted);
+                slots[starts_at] = {...slot, starts_at, teacher_id: starts_at === slot.starts_at ? slot.teacher_id : ''};
+            });
+            weeklyChoices[weekday] = slots;
+            choices = weeklyChoices[displayedDay] ||= {};
+        }
+    };
+    const syncWeekendHours = () => {
+        weekendFields.hidden = !isWeekend();
+        weekendFields.disabled = !isWeekend();
+        root.querySelector('[data-setup-session-label]').textContent = isWeekend() ? 'Student class session' : 'Session';
+    };
+    const changeWeekendHours = group => {
+        remember();
+        updateWeekendHours(group, true);
+        if (linkWeekendHours.checked) {
+            const other = weekendControls.find(control => control !== group);
+            for (const selector of ['[data-weekend-start]', '[data-weekend-duration]']) {
+                other.querySelector(selector).value = group.querySelector(selector).value;
+            }
+            syncWeekendPreset(other);
+            updateWeekendHours(other, true);
+        }
+        render();
+    };
     const selectedClass = () => config.classes.find(item => String(item.id) === cohort.value);
     const remember = () => {
         periods.querySelectorAll('[data-period]').forEach(row => {
             if (row.dataset.covered === '1') return;
-            choices[row.dataset.start] = {starts_at: row.dataset.start, subject_id: row.querySelector('[data-subject]').value, teacher_id: program.value === 'Japan' ? classTeacher.value : row.querySelector('[data-teacher]').value};
+            const subject = row.querySelector('[data-subject]').value;
+            const teacher = row.querySelector('[data-teacher]');
+            const previous = choices[row.dataset.start];
+            const teacherId = teacher.disabled && String(previous?.subject_id) === subject ? previous.teacher_id : teacher.value;
+            choices[row.dataset.start] = {starts_at: row.dataset.start, subject_id: subject, teacher_id: program.value === 'Japan' ? classTeacher.value : teacherId};
         });
     };
     const teacherDetails = (target, teacher) => {
@@ -143,7 +205,7 @@
             status.textContent = `${free} available teacher${free === 1 ? '' : 's'} for this period`;
             if (japanese) {
                 const teacher = payload.teachers.find(t => String(t.id) === String(wanted));
-                status.textContent = teacher ? `${teacher.name}: ${teacher.available ? 'Available' : teacher.reasons.join('; ')}` : 'Choose the Japanese class teacher above. The same teacher teaches Monday to Friday.';
+                status.textContent = teacher ? `${teacher.name}: ${teacher.available ? 'Available' : teacher.reasons.join('; ')}` : 'Choose the Japanese class teacher above.';
             }
             status.dataset.availability = free ? 'available' : 'none';
             const show = id => teacherDetails(details, payload.teachers.find(t => String(t.id) === id));
@@ -182,24 +244,31 @@
         const previous = availabilityClassroom.value || String(config.old.existing_classroom_id || root.dataset.classroomId);
         availabilityClassroom.replaceChildren(option('', availabilityBuilding.value ? 'Select classroom' : 'Select a building first'));
         const cls = selectedClass();
-        const fallback = config.programHours?.[program.value]?.[session.value] || config.sessionHours[session.value];
-        const hours = cls ? studyHours(cls) : [fallback.starts_at, fallback.ends_at];
-        const evening = session.value === 'Evening' ? config.eveningPeriods?.[program.value]?.[eveningPeriod.value] : null;
-        const [start, end] = evening ? [evening.starts_at, evening.ends_at] : hours;
-        root.querySelector('[data-room-availability-context]').textContent = `${session.value} / ${day.value} / ${start}-${end}. Busy means an overlapping lesson or reservation from any program.`;
+        const windows = (isWeekend() ? availableDays() : [day.value]).map(weekday => {
+            const [start, end] = studyHours(cls, weekday);
+            return {weekday, start, end};
+        }).filter(({start, end}) => start < end);
+        const summary = windows.map(({weekday, start, end}) => `${weekday} ${start}–${end}`).join(' / ');
+        root.querySelector('[data-room-availability-context]').textContent = summary ? `${summary}. Busy means an overlapping lesson or reservation.` : 'Set study hours to check room availability.';
         const rooms = (config.rooms || []).filter(room => room.building === availabilityBuilding.value);
         rooms.forEach(room => {
-            const busy = room.commitments.some(item => item.day === day.value && (!item.year || !year.value || item.year === year.value) && item.start < end && item.end > start);
+            const busy = room.commitments.some(item => {
+                if (isWeekend() && cls && item.class_group_id === cls.class_group_id && item.session === cls.session) return false;
+                if (isWeekend() && cls && item.class_id === cls.timetable_owner_id && item.year === year.value &&
+                    weeklyChoices[item.day]?.[item.start]?.subject_id) return false;
+                return windows.some(({weekday, start, end}) => item.day === weekday && (!item.year || !year.value || item.year === year.value) && item.start < end && item.end > start);
+            });
             const unavailable = room.status !== 'active';
             const status = unavailable ? 'Out of service' : busy ? 'Busy' : 'Free';
             availabilityClassroom.append(option(room.id, `${room.number} - ${room.name} - ${status}`, unavailable || busy));
         });
         if (rooms.some(room => String(room.id) === previous)) availabilityClassroom.value = previous;
         if (availabilityBuilding.value && !rooms.length) availabilityClassroom.replaceChildren(option('', 'No classrooms in this building'));
+        availabilityClassroom.setCustomValidity(isWeekend() && availabilityClassroom.selectedOptions[0]?.disabled ? 'Choose a classroom available for both study days.' : '');
         syncRoomSelection();
     };
-    availabilityBuilding.addEventListener('change', renderRoomAvailability);
-    availabilityClassroom.addEventListener('change', () => { syncRoomSelection(); render(); });
+    availabilityBuilding.addEventListener('change', () => { remember(); render(); });
+    availabilityClassroom.addEventListener('change', () => { remember(); syncRoomSelection(); render(); });
     const render = () => {
         renderRoomAvailability();
         const currentGeneration = ++generation;
@@ -217,7 +286,7 @@
             if (!entry) return;
             const assignments = teacher.assignments || [];
             const sameClass = assignment => cls && (String(assignment.id) === String(cls.id) || (cls.class_group_id && String(assignment.class_group_id) === String(cls.class_group_id)));
-            const period = session.value === 'Evening' ? config.eveningPeriods?.[program.value]?.[eveningPeriod.value] : null;
+            const period = !isWeekend() && session.value === 'Evening' ? config.eveningPeriods?.[program.value]?.[eveningPeriod.value] : null;
             const busy = period ? (teacher.commitments || []).some(item =>
                 String(item.class_id) !== String(cls?.id) && availableDays().includes(item.day) &&
                 (!item.year || item.year === year.value) && item.start < period.ends_at && item.end > period.starts_at)
@@ -234,10 +303,11 @@
             message.textContent = cohort.options.length === 1 ? 'No student classes exist for this program and session. Create a class and its curriculum first.' : 'Choose a student class to see its hourly study periods.';
             return;
         }
-        message.textContent = cls.subjects.length ? `${cls.label}: ${studyHours(cls)[0]}-${studyHours(cls)[1]} on ${day.value}.` : 'This class has no subjects yet. Add its curriculum before assigning lessons.';
-        const finish = minute(studyHours(cls)[1]);
+        const [startsAt, endsAt] = studyHours(cls);
+        message.textContent = startsAt === endsAt ? `No study planned for ${day.value}.` : cls.subjects.length ? `${cls.label}: ${startsAt}-${endsAt} on ${day.value}.` : 'This class has no subjects yet. Add its curriculum before assigning lessons.';
+        const finish = minute(endsAt);
         let coveredUntil = -1;
-        for (let start = minute(studyHours(cls)[0]), index = 0; start + 60 <= finish; start += 60, index++) {
+        for (let start = minute(startsAt), index = 0; start + 60 <= finish; start += 60, index++) {
             const startTime = time(start);
             const row = node('article', '', 'lesson-period');
             row.dataset.period = '';
@@ -296,7 +366,7 @@
         }
     };
     const syncEveningPeriods = (wanted = '') => {
-        const enabled = session.value === 'Evening';
+        const enabled = session.value === 'Evening' && !isWeekend();
         root.querySelector('[data-evening-period-field]').hidden = !enabled;
         eveningPeriod.disabled = !enabled;
         const previous = periodProgram === program.value ? eveningPeriod.value : '';
@@ -309,7 +379,7 @@
     const syncClasses = (wanted = '') => {
         syncEveningPeriods();
         cohort.replaceChildren(option('', 'Select student class'));
-        config.classes.filter(c => c.program === program.value && c.session === session.value)
+        config.classes.filter(c => c.program === program.value && c.session === session.value && (!c.class_days || c.class_days === classDays.value))
             .forEach(c => cohort.append(option(c.id, c.label)));
         cohort.value = wanted;
         render();
@@ -321,7 +391,7 @@
     const resetChoices = () => { weeklyChoices = {}; choices = weeklyChoices[displayedDay] = {}; };
     const syncClassTeacher = () => {
         const cls = selectedClass();
-        const period = session.value === 'Evening' ? config.eveningPeriods?.[program.value]?.[eveningPeriod.value] : null;
+        const period = !isWeekend() && session.value === 'Evening' ? config.eveningPeriods?.[program.value]?.[eveningPeriod.value] : null;
         const assigned = period && cls ? (config.japaneseTeachers || []).find(teacher => (teacher.commitments || []).some(item =>
             String(item.class_id) === String(cls.id) && (!item.year || item.year === year.value) && item.start < period.ends_at && item.end > period.starts_at)) : null;
         classTeacher.value = String(assigned?.id || (period ? '' : cls?.teacher_id) || '');
@@ -331,15 +401,20 @@
         Object.values(weeklyChoices).forEach(slots => Object.values(slots).forEach(slot => { slot.teacher_id = classTeacher.value; }));
         render();
     });
-    program.addEventListener('change', () => { syncDays(); displayedDay = day.value; resetChoices(); syncSessions(); syncClasses(); });
+    program.addEventListener('change', () => { syncDays(); syncWeekendHours(); displayedDay = day.value; resetChoices(); syncSessions(); syncClasses(); });
     session.addEventListener('change', () => { resetChoices(); syncClasses(); });
     cohort.addEventListener('change', () => { resetChoices(); syncClassTeacher(); render(); });
     classDays.addEventListener('change', () => {
         remember();
         syncDays();
+        syncWeekendHours();
         weeklyChoices = Object.fromEntries(Object.entries(weeklyChoices).filter(([key]) => availableDays().includes(key)));
         displayedDay = day.value;
         choices = weeklyChoices[displayedDay] ||= {};
+        const previous = cohort.value;
+        syncClasses(previous);
+        if (cohort.value !== previous) resetChoices();
+        syncClassTeacher();
         render();
     });
     day.addEventListener('change', () => {
@@ -368,8 +443,9 @@
         let added = 0;
         availableDays().forEach(weekday => {
             const slots = weeklyChoices[weekday] ||= {};
-            const finish = minute(studyHours(cls)[1]);
-            for (let start = minute(studyHours(cls)[0]); start + 60 <= finish; start += 60) {
+            const [startsAt, endsAt] = studyHours(cls, weekday);
+            const finish = minute(endsAt);
+            for (let start = minute(startsAt); start + 60 <= finish; start += 60) {
                 const startTime = time(start);
                 const existing = slots[startTime];
                 if (existing?.subject_id) {
@@ -426,10 +502,40 @@
     if (!config.old.academic_year && /^\d{4}-\d{4}$/.test(roomContext.get('academic_year') || '')) year.value = roomContext.get('academic_year');
     if (!config.old.day && availableDays().includes(roomContext.get('day'))) {
         day.value = roomContext.get('day');
-        displayedDay = day.value;
-        choices = weeklyChoices[displayedDay] ||= {};
     }
+    displayedDay = day.value;
+    choices = weeklyChoices[displayedDay] ||= {};
     syncSessions(config.old.session || roomContext.get('session') || 'Morning');
+    weekendControls.forEach(group => {
+        const preset = group.querySelector('[data-weekend-preset]');
+        const start = group.querySelector('[data-weekend-start]');
+        const duration = group.querySelector('[data-weekend-duration]');
+        const previous = config.old.weekend_hours?.[group.dataset.weekendDay];
+        const defaultStart = config.sessionHours[session.value].starts_at;
+        weekendTimes[group.dataset.weekendDay] = {start: defaultStart, end: defaultStart};
+        start.value = previous?.starts_at || defaultStart;
+        duration.value = previous?.hours ?? 1;
+        syncWeekendPreset(group);
+        updateWeekendHours(group);
+        preset.addEventListener('change', () => {
+            if (preset.value === 'custom') { start.focus(); return; }
+            start.value = config.sessionHours[preset.value].starts_at;
+            changeWeekendHours(group);
+        });
+        start.addEventListener('change', () => { syncWeekendPreset(group); changeWeekendHours(group); });
+        duration.addEventListener('change', () => changeWeekendHours(group));
+    });
+    const restoredWeekendHours = config.old.weekend_hours;
+    if (restoredWeekendHours) {
+        const {Saturday, Sunday} = restoredWeekendHours;
+        linkWeekendHours.checked = Saturday?.starts_at === Sunday?.starts_at && Saturday?.hours === Sunday?.hours;
+    }
+    linkWeekendHours.addEventListener('change', () => {
+        if (linkWeekendHours.checked) {
+            changeWeekendHours(weekendControls.find(group => group.dataset.weekendDay === day.value));
+        }
+    });
+    syncWeekendHours();
     syncClasses(String(config.old.school_class_id || roomContext.get('school_class_id') || ''));
     syncEveningPeriods(config.old.evening_period || roomContext.get('evening_period') || '');
     render();
@@ -554,6 +660,8 @@
         classForm.elements.program.value = program.value;
         classDialog.querySelector('[data-inline-class-program]').textContent = program.value;
         const khmer = program.value === 'Khmer';
+        classForm.querySelector('[name="class_days"][value="weekend"]').disabled = khmer;
+        classForm.querySelector(`[name="class_days"][value="${classDays.value}"]`).checked = true;
         classForm.querySelector('[data-section-picker]').disabled = !khmer;
         classForm.querySelector('[data-section-requirement]').textContent = khmer ? 'Required' : 'Not used for this program';
         classForm.querySelectorAll('[name="section"]').forEach(input => {
@@ -589,6 +697,10 @@
             const created = payload.classes.find(cls => cls.session === session.value) || payload.classes[0];
             if (!created) throw new Error('The class was saved, but no study session was returned. Refresh to load it.');
             program.value = created.program;
+            classDays.value = created.class_days || 'weekday';
+            syncDays();
+            syncWeekendHours();
+            displayedDay = day.value;
             syncSessions(created.session);
             resetChoices();
             syncClasses(String(created.id));
@@ -609,8 +721,9 @@
         event.preventDefault();
         if (submitting) return;
         remember();
-        const assigned = Object.entries(weeklyChoices).flatMap(([weekday, slots]) =>
-            Object.values(slots).filter(slot => slot.subject_id).map(slot => ({...slot, teacher_id: program.value === 'Japan' ? classTeacher.value : slot.teacher_id, day: weekday})));
+        const assigned = availableDays().flatMap(weekday =>
+            Object.values(weeklyChoices[weekday] || {}).filter(slot => slot.subject_id)
+                .map(slot => ({...slot, teacher_id: program.value === 'Japan' ? classTeacher.value : slot.teacher_id, day: weekday})));
         if (!assigned.length || assigned.some(slot => !slot.teacher_id)) {
             message.textContent = !assigned.length ? 'Choose at least one subject for the week.' : 'Choose a teacher for every planned lesson.';
             message.scrollIntoView({block: 'center'});
@@ -618,7 +731,7 @@
         }
         submitting = true;
         const version = generation;
-        message.textContent = 'Checking the teacher for every planned weekday...';
+        message.textContent = 'Checking the teacher for every planned lesson...';
         try {
             const errors = await Promise.all(assigned.map(async slot => {
                 const subject = selectedClass().subjects.find(item => String(item.id) === String(slot.subject_id));

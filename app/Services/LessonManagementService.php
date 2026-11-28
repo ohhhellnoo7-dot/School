@@ -58,7 +58,11 @@ class LessonManagementService
     public function validate(Schedule $lesson, bool $teacherRules = true): void
     {
         $class = SchoolClass::findOrFail($lesson->school_class_id);
-        if ($class->program === 'Khmer' && in_array($lesson->day, ['Saturday', 'Sunday'], true)) $this->rules->fail('Khmer classes run Monday to Friday only.');
+        $weekend = in_array($lesson->day, ['Saturday', 'Sunday'], true);
+        if ($class->program === 'Khmer' && $weekend) $this->rules->fail('Khmer classes run Monday to Friday only.');
+        if ($class->classGroup?->class_days && $class->classGroup->class_days !== ($weekend ? 'weekend' : 'weekday')) {
+            $this->rules->fail('Choose a day that matches the student class schedule.');
+        }
         if ($class->shared_timetable_class_id) $this->rules->fail('Save lessons on the shared timetable owner.');
         $room = Classroom::findOrFail($lesson->classroom_id);
         $minutes = $this->rules::duration($lesson->starts_at, $lesson->ends_at);
@@ -67,9 +71,9 @@ class LessonManagementService
         [$start, $end] = $class->sessionHours();
         $studyPeriod = $class->session === 'Evening' ? \App\Models\EveningStudyPeriod::where('program', $class->program)->where('starts_at', '<=', $lesson->starts_at)->where('ends_at', '>=', $lesson->ends_at)->first() : null;
         if ($studyPeriod) [$start, $end] = [$studyPeriod->starts_at, $studyPeriod->ends_at];
-        if ($this->rules::minute($lesson->starts_at) < $this->rules::minute($start) || $this->rules::minute($lesson->ends_at) > $this->rules::minute($end) || ($this->rules::minute($lesson->starts_at) - $this->rules::minute($start)) % 60 !== 0) $this->rules->fail('Lesson is outside its configured program/session hours.');
+        if (! $weekend && ($this->rules::minute($lesson->starts_at) < $this->rules::minute($start) || $this->rules::minute($lesson->ends_at) > $this->rules::minute($end) || ($this->rules::minute($lesson->starts_at) - $this->rules::minute($start)) % 60 !== 0)) $this->rules->fail('Lesson is outside its configured program/session hours.');
         if (! ClassSession::where('class_group_id', $class->class_group_id)->where('session', $class->session)->exists()) $this->rules->fail('Confirm the class session first.');
-        if (! $studyPeriod && ! ClassSession::where('class_group_id', $class->class_group_id)->where('session', $class->session)->where('starts_at', '<=', $lesson->starts_at)->where('ends_at', '>=', $lesson->ends_at)->exists()) $this->rules->fail('Confirm the class session first.');
+        if (! $weekend && ! $studyPeriod && ! ClassSession::where('class_group_id', $class->class_group_id)->where('session', $class->session)->where('starts_at', '<=', $lesson->starts_at)->where('ends_at', '>=', $lesson->ends_at)->exists()) $this->rules->fail('Confirm the class session first.');
         $cohortIds = SchoolClass::whereKey($class->id)->orWhere('shared_timetable_class_id', $class->id)->pluck('id');
         $studentCount = \App\Models\Student::enrolledIn($cohortIds)->where('status', 'active')->count();
         if ($room->status !== 'active' || $room->capacity < $studentCount) $this->rules->fail('The physical classroom is inactive or too small.');

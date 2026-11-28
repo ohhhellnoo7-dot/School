@@ -16,7 +16,7 @@ class ClassroomSetupService
         $classes = SchoolClass::whereHas('classGroup', fn ($group) => $group->active())
             ->with('subjects', 'classGroup')->orderBy('name')->orderBy('section')->get();
         $plannerClasses = $classes->map(function ($class) {
-            return ['id' => $class->id, 'class_group_id' => $class->class_group_id, 'label' => $class->label, 'program' => $class->program, 'session' => $class->session, 'teacher_id' => $class->teacher_id,
+            return ['id' => $class->id, 'class_group_id' => $class->class_group_id, 'class_days' => $class->classGroup->class_days, 'timetable_owner_id' => $class->timetableOwnerId(), 'label' => $class->label, 'program' => $class->program, 'session' => $class->session, 'teacher_id' => $class->teacher_id,
                 'hours' => $class->sessionHours(), 'subjects' => $class->timetableOwner()->subjects->filter(fn ($subject) => $class->program !== 'Khmer' || ! $class->subjects->contains(fn ($s) => $s->curriculum_requirement_id) || $subject->curriculum_requirement_id !== null)->map(fn ($subject) => [
                     'id' => $subject->id, 'name' => $subject->name,
                     'minutes' => $class->program === 'Khmer' ? KhmerLessonDuration::minutes($subject) : 60,
@@ -36,16 +36,18 @@ class ClassroomSetupService
                 ->map(fn ($class) => ['id' => $class->id, 'class_group_id' => $class->class_group_id, 'name' => $class->name])->values());
         }
         return ['buildings' => Building::orderBy('name')->get(), 'plannerClasses' => $plannerClasses,
-            'plannerRooms' => Classroom::with(['buildingRecord', 'lessons.schoolClass', 'bookings.classGroup'])->orderBy('room_number')->get()->map(fn ($room) => [
+            'plannerRooms' => Classroom::with(['buildingRecord', 'lessons.schoolClass', 'bookings.classGroup', 'bookings.classSession'])->orderBy('room_number')->get()->map(fn ($room) => [
                 'id' => $room->id, 'number' => $room->room_number, 'name' => $room->name,
                 'building' => $room->building, 'building_name' => $room->buildingRecord?->name ?? $room->building,
                 'status' => $room->status, 'capacity' => $room->capacity, 'url' => route('classrooms.edit', $room),
                 'commitments' => $room->lessons->map(fn ($lesson) => [
                     'day' => $lesson->day, 'start' => substr($lesson->starts_at, 0, 5), 'end' => substr($lesson->ends_at, 0, 5),
-                    'year' => $lesson->academic_year, 'label' => $lesson->schoolClass?->label ?? 'Scheduled lesson',
+                    'year' => $lesson->academic_year, 'class_id' => $lesson->school_class_id,
+                    'label' => $lesson->schoolClass?->label ?? 'Scheduled lesson',
                 ])->concat($room->bookings->map(fn ($booking) => [
                     'day' => $booking->day_of_week, 'start' => substr($booking->starts_at, 0, 5), 'end' => substr($booking->ends_at, 0, 5),
-                    'year' => null, 'label' => $booking->classGroup?->name ?? 'Reserved classroom',
+                    'year' => null, 'class_group_id' => $booking->class_group_id, 'session' => $booking->classSession?->session,
+                    'label' => $booking->classGroup?->name ?? 'Reserved classroom',
                 ]))->values(),
             ]),
             'plannerSessionHours' => config('classrooms.sessions'),
@@ -62,6 +64,10 @@ class ClassroomSetupService
             'plan_enabled' => 'nullable|boolean',
             'evening_period' => 'nullable|integer|exists:evening_study_periods,id',
             'class_days' => 'nullable|in:weekday,weekend',
+            'weekend_hours' => 'sometimes|required|array:Saturday,Sunday|required_array_keys:Saturday,Sunday',
+            'weekend_hours.*' => 'required|array:starts_at,hours',
+            'weekend_hours.*.starts_at' => 'required|date_format:H:i',
+            'weekend_hours.*.hours' => 'required|integer|min:0|max:10',
             'program' => ['required_if:plan_enabled,1', 'nullable', Rule::in(array_keys(\App\Models\Program::sessionMap()))],
             'session' => 'required_if:plan_enabled,1|nullable|in:Morning,Afternoon,Evening',
             'school_class_id' => 'required_if:plan_enabled,1|nullable|integer|exists:school_classes,id',
@@ -100,6 +106,19 @@ class ClassroomSetupService
             if ($class->program === 'Khmer' && (($plan['class_days'] ?? 'weekday') === 'weekend' || in_array($plan['day'], ['Saturday', 'Sunday'], true))) {
                 $this->fail('Khmer classes run Monday to Friday only.');
             }
+            if ($class->classGroup->class_days && $class->classGroup->class_days !== ($plan['class_days'] ?? 'weekday')) {
+                $this->fail('Choose a student class for the selected class days.');
+            }
+            $weekendHours = $plan['weekend_hours'] ?? [];
+            if ($weekendHours && (($plan['class_days'] ?? null) !== 'weekend' || ! empty($plan['evening_period']))) {
+                $this->fail('Choose Weekend to set daily study times.');
+            }
+            foreach ($weekendHours as $weekday => $hours) {
+                $start = TeacherManagementService::minute($hours['starts_at']);
+                $end = $start + 60 * $hours['hours'];
+                if ($end >= 1440) $this->fail($weekday.' study must end before midnight.');
+                $weekendHours[$weekday] = [$start, $end];
+            }
             foreach ($plan['slots'] ?? [] as $slot) {
                 if ((! empty($slot['subject_id']) || ! empty($slot['teacher_id'])) && ! in_array($slot['day'] ?? $plan['day'], $allowedDays, true)) {
                     $this->fail('Choose lesson days matching Weekday or Weekend.');
@@ -111,7 +130,7 @@ class ClassroomSetupService
             if ($class->program === 'Japan') {
                 $teacherId = $plan['class_teacher_id'] ?? $owner->teacher_id;
                 $teacher = \App\Models\User::where('role', 'teacher')->where('program', 'Japan')->where('status', 'active')->find($teacherId);
-                if (! $teacher) $this->fail('Choose an active Japanese class teacher for Monday through Friday.');
+                if (! $teacher) $this->fail('Choose an active Japanese class teacher.');
                 $otherClasses = SchoolClass::where('program', 'Japan')->where('teacher_id', $teacher->id)
                     ->whereKeyNot($owner->id)->get();
                 if (! $studyPeriod && $otherClasses->contains(fn ($other) => ! $owner->class_group_id || $other->class_group_id !== $owner->class_group_id)) {
@@ -133,12 +152,19 @@ class ClassroomSetupService
                 $subject = $owner->subjects()->find($slot['subject_id']);
                 if (! $subject) $this->fail('Choose a subject from this class curriculum.');
                 $minutes = $class->program === 'Khmer' ? KhmerLessonDuration::minutes($subject) : 60;
-                $endMinute = TeacherManagementService::minute($slot['starts_at']) + $minutes;
+                $weekday = $slot['day'] ?? $plan['day'];
+                $startMinute = TeacherManagementService::minute($slot['starts_at']);
+                $endMinute = $startMinute + $minutes;
+                if ($weekendHours) {
+                    [$start, $end] = $weekendHours[$weekday];
+                    if ($startMinute < $start || $endMinute > $end || ($startMinute - $start) % 60 !== 0) {
+                        $this->fail('Each lesson must fit in an hourly study period on '.$weekday.'.');
+                    }
+                }
                 if ($studyPeriod && ($slot['starts_at'] < substr($studyPeriod->starts_at, 0, 5) || $endMinute > TeacherManagementService::minute($studyPeriod->ends_at))) $this->fail('Lesson must fit within the selected evening period.');
                 $end = sprintf('%02d:%02d', intdiv($endMinute, 60), $endMinute % 60);
-                if ($class->program === 'Japan' && $studyPeriod) {
+                if ($class->program === 'Japan' && ($studyPeriod || $weekendHours)) {
                     $rules = app(TeacherManagementService::class);
-                    $weekday = $slot['day'] ?? $plan['day'];
                     if (! $rules->onDuty($teacher, $weekday, $slot['starts_at'], $end) && $rules->canAddEveningWork($teacher, $class, $weekday, $slot['starts_at'], $end)) {
                         \Illuminate\Support\Facades\DB::table('teacher_working_periods')->insert([
                             'teacher_id' => $teacher->id, 'weekday' => $weekday,
@@ -148,12 +174,12 @@ class ClassroomSetupService
                 }
                 try {
                     $existing = $editing ? \App\Models\Schedule::where('classroom_id', $classroom->id)->where('school_class_id', $owner->id)
-                        ->where('academic_year', $plan['academic_year'])->where('day', $slot['day'] ?? $plan['day'])
+                        ->where('academic_year', $plan['academic_year'])->where('day', $weekday)
                         ->get()->first(fn ($lesson) => substr($lesson->starts_at, 0, 5) === $slot['starts_at']) : null;
                     app(LessonManagementService::class)->save([
                         'school_class_id' => $owner->id, 'subject_id' => $subject->id, 'teacher_id' => $slot['teacher_id'],
                         'classroom_id' => $classroom->id, 'program' => $class->program, 'session' => $class->session,
-                        'day' => $slot['day'] ?? $plan['day'], 'academic_year' => $plan['academic_year'],
+                        'day' => $weekday, 'academic_year' => $plan['academic_year'],
                         'starts_at' => $slot['starts_at'], 'ends_at' => $end,
                         'room_change_reason' => $plan['room_change_reason'] ?? null,
                     ], $existing);

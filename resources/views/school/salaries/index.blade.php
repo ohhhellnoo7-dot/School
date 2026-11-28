@@ -118,6 +118,9 @@
             <small class="payroll-weekly-hours" title="{{ $row['weekly_work_hours'] === null ? 'Scheduled hours / weekly teaching limit' : 'Scheduled hours / configured weekly work hours' }}">
                 <i class="bi bi-clock me-1" aria-hidden="true"></i><strong>{{ round($row['weekly_hours'], 2) }}/{{ round($row['weekly_limit'], 2) }} h/week</strong>
             </small>
+            @if($row['weekend_work_hours'] > 0)
+                <small class="d-block text-secondary">{{ round($row['weekly_work_hours'] - $row['weekend_work_hours'], 2) }} h weekday + {{ round($row['weekend_work_hours'], 2) }} h weekend</small>
+            @endif
         </td>
         <td>
             <div class="payroll-count-grid text-secondary">

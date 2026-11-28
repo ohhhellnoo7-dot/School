@@ -10,28 +10,50 @@
         const weekly = document.getElementById('weekly_hours');
         const partTime = document.getElementById('part_time_start');
         const custom = document.querySelector('details.my-4');
+        const weekend = document.querySelector('[data-teacher-weekend]');
+        const total = weekend.querySelector('[data-teacher-work-total]');
+        const minutes = value => Number(value.slice(0, 2)) * 60 + Number(value.slice(3, 5));
+        const workHours = (container, selector) => {
+            const days = new Map();
+            container.querySelectorAll(selector).forEach(row => {
+                const day = row.querySelector('[name$="[weekday]"]').value;
+                const start = minutes(row.querySelector('[name$="[start_time]"]').value);
+                const end = minutes(row.querySelector('[name$="[end_time]"]').value);
+                const unavailable = row.querySelector('[name$="[unavailable]"]').value === '1';
+                if (end <= start) return;
+                if (!days.has(day)) days.set(day, []);
+                days.get(day).push({start, end, unavailable});
+            });
+            let duration = 0;
+            for (const periods of days.values()) {
+                const boundaries = [...new Set(periods.flatMap(period => [period.start, period.end]))].sort((a, b) => a - b);
+                boundaries.slice(0, -1).forEach((start, index) => {
+                    const end = boundaries[index + 1];
+                    const covering = periods.filter(period => period.start <= start && period.end >= end);
+                    if (covering.length && !covering.some(period => period.unavailable)) duration += end - start;
+                });
+            }
+            return duration / 60;
+        };
         const calculate = () => {
             if (program.value === 'Khmer') return;
             let hours = 0;
             if (working.value === 'EnglishFullTime') hours = 40;
             else if (working.value === 'EnglishPartTime') hours = 10;
             else if (working.value === 'Custom') {
-                document.querySelectorAll('.teacher-period-fields:not(:disabled)').forEach(row => {
-                    const fields = row.querySelectorAll('input[type="time"]');
-                    const unavailable = row.querySelector('select[aria-label="Working or unavailable"]');
-                    const minutes = value => Number(value.slice(0, 2)) * 60 + Number(value.slice(3, 5));
-                    if (unavailable.value === '0') hours += Math.max(0, minutes(fields[1].value) - minutes(fields[0].value)) / 60;
-                });
+                hours = workHours(custom, '.teacher-period-fields:not(:disabled)');
             } else {
                 const sessions = working.value === 'Both' ? ['Morning', 'Afternoon'] : [working.value];
                 sessions.forEach(session => {
                     const window = config[program.value]?.sessions[session];
                     if (!window) return;
-                    const minutes = value => Number(value.slice(0, 2)) * 60 + Number(value.slice(3, 5));
                     hours += (minutes(window[1]) - minutes(window[0])) / 60 * 5;
                 });
             }
             weekly.value = Math.round(hours * 100) / 100;
+            const weekendHours = workHours(weekend, '[data-weekend-work-fields]:not(:disabled)');
+            const display = value => Number(value.toFixed(2));
+            total.textContent = `${display(hours)} weekday + ${display(weekendHours)} weekend = ${display(hours + weekendHours)} total hours per week`;
         };
         const syncWorking = () => {
             partTime.closest('.col-md-6').hidden = working.value !== 'EnglishPartTime';
@@ -55,7 +77,9 @@
             additional.closest('.col-md-6').hidden = khmer;
             additional.disabled = khmer;
             additional.required = !khmer;
-            weekly.readOnly = !khmer;
+            weekly.disabled = !khmer;
+            weekend.hidden = khmer;
+            weekend.disabled = khmer;
             const wantedSession = initial ? working.value : '';
             working.replaceChildren(...Object.entries(options.sessions).map(([name, window]) => new Option(`${name} · ${window[0]}–${window[1]}`, name)));
             if (options.sessions.Morning && options.sessions.Afternoon) working.add(new Option('Morning and Afternoon', 'Both'));
@@ -63,13 +87,33 @@
                 working.add(new Option('English full-time — 40 hours/week', 'EnglishFullTime'));
                 working.add(new Option('English part-time — 10 hours/week', 'EnglishPartTime'));
             }
-            if (['Khmer', 'English'].includes(program.value)) working.add(new Option('Custom weekly hours', 'Custom'));
+            working.add(new Option('Custom weekday hours', 'Custom'));
             if ([...working.options].some(option => option.value === wantedSession)) working.value = wantedSession;
             syncWorking();
         };
         program.addEventListener('change', () => syncProgram());
         working.addEventListener('change', syncWorking);
         custom.addEventListener('change', calculate);
+        weekend.querySelectorAll('[data-weekend-work-fields]').forEach(row => {
+            const start = row.querySelector('[name$="[start_time]"]');
+            const end = row.querySelector('[name$="[end_time]"]');
+            const duration = row.querySelector('[data-work-duration]');
+            const updateDuration = () => {
+                end.setCustomValidity(end.value && end.value <= start.value ? 'End time must be after the start time.' : '');
+                duration.value = end.value && start.value && end.value > start.value ? Number(((minutes(end.value) - minutes(start.value)) / 60).toFixed(4)) : '';
+            };
+            const updateEnd = () => {
+                const finish = minutes(start.value) + Math.round(Number(duration.value) * 60);
+                const valid = start.value && duration.value && finish > minutes(start.value) && finish < 1440;
+                end.setCustomValidity(valid ? '' : 'Enter a duration that ends before midnight.');
+                end.value = valid ? `${String(Math.floor(finish / 60)).padStart(2, '0')}:${String(finish % 60).padStart(2, '0')}` : '';
+            };
+            start.addEventListener('change', updateEnd);
+            duration.addEventListener('change', updateEnd);
+            end.addEventListener('change', updateDuration);
+            updateDuration();
+        });
+        weekend.addEventListener('change', calculate);
         syncProgram(true);
     }
     document.querySelectorAll('[data-period]').forEach(input => input.addEventListener('change', () => { document.getElementById(input.dataset.period).disabled = !input.checked; }));
