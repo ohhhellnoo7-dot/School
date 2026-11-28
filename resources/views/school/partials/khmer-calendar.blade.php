@@ -28,6 +28,7 @@
             <div class="khmer-calendar-legend">
                     <span><i class="bi bi-calendar-event" aria-hidden="true"></i> {{ __('khmer-calendar.today', [], $calendarLocale) }}</span>
                     <span class="khmer-calendar-holiday-key"><i class="bi bi-flag-fill" aria-hidden="true"></i> {{ __('khmer-calendar.holiday', [], $calendarLocale) }}</span>
+                    <span class="khmer-calendar-weekend-key"><i class="bi bi-calendar2-week" aria-hidden="true"></i> {{ __('khmer-calendar.weekend', [], $calendarLocale) }}</span>
             </div>
         </div>
         <div class="khmer-calendar-sidebar">
@@ -41,6 +42,10 @@
                     <div class="khmer-calendar-detail khmer-calendar-holiday-key" data-selected-holiday hidden>
                         <i class="bi bi-flag-fill" aria-hidden="true"></i>
                         <p></p>
+                    </div>
+                    <div class="khmer-calendar-detail khmer-calendar-weekend-key" data-selected-weekend hidden>
+                        <i class="bi bi-calendar2-week" aria-hidden="true"></i>
+                        <p>{{ __('khmer-calendar.weekend', [], $calendarLocale) }}</p>
                     </div>
             </div>
             <div class="khmer-calendar-holidays" data-calendar-holidays hidden>

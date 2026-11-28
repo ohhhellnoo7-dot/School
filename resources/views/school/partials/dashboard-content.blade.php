@@ -217,6 +217,21 @@
                     <div class="teaching-holiday-art"></div>
                 </section>
             </template>
+            <template data-calendar-weekend-template data-schedule-label="{{ __('Teaching schedule') }}" data-saturday-art="{{ asset('images/teacher-weekend.png') }}" data-sunday-art="{{ asset('images/teacher-weekend-sunday.png') }}">
+                <section class="panel h-100 teacher-schedule-panel" aria-labelledby="calendar-weekend-preview-title">
+                    <div class="panel-header">
+                        <div class="teacher-schedule-heading">
+                            <span class="teacher-schedule-icon" aria-hidden="true"><i class="bi bi-calendar2-check"></i></span>
+                            <div>
+                                <h2 id="calendar-weekend-preview-title">{{ __('Weekend Day') }}</h2>
+                                <p><time></time></p>
+                            </div>
+                        </div>
+                        <a class="text-link" href="{{ route('teachers.schedule', auth()->id()) }}">{{ __('Full schedule') }} <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i></a>
+                    </div>
+                    @include('school.partials.teaching-weekend', ['preview' => true])
+                </section>
+            </template>
         </div>
         <div class="col-xl-6">
             <div class="panel h-100 teacher-calendar-panel">

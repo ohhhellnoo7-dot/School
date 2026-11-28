@@ -133,6 +133,33 @@ class DashboardAjaxTest extends TestCase
         $this->assertStringNotContainsString('class="teaching-period-current"', $html);
     }
 
+    public function test_teacher_dashboard_shows_weekend_art_only_when_no_periods_are_scheduled(): void
+    {
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-28 09:00'));
+        $this->seed(SchoolSeeder::class);
+        $teacher = User::where('email', 'teacher@school.test')->firstOrFail();
+        $period = Schedule::where('teacher_id', $teacher->id)->firstOrFail();
+        Schedule::where('teacher_id', $teacher->id)->update(['day' => 'Monday']);
+
+        $this->actingAs($teacher)->get('/dashboard')->assertOk()
+            ->assertSee('src="'.asset('images/teacher-weekend.png').'"', false)
+            ->assertSee('data-calendar-weekend-template', false)
+            ->assertSee('data-selected-weekend', false);
+        $html = $this->getJson('/dashboard/data')->assertOk()->json('html');
+        $this->assertStringContainsString('src="'.asset('images/teacher-weekend.png').'"', $html);
+
+        $period->update(['day' => 'Saturday']);
+        $html = $this->getJson('/dashboard/data')->assertOk()->json('html');
+        $this->assertStringContainsString('Period 1', $html);
+        $this->assertStringNotContainsString('src="'.asset('images/teacher-weekend.png').'"', $html);
+
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-29 09:00'));
+        $this->get('/dashboard')->assertOk()->assertSee('src="'.asset('images/teacher-weekend-sunday.png').'"', false);
+        $html = $this->getJson('/dashboard/data')->assertOk()->json('html');
+        $this->assertStringContainsString('src="'.asset('images/teacher-weekend-sunday.png').'"', $html);
+        $this->assertStringNotContainsString('src="'.asset('images/teacher-weekend.png').'"', $html);
+    }
+
     public function test_teacher_dashboard_replaces_scheduled_periods_with_the_calendar_holiday(): void
     {
         $this->seed(SchoolSeeder::class);

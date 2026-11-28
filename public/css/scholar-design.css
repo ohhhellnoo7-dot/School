@@ -480,6 +480,8 @@
 .khmer-calendar-grid button:hover { border-color: var(--action); }
 .khmer-calendar-grid button[aria-current="date"] { border-color: var(--action); font-weight: 700; }
 .khmer-calendar-grid button.is-holiday { background: var(--calendar-holiday-bg); color: var(--calendar-holiday); }
+.khmer-calendar-grid button.is-weekend { background: color-mix(in srgb, var(--action) 11%, var(--surface)); }
+.khmer-calendar-weekend-key i { color: var(--action); }
 .khmer-calendar-grid button[aria-pressed="true"] { background: var(--action); color: var(--on-action); }
 .khmer-calendar-legend { flex-wrap: wrap; margin-top: .35rem; color: var(--muted); font-size: .72rem; }
 .khmer-calendar-legend i { color: var(--action); }

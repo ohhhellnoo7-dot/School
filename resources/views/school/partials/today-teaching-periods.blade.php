@@ -3,8 +3,8 @@
         <div class="teacher-schedule-heading">
             <span class="teacher-schedule-icon" aria-hidden="true"><i class="bi bi-calendar2-check"></i></span>
             <div>
-            <h2 id="today-teaching-periods-title">{{ __('Today’s teaching schedule') }}</h2>
-            <p>{{ today()->translatedFormat('l, F j, Y') }}</p>
+                <h2 id="today-teaching-periods-title">{{ __('Today’s teaching schedule') }}</h2>
+                <p>{{ today()->translatedFormat('l, F j, Y') }}</p>
             </div>
         </div>
         <a class="text-link" href="{{ route('teachers.schedule', auth()->id()) }}">{{ __('Full schedule') }} <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i></a>
@@ -16,12 +16,7 @@
         </div>
     @endif
     @if($todayTeachingPeriods->isEmpty() && !$todayTeacherExcuse && today()->isWeekend())
-        <div class="teacher-weekend">
-            <img src="{{ asset('images/teacher-weekend.png') }}" alt="" decoding="async">
-            <h3>{{ __("It's the Weekend!") }}</h3>
-            <p>{{ __('You have no teaching periods scheduled today.') }}</p>
-            <span class="teacher-weekend-label"><i class="bi bi-calendar2-check" aria-hidden="true"></i> {{ __('Weekend Day') }}</span>
-        </div>
+        @include('school.partials.teaching-weekend', ['sunday' => today()->isSunday()])
     @elseif($todayTeachingPeriods->isEmpty())
         <p class="empty-state p-3 mb-0">{{ __('You have no teaching periods scheduled today.') }}</p>
     @else

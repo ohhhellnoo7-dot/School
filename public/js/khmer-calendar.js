@@ -7,6 +7,8 @@
     const lunarDate = calendar.querySelector('[data-calendar-date]');
     const solarDate = calendar.querySelector('[data-calendar-solar]');
     const selectedHoliday = calendar.querySelector('[data-selected-holiday]');
+    const selectedWeekend = calendar.querySelector('[data-selected-weekend]');
+    const weekendLabel = selectedWeekend.querySelector('p').textContent;
     const locale = {en: 'en', km: 'km-KH-u-nu-khmr', zh: 'zh-CN'}[calendar.lang] || 'en';
     const holidayLabels = JSON.parse(calendar.dataset.holidayLabels);
     const fullDateLabel = new Intl.DateTimeFormat(locale, {timeZone: 'UTC', dateStyle: 'full'});
@@ -29,26 +31,38 @@
 
     let selected = today();
 
-    function renderHolidayPreview(key, label, date) {
+    function renderDayPreview(key, label, date, weekend) {
         const row = calendar.closest('.dashboard-feature-row');
         const slot = row?.querySelector('[data-calendar-holiday-slot]');
         if (!slot) return;
 
         const defaultCard = slot.querySelector('[data-calendar-holiday-default]');
         const dateKey = date.toISOString().slice(0, 10);
-        const showPreview = Boolean(label) && dateKey !== defaultCard.dataset.date;
+        const defaultShowsWeekend = Boolean(defaultCard.querySelector('.teacher-weekend'));
+        const showPreview = dateKey !== defaultCard.dataset.date && (Boolean(label) || weekend || defaultShowsWeekend);
         defaultCard.hidden = showPreview;
-        slot.querySelector('[data-calendar-holiday-preview]')?.remove();
+        slot.querySelector('[data-calendar-day-preview]')?.remove();
         if (!showPreview) return;
 
-        const template = slot.querySelector('[data-calendar-holiday-template]');
+        const template = slot.querySelector(label ? '[data-calendar-holiday-template]' : '[data-calendar-weekend-template]');
         const preview = template.content.firstElementChild.cloneNode(true);
-        preview.dataset.calendarHolidayPreview = '';
-        preview.classList.toggle('teaching-holiday--water-festival', key === 'water_festival');
-        preview.querySelector('h2').textContent = label;
+        preview.dataset.calendarDayPreview = '';
         const time = preview.querySelector('time');
         time.dateTime = dateKey;
         time.textContent = fullDateLabel.format(date);
+        if (!label) {
+            if (weekend) {
+                preview.querySelector('img').src = date.getUTCDay() === 0 ? template.dataset.sundayArt : template.dataset.saturdayArt;
+            } else {
+                preview.querySelector('h2').textContent = template.dataset.scheduleLabel;
+                preview.querySelector('.teacher-weekend').remove();
+            }
+            slot.append(preview);
+            return;
+        }
+
+        preview.classList.toggle('teaching-holiday--water-festival', key === 'water_festival');
+        preview.querySelector('h2').textContent = label;
 
         const artwork = key === 'labour_and_visak' ? ['labour', 'visak'] : [key];
         const art = preview.querySelector('.teaching-holiday-art');
@@ -73,9 +87,11 @@
         lunarDate.textContent = momentkh.format(lunar);
         const key = holidaySchedules[year]?.[`${month}-${day}`];
         const holiday = holidayLabels[key];
+        const weekend = date.getUTCDay() === 0 || date.getUTCDay() === 6;
         selectedHoliday.querySelector('p').textContent = holiday || '';
         selectedHoliday.hidden = !holiday;
-        renderHolidayPreview(key, holiday, date);
+        selectedWeekend.hidden = Boolean(holiday) || !weekend;
+        renderDayPreview(key, holiday, date, weekend);
         for (const button of body.querySelectorAll('button')) {
             button.setAttribute('aria-pressed', Number(button.dataset.calendarDay) === day);
         }
@@ -114,6 +130,14 @@
                 if (!monthHolidays.has(holiday)) monthHolidays.set(holiday, []);
                 monthHolidays.get(holiday).push(button.textContent);
                 button.append(flag);
+            } else if (slot % 7 === 0 || slot % 7 === 6) {
+                button.classList.add('is-weekend');
+                button.title = weekendLabel;
+                button.setAttribute('aria-label', `${button.textContent} · ${weekendLabel}`);
+                const icon = document.createElement('i');
+                icon.className = 'bi bi-calendar2-week';
+                icon.setAttribute('aria-hidden', 'true');
+                button.append(icon);
             }
             if (Date.UTC(year, month, day) === current) button.setAttribute('aria-current', 'date');
             cell.append(button);

@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'weekend' => '周末',
     'title' => '柬埔寨日历',
     'subtitle' => '高棉农历与公共假日',
     'previous' => '上个月',

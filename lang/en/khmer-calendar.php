@@ -8,6 +8,7 @@ return [
     'next' => 'Next month',
     'weekdays' => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     'holiday' => 'Holiday',
+    'weekend' => 'Weekend',
     'selected' => 'Selected date',
     'lunar' => 'Khmer lunar date',
     'public_holidays' => 'Public holidays',

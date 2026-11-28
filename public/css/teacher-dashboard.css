@@ -1,0 +1,174 @@
+.teacher-dashboard-features .teacher-schedule-panel {
+    display: flex;
+    flex-direction: column;
+}
+
+.teacher-schedule-heading {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.teacher-schedule-icon,
+.teacher-weekend-label {
+    color: var(--action);
+    background: var(--surface-tint);
+}
+
+.teacher-schedule-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 3.5rem;
+    height: 3.5rem;
+    border-radius: 1rem;
+    font-size: 1.65rem;
+}
+
+.teacher-weekend {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .65rem;
+    min-height: clamp(23rem, 32vw, 36rem);
+    margin: .5rem .55rem .8rem;
+    padding: 2rem 1rem 4.5rem;
+    overflow: hidden;
+    border-radius: 1.5rem;
+    background: linear-gradient(155deg, var(--surface-tint), var(--surface));
+    text-align: center;
+}
+
+.teacher-weekend img {
+    display: block;
+    width: min(100%, 27rem);
+    height: clamp(10rem, 15vw, 15rem);
+    object-fit: contain;
+}
+
+.teacher-weekend h3 {
+    margin: 0;
+    color: var(--ink);
+    font-size: clamp(1.65rem, 2.1vw, 2.35rem);
+    font-weight: 800;
+    letter-spacing: -.035em;
+}
+
+.teacher-weekend p {
+    margin: 0;
+    color: var(--muted);
+    font-size: clamp(.95rem, 1.15vw, 1.25rem);
+}
+
+.teacher-weekend-label {
+    display: inline-flex;
+    align-items: center;
+    gap: .65rem;
+    margin-top: .55rem;
+    padding: .65rem 1.55rem;
+    border-radius: 2rem;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.teacher-calendar-panel .khmer-calendar { padding: clamp(.75rem, 1.2vw, 1.2rem); }
+.teacher-calendar-panel .khmer-calendar-header { padding: .8rem; }
+.teacher-calendar-panel .khmer-calendar-icon { flex-basis: 3rem; height: 3rem; border-radius: .95rem; }
+.teacher-calendar-panel .khmer-calendar-controls .btn { min-height: 2.25rem; border-radius: 2rem; }
+.teacher-calendar-panel .khmer-calendar-layout:not([hidden]) { gap: .65rem; margin-top: .75rem; }
+.teacher-calendar-panel .khmer-calendar-sidebar { gap: .6rem; }
+.teacher-calendar-panel :is(.khmer-calendar-month, .khmer-calendar-selection, .khmer-calendar-holidays) {
+    padding: .65rem .8rem;
+    border-radius: 1rem;
+}
+.teacher-calendar-panel .khmer-calendar-grid caption { font-size: 1rem; }
+.teacher-calendar-panel .khmer-calendar-grid th { padding-block: .45rem; font-size: .75rem; }
+.teacher-calendar-panel .khmer-calendar-grid button { min-height: 2.55rem; border-radius: .55rem; font-size: .9rem; }
+.teacher-calendar-panel :is(.khmer-calendar-sidebar h4, .khmer-calendar-legend, .khmer-calendar-holidays) { font-size: .85rem; }
+.teacher-calendar-panel .khmer-calendar-solar { font-size: 1rem; }
+.teacher-calendar-panel .khmer-calendar-detail { font-size: .9rem; }
+
+/* Match the dashboard campus stylesheet specificity for shared shell rules. */
+:root[data-theme="light"]:root:root:root:root:root:root:root:root:root .teacher-workspace-design.dashboard-page {
+    --action: #0653ed;
+    --ink: #142455;
+    --muted: #526488;
+    background: radial-gradient(ellipse at 70% 12%, #d9effc, #edf6ff 65%);
+
+    & .sidebar {
+        --sidebar-text: #d7e9ff;
+        --sidebar-heading: #fff;
+        --sidebar-active: #0996ef;
+        background: radial-gradient(ellipse at 0 86%, #1a739e, transparent 43%), linear-gradient(150deg, #155e9b, #112c57);
+    }
+    & .workspace { background: radial-gradient(ellipse at 70% 12%, #d9effc, #edf6ff 65%); }
+    & .brand-mark { border-radius: 50%; background: linear-gradient(145deg, #43c5f6, #0663f0); }
+    & .school-nav a.active { background: #0996ef; box-shadow: inset 0 0 8px #a1e7ff55, 0 6px 14px #072e5945; }
+    & .school-switch { border-radius: 1.4rem; }
+    & .topbar {
+        background: linear-gradient(110deg, #fbfdff, #e4effc);
+        border-color: #d6e4f9;
+        box-shadow: none;
+    }
+    & .topbar :is(.portal-search, .theme-switcher > summary, .language-switcher > summary, .profile-link, .btn) {
+        border-radius: 2rem;
+    }
+    & .topbar .teacher-scan-shortcut { color: white; background: var(--action); border-color: transparent; }
+    & .topbar .portal-search { width: min(100%, 33rem); background: #fff; }
+    & .dashboard-metrics .teacher-dashboard-metric {
+        border-color: #fff8;
+        background: linear-gradient(125deg, #fff, var(--teacher-metric-bg, #eee6fb));
+        box-shadow: 0 7px 18px #46659e1c;
+    }
+    & .dashboard-metrics > :nth-child(2) { --teacher-metric-bg: #e4f2fb; }
+    & .dashboard-metrics > :nth-child(3) { --teacher-metric-bg: #fcf3e2; }
+    & .dashboard-metrics > :nth-child(4) { --teacher-metric-bg: #fbe7ee; }
+    & .teacher-dashboard-metric .dashboard-metric-icon { background: var(--teacher-metric-bg, #eee6fb); }
+    & .teacher-dashboard-metric .dashboard-metric-copy strong { color: var(--ink); }
+    & .teacher-dashboard-metric .dashboard-metric-copy span { color: var(--muted); }
+    & .teacher-dashboard-features :is(.teacher-schedule-panel, .teacher-calendar-panel) {
+        border: 1px solid #fff;
+        border-radius: 1.7rem;
+        background: #fff;
+        box-shadow: 0 8px 22px #325f9f14;
+    }
+    & .teacher-dashboard-features .teacher-schedule-panel .panel-header { padding: 1.5rem 1.25rem 1rem; }
+    & .teacher-schedule-panel .panel-header h2 { font-size: clamp(1rem, 1.2vw, 1.35rem); }
+    & .teacher-schedule-icon, & .teacher-weekend-label { color: #4e32be; background: #eee8fc; }
+    & .teacher-weekend {
+        background:
+            radial-gradient(ellipse 57% 26% at 0 109%, #c5f1e6 92%, transparent 93%),
+            radial-gradient(ellipse 52% 28% at 108% 115%, #c5f1e6 95%, transparent 96%),
+            radial-gradient(ellipse 75% 34% at 45% 115%, #def1fa 96%, transparent 97%),
+            linear-gradient(150deg, #edf6ff, #f7fafc 76%);
+    }
+    & .teacher-calendar-panel .khmer-calendar-grid button:not(.is-holiday, .is-weekend, [aria-pressed="true"]) { background: #e3effc; }
+    & .teacher-calendar-panel .khmer-calendar-grid button.is-weekend:not([aria-pressed="true"]) { background: #eee8fc; color: #4e32be; }
+}
+
+@media (min-width: 1440px) {
+    :root[data-theme="light"]:not([data-sidebar="collapsed"]) .teacher-workspace-design.dashboard-page { --shell-width: 17rem; }
+    :root[data-theme="light"]:not([data-sidebar="collapsed"]):root:root:root:root:root:root:root:root:root .teacher-workspace-design.dashboard-page {
+        & .brand { margin: 2.1rem 1.35rem 2.15rem; padding-bottom: 1.85rem; border-bottom: 1px solid #31cbef; font-size: 2rem; }
+        & .brand-mark { width: 2.9rem; height: 2.9rem; margin-right: .75rem; }
+        & .school-nav { gap: .75rem; padding-inline: 1.15rem; }
+        & .school-nav a { min-height: 3.35rem; padding-inline: 1rem; border-radius: 1.15rem; font-size: 1rem; }
+        & .school-nav a i { font-size: 1.35rem; }
+        & .school-switch { margin-inline: 1.15rem; }
+    }
+    :root[data-theme="light"]:root:root:root:root:root:root:root:root:root .teacher-workspace-design.dashboard-page {
+        & .main-content { padding-inline: clamp(1.3rem, 1.4vw, 1.75rem); }
+        & .topbar { height: 5.25rem; }
+        & .portal-search { min-height: 3.3rem; }
+        & .teacher-scan-shortcut { min-height: 3.3rem; padding-inline: 1rem; }
+    }
+}
+
+@media (max-width: 575px) {
+    .teacher-calendar-panel .khmer-calendar-grid button { min-height: 2.2rem; }
+    .teacher-weekend { padding-bottom: 3rem; }
+    .teacher-schedule-icon { flex-basis: 2.75rem; height: 2.75rem; }
+}
