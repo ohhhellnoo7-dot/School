@@ -58,6 +58,22 @@
 .salary-calculator-header h2 { margin: 0 0 4px; font-size: clamp(19px, 5vw, 24px); font-weight: 750; }
 .salary-calculator-header p { margin: 0; color: var(--text-secondary); font-size: .82rem; }
 .salary-calculator-form { display: grid; gap: 14px; padding: 18px clamp(16px, 5vw, 28px) 22px; }
+.salary-calculator-form[hidden] { display: none; }
+.salary-calculator-tabs { display: flex; margin: 14px clamp(16px, 5vw, 28px) 0; }
+.salary-calculator-tabs .btn { flex: 1; transition: background-color .18s ease, color .18s ease; }
+.salary-calculator-breakdown.weekend-salary-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.weekend-salary-summary i {
+    display: inline-grid;
+    place-items: center;
+    width: 1.65rem;
+    height: 1.65rem;
+    margin-inline-end: .25rem;
+    border-radius: .55rem;
+    background: #dcefed;
+    color: #235b57;
+}
+.weekend-salary-summary > div:nth-child(even) i { background: #eee4f7; color: #61457b; }
+.salary-calculator-total .salary-calculator-formula output { display: inline; font-size: inherit; color: inherit; }
 
 .salary-slider { --slider-color: var(--warning, var(--action)); }
 .salary-slider-evening { --slider-color: var(--violet, var(--action)); }

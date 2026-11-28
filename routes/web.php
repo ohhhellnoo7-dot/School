@@ -112,6 +112,7 @@ Route::middleware(['auth', 'role:administrator,teacher,student,parent', \App\Htt
         Route::get('/attendance', [\App\Http\Controllers\EmployeeSalaryController::class, 'attendance'])->name('attendance');
         Route::get('/teacher-reports', [\App\Http\Controllers\EmployeeSalaryController::class, 'teacherReports'])->name('teacher-reports');
         Route::put('/salary-rates', [\App\Http\Controllers\EmployeeSalaryController::class, 'updateSalaryRates'])->name('salary-rates.update');
+        Route::put('/weekend-settings', [\App\Http\Controllers\EmployeeSalaryController::class, 'updateWeekendSalary'])->name('weekend-settings.update');
         Route::post('/{teacher}/attendance', [\App\Http\Controllers\EmployeeSalaryController::class, 'saveAttendance'])->whereNumber('teacher')->name('attendance.store');
         Route::get('/{teacher}', [\App\Http\Controllers\EmployeeSalaryController::class, 'show'])->whereNumber('teacher')->name('show');
         Route::put('/{teacher}', [\App\Http\Controllers\EmployeeSalaryController::class, 'update'])->whereNumber('teacher')->name('update');

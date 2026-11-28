@@ -139,8 +139,25 @@ class EmployeeSalaryController extends Controller
         $recorded->paid_count += $earlyOnly->count();
         $recorded->paid_cents += $earlyPayments->sum();
         $withdrawalTotals = $withdrawal ? $this->withdrawalTotals($month, $rows) : null;
+        $weekendPeriods = DB::table('teacher_working_periods')
+            ->whereIn('weekday', EmployeeSalaryCalculator::WEEKEND_DAYS)->get()->groupBy('teacher_id');
+        $weekendTeachers = (clone $teacherPopulation)->whereIn('id', $weekendPeriods->keys())->orderBy('name')->get(['id', 'name']);
+        $weekendSettings = app(\App\Services\TeacherWeekendSalary::class)->settingsFor($weekendTeachers->modelKeys(), today());
+        $weekendOptions = $weekendTeachers->map(function (User $teacher) use ($weekendPeriods, $weekendSettings) {
+            $setting = $weekendSettings->get($teacher->id);
+            $dailyMinutes = $weekendPeriods[$teacher->id]->groupBy('weekday')
+                ->map(fn ($periods) => TeacherManagementService::workingMinutes($periods))->max();
+
+            return [
+                'id' => $teacher->id,
+                'name' => $teacher->name,
+                'rate' => Money::decimal($setting->hourly_cents ?? app(EmployeeSalaryRates::class)->amounts()['weekend_hourly']),
+                'hours' => round(($setting->daily_minutes ?? $dailyMinutes) / 60, 2),
+            ];
+        });
 
         return view('school.salaries.index', compact('month', 'teachers', 'rows', 'asOf', 'teacherCount', 'recorded', 'payday', 'withdrawalTotals') + [
+            'weekendOptions' => $weekendOptions,
             'salaryRates' => collect([5, 10, 20, 40, 50])->mapWithKeys(fn ($hours) => [$hours => $calculator->baseCents($hours * 60)]),
         ]);
     }
@@ -179,10 +196,11 @@ class EmployeeSalaryController extends Controller
         $stopHistory = $stops->history($teachers->modelKeys());
         $weeklyLimits = DB::table('teacher_profiles')->whereIn('teacher_id', $teachers->modelKeys())->pluck('weekly_minutes', 'teacher_id');
         $workPeriods = DB::table('teacher_working_periods')->whereIn('teacher_id', $teachers->modelKeys())->get()->groupBy('teacher_id');
+        $weekendSettings = app(\App\Services\TeacherWeekendSalary::class)->settingsFor($teachers->modelKeys(), $month);
         $advanceService = app(EmployeeSalaryAdvances::class);
         $advances = $advanceService->outstanding($teachers->modelKeys(), $asOf->min(today()), $month);
         $coverage = app(CombinedClassPay::class)->totals($teachers->modelKeys(), $month);
-        return $teachers->map(function ($teacher) use ($profiles, $payments, $attendance, $calculator, $asOf, $scans, $overrides, $teaching, $teachingMinutes, $weeklyLimits, $workPeriods, $stops, $stopHistory, $month, $advanceService, $advances, $deductions, $legacy, $earlyPayments, $coverage) {
+        return $teachers->map(function ($teacher) use ($profiles, $payments, $attendance, $calculator, $asOf, $scans, $overrides, $teaching, $teachingMinutes, $weeklyLimits, $workPeriods, $weekendSettings, $stops, $stopHistory, $month, $advanceService, $advances, $deductions, $legacy, $earlyPayments, $coverage) {
             $profile = $profiles->get($teacher->id);
             $payment = $payments->get($teacher->id);
             [$attendanceProfile] = $stops->payrollAt($stopHistory->get($teacher->id, collect()), $deductions->attendanceMonth($month), $profile, 0);
@@ -194,7 +212,7 @@ class EmployeeSalaryController extends Controller
             $periods = $workPeriods->get($teacher->id, collect());
             $weekendHours = $payment ? 0 : $teaching::workingMinutes($periods->whereIn('weekday', ['Saturday', 'Sunday'])) / 60;
             if ($weekendHours > 0) $weeklyHours = $teaching::workingMinutes($periods) / 60;
-            $calculation = ! $payment && $profile ? $calculator->calculate($profile, $asOf, $assignedMinutes, $periods) : null;
+            $calculation = ! $payment && $profile ? $calculator->calculate($profile, $asOf, $assignedMinutes, $periods, $weekendSettings) : null;
 
             return ['teacher' => $teacher, 'profile' => $profile, 'payment' => $payment,
                 'paid_early' => $earlyPayments->has($teacher->id),
@@ -440,6 +458,20 @@ class EmployeeSalaryController extends Controller
         $rates->save(array_map(Money::cents(...), $data['rates']) + ['weekend_hourly' => $rates->amounts()['weekend_hourly']]);
 
         return back()->with('success', __('Salary rates saved.'));
+    }
+
+    public function updateWeekendSalary(Request $request, \App\Services\TeacherWeekendSalary $settings)
+    {
+        $data = $request->validateWithBag('weekendSalary', [
+            'teacher_id' => ['required', 'integer', 'exists:users,id'],
+            'hourly_rate' => ['required', 'numeric', 'decimal:0,2', 'min:0', 'max:100000'],
+            'daily_hours' => ['required', 'numeric', 'decimal:0,2', 'min:0', 'max:24'],
+        ]);
+        $teacher = User::findOrFail($data['teacher_id']);
+        $this->teacher($teacher);
+        $settings->approve($teacher->id, $request->user()->id, Money::cents($data['hourly_rate']), (int) round($data['daily_hours'] * 60));
+
+        return back()->with('success', __('Weekend salary settings saved.'))->with('weekend_salary_teacher', $teacher->id);
     }
 
     public function update(Request $request, User $teacher)

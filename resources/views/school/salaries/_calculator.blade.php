@@ -13,7 +13,11 @@
         </div>
     </header>
 
-    <form method="dialog" class="salary-calculator-form">
+    <div class="salary-calculator-tabs btn-group" role="group" aria-label="{{ __('Salary calculator schedule') }}">
+        <button class="btn btn-primary" type="button" data-calculator-tab aria-controls="salary-calculator-weekday" aria-pressed="true">{{ __('Weekday') }}</button>
+        <button class="btn btn-outline-primary" type="button" data-calculator-tab aria-controls="salary-calculator-weekend" aria-pressed="false">{{ __('Weekend') }}</button>
+    </div>
+    <form id="salary-calculator-weekday" method="dialog" class="salary-calculator-form">
         @foreach(['morning' => 'sunrise', 'afternoon' => 'sun-fill', 'evening' => 'moon-stars-fill'] as $key => $icon)
             @php
                 $max = $key === 'evening' ? 10 : $sessionHours[$key];
@@ -55,4 +59,5 @@
             <button class="btn btn-primary" type="submit">Close</button>
         </footer>
     </form>
+    @include('school.salaries._weekend-calculator')
 </dialog>

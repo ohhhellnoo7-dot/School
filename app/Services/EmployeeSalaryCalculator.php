@@ -75,7 +75,7 @@ class EmployeeSalaryCalculator
         return $afternoonOnly ? 'Afternoon' : 'Morning';
     }
 
-    public function calculate(EmployeeSalaryProfile $profile, Carbon $asOf, int $assignedMinutes, ?Collection $workPeriods = null): array
+    public function calculate(EmployeeSalaryProfile $profile, Carbon $asOf, int $assignedMinutes, ?Collection $workPeriods = null, ?Collection $weekendSettings = null): array
     {
         $started = $profile->service_started_on;
         $months = max(0, ($asOf->year - $started->year) * 12 + $asOf->month - $started->month);
@@ -90,14 +90,19 @@ class EmployeeSalaryCalculator
             ->whereIn('weekday', self::WEEKEND_DAYS)->get();
         $minutesByDay = $workPeriods->whereIn('weekday', self::WEEKEND_DAYS)->groupBy('weekday')
             ->map(fn ($periods) => TeacherManagementService::workingMinutes($periods));
+        $weekendSettings ??= $profile->teacher_id !== null && $minutesByDay->sum() > 0
+            ? app(TeacherWeekendSalary::class)->settingsFor([$profile->teacher_id], $asOf)
+            : collect();
+        $weekendSetting = $weekendSettings->get($profile->teacher_id);
         $weekendMinutes = 0;
         $end = $asOf->copy()->endOfMonth();
         for ($date = $asOf->copy()->startOfMonth(); $date->lte($end); $date->addDay()) {
             if ($date->gte($started)) {
-                $weekendMinutes += $minutesByDay->get($date->format('l'), 0);
+                $scheduledMinutes = $minutesByDay->get($date->format('l'), 0);
+                $weekendMinutes += min($scheduledMinutes, $weekendSetting->daily_minutes ?? $scheduledMinutes);
             }
         }
-        $weekendRate = app(EmployeeSalaryRates::class)->amounts()['weekend_hourly'];
+        $weekendRate = $weekendSetting->hourly_cents ?? app(EmployeeSalaryRates::class)->amounts()['weekend_hourly'];
         $weekendCents = (int) round($weekendMinutes * $weekendRate / 60);
         $weekdayEligible = $weeklyMinutes > 0 && $started->lte($asOf);
         $eligible = $weekdayEligible || $weekendMinutes > 0;

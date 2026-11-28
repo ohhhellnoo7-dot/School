@@ -95,7 +95,7 @@ document.querySelectorAll('#salary-rates-dialog').forEach((dialog) => {
 });
 
 document.querySelectorAll('#salary-calculator').forEach((dialog) => {
-    const form = dialog.querySelector('form');
+    const form = dialog.querySelector('#salary-calculator-weekday');
     const sliders = [...form.querySelectorAll('input[type="range"]')];
     const estimates = Object.fromEntries(
         [...dialog.querySelectorAll('[data-estimate]')].map((element) => [element.dataset.estimate, element])
@@ -132,4 +132,64 @@ document.querySelectorAll('#salary-calculator').forEach((dialog) => {
     });
     form.addEventListener('input', update);
     form.addEventListener('reset', () => requestAnimationFrame(update));
+
+    const tabs = [...dialog.querySelectorAll('[data-calculator-tab]')];
+    const weekend = dialog.querySelector('#salary-calculator-weekend');
+    const selectTab = (active) => {
+        tabs.forEach((tab) => {
+            const selected = tab === active;
+            tab.setAttribute('aria-pressed', String(selected));
+            tab.classList.toggle('btn-primary', selected);
+            tab.classList.toggle('btn-outline-primary', !selected);
+            document.getElementById(tab.getAttribute('aria-controls')).hidden = !selected;
+        });
+    };
+    tabs.forEach((tab) => tab.addEventListener('click', () => selectTab(tab)));
+
+    const teacher = weekend.querySelector('#weekend-salary-teacher');
+    const approvedRate = weekend.querySelector('#weekend-approved-rate');
+    const approvedHours = weekend.querySelector('#weekend-approved-hours');
+    const estimateRate = weekend.querySelector('#weekend-estimate-rate');
+    const estimateHours = weekend.querySelector('#weekend-estimate-hours');
+    const estimateDays = weekend.querySelector('#weekend-estimate-days');
+    const number = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+    const renderEstimate = () => {
+        const hours = estimateHours.valueAsNumber;
+        const totalHours = hours * Number(estimateDays.value);
+        const minHours = Number(estimateHours.min);
+        const progress = (hours - minHours) / (Number(estimateHours.max) - minHours) * 100;
+        estimateHours.closest('.salary-slider').style.setProperty('--slider-progress', `${progress}%`);
+        weekend.querySelector('#weekend-hours-per-day').value = `${number.format(hours)} h`;
+        weekend.querySelector('#weekend-estimated-hours').value = `${number.format(totalHours)} h`;
+        weekend.querySelector('#weekend-estimated-pay').value = estimateRate.validity.valid ? usd.format(estimateRate.valueAsNumber * totalHours) : '—';
+    };
+    const renderSettings = () => {
+        const rate = approvedRate.valueAsNumber;
+        const day = rate * approvedHours.valueAsNumber;
+        const amounts = { hour: rate, day, weekend: day * 2, monthly: day * 2 * 52 / 12 };
+        weekend.querySelectorAll('[data-weekend-summary]').forEach((value) => {
+            const amount = amounts[value.dataset.weekendSummary];
+            value.textContent = approvedRate.validity.valid && Number.isFinite(amount) && amount >= 0 && (value.dataset.weekendSummary === 'hour' || approvedHours.validity.valid)
+                ? usd.format(amount)
+                : '—';
+        });
+        estimateRate.value = approvedRate.value;
+        if (approvedHours.validity.valid) estimateHours.value = approvedHours.value;
+        renderEstimate();
+    };
+    const loadTeacher = () => {
+        const { rate, hours } = teacher.selectedOptions[0].dataset;
+        approvedRate.value = rate;
+        approvedHours.value = hours;
+        renderSettings();
+    };
+    teacher.addEventListener('change', loadTeacher);
+    [approvedRate, approvedHours].forEach((input) => input.addEventListener('input', renderSettings));
+    [estimateRate, estimateHours, estimateDays].forEach((input) => input.addEventListener('input', renderEstimate));
+    if (weekend.querySelector('.text-danger')) renderSettings();
+    else loadTeacher();
+    if (weekend.hasAttribute('data-reopen')) {
+        selectTab(tabs[1]);
+        dialog.showModal();
+    }
 });

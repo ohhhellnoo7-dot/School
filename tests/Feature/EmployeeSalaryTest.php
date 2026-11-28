@@ -593,6 +593,34 @@ class EmployeeSalaryTest extends TestCase
         }
     }
 
+    public function test_approved_weekend_settings_apply_per_teacher_and_preserve_earlier_rates(): void
+    {
+        $this->travelTo(Carbon::parse('2026-02-01'));
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $teacher = $this->employee();
+        $profile = $this->profile($teacher, $admin);
+        $profile->update(['service_started_on' => '2026-02-01']);
+        foreach (['Saturday', 'Sunday'] as $weekday) {
+            \Illuminate\Support\Facades\DB::table('teacher_working_periods')->insert([
+                'teacher_id' => $teacher->id, 'weekday' => $weekday, 'start_time' => '07:00', 'end_time' => '11:00', 'unavailable' => false,
+            ]);
+        }
+        $update = route('employee-salaries.weekend-settings.update');
+        $settings = ['teacher_id' => $teacher->id, 'hourly_rate' => '2.00', 'daily_hours' => '3'];
+        $this->actingAs($teacher)->put($update, $settings)->assertForbidden();
+        $this->actingAs($admin)->put($update, $settings)->assertRedirect()->assertSessionHasNoErrors();
+        $calculator = app(EmployeeSalaryCalculator::class);
+        $this->assertSame(4800, $calculator->calculate($profile, today(), 0)['weekend_cents']);
+
+        $this->travelTo(Carbon::parse('2026-03-01'));
+        $this->put($update, array_replace($settings, ['hourly_rate' => '2.50']))->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame(6750, $calculator->calculate($profile, today(), 0)['weekend_cents']);
+        $this->assertSame(4800, $calculator->calculate($profile, Carbon::parse('2026-02-01'), 0)['weekend_cents']);
+        $this->assertDatabaseCount('teacher_weekend_salary_settings', 2);
+        $this->get(route('employee-salaries.index', ['month' => '2026-03']))->assertOk()
+            ->assertSee('data-rate="2.50"', false)->assertSee('data-hours="3"', false);
+    }
+
     public function test_increase_is_five_dollars_per_completed_three_months_for_total_salary(): void
     {
         $calculator = new EmployeeSalaryCalculator;
