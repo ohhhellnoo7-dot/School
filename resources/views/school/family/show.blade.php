@@ -4,9 +4,9 @@
 @php
     $home = route('students.index', $guardian->role === 'parent' ? [] : ['my_children' => 1]);
     $profile = route('students.family.show', $student);
-    $tabs = ['overview' => ['Overview', 'person'], 'attendance' => ['Attendance', 'calendar-check'], 'timetable' => ['Timetable', 'clock'], 'results' => ['Academic Results', 'bar-chart'], 'fees' => ['School Fees', 'receipt']];
+    $tabs = ['overview' => ['Overview', 'person'], 'attendance' => ['Attendance', 'calendar-check'], 'timetable' => ['Timetable', 'calendar3'], 'results' => ['Academic Results', 'bar-chart'], 'fees' => ['School Fees', 'receipt']];
 @endphp
-<div class="family-page">
+<div @class(['family-page', 'family-timetable-page' => $tab === 'timetable'])>
     <a class="family-back" href="{{ $home }}"><i class="bi bi-arrow-left" aria-hidden="true"></i> {{ __('My Children') }}</a>
     <header class="family-profile-header">
         @include('school.partials.avatar', ['person' => $student, 'size' => 80])
@@ -28,8 +28,10 @@
         @endforeach
     </nav>
     <div class="family-skeleton family-panel" data-family-skeleton hidden role="status" aria-label="{{ __('Loading child profile') }}"><span></span><span></span><span></span></div>
-    <section class="family-panel family-tab-panel" data-family-content aria-labelledby="family-tab-heading">
-        <h2 id="family-tab-heading">{{ __($tabs[$tab][0]) }}</h2>
+    <section @class(['family-panel', 'family-tab-panel', 'family-timetable-panel' => $tab === 'timetable']) data-family-content aria-labelledby="family-tab-heading">
+        @if($tab !== 'timetable')
+            <h2 id="family-tab-heading">{{ __($tabs[$tab][0]) }}</h2>
+        @endif
         @if($errors->any())
             <div class="alert alert-danger" role="alert">{{ $errors->first() }}</div>
         @endif

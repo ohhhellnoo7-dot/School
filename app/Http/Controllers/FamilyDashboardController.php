@@ -111,25 +111,24 @@ class FamilyDashboardController extends Controller
         $filters = $request->validate([
             'tab' => ['nullable', Rule::in(self::TABS)],
             'month' => 'nullable|date_format:Y-m',
-            'day' => ['nullable', Rule::in(TimetableController::DAYS)],
+            'week' => 'nullable|date_format:Y-m-d',
             'period' => 'nullable|regex:/^\d{4}-[12]$/',
         ]);
         $tab = $filters['tab'] ?? 'overview';
         $parentAttendance = $tab === 'attendance' && $guardian->role === 'parent';
-        $weekday = now()->format('l');
-        $day = $filters['day'] ?? (in_array($weekday, TimetableController::DAYS, true) ? $weekday : 'Monday');
         $classes = $this->classes($student);
-        $owners = $classes->map->timetableOwnerId();
+        $timetableClasses = $classes->unique(fn ($class) => $class->timetableOwnerId());
         $siblings = $guardian->children()->orderBy('name')->get(['students.id', 'students.name']);
 
         $details = match ($tab) {
             'attendance' => $this->attendance($student, $classes, $filters['month'] ?? now()->format('Y-m'), $parentAttendance),
             'timetable' => [
                 'days' => TimetableController::DAYS,
-                'day' => $day,
-                'lessons' => Schedule::with(['subject.teacher', 'teacher', 'classroom', 'schoolClass'])
-                    ->forAcademicYear(AcademicYear::current())->whereIn('school_class_id', $owners)
-                    ->where('day', $day)->orderBy('starts_at')->get(),
+                'week' => CarbonImmutable::parse($filters['week'] ?? 'today', config('classrooms.timezone'))->startOfWeek(CarbonImmutable::MONDAY),
+                'timetableClasses' => $timetableClasses,
+                'lessons' => Schedule::with(['subject.teacher', 'teacher', 'classroom'])
+                    ->forAcademicYear(AcademicYear::current())->whereIn('school_class_id', $timetableClasses->map->timetableOwnerId())
+                    ->whereIn('day', TimetableController::DAYS)->orderBy('starts_at')->get()->groupBy(['school_class_id', 'day']),
             ],
             'results' => $this->results($student, $filters['period'] ?? ''),
             'fees' => ['fees' => $student->fees()->with(['adjustments', 'payments'])->latest('due_date')->get()],

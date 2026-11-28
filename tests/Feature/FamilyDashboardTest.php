@@ -129,6 +129,8 @@ class FamilyDashboardTest extends TestCase
         Attendance::create(['student_id' => $other->id, 'date' => '2026-11-03', 'status' => 'late', 'notes' => 'Private attendance remark']);
         $subject = Subject::create(['name' => 'Literacy', 'code' => 'FAM-LIT', 'school_class_id' => $class->id, 'teacher_id' => $teacher->id]);
         Schedule::create(['subject_id' => $subject->id, 'day' => 'Monday', 'starts_at' => '13:00', 'ends_at' => '14:00', 'room' => 'Room B']);
+        $khmerSubject = Subject::create(['name' => 'Khmer Literature', 'code' => 'FAM-KHM', 'school_class_id' => $otherClass->id, 'teacher_id' => $teacher->id]);
+        Schedule::create(['subject_id' => $khmerSubject->id, 'day' => 'Thursday', 'starts_at' => '09:00', 'ends_at' => '10:00', 'room' => 'Room C']);
         $exam = Examination::create(['name' => 'Reading assessment', 'subject_id' => $subject->id, 'date' => '2026-11-01', 'total_marks' => 100]);
         Grade::create(['student_id' => $child->id, 'examination_id' => $exam->id, 'marks' => 86, 'remarks' => 'Good comprehension']);
         $child->fees()->create(['description' => 'English tuition', 'amount' => '35.00', 'paid' => '10.00', 'currency' => 'USD', 'due_date' => today()]);
@@ -149,7 +151,12 @@ class FamilyDashboardTest extends TestCase
         $this->get(route('modules.index', ['module' => 'attendance', 'child' => $child->id, 'month' => '2026-11']))
             ->assertOk()->assertSee(['Linked Child', 'Switch child', 'School office notified'])->assertDontSee('Private attendance remark');
         $this->get(route('modules.index', ['module' => 'attendance', 'child' => $other->id]))->assertNotFound();
-        $this->get(route('students.family.show', [$child, 'tab' => 'timetable', 'day' => 'Monday']))->assertOk()->assertSee(['Literacy', 'Room B', '13:00']);
+        $this->get(route('students.family.show', [$child, 'tab' => 'timetable', 'week' => '2026-11-26']))->assertOk()
+            ->assertSee(['Nov 23', 'Nov 27, 2026', 'Previous week', 'Next week'])
+            ->assertSee('week=2026-11-16', false)->assertSee('week=2026-11-30', false)
+            ->assertSee(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Literacy', 'Room B', '13:00', 'Khmer Literature', 'Room C'])
+            ->assertViewHas('lessons', fn ($lessons) => $lessons[$class->id]['Monday']->first()->subject->is($subject)
+                && $lessons[$otherClass->id]['Thursday']->first()->subject->is($khmerSubject));
         $this->get(route('students.family.show', [$child, 'tab' => 'results', 'period' => '2026-2']))->assertOk()->assertSee('Good comprehension');
         $this->get(route('students.family.show', [$child, 'tab' => 'results', 'period' => '2026-1']))->assertOk()->assertDontSee('Good comprehension');
         $this->get(route('students.family.show', [$child, 'tab' => 'fees']))->assertOk()->assertSee(['25.00 USD', '90000.00 KHR']);

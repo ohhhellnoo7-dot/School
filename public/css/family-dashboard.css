@@ -372,6 +372,87 @@
 }
 .family-program-report h4 { margin: 0 0 .25rem; font-size: 1rem; font-weight: 750; }
 .family-program-report p { margin: 0 0 .65rem; }
+.family-timetable-page { gap: 1.35rem; }
+.family-timetable-page .family-profile-header {
+    padding-block: 1.25rem;
+    background: linear-gradient(135deg, var(--surface), color-mix(in srgb, #43a6ff 25%, var(--surface)));
+}
+.family-timetable-page .family-tabs a { padding: .58rem 1.2rem; box-shadow: 0 2px 5px var(--shadow-color, #16365a17); }
+.family-timetable-page .family-tabs [aria-current] { background: linear-gradient(135deg, #2684ff, #0055eb); color: #fff; }
+.family-timetable-panel { padding: clamp(.85rem, 1.5vw, 1.5rem); }
+.family-timetable-heading { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; margin-bottom: 1rem; }
+.family-timetable-heading h2 { margin: 0; font-size: clamp(1.35rem, 2vw, 1.8rem); }
+.family-timetable-heading p, .family-timetable-program > p { margin: .2rem 0 0; }
+.family-timetable-heading-icon, .family-subject-icon {
+    display: grid;
+    place-items: center;
+    border-radius: 28%;
+    background: color-mix(in srgb, var(--day-accent, #0079e6) 14%, var(--surface));
+    color: var(--day-accent, #0079e6);
+}
+.family-timetable-heading-icon { width: 4rem; height: 4rem; font-size: 2rem; }
+.family-week-nav {
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+    margin-inline-start: auto;
+    padding: .2rem;
+    border: 1px solid var(--family-border);
+    border-radius: 2rem;
+    font-size: .9rem;
+    font-weight: 750;
+}
+.family-week-nav a { display: grid; width: 2.2rem; height: 2.2rem; place-items: center; color: inherit; }
+.family-week-nav span { padding-inline: .3rem; }
+.family-timetable-program + .family-timetable-program { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--family-border); }
+.family-timetable-program > p { margin-bottom: .8rem; }
+.family-timetable-week { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .85rem; }
+.family-timetable-day {
+    --day-accent: #0075d8;
+    --day-tint: #68b8fb;
+    border: 1px solid color-mix(in srgb, var(--day-tint) 48%, var(--family-border));
+    border-radius: 1rem;
+    background: linear-gradient(var(--surface), color-mix(in srgb, var(--day-tint) 9%, var(--surface)));
+    overflow: hidden;
+}
+.family-timetable-day:nth-child(2) { --day-accent: #7139de; --day-tint: #a78cf4; }
+.family-timetable-day:nth-child(3) { --day-accent: #008358; --day-tint: #61dfb3; }
+.family-timetable-day:nth-child(4) { --day-accent: #ab4f00; --day-tint: #ffb773; }
+.family-timetable-day:nth-child(5) { --day-accent: #b51768; --day-tint: #fa88c2; }
+.family-timetable-day h4 {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    margin: 0;
+    padding: .7rem .75rem;
+    background: color-mix(in srgb, var(--day-tint) 35%, var(--surface));
+    color: color-mix(in srgb, var(--day-accent) 67%, var(--family-ink));
+    font-size: 1rem;
+}
+.family-timetable-day h4 i { font-size: 1.15rem; }
+.family-timetable-day .family-records { padding: .25rem .65rem .7rem; }
+.family-timetable-day .family-records li { display: flex; flex-wrap: nowrap; align-items: center; gap: .55rem; padding-block: .6rem; }
+.family-timetable-day strong { display: block; line-height: 1.2; }
+.family-subject-icon { width: clamp(1.85rem, 3vw, 3.2rem); aspect-ratio: 1; flex: none; font-size: clamp(1rem, 1.8vw, 1.65rem); }
+.family-lesson-time {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    margin-bottom: .2rem;
+    padding: .18rem .5rem;
+    border-radius: 1rem;
+    background: color-mix(in srgb, var(--day-tint) 28%, var(--surface));
+    color: color-mix(in srgb, var(--day-accent) 65%, var(--family-ink));
+    white-space: nowrap;
+    font-size: .78rem;
+    font-weight: 750;
+}
+@media (max-width: 1200px) {
+    .family-timetable-week { grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); }
+}
+@media (max-width: 575px) {
+    .family-week-nav { margin-inline-start: 0; }
+}
 .family-month-scroll { overflow-x: auto; }
 .family-month-grid { width: 100%; border-collapse: separate; border-spacing: 0; text-align: center; font-size: .875rem; }
 .family-month-grid :is(th, td) {
@@ -382,7 +463,7 @@
 }
 .family-month-grid thead th { background: #007b87; color: #fff; }
 .family-month-grid thead .is-weekend { background: #c9232b; }
-.family-month-grid thead .is-holiday, .family-month-grid tbody .is-holiday { background: #e8dfd0; color: #183549; }
+.family-month-grid thead .is-holiday { background: #e8dfd0; color: #183549; }
 .family-month-grid thead th time { color: inherit; }
 .family-month-grid tr > * { min-width: 2rem; padding-inline: .2rem; }
 .family-day-mark {

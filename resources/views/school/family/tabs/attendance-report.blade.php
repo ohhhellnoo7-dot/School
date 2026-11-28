@@ -46,7 +46,7 @@
                             $mark = $marks->get($date) ?? $records->get($date);
                                 $label = $mark ? __(ucfirst($mark->status)) : __('Not recorded');
                             @endphp
-                            <td data-date="{{ $date }}" @class(['is-holiday' => $holidays->get($day->day)])>
+                            <td data-date="{{ $date }}">
                                 <span class="family-day-mark" data-tone="{{ $mark?->status }}" title="{{ $label }}">
                                     @if(isset($statusIcons[$mark?->status]))
                                         <i class="bi bi-{{ $statusIcons[$mark->status] }}" aria-hidden="true"></i>
